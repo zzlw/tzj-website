@@ -1,0 +1,11 @@
+{
+  "error": {
+    "title": "Something Went Wrong",
+    "description": "An error occurred while loading this page. Please try again. If the problem persists, contact our support team.",
+    "retry": "Try Again",
+    "backHome": "Back to Home",
+    "globalTitle": "System Error",
+    "globalDescription": "The application encountered a critical error. Please refresh and try again.",
+    "globalRefresh": "Refresh Page"
+  }
+}

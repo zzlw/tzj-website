@@ -1,0 +1,70 @@
+{
+  "meta": {
+    "title": "Modular Series",
+    "description": "TZJ modular training systems — M / O / D / X four series with all-galvanized steel frames, open floor plans, reconfigurable and stackable for unlimited training scenarios."
+  },
+  "hero": {
+    "eyebrow": "Modular Training Tower · Series",
+    "title": "Modular Series",
+    "description": "M / O / D / X four series with all-galvanized steel frames — open floor plans, reconfigurable and stackable for unlimited training scenarios."
+  },
+  "seriesSection": {
+    "eyebrow": "Series Overview",
+    "title": "M / O / D / X Four Series"
+  },
+  "seriesUsePrefix": "Best for: ",
+  "series": [
+    {
+      "code": "M Series",
+      "name": "Entry-Level Simulator",
+      "desc": "All essential elements for basic fire training requirements. Two-story tower with single-story annex — the ideal starting point for building training capability.",
+      "use": "Basic skills training"
+    },
+    {
+      "code": "O Series",
+      "name": "Open Space",
+      "desc": "Configurable as multi-room (office) or large open-span (warehouse) layouts. Two-story residential/industrial unit + single-story annex for multi-person team training.",
+      "use": "Office / warehouse scenarios"
+    },
+    {
+      "code": "D Series",
+      "name": "Multi-Level Advanced",
+      "desc": "Larger open-floor module combinations creating complex interior building environments for advanced training.",
+      "use": "Advanced integrated training"
+    },
+    {
+      "code": "X Series",
+      "name": "Full-Size Complex",
+      "desc": "Multi-level training tower + residential/industrial units + annex — with custom doors, windows, breach points, burn rooms, and prop interfaces.",
+      "use": "High-rise + annex integrated training"
+    }
+  ],
+  "advantagesSection": {
+    "eyebrow": "Core Advantages",
+    "title": "Why choose a modular system"
+  },
+  "advantages": [
+    "All-galvanized steel frame — corrosion resistant, ultra-durable",
+    "Open floor plan — walls, doors, and windows freely reconfigurable",
+    "Modules rearrange and stack — expand on demand",
+    "Factory prefabricated — fast on-site assembly"
+  ],
+  "relatedLinks": [
+    {
+      "label": "Modular vs Containers",
+      "desc": "Comprehensive comparison from materials to load capacity."
+    },
+    {
+      "label": "Fixed Training Tower",
+      "desc": "Rugged multi-level steel training towers."
+    },
+    {
+      "label": "Tower Design Center",
+      "desc": "Browse specifications, elevations, and floor plans."
+    }
+  ],
+  "cta": {
+    "title": "Want to see how it compares to containers?",
+    "compareLink": "Modular vs Containers"
+  }
+}

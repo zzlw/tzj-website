@@ -1,0 +1,95 @@
+{
+  "content": {
+    "filters": {
+      "allTypes": "全部类型",
+      "allCategories": "全部分类"
+    },
+    "sort": {
+      "ariaLabel": "排序方式",
+      "cases": {
+        "completionDesc": "完成時间（新→旧）",
+        "completionAsc": "完成時间（旧→新）",
+        "titleAsc": "標題（A→Z）",
+        "titleDesc": "標題（Z→A）",
+        "locationAsc": "地点（A→Z）"
+      },
+      "news": {
+        "publishedDesc": "發布時间（新→旧）",
+        "publishedAsc": "發布時间（旧→新）",
+        "titleAsc": "標題（A→Z）",
+        "titleDesc": "標題（Z→A）"
+      },
+      "blog": {
+        "publishedDesc": "發布時间（新→旧）",
+        "publishedAsc": "發布時间（旧→新）",
+        "titleAsc": "標題（A→Z）",
+        "titleDesc": "標題（Z→A）"
+      },
+      "tradeShows": {
+        "startDesc": "活動日期（新→旧）",
+        "startAsc": "活動日期（旧→新）",
+        "titleAsc": "標題（A→Z）",
+        "titleDesc": "標題（Z→A）"
+      }
+    },
+    "categories": {
+      "cases": {
+        "types": {
+          "military": "部隊类",
+          "fire": "消防类",
+          "police": "公安类",
+          "scenic": "景區类",
+          "school": "学校类",
+          "enterprise": "企業类"
+        }
+      },
+      "news": {
+        "categories": {
+          "company": "公司動态",
+          "industry": "行業資讯",
+          "knowledge": "拓展知識",
+          "equipment": "器材知識"
+        }
+      },
+      "blog": {
+        "categories": {
+          "training_facility": "訓練設施",
+          "burn_room": "燃燒室技術",
+          "modular": "模組化系統",
+          "practice": "訓練實践",
+          "industry": "行業洞察"
+        }
+      },
+      "tradeShows": {
+        "types": {
+          "exhibition": "展览會",
+          "seminar": "研讨會",
+          "roadshow": "巡回活動"
+        }
+      }
+    },
+    "list": {
+      "emptyCases": "暂无匹配的案例，請调整筛選條件。",
+      "emptyNews": "暂无匹配的新闻，請调整筛選條件。",
+      "emptyBlog": "暂无匹配的文章，請调整筛選條件。",
+      "emptyTradeShows": "暂无匹配的活動，請调整筛選條件。",
+      "readMore": "阅读全文",
+      "viewCase": "查看案例",
+      "backToList": "返回列表",
+      "publishedAt": "發布于",
+      "completedAt": "完成于",
+      "location": "地点",
+      "relatedContent": "相關內容"
+    },
+    "pagination": {
+      "prev": "上一頁",
+      "next": "下一頁",
+      "page": "第 {page} 頁，共 {totalPages} 頁"
+    },
+    "productGrid": {
+      "familyIndex": "板組 {index} / {total}",
+      "familyIndexWithCount": "板組 {index} / {total} · {count}",
+      "lineCount": "{count} 條產品线"
+    }
+  }
+}

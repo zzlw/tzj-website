@@ -1,0 +1,132 @@
+import { getTranslations } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
+import { MediaImage as Image } from "@/components/MediaImage";
+import { Phone, Mail, MapPin } from "lucide-react";
+import { Container, Eyebrow, RbButton, RbLink } from "@/components/ui";
+import { FOOTER_BLOCKS } from "@/lib/navigation";
+import { FooterLanguageTrigger } from "@/components/i18n/FooterLanguageTrigger";
+import { siteConfig } from "@/lib/site";
+
+export async function Footer() {
+  const tNav = await getTranslations("nav");
+  const tFooter = await getTranslations("footer");
+  const tContact = await getTranslations("contact");
+  const tCommon = await getTranslations("common");
+
+  return (
+    <footer className="bg-white">
+      <div className="grid lg:grid-cols-2">
+        <div className="relative flex min-h-[360px] flex-col justify-center overflow-hidden bg-neutral-900 px-5 py-14 sm:px-8 lg:px-12 lg:py-20 xl:px-16">
+          <Image
+            src="/media/fixed-tower-hero.jpg"
+            alt=""
+            fill
+            sizes="(max-width: 1024px) 100vw, 50vw"
+            className="object-cover object-center"
+          />
+          <div className="absolute inset-0 rb-media-shade-strong" aria-hidden="true" />
+          <div className="rb-on-media relative z-10 max-w-md">
+            <Eyebrow inverted>{tFooter("ctaEyebrow")}</Eyebrow>
+            <h2 className="rb-h2 mt-4 text-white">{tFooter("ctaTitle")}</h2>
+            <p className="mt-4 text-base leading-relaxed text-white/85">
+              {tFooter("ctaDesc")}
+            </p>
+            <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-4">
+              <RbButton href="/contact" variant="light">
+                {tFooter("ctaButton")}
+              </RbButton>
+              <RbLink href="/cases" inverted>
+                {tFooter("ctaLink")}
+              </RbLink>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white px-5 py-14 sm:px-8 lg:px-12 lg:py-20 xl:px-16">
+          <div className="grid grid-cols-2 gap-x-8 gap-y-10 xl:grid-cols-4">
+            {FOOTER_BLOCKS.map((block) => (
+              <div key={block.titleKey}>
+                <div className="text-xs font-bold uppercase tracking-[0.18em] text-neutral-500">
+                  {tFooter(block.titleKey as Parameters<typeof tFooter>[0])}
+                </div>
+                <ul className="mt-4 space-y-3">
+                  {block.links.map((link) => (
+                    <li key={link.key}>
+                      <Link
+                        href={link.href}
+                        className="font-display text-base font-bold text-neutral-900 transition-colors hover:text-primary"
+                      >
+                        {tNav(link.key as Parameters<typeof tNav>[0])}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="border-t border-neutral-300">
+        <Container>
+          <div className="flex flex-col gap-5 py-8 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-secondary-text">
+              <a
+                href={`tel:${siteConfig.contact.phone.replace(/-/g, "")}`}
+                className="flex items-center gap-2 transition-colors hover:text-primary"
+              >
+                <Phone className="h-4 w-4 text-primary" aria-hidden="true" />
+                {siteConfig.contact.phone}
+              </a>
+              <a
+                href={`mailto:${siteConfig.contact.email}`}
+                className="flex items-center gap-2 transition-colors hover:text-primary"
+              >
+                <Mail className="h-4 w-4 text-primary" aria-hidden="true" />
+                {siteConfig.contact.email}
+              </a>
+              <span className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-primary" aria-hidden="true" />
+                {tContact("address")}
+              </span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-secondary-text">
+              <FooterLanguageTrigger />
+              <Link href="/privacy" className="transition-colors hover:text-primary">
+                {tFooter("privacy")}
+              </Link>
+              <Link href="/terms" className="transition-colors hover:text-primary">
+                {tFooter("terms")}
+              </Link>
+            </div>
+          </div>
+        </Container>
+      </div>
+
+      <div className="border-t border-neutral-300 bg-neutral-100">
+        <Container>
+          <div className="flex flex-col items-center justify-between gap-3 py-6 text-xs text-neutral-500 md:flex-row">
+            <div className="flex items-center gap-3">
+              <span className="flex h-8 w-8 items-center justify-center bg-primary font-display text-sm font-extrabold text-white">
+                TZ
+              </span>
+              <span>
+                &copy; {new Date().getFullYear()} {tCommon("legalName")}{" "}
+                {tFooter("copyright")}
+              </span>
+            </div>
+            <a
+              href="https://beian.miit.gov.cn"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition-colors hover:text-primary"
+            >
+              {siteConfig.beian}
+            </a>
+          </div>
+        </Container>
+      </div>
+    </footer>
+  );
+}

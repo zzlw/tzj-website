@@ -1,0 +1,29 @@
+{
+  "meta": {
+    "title": "Project Case Studies",
+    "description": "TZJ training facility project case studies — fire/rescue, police/military, mining rescue, education, tourism, and CFBT training complexes across industries."
+  },
+  "hero": {
+    "eyebrow": "Project Case Studies",
+    "title": "Training complexes across the nation",
+    "description": "Over 1000 training complex projects serving fire, police, military, mining, education, and tourism sectors nationwide. Below are representative projects."
+  },
+  "relatedLinks": [
+    {
+      "label": "Fixed Training Tower",
+      "desc": "Rugged multi-level steel training towers."
+    },
+    {
+      "label": "Modular Training Tower",
+      "desc": "Flexible, reconfigurable, expandable modular systems."
+    },
+    {
+      "label": "Specialized Training",
+      "desc": "Maritime, tactical, and hazmat specialized programs."
+    }
+  ],
+  "cta": {
+    "title": "Want to see projects similar to your needs?",
+    "description": "Speak with our engineers and fire service experts for recommendations tailored to your site and budget."
+  }
+}

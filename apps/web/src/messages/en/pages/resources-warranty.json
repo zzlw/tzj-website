@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "title": "Warranty Service",
+    "description": "TZJ training facility warranty — integrated design, manufacturing, and installation warranty with component-level coverage for structure, liner, and accessories, plus inspection, maintenance, and parts support."
+  },
+  "hero": {
+    "eyebrow": "Resources · Warranty",
+    "title": "Warranty Service",
+    "description": "Integrated design, manufacturing, and installation warranty — one call, full accountability."
+  },
+  "integratedSection": {
+    "eyebrow": "Integrated Warranty",
+    "title": "One call, full accountability",
+    "description": "Design, manufacturing, and installation all by TZJ — no passing blame between separate designers, suppliers, and contractors. If anything goes wrong, you call us."
+  },
+  "responsibility": [
+    {
+      "title": "Design",
+      "desc": "Completed by TZJ — covered under integrated warranty."
+    },
+    {
+      "title": "Manufacturing",
+      "desc": "Factory-standard production with integrated and manufacturer warranty."
+    },
+    {
+      "title": "Installation",
+      "desc": "Turnkey installation by our own teams — covered under integrated warranty."
+    }
+  ],
+  "warrantySection": {
+    "eyebrow": "Warranty Coverage",
+    "title": "Component warranty policy"
+  },
+  "tableHeaders": {
+    "item": "Component",
+    "scope": "Warranty",
+    "note": "Details"
+  },
+  "warrantyRows": [
+    {
+      "item": "Steel structure",
+      "scope": "Long-term warranty",
+      "note": "Hot-dip galvanized steel structure with long-term quality assurance on structural members."
+    },
+    {
+      "item": "Galvanized coating",
+      "scope": "Within warranty period",
+      "note": "Warranty on galvanized corrosion protection under normal use."
+    },
+    {
+      "item": "Thermal liner",
+      "scope": "Within warranty period",
+      "note": "Warranty on material and workmanship defects; wear items assessed by usage."
+    },
+    {
+      "item": "Training props & accessories",
+      "scope": "Within warranty period",
+      "note": "Functional component warranty and parts support."
+    }
+  ],
+  "warrantyFootnote": "* Specific warranty terms are per contract. Warranty period and scope may vary by product and conditions of use.",
+  "supportSection": {
+    "eyebrow": "After-Sales Support",
+    "title": "Ongoing after-sales assurance"
+  },
+  "support": [
+    "Annual inspection and maintenance service",
+    "Replaceable wear items and liner panels",
+    "Ongoing technical support after delivery",
+    "Operation and maintenance training"
+  ],
+  "relatedLinks": [
+    {
+      "label": "Annual Inspection Service",
+      "desc": "Regular inspection keeps facilities safe and operational."
+    },
+    {
+      "label": "How to Buy",
+      "desc": "Complete procurement process from consultation through delivery."
+    },
+    {
+      "label": "FAQs",
+      "desc": "Common questions on products, procurement, and maintenance."
+    }
+  ],
+  "cta": {
+    "title": "Learn about your warranty and maintenance plan",
+    "secondaryLabel": "View annual inspection service"
+  }
+}

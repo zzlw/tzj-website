@@ -1,0 +1,49 @@
+{
+  "meta": {
+    "title": "衬里方案对比",
+    "description": "对比拓之迹互锁隔热衬里与传统耐火砖、整体浇筑等燃烧室衬里方案，并了解既有燃烧室的改造升级流程。"
+  },
+  "hero": {
+    "eyebrow": "实火与燃烧训练 · 对比",
+    "title": "衬里方案对比",
+    "description": "互锁隔热衬里 vs 传统衬里——从安装、维修到使用寿命的全面对比，以及既有燃烧室改造流程。"
+  },
+  "compareSection": {
+    "eyebrow": "方案对比",
+    "title": "互锁衬里 vs 传统衬里"
+  },
+  "tableHeaders": {
+    "feature": "对比项",
+    "interlock": "互锁隔热衬里",
+    "traditional": "传统衬里"
+  },
+  "rows": [
+    { "feature": "安装方式", "interlock": "互锁拼装，现场快速施工", "traditional": "砌筑或整体浇筑，工期长" },
+    { "feature": "维修更换", "interlock": "单块独立拆换，局部维修", "traditional": "需大面积凿除，维修成本高" },
+    { "feature": "隔热性能", "interlock": "钙硅基材料，背温控制优秀", "traditional": "随使用易开裂、隔热衰减" },
+    { "feature": "结构保护", "interlock": "有效保护主体钢结构", "traditional": "开裂后热量易传导至结构" },
+    { "feature": "使用寿命", "interlock": "耐反复高温，长期稳定", "traditional": "高温反复后易劣化" },
+    { "feature": "改造适配", "interlock": "可对既有燃烧室升级改造", "traditional": "改造难度大" }
+  ],
+  "retrofitSection": {
+    "eyebrow": "改造升级",
+    "title": "既有燃烧室改造流程",
+    "description": "无论现状如何，我们都能用互锁隔热衬里，把老旧、久经使用的燃烧室改造为贴近现代实战需求的训练设施 —— 单块可换、维护更省。"
+  },
+  "steps": [
+    { "step": "01", "title": "现场评估", "desc": "勘察既有燃烧室结构与衬里损耗情况，评估改造可行性。" },
+    { "step": "02", "title": "方案设计", "desc": "按燃烧室尺寸定制互锁衬里排布与节点方案。" },
+    { "step": "03", "title": "拆除与基面处理", "desc": "拆除老化衬里，处理钢结构基面，确保安装条件。" },
+    { "step": "04", "title": "互锁安装", "desc": "互锁拼装新衬里，快速施工、减少停训时间。" },
+    { "step": "05", "title": "验收交付", "desc": "完成检查与功能验证，交付可投入实战训练的燃烧室。" }
+  ],
+  "relatedLinks": [
+    { "label": "互锁隔热衬里", "desc": "钙硅基互锁衬里的技术规格与性能。" },
+    { "label": "燃烧室总览", "desc": "安全实战燃烧环境的完整方案。" },
+    { "label": "年检服务", "desc": "定期检查，及早发现并处理隐患。" }
+  ],
+  "cta": {
+    "title": "评估您的燃烧室改造方案",
+    "secondaryLabel": "了解互锁隔热衬里"
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "meta": {
+    "title": "資源中心",
+    "description": "拓之跡資源中心：如何採購、塔型設計中心、年檢服務、常見問題、展會活動、媒體報道、質保服務與博客。"
+  },
+  "hero": {
+    "eyebrow": "資源中心",
+    "title": "採購、設計、檢測與知識",
+    "description": "從如何採購到塔型設計、年檢服務與行業知識，這裡彙集了推進您項目所需的全部資源。"
+  },
+  "sections": [
+    {
+      "label": "如何採購",
+      "href": "/resources/how-to-buy",
+      "desc": "從溝通到交付的完整採購流程與機構採購支持。"
+    },
+    {
+      "label": "塔型設計中心",
+      "href": "/resources/design-center",
+      "desc": "瀏覽產品系列、技術參數與選型設計資料。"
+    },
+    {
+      "label": "年檢服務",
+      "href": "/resources/inspections",
+      "desc": "訓練設施年度檢測與維護，保障安全與壽命。"
+    },
+    {
+      "label": "常見問題",
+      "href": "/resources/faqs",
+      "desc": "產品選型、採購、安裝與維護的常見問題解答。"
+    },
+    {
+      "label": "展會活動",
+      "href": "/resources/trade-shows",
+      "desc": "了解我們近期參與的展會與行業交流活動。"
+    },
+    {
+      "label": "媒體報道",
+      "href": "/resources/news",
+      "desc": "公司動態、產品迭代與項目交付的新聞資訊。"
+    },
+    {
+      "label": "質保服務",
+      "href": "/resources/warranty",
+      "desc": "分項質保政策與持續的售後維護支持。"
+    },
+    {
+      "label": "博客",
+      "href": "/resources/blog",
+      "desc": "訓練設施設計理念、技術解讀與訓練實踐。"
+    }
+  ],
+  "cta": {
+    "title": "還有疑問？",
+    "description": "與我們的工程師和消防專家團隊溝通，獲取專業建議。"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "meta": {
+    "title": "Blog",
+    "description": "TZJ Blog — design philosophy for fire training facilities, burn room and liner technology, modular systems, training practice, and industry insights to support training complex development."
+  },
+  "hero": {
+    "eyebrow": "Resources · Blog",
+    "title": "Blog",
+    "description": "Training facility design, burn room and liner technology, modular systems, training practice, and industry insights."
+  },
+  "featuredSection": {
+    "eyebrow": "Featured",
+    "title": "Editor's Picks"
+  },
+  "listSection": {
+    "eyebrow": "Articles",
+    "title": "Latest Articles"
+  },
+  "relatedLinks": [
+    {
+      "label": "FAQs",
+      "desc": "Common questions on selection, procurement, and maintenance."
+    },
+    {
+      "label": "Project Case Studies",
+      "desc": "See delivered training complex projects."
+    },
+    {
+      "label": "Tower Design Center",
+      "desc": "Browse tower specifications and design resources."
+    }
+  ],
+  "cta": {
+    "title": "Have a specific question to discuss?",
+    "description": "Speak with our engineers and fire service experts for professional guidance."
+  }
+}

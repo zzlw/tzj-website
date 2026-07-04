@@ -1,0 +1,25 @@
+{
+  "meta": {
+    "title": "资源中心",
+    "description": "拓之迹资源中心：如何采购、塔型设计中心、年检服务、常见问题、展会活动、媒体报道、质保服务与博客。"
+  },
+  "hero": {
+    "eyebrow": "资源中心",
+    "title": "采购、设计、检测与知识",
+    "description": "从如何采购到塔型设计、年检服务与行业知识，这里汇集了推进您项目所需的全部资源。"
+  },
+  "sections": [
+    { "label": "如何采购", "href": "/resources/how-to-buy", "desc": "从沟通到交付的完整采购流程与机构采购支持。" },
+    { "label": "塔型设计中心", "href": "/resources/design-center", "desc": "浏览产品系列、技术参数与选型设计资料。" },
+    { "label": "年检服务", "href": "/resources/inspections", "desc": "训练设施年度检测与维护，保障安全与寿命。" },
+    { "label": "常见问题", "href": "/resources/faqs", "desc": "产品选型、采购、安装与维护的常见问题解答。" },
+    { "label": "展会活动", "href": "/resources/trade-shows", "desc": "了解我们近期参与的展会与行业交流活动。" },
+    { "label": "媒体报道", "href": "/resources/news", "desc": "公司动态、产品迭代与项目交付的新闻资讯。" },
+    { "label": "质保服务", "href": "/resources/warranty", "desc": "分项质保政策与持续的售后维护支持。" },
+    { "label": "博客", "href": "/resources/blog", "desc": "训练设施设计理念、技术解读与训练实践。" }
+  ],
+  "cta": {
+    "title": "还有疑问？",
+    "description": "与我们的工程师和消防专家团队沟通，获取专业建议。"
+  }
+}

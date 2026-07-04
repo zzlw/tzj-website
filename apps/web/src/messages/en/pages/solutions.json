@@ -1,0 +1,19 @@
+{
+  "meta": {
+    "title": "Solutions",
+    "description": "TZJ training facility solutions by customer type — for fire & rescue, police & SWAT, military, mine rescue, education, and enterprise, combining towers, burn rooms, specialized scenarios, and props."
+  },
+  "hero": {
+    "eyebrow": "By Customer · Solutions",
+    "title": "Find the training solution that matches your mission",
+    "description": "Different teams and missions demand very different training facilities. We regroup towers, burn rooms, specialized scenarios, and props by customer type to help you find the right overall solution quickly."
+  },
+  "breadcrumb": {
+    "current": "Solutions"
+  },
+  "viewSolution": "View Solution",
+  "cta": {
+    "title": "Don't see an exact match?",
+    "description": "Every organization's mission and site is unique. Tell us your requirements and our engineers and fire service experts will design a tailored training solution."
+  }
+}

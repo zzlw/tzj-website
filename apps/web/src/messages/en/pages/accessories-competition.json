@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "title": "Competition Training Facilities",
+    "description": "TZJ competition training facilities — professional equipment aligned with fire/rescue skills competition rules for event preparation, selection, and year-round drill-to-compete training."
+  },
+  "hero": {
+    "eyebrow": "Training Equipment · Competition",
+    "title": "Competition Training Facilities",
+    "description": "Train to compete, compete to win — professional facilities aligned with competition rules connect daily training directly to the arena.",
+    "imageAlt": "Competition training facilities"
+  },
+  "breadcrumb": {
+    "parent": "Training Equipment",
+    "current": "Competition Training Facilities"
+  },
+  "jsonLd": {
+    "productName": "Competition Training Facilities",
+    "productDescription": "Professional training facilities aligned with fire/rescue skills competition rules."
+  },
+  "overview": {
+    "eyebrow": "Train to Compete",
+    "title": "Bring competition standards to the training ground",
+    "description": "Skills competitions are a key lever for assessing and improving team capability. Competition-aligned facilities connect daily training seamlessly to event standards — training is competing.",
+    "lead": "Dimensions, standards, and pace match competition rules to help teams prepare systematically and perform consistently.",
+    "body": "Also ideal for in-house competitions and year-round drill programs that continuously motivate teams to improve operational skills."
+  },
+  "featuresSection": {
+    "eyebrow": "Core Features",
+    "title": "Six capabilities of competition facilities"
+  },
+  "features": [
+    {
+      "title": "Competition-aligned",
+      "desc": "Designed to skills competition event rules with dimensions and standards matching event requirements."
+    },
+    {
+      "title": "Timing & Speed",
+      "desc": "Supports timed and speed events with pace that accurately reflects competition rhythm."
+    },
+    {
+      "title": "Event Preparation",
+      "desc": "Built for selection and camp training — helping teams prepare systematically and perform consistently."
+    },
+    {
+      "title": "Drill to Compete",
+      "desc": "Supports year-round drill and in-house competitions that motivate continuous improvement."
+    },
+    {
+      "title": "Adjustable Difficulty",
+      "desc": "Graduated difficulty settings for beginners and elite performers alike."
+    },
+    {
+      "title": "Built to Standard",
+      "desc": "Industrial-grade construction, code-compliant and durable under high-frequency competition training."
+    }
+  ],
+  "programsSection": {
+    "eyebrow": "Competition Events",
+    "title": "Supported competition and training events"
+  },
+  "programs": [
+    "100-meter obstacle and speed events",
+    "Ladder / hook ladder climb",
+    "Hose lay and connection",
+    "Load carry and handling events",
+    "In-house competitions and selection camps",
+    "Skills competition preparation"
+  ],
+  "relatedLinks": [
+    {
+      "label": "Fitness & Vestibular Equipment",
+      "desc": "Physical conditioning and vestibular stability training."
+    },
+    {
+      "label": "Fixed Training Tower (Steel)",
+      "desc": "Multi-level structure for climbing and competition events."
+    },
+    {
+      "label": "Enterprise & Campus Solutions",
+      "desc": "Dedicated team drill and competition camp programs."
+    }
+  ],
+  "cta": {
+    "title": "Configure competition facilities for your event camp",
+    "description": "Tell us your preparation goals and competition events — we'll customize training facilities aligned with the rules."
+  }
+}

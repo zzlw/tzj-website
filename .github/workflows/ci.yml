@@ -1,0 +1,173 @@
+# ============================================================
+# TZJ Monorepo — CI/CD Pipeline (GitHub Actions)
+# ============================================================
+# 原则: 缓存优先, 安全门禁, 自动部署
+# Turbo Remote Cache 让 CI 速度飞起
+# ============================================================
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: ["main", "develop"]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Turbo Remote Cache (Vercel)
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+
+jobs:
+  # ── 1. Build & Test (Turbo) ────────────────────────────────
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.9.0
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint (Biome)
+        run: pnpm run check
+
+      - name: Typecheck
+        run: pnpm run typecheck
+
+      - name: Build & Test (Turbo)
+        run: pnpm run build
+
+  # ── 1b. Lighthouse CI (Web) ────────────────────────────────
+  lighthouse-web:
+    name: Lighthouse CI (Web)
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.9.0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Web
+        run: pnpm --filter @tzj/web build
+
+      - name: Run Lighthouse CI
+        run: |
+          npm install -g @lhci/cli@0.14.0
+          lhci autorun --config=apps/web/lighthouserc.json
+        continue-on-error: true
+
+  # ── 2. Docker Build & Security Scan ────────────────────────
+  docker-build:
+    name: Docker Build & Scan
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    strategy:
+      matrix:
+        app: [web, admin, api]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/${{ matrix.app }}/Dockerfile
+          load: true
+          tags: tzj/${{ matrix.app }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Trivy 安全扫描
+      - name: Security Scan (Trivy)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: tzj/${{ matrix.app }}:${{ github.sha }}
+          format: sarif
+          output: trivy-${{ matrix.app }}.sarif
+          severity: CRITICAL,HIGH
+
+      - name: Upload Trivy results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-${{ matrix.app }}.sarif
+
+      # 仅在 main 分支推送镜像
+      - name: Login to Registry
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push Image
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          docker tag tzj/${{ matrix.app }}:${{ github.sha }} ghcr.io/${{ github.repository }}/${{ matrix.app }}:${{ github.sha }}
+          docker tag tzj/${{ matrix.app }}:${{ github.sha }} ghcr.io/${{ github.repository }}/${{ matrix.app }}:latest
+          docker push ghcr.io/${{ github.repository }}/${{ matrix.app }}:${{ github.sha }}
+          docker push ghcr.io/${{ github.repository }}/${{ matrix.app }}:latest
+
+  # ── 3. Dependency Audit ────────────────────────────────────
+  dependency-audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.9.0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Audit dependencies
+        run: pnpm audit --audit-level=high
+        continue-on-error: true

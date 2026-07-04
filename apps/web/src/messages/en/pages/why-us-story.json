@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "title": "Our Story",
+    "description": "The TZJ story — 16 years dedicated to emergency response training equipment, a history of continuous innovation and sustained industry growth."
+  },
+  "hero": {
+    "eyebrow": "Why TZJ · Story",
+    "title": "Our Story",
+    "description": "16 years dedicated to emergency response training equipment — a history of continuous innovation and sustained growth at TZJ."
+  },
+  "storySection": {
+    "eyebrow": "Our Story",
+    "title": "Starting from frontline needs",
+    "description": "As communities grow more complex, fire departments need tougher, more reliable training tools. TZJ was born to meet that need — not just a vendor, but training specialists grown from real fire service and engineering experience."
+  },
+  "valuesSection": {
+    "eyebrow": "Our Beliefs",
+    "title": "Values that carry us forward every year",
+    "description": "For 16 years, these commitments have led us to treat every project as a legacy worth building."
+  },
+  "values": [
+    {
+      "title": "Quality First",
+      "desc": "From materials to craftsmanship, we hold to high standards — facilities built to withstand time and live-fire training."
+    },
+    {
+      "title": "Continuous Innovation",
+      "desc": "Ongoing R&D in thermal liner, modular systems, and more — leading industry evolution."
+    },
+    {
+      "title": "Safety Above All",
+      "desc": "The safety of trainees and firefighters is the starting point of every design and build decision."
+    },
+    {
+      "title": "Long-Term Partnership",
+      "desc": "From design through delivery and after-sales maintenance — we walk the full project lifecycle with our customers."
+    }
+  ],
+  "timelineSection": {
+    "title": "Our Journey"
+  },
+  "timeline": [
+    {
+      "year": "Founded",
+      "title": "TZJ begins",
+      "desc": "Founded by a team with fire service and engineering backgrounds, focused on steel training facilities built for fire service."
+    },
+    {
+      "year": "Early Years",
+      "title": "First steel training tower",
+      "desc": "Delivered the first steel training tower — rugged and durable, replacing traditional masonry — still in service today."
+    },
+    {
+      "year": "Iteration",
+      "title": "Burn room thermal liner",
+      "desc": "Introduced calcium silicate thermal liner system balancing durability and thermal protection."
+    },
+    {
+      "year": "Upgrade",
+      "title": "Hot-dip galvanizing",
+      "desc": "Adopted hot-dip galvanized steel across the product line, significantly improving corrosion resistance and service life."
+    },
+    {
+      "year": "Innovation",
+      "title": "Modular training system",
+      "desc": "Launched all-galvanized steel modular training buildings with open floor plans, reconfigurable and stackable."
+    },
+    {
+      "year": "Expansion",
+      "title": "Hazmat training capability",
+      "desc": "Added hazmat training props and mobile trailers covering broader emergency training scenarios."
+    },
+    {
+      "year": "Standard",
+      "title": "Interlocking thermal liner",
+      "desc": "Upgraded to interlocking thermal liner system — easier maintenance and improved thermal performance."
+    },
+    {
+      "year": "Today",
+      "title": "Nationwide and global",
+      "desc": "1000+ training complex projects across 31 provinces and international markets."
+    }
+  ],
+  "relatedLinks": [
+    {
+      "label": "Leadership Team",
+      "desc": "A team of fire service, engineering, and construction experts."
+    },
+    {
+      "label": "Certifications",
+      "desc": "Trust earned through rigorous standards and system certifications."
+    },
+    {
+      "label": "Global Reach",
+      "desc": "1000+ projects across China and international markets."
+    }
+  ],
+  "cta": {
+    "title": "Build a legacy together with us",
+    "secondaryLabel": "Meet our team"
+  }
+}

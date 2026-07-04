@@ -1,0 +1,64 @@
+{
+  "meta": {
+    "title": "FAQs",
+    "description": "Frequently asked questions about TZJ training towers, burn rooms, modular systems, and the procurement process."
+  },
+  "hero": {
+    "eyebrow": "Resources · FAQs",
+    "title": "Frequently Asked Questions",
+    "description": "Answers to common questions on tower selection, burn rooms, modular systems, procurement, and maintenance."
+  },
+  "groups": [
+    {
+      "title": "Products & Solutions",
+      "items": [
+        { "q": "Fixed tower or modular tower — how do I choose?", "a": "Fixed towers are structurally robust and closely resemble real buildings — ideal for permanent training complexes. Modular towers reconfigure and expand — ideal for phased budgets or changing scenarios. We can recommend based on your training objectives and site conditions." },
+        { "q": "Can training towers be customized?", "a": "Yes. Every building starts from a blank slate — floors, roof, doors, windows, breach points, burn rooms, and props can all be designed to your exact requirements. No two departments are exactly alike." },
+        { "q": "What material is used for burn room liner?", "a": "We use calcium silicate interlocking thermal liner for durability and insulation. Expansion gaps between panels and thermal air cavities between panels and structure provide effective insulation; individual panels can be removed for maintenance." },
+        { "q": "Are roof guardrails required?", "a": "For high-work safety, we recommend guardrails or parapets with toe boards on roof training areas to meet fall-protection requirements." },
+        { "q": "How is temperature controlled inside burn rooms?", "a": "We recommend temperature monitoring with sensors at ceiling and working height — controlling training temperature and extending liner service life." },
+        { "q": "Can gas simulators be added?", "a": "Yes. We integrate with leading gas simulator products for new builds and retrofits of existing facilities." },
+        { "q": "Can structures be expanded or relocated after completion?", "a": "Yes. Burn rooms and annexes can be added as teams grow; bolt-connected structures can even be disassembled and rebuilt at a new site." }
+      ]
+    },
+    {
+      "title": "Fixed Training Tower",
+      "items": [
+        { "q": "Why steel structure instead of concrete?", "a": "Steel performs more consistently through repeated thermal cycles with more uniform expansion; total build and long-term maintenance costs are typically much lower; and damaged panels can be replaced — whereas concrete cracks are often expensive or impractical to repair." },
+        { "q": "How long does construction and installation take?", "a": "Timeline depends on tower size and customization. As a turnkey supplier with a single point of contact, we provide a clear production and installation schedule after design approval — typically completing on-site installation within weeks." },
+        { "q": "What foundation is required?", "a": "Column-free design distributes loads evenly, often simplifying foundation requirements. Specific foundation design follows structural calculations and site conditions — we advise during early planning." },
+        { "q": "What flooring material is used?", "a": "Floors are typically concrete at each level — closer to real fireground conditions and more durable." },
+        { "q": "How long will the building last?", "a": "Hot-dip galvanized steel structures, with proper use and regular maintenance, serve for decades — a long-term investment built to last." }
+      ]
+    },
+    {
+      "title": "Modular Training Tower",
+      "items": [
+        { "q": "How many stories can modules stack?", "a": "Pre-engineered design supports stable multi-story stacking with height increases available per project requirements." },
+        { "q": "How is it fundamentally different from shipping containers?", "a": "Modular systems use new materials and all-galvanized steel frames with open floor plans — walls and doors carry no structural load and move freely. Purpose-built for emergency training — things refurbished containers cannot match." },
+        { "q": "Are different sizes available?", "a": "Standard modules combine, stack, and connect freely to adapt to different sites and training scales." },
+        { "q": "What are the benefits of galvanized steel?", "a": "Zinc coating prevents steel corrosion, lowering maintenance cost and extending service life far beyond plain steel." }
+      ]
+    },
+    {
+      "title": "Procurement & Delivery",
+      "items": [
+        { "q": "What is the procurement process?", "a": "Typically: needs consultation → design & selection → quote & contract → detailed design → production → installation & acceptance. See the How to Buy page for details." },
+        { "q": "Do you support government procurement or public bidding?", "a": "Yes. We provide complete technical specifications and qualification documents for public bidding and government procurement processes." },
+        { "q": "How long is the typical project timeline?", "a": "Timeline depends on tower size and customization. After design approval, we provide a clear production and installation schedule." }
+      ]
+    },
+    {
+      "title": "Installation & Maintenance",
+      "items": [
+        { "q": "What are the site requirements?", "a": "Appropriate foundation and site conditions are required — we assess the site during early planning and advise on foundation design." },
+        { "q": "Do you provide installation and training?", "a": "Yes. We handle on-site installation and commissioning and train personnel on operation and maintenance so teams are productive from day one." },
+        { "q": "How is ongoing maintenance handled?", "a": "We provide annual inspection and maintenance service and replacement support for wear items such as liner panels." }
+      ]
+    }
+  ],
+  "cta": {
+    "title": "Didn't find your answer?",
+    "description": "Contact our team directly for expert answers tailored to your project."
+  }
+}

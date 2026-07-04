@@ -1,0 +1,60 @@
+{
+  "meta": {
+    "title": "CFBT Fire Behavior Training",
+    "description": "TZJ CFBT fire behavior training facilities — train fire behavior reading, flashover warning, and hose stream tactics in safe, controlled live-fire environments."
+  },
+  "hero": {
+    "eyebrow": "Live-Fire & Burn Training · CFBT",
+    "title": "CFBT Fire Behavior Training Facility",
+    "description": "In a safe, controlled live-fire environment, train firefighters to read fire, anticipate flashover, and apply the right hose tactics — that is the core value of CFBT.",
+    "imageAlt": "CFBT fire behavior training facility"
+  },
+  "breadcrumb": {
+    "parent": "Live-Fire & Burn Training",
+    "current": "CFBT Fire Behavior Training Facility"
+  },
+  "jsonLd": {
+    "productName": "CFBT Fire Behavior Training Facility",
+    "productDescription": "Live-fire training facility for fire behavior reading, flashover warning, and hose stream tactics."
+  },
+  "overview": {
+    "eyebrow": "Reading the fire",
+    "title": "From suppression to understanding fire",
+    "description": "CFBT (Compartment Fire Behavior Training) teaches more than suppression — it trains firefighters to understand fire behavior: how smoke layers build, when flashover approaches, and how hose streams affect the fireground.",
+    "lead": "Solid-fuel fires reproduce real fire behavior, combined with temperature monitoring and ventilation control for training that is both realistic and safe.",
+    "body": "Designed to NFPA 1403/1402 and relevant domestic standards, with interlocking liners protecting structure and extending facility life."
+  },
+  "featuresSection": {
+    "eyebrow": "Core capabilities",
+    "title": "Six capabilities of CFBT facilities"
+  },
+  "features": [
+    { "title": "Real fire behavior", "desc": "Solid fuels reproduce smoke layer development, rollover, and flashover precursors for fire behavior reading." },
+    { "title": "Flashover warning", "desc": "Observe flashover progression from a safe distance so trainees learn to recognize critical signs and act in time." },
+    { "title": "Hose stream & ventilation tactics", "desc": "Pulsed application and ventilation control train hose stream use and smoke layer management." },
+    { "title": "Controlled temperatures", "desc": "Temperature monitoring at ceiling and working level balances realism with crew safety." },
+    { "title": "Interlocking insulation liner", "desc": "Calcium silicate interlocking liners withstand high heat, protect structure, and allow single-tile replacement." },
+    { "title": "Repeatable training", "desc": "Controlled fuel and conditions support high-frequency, repeatable standardized training." }
+  ],
+  "programsSection": {
+    "eyebrow": "Training programs",
+    "title": "Programs supported"
+  },
+  "programs": [
+    "Smoke layer observation and fire behavior reading",
+    "Flashover precursor recognition and warning",
+    "Pulsed / penetrating hose stream tactics",
+    "Ventilation control and smoke layer management",
+    "Thermal imaging fireground reading",
+    "Attack route selection and safe withdrawal"
+  ],
+  "relatedLinks": [
+    { "label": "Burn Rooms & Interlocking Liners", "desc": "The core of safe, realistic live-fire training." },
+    { "label": "Fire Simulation Training", "desc": "Low-cost, repeatable simulated training." },
+    { "label": "Fire & Rescue Solutions", "desc": "Integrated training solutions for fire & rescue agencies." }
+  ],
+  "cta": {
+    "title": "Build your CFBT training center",
+    "description": "Speak with our engineers and fire service experts to create safe, realistic, sustainable live-fire training facilities."
+  }
+}

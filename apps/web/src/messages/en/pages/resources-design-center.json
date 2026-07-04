@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "title": "Tower Design Center",
+    "description": "TZJ Tower Design Center — browse standard tower series, access design resources and technical specifications to plan your training facility."
+  },
+  "hero": {
+    "eyebrow": "Resources · Design",
+    "title": "Tower Design Center",
+    "description": "Browse standard tower series, access design resources and technical specifications to plan your training facility."
+  },
+  "catalogSection": {
+    "eyebrow": "Product Catalog",
+    "title": "Browse by product line",
+    "viewDetails": "View details"
+  },
+  "catalog": [
+    {
+      "title": "Fixed Training Tower",
+      "desc": "Standard tower series and custom options — steel structure with all-galvanized walls.",
+      "href": "/fixed-tower"
+    },
+    {
+      "title": "Modular Training Tower",
+      "desc": "M/O/D/X series — reconfigurable, stackable, and expandable.",
+      "href": "/modular-tower"
+    },
+    {
+      "title": "Burn Rooms",
+      "desc": "Interlocking insulated burn rooms — durability and thermal protection combined.",
+      "href": "/burn-rooms"
+    },
+    {
+      "title": "Training Props & Accessories",
+      "desc": "Maritime, tactical, hazmat, and multi-scenario training props.",
+      "href": "/accessories"
+    }
+  ],
+  "resourcesSection": {
+    "eyebrow": "Design Resources",
+    "title": "Selection and design reference",
+    "note": "Need complete design resources or technical specification files? Contact our team — we'll provide materials tailored to your project."
+  },
+  "resources": [
+    "Standard tower layout and dimension references",
+    "Structural and burn room technical specifications",
+    "Training discipline and scenario configuration guidance",
+    "Project case studies and selection guides"
+  ],
+  "downloadsSection": {
+    "eyebrow": "Available Materials",
+    "title": "What you can get for each tower type",
+    "description": "From technical specs to drawings and model files — helping you coordinate efficiently with design firms and contractors."
+  },
+  "downloads": [
+    {
+      "title": "Technical Specifications",
+      "desc": "Structural, material, and configuration specifications for each tower type."
+    },
+    {
+      "title": "Elevations & Floor Plans",
+      "desc": "Tower elevations and floor plans for site planning."
+    },
+    {
+      "title": "Training Props List",
+      "desc": "Optional training props and scenario configuration references."
+    },
+    {
+      "title": "BIM / Model Files",
+      "desc": "Available on request for design and modeling workflows."
+    }
+  ],
+  "relatedLinks": [
+    {
+      "label": "How to Buy",
+      "desc": "Complete procurement process from consultation through delivery."
+    },
+    {
+      "label": "Standard Tower Series",
+      "desc": "Browse preset towers for fast selection."
+    },
+    {
+      "label": "FAQs",
+      "desc": "Common questions on selection, procurement, and maintenance."
+    }
+  ],
+  "cta": {
+    "title": "Start designing your training tower",
+    "secondaryLabel": "Learn about procurement"
+  }
+}

@@ -1,0 +1,47 @@
+# ============================================================
+# TZJ Monorepo — Docker Build Ignore
+# ============================================================
+# Used when building Docker images (context = monorepo root)
+# ============================================================
+
+# ── VCS & IDE ────────────────────────────────────────────────
+.git
+.gitignore
+.github
+.vscode
+.idea
+*.swp
+*.swo
+
+# ── Node ─────────────────────────────────────────────────────
+node_modules
+**/node_modules
+**/.next
+**/dist
+**/build
+**/coverage
+**/.turbo
+
+# ── Infrastructure ───────────────────────────────────────────
+infra
+*.md
+LICENSE
+.env*.local
+
+# ── OS ───────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Source Maps ──────────────────────────────────────────────
+**/*.map
+
+# ── Tests ────────────────────────────────────────────────────
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+**/__tests__
+**/test
+
+# ── Harness (AI governance, not needed in production) ────────
+harness

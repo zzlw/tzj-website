@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "title": "Police & Military Climbing Tower",
+    "description": "TZJ police and military climbing tower training facilities — integrated climbing, rappelling, and tactical entry training for police, SWAT, and military units."
+  },
+  "hero": {
+    "eyebrow": "Training Towers · Climbing Tower",
+    "title": "Police & Military Climbing Tower",
+    "description": "Purpose-built climbing and tactical training for police, SWAT, and military — climbing, rappelling, and entry scenarios in one rugged multi-story structure.",
+    "imageAlt": "Police and military climbing tower"
+  },
+  "breadcrumb": {
+    "parent": "Training Towers",
+    "current": "Police & Military Climbing Tower"
+  },
+  "jsonLd": {
+    "productName": "Police & Military Climbing Tower",
+    "productDescription": "Integrated climbing, rappelling, and tactical entry training for police, SWAT, and military units."
+  },
+  "overview": {
+    "eyebrow": "Built for Tactical Operations",
+    "title": "Real scenarios built into the structure",
+    "description": "A climbing tower is not just a building — it's a tactical training system. We co-design positions and flows with your unit so every drill reflects real operational scenarios.",
+    "lead": "Multi-story structure + configurable entry points supporting the full tactical chain from unassisted climbing to team assault.",
+    "body": "All-galvanized steel ensures rugged reliability under high-frequency use, with guardrails and fall-arrest systems protecting training safety."
+  },
+  "featuresSection": {
+    "eyebrow": "Core Features",
+    "title": "Six capabilities of climbing towers"
+  },
+  "features": [
+    {
+      "title": "Multi-Level Climbing Structure",
+      "desc": "Multi-story layout replicating real buildings — unassisted climbing, rapid ascent, and floor-by-floor movement."
+    },
+    {
+      "title": "Rappelling & High Transfer",
+      "desc": "Pre-installed rope anchors and work platforms for rappelling, descent, and high traverse disciplines."
+    },
+    {
+      "title": "Tactical Entry Scenarios",
+      "desc": "Breach doors, windows, and balconies configurable to tactical entry flows."
+    },
+    {
+      "title": "Custom Floor Plans",
+      "desc": "Rooms, corridors, and positions customized to unit tactical requirements and operational flows."
+    },
+    {
+      "title": "Team Coordination",
+      "desc": "Multi-level, multi-point design supporting team coordination, command, and force-on-force drills."
+    },
+    {
+      "title": "Built to Last",
+      "desc": "All-galvanized steel structure — impact and weather resistant under high-frequency climbing and equipment use."
+    }
+  ],
+  "programsSection": {
+    "eyebrow": "Training Disciplines",
+    "title": "Supported training disciplines"
+  },
+  "programs": [
+    "Unassisted climbing and rapid ascent",
+    "Rope rappelling, descent, and high traverse",
+    "Breach entry and window/balcony assault",
+    "Indoor CQB and floor-by-floor clearing",
+    "Team coordination and command drills",
+    "Optional climbing walls, rope ladders, and obstacle props"
+  ],
+  "relatedLinks": [
+    {
+      "label": "Tactical Training",
+      "desc": "Reconfigurable breach-and-entry and CQB scenario props."
+    },
+    {
+      "label": "Custom Training Tower",
+      "desc": "Layouts customized to tactical flows."
+    },
+    {
+      "label": "Police & Military Solutions",
+      "desc": "Comprehensive training programs for police and military."
+    }
+  ],
+  "cta": {
+    "title": "Customize a climbing tower for your unit",
+    "description": "Tell us your tactical requirements and site conditions — our engineering team will design a climbing tower program for you."
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "meta": {
+    "title": "Fire Simulation Training Systems",
+    "description": "TZJ fire simulation training systems use gas and electronic flame and smoke effects to recreate multiple fire scenarios—safe, clean, and repeatable for high-frequency instruction and routine drill programs."
+  },
+  "hero": {
+    "eyebrow": "Live Fire & Burn Training · Simulation",
+    "title": "Fire Simulation Training Systems",
+    "description": "Safe, clean, and repeatable—bring high-frequency instruction and routine drills to any site with simulated flame and smoke.",
+    "imageAlt": "Fire simulation training facility"
+  },
+  "breadcrumb": {
+    "parent": "Live Fire & Burn Training",
+    "current": "Fire Simulation Training Systems"
+  },
+  "jsonLd": {
+    "productName": "Fire Simulation Training Systems",
+    "productDescription": "Gas and electronic simulation of flame and smoke for multiple fire scenarios—safe, clean, and repeatable."
+  },
+  "overview": {
+    "eyebrow": "Between realism and control",
+    "title": "Not every drill needs live fire",
+    "description": "For equipment handling, initial attack, and workforce training, simulation delivers the best balance of realism and control—safer, cleaner, and more cost-effective.",
+    "lead": "Fire intensity and smoke levels are adjustable, so one system covers multiple fire scenarios and training tiers.",
+    "body": "Complements CFBT live-fire facilities: simulation handles high-frequency instruction; live fire handles advanced tactical training—a stronger combined program."
+  },
+  "featuresSection": {
+    "eyebrow": "Key capabilities",
+    "title": "Six advantages of simulation systems"
+  },
+  "features": [
+    { "title": "Multi-scenario simulation", "desc": "Simulate pan fires, gas, electrical, kitchen, and other fire types from a single facility." },
+    { "title": "Adjustable conditions", "desc": "Scale flame and smoke intensity from introductory lessons through advanced practical drills." },
+    { "title": "High-frequency repeatability", "desc": "Fast ignition and reset support large-volume, routine, repeatable training." },
+    { "title": "Clean and eco-friendly", "desc": "Primarily gas and electronic simulation with minimal smoke—ideal for indoor and densely populated areas." },
+    { "title": "Lower operating cost", "desc": "No solid fuel or frequent liner replacement—more economical over the long term." },
+    { "title": "Safe and controllable", "desc": "Safety interlocks and emergency shutoff keep the training environment safe, controlled, and auditable." }
+  ],
+  "programsSection": {
+    "eyebrow": "Training programs",
+    "title": "Programs this system supports"
+  },
+  "programs": [
+    "Extinguisher and hose line equipment operation",
+    "Initial fire attack and response procedures",
+    "Kitchen, electrical, and gas fire simulation drills",
+    "Evacuation, escape, and self-rescue exercises",
+    "Workforce and public fire safety training",
+    "Routine drill programs for career departments"
+  ],
+  "relatedLinks": [
+    { "label": "CFBT Fire Behavior Training", "desc": "Advanced live fire and fire-behavior assessment." },
+    { "label": "Fire Safety Education Center", "desc": "Immersive public fire safety experience space." },
+    { "label": "Enterprise & Campus Solutions", "desc": "Emergency readiness for enterprises and campuses." }
+  ],
+  "cta": {
+    "title": "Configure simulation training for your site",
+    "description": "Tell us your training goals and site conditions—we will recommend the right simulation solution."
+  }
+}

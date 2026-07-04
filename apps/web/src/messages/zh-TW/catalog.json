@@ -1,0 +1,89 @@
+{
+  "catalog": {
+    "families": {
+      "towers": {
+        "title": "訓練塔與建筑",
+        "description": "工業级钢结构建筑主體 —— 从多层實戰火場到攀登樓與科普館，為訓練基地奠定坚固骨架。"
+      },
+      "burn": {
+        "title": "實火與燃燒訓練",
+        "description": "安全可控的真實火場與烟火特性訓練 —— 互鎖襯裡、CFBT 與消防模拟，支撑高强度實戰演練。"
+      },
+      "specialized": {
+        "title": "專項場景訓練",
+        "description": "面向特定任務的高度專業化場景 —— 海事、戰術、危化品、繩索與心理拓展，贴近真實、可反复演練。"
+      },
+      "accessories": {
+        "title": "訓練器械與導具",
+        "description": "配件導具、體能器械與競賽設施 —— 完善从體能到實戰的訓練闭环。"
+      }
+    },
+    "lines": {
+      "fixed-tower": {
+        "title": "固定訓練塔（钢结构）",
+        "shortTitle": "固定訓練塔",
+        "description": "工業级全镀锌钢结构，標準與定制，最坚固耐用的多层實戰火場訓練主體。"
+      },
+      "modular-tower": {
+        "title": "模組化訓練塔",
+        "shortTitle": "模組化塔",
+        "description": "开放式平面、无內部承重墙，墙门窗自由重组，支持分期扩建與能力升级。"
+      },
+      "climbing-tower": {
+        "title": "公安武警攀登樓",
+        "shortTitle": "攀登樓",
+        "description": "面向公安、特警與武警的攀登樓主體，将攀登、索降與戰術突入融入结构設計。"
+      },
+      "education-center": {
+        "title": "科普教育館",
+        "shortTitle": "科普教育館",
+        "description": "沉浸式消防安全科普體验空间，服務院校教学與公众安全教育，寓教于練。"
+      },
+      "burn-rooms": {
+        "title": "燃燒室 · 互鎖襯裡",
+        "shortTitle": "燃燒室",
+        "description": "钙硅基互鎖隔熱襯裡，耐高温、低维护，為安全逼真的實戰火場訓練保驾护航。"
+      },
+      "cfbt": {
+        "title": "CFBT 烟火特性訓練",
+        "shortTitle": "CFBT",
+        "description": "烟火特性認知與控火訓練設施，帮助学员理解火場發展規律與戰術決策。"
+      },
+      "fire-simulation": {
+        "title": "消防模拟訓練設施",
+        "shortTitle": "消防模拟",
+        "description": "可编程烟熱與報警聯動系統，在可控环境中复現复杂火場與疏散場景。"
+      },
+      "maritime": {
+        "title": "海事訓練設施",
+        "shortTitle": "海事訓練",
+        "description": "船舱、甲板與狭舱救援場景，还原真實水上火場與港口消防訓練需求。"
+      },
+      "tactical": {
+        "title": "戰術訓練設施",
+        "shortTitle": "戰術訓練",
+        "description": "破门突入、CQB 與繩索高空等可重组戰術場景，服務公安特警實戰化演練。"
+      },
+      "hazmat": {
+        "title": "危化品訓練設施",
+        "shortTitle": "危化品訓練",
+        "description": "泄漏、堵漏與洗消場景，支持跨區域协同演練與危化品應急处置訓練。"
+      },
+      "rope-rescue": {
+        "title": "山岳繩索救援設施",
+        "shortTitle": "繩索救援",
+        "description": "高空、崖壁與狭缝救援訓練設施，支撑山岳與高空繩索救援科目。"
+      },
+      "psychological": {
+        "title": "心理拓展訓練設施",
+        "shortTitle": "心理拓展",
+        "description": "高空断桥、信任背摔等心理行為訓練設施，强化團隊协同與心理素質。"
+      },
+      "accessories": {
+        "title": "訓練器械與導具",
+        "shortTitle": "訓練器械",
+        "description": "熱與烟、逃生、搜救、破拆及體能競賽类設施，完善訓練基地配套能力。"
+      }
+    }
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "meta": {
+    "titleSuffix": "Training Solutions"
+  },
+  "hero": {
+    "eyebrowPrefix": "Solutions · "
+  },
+  "intro": {
+    "eyebrow": "Needs Assessment",
+    "titleSuffix": "Training Facilities You Need"
+  },
+  "focus": {
+    "eyebrow": "Key Focus",
+    "title": "How We Align With Your Mission"
+  },
+  "recommended": {
+    "eyebrow": "Recommended Configuration",
+    "title": "Recommended Training Facility Package",
+    "description": "The products below can be combined into a training program tailored to your needs, with phased construction based on site and budget."
+  },
+  "programs": {
+    "eyebrow": "Typical Disciplines",
+    "title": "Supported Training Disciplines",
+    "caseLink": "View related project case studies"
+  },
+  "others": {
+    "title": "Other Customer Solutions"
+  },
+  "cta": {
+    "titlePrefix": "Custom training solutions for ",
+    "titleSuffix": "",
+    "description": "Tell us your site, disciplines, and budget — our engineers and fire service experts will design a complete program for you.",
+    "backLink": "Back to all solutions"
+  }
+}

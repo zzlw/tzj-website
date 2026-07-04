@@ -1,0 +1,186 @@
+@import "tailwindcss";
+@import "@tzj/ui/globals.css";
+@import "tw-animate-css";
+
+/* Tailwind v4 默认只扫描本 app；显式纳入共享 UI 包源码，
+   否则 Dialog 等仅在 @tzj/ui 中使用的工具类（inset-0/translate 等）不会被生成 */
+@source "../../../../packages/ui/src";
+
+@theme {
+  /* Admin — 对齐 C 端 Rosenbauer 工业浅色风格：白底 / 深字 / 品牌红 / 锐利直角 */
+  --color-background: #ffffff;
+  --color-foreground: #1c1c1c;
+  --color-primary: #e3000f;
+  --color-primary-hover: #c8000c;
+  --color-primary-foreground: #ffffff;
+  --color-surface: #f7f7f7;
+  --color-surface-hover: #efefef;
+  --color-border: #e8e8e8;
+  --color-border-strong: #d4d4d4;
+  --color-muted-foreground: #5b6166;
+  --color-secondary-text: #5b6166;
+  --color-card: #ffffff;
+  --color-card-foreground: #1c1c1c;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #1c1c1c;
+  --color-secondary: #f7f7f7;
+  --color-secondary-foreground: #1c1c1c;
+  --color-muted: #f7f7f7;
+  --color-accent: #e0e0e0;
+  --color-accent-foreground: #1c1c1c;
+  --color-destructive: #e3000f;
+  --color-destructive-foreground: #ffffff;
+  --color-input: #e8e8e8;
+  --color-ring: #d4000e;
+
+  /* 与 C 端一致的锐利边角 */
+  --radius-sm: 2px;
+  --radius-md: 2px;
+  --radius-lg: 4px;
+  --radius-xl: 4px;
+
+  --font-sans: "Inter", "Noto Sans SC", system-ui, sans-serif;
+
+  --color-sidebar: hsl(var(--sidebar-background));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-primary: hsl(var(--sidebar-primary));
+  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
+  --color-sidebar-accent: hsl(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+  --color-sidebar-ring: hsl(var(--sidebar-ring));
+
+  --color-chart-1: #e3000f;
+  --color-chart-2: #1c1c1c;
+  --color-chart-3: #5b6166;
+  --color-chart-4: #2563eb;
+  --color-chart-5: #d97706;
+}
+
+:root {
+  color-scheme: light;
+
+  /* shadcn Sidebar 主题变量 */
+  --sidebar-background: 0 0% 98%;
+  --sidebar-foreground: 240 5.3% 26.1%;
+  --sidebar-primary: 0 72% 47%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 0 0% 94%;
+  --sidebar-accent-foreground: 0 0% 11%;
+  --sidebar-border: 0 0% 91%;
+  --sidebar-ring: 0 72% 47%;
+}
+
+/* 后台壳层：禁止 body 滚动，滚动交给内部 ScrollArea（overlay 风格自定义滚动条） */
+html.dashboard-shell,
+html.dashboard-shell body {
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Radix 锁滚动时不再额外补偿 padding（内部 ScrollArea 不受原生滚动条影响） */
+body[data-scroll-locked] {
+  margin-right: 0 !important;
+  padding-right: 0 !important;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Vditor Markdown 编辑器 — 浅色主题适配 Admin */
+.markdown-editor .vditor {
+  --panel-background-color: #ffffff;
+  --toolbar-background-color: #f7f7f7;
+  --textarea-background-color: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  /* vditor 自身不带背景，全屏时若无背景会透出底层页面 */
+  background-color: #ffffff;
+}
+.markdown-editor .vditor-toolbar {
+  border-bottom: 1px solid var(--color-border);
+  background-color: #f7f7f7;
+  /* 工具栏居中：改用 flex 布局（覆盖 vditor 的 float 排布） */
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  padding-left: 0.5rem !important; /* 覆盖 vditor 动态写入的 inline padding-left */
+  padding-right: 0.5rem;
+}
+/* edit-mode 下拉入口隐藏：模式收敛为 编辑（默认）/ 源码 / 预览 三态，
+   其隐藏的 data-mode 按钮仍被源码切换程序化使用 */
+.markdown-editor .vditor-toolbar__item:has(button[data-type="edit-mode"]) {
+  display: none;
+}
+/* 工具按钮点击后保持焦点会让提示气泡常驻；
+   鼠标操作（非键盘 Tab 聚焦）时不再因 :focus 显示气泡 */
+.markdown-editor .vditor-tooltipped:focus:not(:focus-visible):not(:hover)::before,
+.markdown-editor .vditor-tooltipped:focus:not(:focus-visible):not(:hover)::after {
+  display: none;
+}
+/* 同理，鼠标点击残留的 :focus 不再让图标保持高亮色；
+   真正激活态由 .vditor-menu--current（!important）负责，不受影响 */
+.markdown-editor .vditor-toolbar__item .vditor-tooltipped:focus:not(:focus-visible):not(:hover) {
+  color: var(--toolbar-icon-color);
+}
+/* 预览模式（预览按钮处于激活态）下禁用所有编辑类按钮，仅保留
+   预览开关 / 全屏 / 大纲。状态由 CSS 驱动，不依赖 vditor 内部的
+   启用/禁用逻辑（其全屏切换会错误地恢复工具栏可用状态） */
+/* 注意不能写成 button.vditor-tooltipped：上传项渲染的是 div 而非 button */
+.markdown-editor .vditor:has(button[data-type="preview"].vditor-menu--current)
+  .vditor-toolbar
+  .vditor-tooltipped:not([data-type="preview"]):not([data-type="fullscreen"]):not([data-type="outline"]) {
+  color: var(--second-color) !important;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+/* 禁用还需作用到工具栏项容器：上传项内部覆盖着透明的 file input，
+   仅禁用图标元素时该 input 仍可悬停/点击弹出文件选择框 */
+.markdown-editor .vditor:has(button[data-type="preview"].vditor-menu--current)
+  .vditor-toolbar
+  .vditor-toolbar__item:not(:has([data-type="preview"], [data-type="fullscreen"], [data-type="outline"])) {
+  pointer-events: none;
+}
+/* 字数统计固定靠右：绝对定位，不参与 flex 布局
+   （margin-left:auto 会吞掉剩余空间导致其余按钮无法居中） */
+.markdown-editor .vditor-toolbar .vditor-counter {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  margin: 0;
+  float: none;
+}
+.markdown-editor .vditor-ir pre.vditor-reset,
+.markdown-editor .vditor-wysiwyg pre.vditor-reset,
+.markdown-editor .vditor-sv textarea {
+  background: #ffffff;
+  color: #1c1c1c;
+}
+.markdown-editor .vditor-ir__node--expand .vditor-ir__marker {
+  color: #5b6166;
+}
+.markdown-editor .vditor-content {
+  background: #ffffff;
+}
+/* 全屏模式：铺满视口、去掉圆角，层级由 fullscreen.index 控制 */
+.markdown-editor .vditor--fullscreen {
+  border-radius: 0;
+  border: none;
+}
+/* 分屏预览（both）区域与编辑区保持同底色 */
+.markdown-editor .vditor-preview {
+  background: #ffffff;
+}
+.markdown-editor .vditor-counter {
+  color: var(--color-muted-foreground);
+  background: transparent;
+}
+

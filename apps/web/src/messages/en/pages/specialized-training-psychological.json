@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "title": "Psychological Expansion Training Facilities",
+    "description": "TZJ psychological expansion training facilities — high-altitude bridge crossings, cloud ladders, and aerial courses building will, courage, and teamwork for military, fire, police, and corporate teams."
+  },
+  "hero": {
+    "eyebrow": "Specialized Training · Psychological Expansion",
+    "title": "Psychological Expansion Training Facilities",
+    "description": "The real test often comes from within — building will, courage, and teamwork under height and pressure.",
+    "imageAlt": "Psychological expansion training facilities"
+  },
+  "breadcrumb": {
+    "parent": "Specialized Training",
+    "current": "Psychological Expansion Training Facilities"
+  },
+  "jsonLd": {
+    "productName": "Psychological Expansion Training Facilities",
+    "productDescription": "High-altitude bridge crossings, cloud ladders, and aerial courses building will, courage, and teamwork."
+  },
+  "overview": {
+    "eyebrow": "Building Mental Strength",
+    "title": "Beyond equipment, mindset is combat power",
+    "description": "For high-risk missions, strong mental fitness and team cohesion matter as much as physical skill. Expansion facilities help teams face fear and push limits within safe, controlled boundaries.",
+    "lead": "From high-altitude bridge crossings to team trust exercises — systematically building will, courage, stress tolerance, and coordination.",
+    "body": "Complete protection and fall-arrest systems keep high-intensity psychological challenges within safe boundaries."
+  },
+  "featuresSection": {
+    "eyebrow": "Core Features",
+    "title": "Six capabilities of expansion facilities"
+  },
+  "features": [
+    {
+      "title": "High-Altitude Courses",
+      "desc": "Classic high-altitude elements including bridge crossings, cloud ladders, rope ladders, and balance beams — facing fear and breaking through limits."
+    },
+    {
+      "title": "Will & Courage",
+      "desc": "Controlled-risk challenges that build trainees' mental toughness and psychological resilience."
+    },
+    {
+      "title": "Team Collaboration",
+      "desc": "Group trust and coordination exercises that strengthen communication and cohesion."
+    },
+    {
+      "title": "Stress Response",
+      "desc": "Training calm decision-making and adaptability under pressure."
+    },
+    {
+      "title": "Graduated Difficulty",
+      "desc": "Adjustable difficulty levels for different audiences and training phases."
+    },
+    {
+      "title": "Safety Protection",
+      "desc": "Complete belay lines, fall-arrest systems, and safety redundancy."
+    }
+  ],
+  "programsSection": {
+    "eyebrow": "Training Programs",
+    "title": "Supported expansion programs"
+  },
+  "programs": [
+    "High-altitude bridge crossing challenges",
+    "Cloud ladder / rope ladder climbing",
+    "High-altitude balance beam courses",
+    "Team trust and cooperation exercises",
+    "Decision-making under pressure",
+    "Team building and icebreaker activities"
+  ],
+  "relatedLinks": [
+    {
+      "label": "Mountain & Rope Rescue Training",
+      "desc": "Complex terrain rope and high-angle transfer."
+    },
+    {
+      "label": "Fitness & Vestibular Equipment",
+      "desc": "Physical conditioning and vestibular stability."
+    },
+    {
+      "label": "Military Solutions",
+      "desc": "Comprehensive training programs for military units."
+    }
+  ],
+  "cta": {
+    "title": "Plan a psychological expansion course for your team",
+    "description": "Tell us your training goals and site conditions — we'll design safe, effective expansion facilities for you."
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "title": "Global Reach",
+    "description": "TZJ has delivered 1000+ training complex projects across 31 provinces in China and international markets including Southeast Asia and the Middle East."
+  },
+  "hero": {
+    "eyebrow": "Why TZJ / Global Reach",
+    "title": "Nationwide reach, global delivery",
+    "description": "Redefining the map of fire training towers across China and the world. Our training facilities are the solid foundation of department readiness.",
+    "imageAlt": "Global reach"
+  },
+  "overviewSection": {
+    "eyebrow": "Industry Leader",
+    "title": "Leading the evolution of fire training towers",
+    "description": "With 1000+ training complex projects, TZJ products are recognized for durability, effectiveness, and safety. Our impact goes beyond numbers — it reflects an relentless pursuit of excellence and innovation."
+  },
+  "regions": [
+    "31 provinces nationwide",
+    "North China",
+    "East China",
+    "South China",
+    "Central China",
+    "Southwest China",
+    "Northwest China",
+    "Northeast China",
+    "Southeast Asia",
+    "Middle East",
+    "Other international markets"
+  ],
+  "sectorsSection": {
+    "eyebrow": "Sectors Served",
+    "title": "Training solutions for teams across industries",
+    "description": "From municipal fire departments to mining, education, and tourism — TZJ builds training facilities tailored to each sector's emergency response needs."
+  },
+  "sectors": [
+    "Fire & Rescue",
+    "Military",
+    "Police / SWAT",
+    "Mining",
+    "Vocational Education",
+    "Tourism / Outdoor Recreation"
+  ],
+  "highlightsSection": {
+    "eyebrow": "Innovation Driven",
+    "title": "Continuous innovation, global success"
+  },
+  "highlights": [
+    {
+      "title": "Standard Tower Series",
+      "desc": "Industry-changing steel fixed towers — dual-frame design with all-galvanized walls, guardrails, stairs, and ladders. Fast standard delivery, deep customization, and future expansion."
+    },
+    {
+      "title": "Interlocking Thermal Liner",
+      "desc": "Evolving calcium silicate liner system delivering the best balance of durability and thermal protection for modern burn rooms."
+    },
+    {
+      "title": "Modular Training System",
+      "desc": "Unlike other modular approaches — all-galvanized steel frames with open floor plans and reconfigurable walls, doors, and windows."
+    },
+    {
+      "title": "Hazmat Training Props",
+      "desc": "A dozen hazmat props and mobile trailers replicating real hazard scenarios for cross-regional coordinated training."
+    }
+  ],
+  "quote": {
+    "text": "We are committed to delivering turnkey training solutions for fire departments across China and overseas — with ongoing support long after delivery.",
+    "attribution": "— TZJ"
+  },
+  "relatedLinks": [
+    {
+      "label": "Project Case Studies",
+      "desc": "Browse delivered training complex projects."
+    },
+    {
+      "label": "Our Story",
+      "desc": "16 years of continuous innovation and growth."
+    },
+    {
+      "label": "Leadership Team",
+      "desc": "Fire service, engineering, and construction experts."
+    }
+  ],
+  "cta": {
+    "title": "Trust your project to a partner who delivers"
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "meta": {
+    "title": "Trade Shows",
+    "description": "Learn about TZJ's recent participation in fire and emergency equipment trade shows and industry events — visit our booth to discuss training facility solutions."
+  },
+  "hero": {
+    "eyebrow": "Resources · Trade Shows",
+    "title": "Trade Shows",
+    "description": "Recent fire and emergency equipment trade shows and industry events — we welcome you to visit our booth."
+  },
+  "listSection": {
+    "eyebrow": "Recent Events",
+    "title": "Trade shows and industry events"
+  },
+  "whyVisitSection": {
+    "eyebrow": "On-Site Highlights",
+    "title": "Why visit us"
+  },
+  "features": [
+    {
+      "title": "Experience Up Close",
+      "desc": "See the real craftsmanship and details of training towers, burn rooms, and props on site."
+    },
+    {
+      "title": "Talk to Experts",
+      "desc": "Face-to-face discussions with engineers and fire service experts about your training needs."
+    },
+    {
+      "title": "Start a Conversation",
+      "desc": "Get on-site recommendations and preliminary quotes to accelerate your project."
+    }
+  ],
+  "relatedLinks": [
+    {
+      "label": "Project Case Studies",
+      "desc": "See delivered training complex projects."
+    },
+    {
+      "label": "News & Media",
+      "desc": "Latest updates and industry events."
+    },
+    {
+      "label": "Tower Design Center",
+      "desc": "Browse product lines and design resources."
+    }
+  ],
+  "cta": {
+    "title": "Want to meet us at a show?"
+  }
+}

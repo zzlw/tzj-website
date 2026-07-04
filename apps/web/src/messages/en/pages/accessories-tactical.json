@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "title": "Tactical Training",
+    "description": "TZJ tactical training facilities — forcible entry, indoor CQB, stairwell movement, rope and high-angle scenarios on reconfigurable all-galvanized steel modular systems for law enforcement, SWAT, and military tactical training."
+  },
+  "hero": {
+    "eyebrow": "Specialized Training · Tactical",
+    "title": "Tactical Training",
+    "description": "Durable steel training structures covering the full tactical spectrum from breach and entry to high-angle rope operations."
+  },
+  "heroImageAlt": "Live tactical training",
+  "scenariosSection": {
+    "eyebrow": "Core Scenarios",
+    "title": "Tactical training disciplines",
+    "description": "Durable steel training structures covering the full tactical spectrum from breach and entry to high-angle rope operations."
+  },
+  "scenarios": [
+    {
+      "title": "Breach & Entry",
+      "desc": "Reusable breach training devices and entry doors for rapid forcible entry and interior assault."
+    },
+    {
+      "title": "Indoor CQB",
+      "desc": "Reconfigurable interior rooms and corridors for close-quarters combat and room clearing."
+    },
+    {
+      "title": "Stairwell Movement",
+      "desc": "Multi-level stairwells and corner structures for vertical movement, cover, and coordinated advance."
+    },
+    {
+      "title": "Rope & High Angle",
+      "desc": "High-work and rope descent stations for high-angle approach, rappelling, and high rescue."
+    }
+  ],
+  "modularSection": {
+    "eyebrow": "Flexible Reconfiguration",
+    "title": "Modular systems that evolve with the mission",
+    "description": "Modular training towers use all-galvanized steel frames with no interior load-bearing walls — flexibility unmatched by other indoor tactical training facilities. Walls, doors, and windows move, remove, and reconfigure with ease.",
+    "lead": "The same tower can be a multi-room apartment today and an open-plan office or warehouse tomorrow — keeping tactical teams facing new challenges and building adaptability."
+  },
+  "skillTags": [
+    "Situational awareness",
+    "Cover and concealment",
+    "Close-quarters combat",
+    "Tactical movement",
+    "Team coordination",
+    "Defensive tactics",
+    "Hostage rescue",
+    "Room clearing",
+    "Communication protocols",
+    "Decision-making under pressure",
+    "Survival skills",
+    "Evacuation procedures"
+  ],
+  "customSection": {
+    "eyebrow": "Customization",
+    "title": "Built to your mission requirements",
+    "description": "From concept to completion, our consultants and engineers work alongside you to deliver the tactical training facility that best fits your mission.",
+    "linkFixedTower": "Explore fixed training towers",
+    "linkModularTower": "Explore modular training towers"
+  },
+  "customPoints": [
+    {
+      "title": "Code-ready design",
+      "desc": "Structural design to seismic, wind, and other code requirements for projects across regions and overseas."
+    },
+    {
+      "title": "Adapt on demand",
+      "desc": "Design and manufacturing teams build custom layouts, scenarios, and props around mission objectives and progressive difficulty."
+    },
+    {
+      "title": "Free reconfiguration",
+      "desc": "All-galvanized steel with no interior load-bearing walls — walls, doors, and windows move freely for unlimited indoor tactical combinations."
+    },
+    {
+      "title": "Expandable",
+      "desc": "Add structures as teams grow — introduce advanced disciplines through greater realism and progressive complexity."
+    }
+  ],
+  "relatedLinks": [
+    {
+      "label": "Fixed Training Tower",
+      "desc": "Durable multi-level steel towers for complex tactical disciplines."
+    },
+    {
+      "label": "Modular Training Tower",
+      "desc": "Freely reconfigurable walls, doors, and windows for ever-changing indoor scenarios."
+    },
+    {
+      "label": "Training Props & Accessories",
+      "desc": "Breach props, ropes, mazes, and more to enhance realism."
+    }
+  ],
+  "cta": {
+    "title": "Customize your tactical training scenario",
+    "description": "Whether standard tower, custom tower, or modular system — we support your project from design through delivery.",
+    "secondaryLabel": "Back to specialized training"
+  }
+}

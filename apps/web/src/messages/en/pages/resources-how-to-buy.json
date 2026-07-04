@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "title": "How to Buy",
+    "description": "Learn how to procure TZJ training towers and facilities — from needs consultation, design, and contracting through production, installation, and acceptance."
+  },
+  "hero": {
+    "eyebrow": "Resources · Procurement",
+    "title": "How to Buy",
+    "description": "From needs consultation through installation and acceptance — we guide your training facility project to completion with a clear, transparent process."
+  },
+  "introSection": {
+    "eyebrow": "Start Here",
+    "title": "\"Where do we begin?\"",
+    "description": "This is our most frequently asked question. Whether building a new training complex or upgrading existing facilities, we guide your project step by step with a clear, transparent process.",
+    "lead": "Building a training facility involves site selection, budget, apparatus access, burn room configuration, and many other decisions. Successful projects usually come down to two things:",
+    "collaborationLabel": "Close collaboration",
+    "collaborationText": "End users, administrators, designers, and contractors aligned and moving forward together.",
+    "visionLabel": "A clear vision",
+    "visionText": "A shared goal of a safe, modern, realistic training environment."
+  },
+  "stepsSection": {
+    "eyebrow": "Procurement Process",
+    "title": "Six steps to project completion"
+  },
+  "steps": [
+    {
+      "step": "01",
+      "title": "Needs consultation",
+      "desc": "Consult with our advisors on training objectives, site conditions, budget, and timeline."
+    },
+    {
+      "step": "02",
+      "title": "Design & selection",
+      "desc": "Choose a standard tower or begin custom design — confirm structure, burn rooms, and props."
+    },
+    {
+      "step": "03",
+      "title": "Quote & contract",
+      "desc": "Clear quote and delivery plan; contract and technical requirements confirmed."
+    },
+    {
+      "step": "04",
+      "title": "Detailed design",
+      "desc": "Construction drawings, structural calculations, and required compliance documentation."
+    },
+    {
+      "step": "05",
+      "title": "Production",
+      "desc": "Factory prefabrication of steel structure and liner components with full quality control."
+    },
+    {
+      "step": "06",
+      "title": "Installation & acceptance",
+      "desc": "On-site installation, commissioning, training, acceptance, and ongoing support."
+    }
+  ],
+  "procurementSection": {
+    "eyebrow": "Procurement Support",
+    "title": "Tailored support for institutional procurement"
+  },
+  "procurement": [
+    "Support for government procurement and public bidding processes",
+    "Complete technical specifications and qualification documents",
+    "Phased construction and expansion options available",
+    "Ongoing inspection and maintenance support after delivery"
+  ],
+  "relatedLinks": [
+    {
+      "label": "Tower Design Center",
+      "desc": "Browse tower specs, elevations, and floor plans."
+    },
+    {
+      "label": "FAQs",
+      "desc": "Common questions on procurement, delivery, and maintenance."
+    },
+    {
+      "label": "Warranty Service",
+      "desc": "Post-delivery warranty and after-sales support."
+    }
+  ],
+  "cta": {
+    "title": "Start your procurement consultation",
+    "description": "Contact our team for project-specific recommendations and quotes — let's bring your training complex to life.",
+    "secondaryLabel": "Visit the Tower Design Center"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "error": {
+    "title": "出现了一些问题",
+    "description": "页面加载时发生错误，请稍后重试。如问题持续，请联系我们的技术支持。",
+    "retry": "重试",
+    "backHome": "返回首页",
+    "globalTitle": "系统错误",
+    "globalDescription": "应用遇到了严重错误，请刷新页面重试。",
+    "globalRefresh": "刷新页面"
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "meta": {
+    "title": "Resources",
+    "description": "TZJ Resources — how to buy, tower design center, annual inspections, FAQs, trade shows, news, warranty, and blog."
+  },
+  "hero": {
+    "eyebrow": "Resources",
+    "title": "Procurement, design, inspection & knowledge",
+    "description": "From how to buy to tower design, annual inspections, and industry knowledge — everything you need to move your project forward."
+  },
+  "sections": [
+    {
+      "label": "How to Buy",
+      "href": "/resources/how-to-buy",
+      "desc": "Complete procurement process and institutional procurement support from consultation through delivery."
+    },
+    {
+      "label": "Tower Design Center",
+      "href": "/resources/design-center",
+      "desc": "Browse product lines, technical specifications, and selection design resources."
+    },
+    {
+      "label": "Annual Inspection Service",
+      "href": "/resources/inspections",
+      "desc": "Annual inspection and maintenance for training facilities — safety and longevity."
+    },
+    {
+      "label": "FAQs",
+      "href": "/resources/faqs",
+      "desc": "Answers to common questions on product selection, procurement, installation, and maintenance."
+    },
+    {
+      "label": "Trade Shows",
+      "href": "/resources/trade-shows",
+      "desc": "Recent trade shows and industry events we participate in."
+    },
+    {
+      "label": "News & Media",
+      "href": "/resources/news",
+      "desc": "Company updates, product developments, and project delivery news."
+    },
+    {
+      "label": "Warranty Service",
+      "href": "/resources/warranty",
+      "desc": "Component warranty policies and ongoing after-sales maintenance support."
+    },
+    {
+      "label": "Blog",
+      "href": "/resources/blog",
+      "desc": "Training facility design philosophy, technical insights, and training practice."
+    }
+  ],
+  "cta": {
+    "title": "Still have questions?",
+    "description": "Speak with our engineers and fire service experts for professional guidance."
+  }
+}

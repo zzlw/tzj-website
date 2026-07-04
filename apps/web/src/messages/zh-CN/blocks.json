@@ -1,0 +1,38 @@
+{
+  "blocks": {
+    "statBand": {
+      "years": "年深耕应急救援训练装备",
+      "projects": "训练基地案例",
+      "productLines": "大产品线",
+      "domains": "大服务领域"
+    },
+    "processBand": {
+      "eyebrow": "交钥匙服务",
+      "title": "从构想到落成，全程为您护航",
+      "description": "作为一体化供应商，我们把设计、制造、安装与售后集于一体——单一对接，责任到底。",
+      "steps": {
+        "survey": { "title": "需求勘察", "desc": "深入了解您的场地条件、训练科目、人员规模与预算，明确建设目标。" },
+        "design": { "title": "方案设计", "desc": "工程师与消防专家共同定制布局、道具与结构，兼顾真实度与合规性。" },
+        "manufacture": { "title": "生产制造", "desc": "工厂标准化制造，全流程质量管控，确保每个部件经久耐用。" },
+        "install": { "title": "现场安装", "desc": "专业团队交钥匙安装，从基础到收尾一站式完成。" },
+        "training": { "title": "培训交付", "desc": "提供使用培训与验收，让队伍第一时间高效上手。" },
+        "service": { "title": "售后维保", "desc": "长期维保、配件供应与合规检查，守护您的长期投资。" }
+      }
+    },
+    "relatedLinks": {
+      "eyebrow": "相关内容",
+      "titleDefault": "延伸了解",
+      "learnMore": "了解更多"
+    }
+  },
+  "cta": {
+    "bookConsult": "预约咨询",
+    "learnMore": "了解详情",
+    "viewAll": "查看全部",
+    "downloadPdf": "下载产品规格 PDF"
+  },
+  "breadcrumbs": {
+    "home": "首页",
+    "solutions": "解决方案"
+  }
+}

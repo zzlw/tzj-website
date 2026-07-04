@@ -1,0 +1,164 @@
+{
+  "meta": {
+    "title": "標準塔型系列",
+    "description": "拓之跡標準塔型系列 —— 涵蓋高層、綜合、五至一级報警等多種預設塔型，對標 NFPA 1400/1402 等實戰訓練標準，可快速選型與深度定制。"
+  },
+  "hero": {
+    "eyebrow": "固定訓練塔 · 標準系列",
+    "title": "標準塔型系列",
+    "description": "從 15 套預設布局中直接選型，加速項目進度；也可任選一套作為起點，輕鬆定制屬於您的方案。"
+  },
+  "complianceSection": {
+    "eyebrow": "標準合規",
+    "title": "對標國際實戰訓練標準",
+    "description": "我們的每一座訓練結構與多種燃燒室方案，均滿足實戰訓練設施的標準要求。無論單位規模大小，我們都能定制合適的基礎設計、固定件與道具組合，最大化訓練體验。"
+  },
+  "durabilitySection": {
+    "eyebrow": "經久耐用",
+    "title": "為什么拓之跡固定塔更耐用",
+    "description": "實戰火场訓練意味著高溫、衝擊與常年反覆使用。我們從結構、連接到防護，每一個環節都為長期嚴苛使用而設計。",
+    "note": "相較混凝土/砌塊結構，金屬訓練塔在反覆热-冷循環中表現更穩定，整體建造與長期維護成本通常顯著更低，且受損構件可局部拆換、無需整體報廢。"
+  },
+  "durability": [
+    {
+      "title": "高強度牆板包層",
+      "desc": "結構化钢制包層经刚性处理，可承受登梯、索降等反覆的物理衝擊，远超普通薄板加自攻螺钉的做法。"
+    },
+    {
+      "title": "螺栓刚性連接",
+      "desc": "包層以密集螺栓刚性連接為一體，形成整體受力的堅固外殼，經久耐用。"
+    },
+    {
+      "title": "逐缝密封防风雨",
+      "desc": "每一道接缝均做密封处理，防风雨、防渗漏，支持全天候、全年候訓練。"
+    },
+    {
+      "title": "热浸鍍鋅长寿命",
+      "desc": "鋼結構热浸鍍鋅防锈，維護成本低；受損板件可拆換，投資長期可靠。"
+    }
+  ],
+  "seriesSectionTitle": "塔型系列",
+  "series": [
+    {
+      "name": "高層系列",
+      "variants": "五層 / 六層",
+      "desc": "高層塔配电梯井與樓梯塔，模擬高層建築灭火；另含两層居住单元與单層附属體。",
+      "image": "/media/alarm-highrise.jpg"
+    },
+    {
+      "name": "五级報警系列",
+      "variants": "四層 / 五層",
+      "desc": "主塔含內部樓梯井，两層单元帶阁樓與坡屋面，双破拆口與双燃燒室。",
+      "image": "/media/alarm-5th.png"
+    },
+    {
+      "name": "三级報警系列",
+      "variants": "三層 / 四層",
+      "desc": "主塔、居住與附属結構，配双實戰燃燒室，支持多場景訓練。",
+      "image": "/media/alarm-3rd.png"
+    },
+    {
+      "name": "一级報警系列",
+      "variants": "二層 / 三層 / 四層",
+      "desc": "含內部樓梯、爬梯與實戰燃燒室，滿足基礎實戰訓練要求。",
+      "image": "/media/alarm-1st.png"
+    }
+  ],
+  "moreSeries": [
+    {
+      "name": "綜合報警系列",
+      "variants": "四層 / 五層",
+      "desc": "主塔 + 两層居住/工業单元（帶阁樓），多房間、双破拆口與双燃燒室。"
+    },
+    {
+      "name": "四级報警系列",
+      "variants": "四層 / 五層",
+      "desc": "多層主塔含內部樓梯井，两層单元帶坡屋面與阁樓，双燃燒室。"
+    },
+    {
+      "name": "二级報警系列",
+      "variants": "標準 / 加长",
+      "desc": "两層单元連接单層附属體，訓練多房間布局（辦公）與開放空間（倉儲）。"
+    }
+  ],
+  "compareSection": {
+    "eyebrow": "如何選擇",
+    "title": "標準塔型 vs 定制塔型",
+    "description": "預設塔型讓項目更快落地，定制塔型则完全貼合獨特需求。兩者皆享同樣堅固的鋼結構與交鑰匙服务。"
+  },
+  "compare": {
+    "headers": {
+      "feature": "對比項",
+      "standard": "標準塔型",
+      "custom": "定制塔型"
+    },
+    "ariaSupported": "支持",
+    "ariaNotSupported": "不支持",
+    "rows": [
+      {
+        "feature": "堅固鍍鋅鋼結構",
+        "standard": true,
+        "custom": true
+      },
+      {
+        "feature": "交鑰匙全流程服务",
+        "standard": true,
+        "custom": true
+      },
+      {
+        "feature": "完整技術規格與图纸",
+        "standard": true,
+        "custom": true
+      },
+      {
+        "feature": "后期可加建擴展",
+        "standard": true,
+        "custom": true
+      },
+      {
+        "feature": "多種外立面配色",
+        "standard": "標準配色",
+        "custom": "自由定制"
+      },
+      {
+        "feature": "定制訓練道具",
+        "standard": false,
+        "custom": true
+      },
+      {
+        "feature": "建築外立面與造型",
+        "standard": false,
+        "custom": true
+      },
+      {
+        "feature": "布局自由定制",
+        "standard": false,
+        "custom": true
+      },
+      {
+        "feature": "交付速度",
+        "standard": "更快",
+        "custom": "按方案而定"
+      }
+    ]
+  },
+  "relatedLinks": [
+    {
+      "label": "定制訓練塔",
+      "desc": "從构思到竣工，按精确要求打造专属火场。"
+    },
+    {
+      "label": "燃燒室與襯裡",
+      "desc": "安全、真實的實戰燃燒環境與热防護方案。"
+    },
+    {
+      "label": "塔型設計中心",
+      "desc": "瀏覽塔型規格、立面與平面圖資料。"
+    }
+  ],
+  "cta": {
+    "title": "想要量身定制的塔型？",
+    "description": "每一處尺寸、門窗與布局都可由您決定 —— 打造屬於您的訓練設施。",
+    "customLink": "了解定制訓練塔"
+  }
+}

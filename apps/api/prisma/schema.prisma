@@ -1,0 +1,394 @@
+// TZJ 应急救援训练装备 — Prisma Schema
+// PostgreSQL + Prisma 6
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ═══════════════════════════════════════════
+// 工程案例
+// ═══════════════════════════════════════════
+model Case {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  summary     String?  @db.Text
+  description String?  @db.Text
+  coverImage  String?
+  images      String[] @default([])
+  location    String?
+  client      String?
+  caseType    String   // military | fire | police | scenic | school | enterprise
+  highlights  String[] @default([])
+  specs       Json?
+  completionDate DateTime?
+  seoTitle    String?
+  seoDesc     String?
+  sortOrder   Int      @default(0)
+  isFeatured  Boolean  @default(false)
+  status      String   @default("draft")
+  scheduledAt DateTime?
+  viewCount   Int      @default(0)
+  author      String?
+  systemPublishedAt DateTime?
+  createdBy         String?
+  createdById       String?
+  createdByUser     User?    @relation("CaseCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  lastOperator      String?
+  lastOperatorId    String?
+  lastOperatorUser  User?    @relation("CaseLastOperator", fields: [lastOperatorId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([caseType])
+  @@index([status])
+  @@index([isFeatured])
+  @@index([systemPublishedAt])
+  @@index([createdById])
+  @@index([lastOperatorId])
+  @@map("cases")
+}
+
+// ═══════════════════════════════════════════
+// 新闻资讯
+// ═══════════════════════════════════════════
+model News {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  summary     String?  @db.Text
+  content     String?  @db.Text
+  coverImage  String?
+  images      String[] @default([])
+  category    String   // company | industry | knowledge | equipment
+  author      String?
+  seoTitle    String?
+  seoDesc     String?
+  isTop       Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  status      String   @default("draft")
+  scheduledAt DateTime?
+  viewCount   Int      @default(0)
+  publishedAt DateTime?
+  systemPublishedAt DateTime?
+  createdBy         String?
+  createdById       String?
+  createdByUser     User?    @relation("NewsCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  lastOperator      String?
+  lastOperatorId    String?
+  lastOperatorUser  User?    @relation("NewsLastOperator", fields: [lastOperatorId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+  @@index([status])
+  @@index([publishedAt])
+  @@index([systemPublishedAt])
+  @@index([createdById])
+  @@index([lastOperatorId])
+  @@map("news")
+}
+
+// ═══════════════════════════════════════════
+// 博客
+// ═══════════════════════════════════════════
+model Blog {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  excerpt     String?  @db.Text
+  content     String?  @db.Text
+  coverImage  String?
+  images      String[] @default([])
+  category    String   // training_facility | burn_room | modular | practice | industry
+  readTime    String?
+  author      String?
+  seoTitle    String?
+  seoDesc     String?
+  isFeatured  Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  status      String   @default("draft")
+  scheduledAt DateTime?
+  viewCount   Int      @default(0)
+  publishedAt DateTime?
+  systemPublishedAt DateTime?
+  createdBy         String?
+  createdById       String?
+  createdByUser     User?    @relation("BlogCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  lastOperator      String?
+  lastOperatorId    String?
+  lastOperatorUser  User?    @relation("BlogLastOperator", fields: [lastOperatorId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+  @@index([status])
+  @@index([publishedAt])
+  @@index([systemPublishedAt])
+  @@index([createdById])
+  @@index([lastOperatorId])
+  @@map("blogs")
+}
+
+// ═══════════════════════════════════════════
+// 展会活动
+// ═══════════════════════════════════════════
+model TradeShow {
+  id             String    @id @default(cuid())
+  title          String
+  slug           String    @unique
+  summary        String?   @db.Text
+  content        String?   @db.Text
+  location       String?
+  eventDateLabel String?
+  startDate      DateTime?
+  endDate        DateTime?
+  boothNumber    String?
+  eventType      String    @default("exhibition") // exhibition | seminar | roadshow
+  coverImage     String?
+  images         String[]  @default([])
+  externalUrl    String?
+  seoTitle       String?
+  seoDesc        String?
+  sortOrder      Int       @default(0)
+  isFeatured     Boolean   @default(false)
+  status         String    @default("draft")
+  scheduledAt    DateTime?
+  viewCount      Int       @default(0)
+  publishedAt    DateTime?
+  author         String?
+  systemPublishedAt DateTime?
+  createdBy         String?
+  createdById       String?
+  createdByUser     User?    @relation("TradeShowCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  lastOperator      String?
+  lastOperatorId    String?
+  lastOperatorUser  User?    @relation("TradeShowLastOperator", fields: [lastOperatorId], references: [id], onDelete: SetNull)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([eventType])
+  @@index([status])
+  @@index([startDate])
+  @@index([systemPublishedAt])
+  @@index([createdById])
+  @@index([lastOperatorId])
+  @@map("trade_shows")
+}
+
+// ═══════════════════════════════════════════
+// 联系信息
+// ═══════════════════════════════════════════
+model Contact {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String?
+  email     String?
+  company   String?
+  subject   String?
+  message   String   @db.Text
+  source    String?  // website | admin | api
+  isRead    Boolean  @default(false)
+  isHandled Boolean  @default(false)
+  remark    String?  @db.Text
+  lastOperator      String?
+  lastOperatorId    String?
+  lastOperatorUser  User?    @relation("ContactLastOperator", fields: [lastOperatorId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isRead])
+  @@index([isHandled])
+  @@index([createdAt])
+  @@index([lastOperatorId])
+  @@map("contacts")
+}
+
+// ═══════════════════════════════════════════
+// 静态页面（关于我们、服务承诺等）
+// ═══════════════════════════════════════════
+model Page {
+  id        String   @id @default(cuid())
+  title     String
+  slug      String   @unique
+  content   String?  @db.Text
+  coverImage String?
+  seoTitle  String?
+  seoDesc   String?
+  status    String   @default("published")
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("pages")
+}
+
+// ═══════════════════════════════════════════
+// 用户（管理后台）
+// ═══════════════════════════════════════════
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String
+  nickname  String?
+  email     String?  @unique
+  phone     String?
+  avatar    String?
+  role      String   @default("editor") // admin | editor | viewer
+  isActive  Boolean  @default(true)
+  lastLoginAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions    Session[]
+  auditLogs   AuditLog[]
+  mediaAssets MediaAsset[]
+  casesLastOperated     Case[]      @relation("CaseLastOperator")
+  newsLastOperated      News[]      @relation("NewsLastOperator")
+  blogsLastOperated     Blog[]      @relation("BlogLastOperator")
+  tradeShowsLastOperated TradeShow[] @relation("TradeShowLastOperator")
+  casesCreated          Case[]      @relation("CaseCreatedBy")
+  newsCreated           News[]      @relation("NewsCreatedBy")
+  blogsCreated          Blog[]      @relation("BlogCreatedBy")
+  tradeShowsCreated     TradeShow[] @relation("TradeShowCreatedBy")
+  contactsLastOperated  Contact[]   @relation("ContactLastOperator")
+
+  @@map("users")
+}
+
+// ═══════════════════════════════════════════
+// 角色与权限（RBAC）
+// ═══════════════════════════════════════════
+model AccessRole {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String?
+  permissions String[] @default([])
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("access_roles")
+}
+
+// ═══════════════════════════════════════════
+// 媒体库（图片/视频/文档统一管理）
+// ═══════════════════════════════════════════
+model MediaAsset {
+  id           String    @id @default(cuid())
+  key          String    @unique // S3 对象 key
+  url          String // 公开访问 URL
+  filename     String // 原始文件名
+  mimeType     String
+  size         Int // 字节
+  width        Int?
+  height       Int?
+  folder       String    @default("uploads")
+  alt          String?
+  uploadedById String?
+  uploadedBy   User?     @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  deletedAt    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([folder])
+  @@index([mimeType])
+  @@index([createdAt])
+  @@index([deletedAt])
+  @@map("media_assets")
+}
+
+// ═══════════════════════════════════════════
+// 登录会话（refresh token 轮换 / 可撤销）
+// ═══════════════════════════════════════════
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash    String   @unique // refresh token 的 sha256，不存明文
+  userAgent    String?
+  ip           String?
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  createdAt    DateTime @default(now())
+  lastUsedAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+// ═══════════════════════════════════════════
+// 审计日志（谁在何时对什么做了什么）
+// ═══════════════════════════════════════════
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action     String   // login | logout | create | update | delete | publish ...
+  resource   String   // product | case | news | user ...
+  resourceId String?
+  detail     Json?
+  ip         String?
+  userAgent  String?
+  traceId    String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([resource])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// ═══════════════════════════════════════════
+// 官网访客分析（PageView 事件）
+// ═══════════════════════════════════════════
+model PageView {
+  id           String   @id @default(cuid())
+  sessionId    String
+  path         String
+  title        String?
+  referrer     String?
+  referrerHost String?
+  userAgent    String?
+  ipHash       String?
+  country      String?
+  region       String?
+  city         String?
+  deviceType   String?
+  browser      String?
+  os           String?
+  isBot        Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([path, createdAt])
+  @@index([sessionId])
+  @@index([referrerHost, createdAt])
+  @@index([isBot, createdAt])
+  @@index([country, createdAt])
+  @@map("page_views")
+}
+
+// ═══════════════════════════════════════════
+// 系统设置（KV 存储）
+// ═══════════════════════════════════════════
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json
+  group     String   @default("general")
+  label     String?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([group])
+  @@map("settings")
+}

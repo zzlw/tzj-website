@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "title": "Leadership Team",
+    "description": "The TZJ leadership team — fire service, engineering, and construction management experts dedicated to building better fire training solutions."
+  },
+  "hero": {
+    "eyebrow": "Why TZJ · Team",
+    "title": "Leadership Team",
+    "description": "Fire service, engineering, and construction management experts dedicated to building better fire training solutions."
+  },
+  "teamSection": {
+    "eyebrow": "Meet the Team",
+    "title": "The right people for the job"
+  },
+  "team": [
+    {
+      "name": "General Manager / CEO",
+      "tag": "Executive Leadership",
+      "desc": "15+ years of corporate and engineering management experience, leading company strategy and sustainable growth."
+    },
+    {
+      "name": "COO",
+      "tag": "Operations",
+      "desc": "25+ years in manufacturing and construction, driving R&D and deployment of thermal liner and modular systems."
+    },
+    {
+      "name": "Product Director",
+      "tag": "Product Development",
+      "desc": "20+ years of frontline experience leading training facility product lines and modular building systems."
+    },
+    {
+      "name": "Engineering Director",
+      "tag": "Engineering Design",
+      "desc": "Deep expertise in structural and fire training facility engineering, including seismic and wind load design."
+    },
+    {
+      "name": "Pre-Sales Manager",
+      "tag": "Solution Consulting",
+      "desc": "Extensive fire service industry experience providing needs assessment and custom selection guidance."
+    },
+    {
+      "name": "Inspection Engineer",
+      "tag": "Compliance Inspection",
+      "desc": "Responsible for compliance inspections and documentation for training buildings, ensuring long-term safety."
+    }
+  ],
+  "whySection": {
+    "eyebrow": "Why It Matters",
+    "title": "Built by people who understand both fire service and engineering",
+    "description": "Training facilities are not ordinary buildings. Only a team that truly understands live operations and engineering can deliver facilities that are both realistic and durable."
+  },
+  "why": [
+    {
+      "title": "Fire Service Know-How",
+      "desc": "The team understands frontline operational needs — knowing which scenarios and props truly build real capability."
+    },
+    {
+      "title": "Engineering Excellence",
+      "desc": "Expertise in structure, seismic design, wind loads, and manufacturing — turning training concepts into rugged, durable facilities."
+    },
+    {
+      "title": "Partnership Mindset",
+      "desc": "From pre-sales assessment through after-sales maintenance — single point of contact, full accountability, working alongside you on every project."
+    }
+  ],
+  "relatedLinks": [
+    {
+      "label": "Our Story",
+      "desc": "16 years of continuous innovation and growth."
+    },
+    {
+      "label": "Certifications",
+      "desc": "Trust earned through rigorous standards and system certifications."
+    },
+    {
+      "label": "Global Reach",
+      "desc": "1000+ projects across China and international markets."
+    }
+  ],
+  "cta": {
+    "title": "Let us become part of your team",
+    "description": "From pre-sales through after-sales, we work alongside you on every project."
+  }
+}

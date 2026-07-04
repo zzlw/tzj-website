@@ -1,0 +1,101 @@
+{
+  "home": {
+    "hero": {
+      "eyebrow": "Integrated Emergency Rescue Training Equipment Supplier",
+      "titleLine1": "Built for Real-World Operations",
+      "titleLine2": "Complete Training Base Solutions",
+      "description": "Sixteen years dedicated to emergency rescue training equipment — from training towers and structures to live-fire burn facilities, specialized scenarios, and training props. {count} product lines across 6 service domains, delivered turnkey for fire, police, military, and other agencies.",
+      "browseProducts": "Browse Products",
+      "viewSolutions": "View Solutions"
+    },
+    "products": {
+      "eyebrow": "Products · {count} Product Lines",
+      "title": "Everything Your Training Base Needs",
+      "description": "Four categories and {count} product lines — from structural buildings to live fire, specialized scenarios, and equipment, all in one place for fire, police, military, and more.",
+      "browseAll": "Browse All Products",
+      "familyTowers": "Towers & Structures",
+      "familyBurn": "Live Fire & Burn",
+      "familySpecialized": "Specialized Scenarios",
+      "familyAccessories": "Training Equipment",
+      "total": "Total"
+    },
+    "solutions": {
+      "eyebrow": "Solutions · 6 Service Domains",
+      "title": "Matched to Your Mission",
+      "description": "Fire & rescue, police & SWAT, military, mine rescue, education, and enterprise — we organize our products by customer mission so you can find the right integrated solution quickly.",
+      "viewAll": "View All Solutions",
+      "viewSolution": "View Solution"
+    },
+    "mission": {
+      "eyebrow": "One Goal, One Passion",
+      "titleLine1": "Our Training Towers",
+      "titleLine2": "Designed by Firefighters & Engineers",
+      "titleHighlight": "Built for Fire Training",
+      "statYears": "Years in Industry",
+      "statProjects": "Training Base Projects",
+      "statLines": "Product Lines",
+      "statDomains": "Service Domains",
+      "learnMore": "See What Makes Us Different"
+    },
+    "deliveries": {
+      "eyebrow": "Project Portfolio",
+      "title": "Training Bases Across China",
+      "description": "Over 1,000 training base projects serving fire, police, military, universities, and more nationwide.",
+      "viewAll": "View All Projects",
+      "items": {
+        "henan-fire-rescue": {
+          "title": "Provincial Fire & Rescue Training Base",
+          "location": "Henan",
+          "category": "Fire & Rescue"
+        },
+        "shandong-police": {
+          "title": "Municipal SWAT Climbing Training Tower",
+          "location": "Shandong",
+          "category": "Police & SWAT"
+        },
+        "shanxi-mine-rescue": {
+          "title": "Mine Rescue Team Training Facility",
+          "location": "Shanxi",
+          "category": "Mine Rescue"
+        },
+        "jiangsu-university": {
+          "title": "University Safety Training & Education Center",
+          "location": "Jiangsu",
+          "category": "Education"
+        },
+        "zhejiang-outdoor": {
+          "title": "Scenic Area Outdoor Adventure Training Base",
+          "location": "Zhejiang",
+          "category": "Outdoor Adventure"
+        },
+        "guangdong-cfbt": {
+          "title": "Municipal Fire & Rescue CFBT Training Center",
+          "location": "Guangdong",
+          "category": "CFBT"
+        }
+      }
+    },
+    "certification": {
+      "eyebrow": "Credentials & Trust",
+      "title": "Rigorous Standards You Can Rely On",
+      "description": "Industry certifications and client endorsements reflect our commitment to quality and integrity.",
+      "items": {
+        "iso9001": { "title": "ISO 9001", "subtitle": "Quality Management System" },
+        "hitech": { "title": "High-Tech Enterprise", "subtitle": "National Certification" },
+        "patents": { "title": "Multiple Patents", "subtitle": "Utility & Design" },
+        "safety": { "title": "Work Safety Standardization", "subtitle": "Level 3 Compliance" }
+      },
+      "clientsHeading": "Industries We Serve",
+      "clients": {
+        "fire": "Fire & Rescue",
+        "police": "Police & SWAT",
+        "mine": "Mine Rescue",
+        "university": "Universities",
+        "tourism": "Tourism & Scenic",
+        "military": "Military Training",
+        "petrochemical": "Petrochemical",
+        "maritime": "Ports & Maritime"
+      }
+    }
+  }
+}

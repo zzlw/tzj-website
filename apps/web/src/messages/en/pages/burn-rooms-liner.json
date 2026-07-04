@@ -1,0 +1,64 @@
+{
+  "meta": {
+    "title": "Interlocking Thermal Liners",
+    "description": "TZJ interlocking calcium-silicate thermal liner systems balance durability and heat protection—individual panels are replaceable for easy maintenance and long-term burn room reliability."
+  },
+  "hero": {
+    "eyebrow": "Live Fire & Burn Training · Liners",
+    "title": "Interlocking Thermal Liners",
+    "description": "Calcium-silicate interlocking liner systems with replaceable panels and easy maintenance for long-term burn room protection."
+  },
+  "gallery": {
+    "linerAlt": "Interlocking thermal liner in burn room",
+    "steelAlt": "Hot-dip galvanized steel structure"
+  },
+  "specsSection": {
+    "eyebrow": "Technical specifications",
+    "title": "Liner system specifications",
+    "description": "Liners directly affect burn room safety and service life. Our engineered materials and structure isolate heat and minimize thermal loss."
+  },
+  "specs": [
+    { "item": "Material", "value": "Calcium-silicate thermal composite panels" },
+    { "item": "Structure", "value": "Interlocking assembly; each panel independently replaceable" },
+    { "item": "Temperature rating", "value": "Withstands repeated Class A live-fire training temperatures" },
+    { "item": "Insulation", "value": "Significantly reduces steel back-face temperature; protects primary structure" },
+    { "item": "Maintenance", "value": "Local damage repaired by replacing individual panels—no full tear-out" },
+    { "item": "Compatibility", "value": "For fixed towers and modular system burn rooms" }
+  ],
+  "featuresSection": {
+    "eyebrow": "Liner advantages",
+    "title": "The value of interlocking design"
+  },
+  "features": [
+    "Interlocking structure for faster installation and replacement",
+    "Calcium-silicate material balances durability and insulation",
+    "Protects primary burn room steel structure and extends service life",
+    "Retrofit upgrades for existing burn rooms"
+  ],
+  "performanceSection": {
+    "eyebrow": "Engineering performance",
+    "title": "Built for the toughest fire conditions",
+    "description": "From material to construction, our liner systems are built for repeated live-fire training—protecting structure, supporting realism, and simplifying maintenance."
+  },
+  "performance": [
+    "High-durability, low-maintenance thermal insulation",
+    "Asbestos-free calcium-silicate product",
+    "Protects metal, masonry, and concrete structures",
+    "Suitable for new construction, retrofits, and damaged-structure repair",
+    "Realistic drywall appearance for training realism",
+    "Works well with thermal imaging cameras",
+    "Supports Class A and gas-simulation fires",
+    "No restriction on fire source placement inside the burn room",
+    "No freeze-thaw issues; no drying period between sessions",
+    "Does not promote mold growth; does not absorb water"
+  ],
+  "relatedLinks": [
+    { "label": "Liner comparison", "desc": "Full comparison of interlocking vs. traditional liners." },
+    { "label": "Burn rooms overview", "desc": "Complete solutions for safe live-fire training." },
+    { "label": "Annual inspection service", "desc": "Regular inspections to extend burn room service life." }
+  ],
+  "cta": {
+    "title": "Want to understand liner options?",
+    "secondaryLabel": "View liner comparison"
+  }
+}

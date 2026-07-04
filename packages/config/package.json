@@ -1,0 +1,19 @@
+{
+  "name": "@tzj/config",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./tsconfig/base": "./src/tsconfig.base.json",
+    "./tsconfig/react": "./src/tsconfig.react.json",
+    "./tsconfig/nestjs": "./src/tsconfig.nestjs.json",
+    "./env": "./src/env.ts"
+  },
+  "dependencies": {
+    "zod": "^4.4.3"
+  },
+  "scripts": {
+    "typecheck": "echo 'config: no typecheck needed'",
+    "clean": "echo 'config: nothing to clean'"
+  }
+}

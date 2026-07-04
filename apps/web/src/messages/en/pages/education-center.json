@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "title": "Fire Safety Education Center",
+    "description": "TZJ fire safety education centers—immersive public fire safety experience spaces for schools and community education."
+  },
+  "hero": {
+    "eyebrow": "Training Towers · Education",
+    "title": "Fire Safety Education Center",
+    "description": "Turn safety knowledge into memorable, hands-on experiences—for schools and the public.",
+    "imageAlt": "Fire safety education center"
+  },
+  "breadcrumb": {
+    "parent": "Training Towers",
+    "current": "Education Center"
+  },
+  "jsonLd": {
+    "productName": "Fire Safety Education Center",
+    "productDescription": "Immersive fire safety education space for schools and public programs."
+  },
+  "overview": {
+    "eyebrow": "Learn by doing",
+    "title": "Safety education that engages",
+    "description": "Move beyond lectures with real environments, interaction, and experience that help visitors remember prevention and self-rescue.",
+    "lead": "Themed exhibit paths connect awareness to experience in a complete education loop.",
+    "body": "Integrates with training towers and simulation for a combined public education and hands-on training base."
+  },
+  "featuresSection": {
+    "eyebrow": "Key features",
+    "title": "Six hallmarks of our education centers"
+  },
+  "features": [
+    {
+      "title": "Immersive experience",
+      "desc": "Realistic scenes and interactive exhibits make fire and escape knowledge tangible."
+    },
+    {
+      "title": "Themed zones",
+      "desc": "Prevention, escape, and equipment zones with clear visitor flow."
+    },
+    {
+      "title": "Multiple audiences",
+      "desc": "Students, workforce, and public groups with tour and group formats."
+    },
+    {
+      "title": "Safe and controlled",
+      "desc": "Simulation-based, safe for large-scale routine public access."
+    },
+    {
+      "title": "Digital interaction",
+      "desc": "Multimedia and interactive technology for engagement and outreach."
+    },
+    {
+      "title": "Education to practice",
+      "desc": "Links to training facilities for a full awareness-to-practice loop."
+    }
+  ],
+  "zonesSection": {
+    "eyebrow": "Exhibit planning",
+    "title": "Typical zones and experiences"
+  },
+  "zones": [
+    "Fire cause and prevention",
+    "Home and public hazard identification",
+    "Extinguisher operation",
+    "Smoke escape corridor",
+    "Knot tying, alarm, and self-rescue",
+    "Fire service history and heroes"
+  ],
+  "relatedLinks": [
+    {
+      "label": "Fire simulation systems",
+      "desc": "Safe, controlled simulation training."
+    },
+    {
+      "label": "Education solutions",
+      "desc": "Integrated programs for schools."
+    },
+    {
+      "label": "Standard tower series",
+      "desc": "Preset towers for rapid deployment."
+    }
+  ],
+  "cta": {
+    "title": "Build your education center",
+    "description": "Share your site and education goals—we will plan exhibits and interaction end to end."
+  }
+}

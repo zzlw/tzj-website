@@ -1,0 +1,11 @@
+{
+  "error": {
+    "title": "出現了一些問題",
+    "description": "頁面載入時發生錯誤，請稍後重試。如問題持續，請聯系我們的技術支持。",
+    "retry": "重試",
+    "backHome": "返回首頁",
+    "globalTitle": "系統錯誤",
+    "globalDescription": "應用遇到了嚴重錯誤，請刷新頁面重試。",
+    "globalRefresh": "刷新頁面"
+  }
+}

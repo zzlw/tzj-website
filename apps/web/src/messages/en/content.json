@@ -1,0 +1,130 @@
+{
+  "content": {
+    "filters": {
+      "allTypes": "All Types",
+      "allCategories": "All Categories"
+    },
+    "sort": {
+      "ariaLabel": "Sort by",
+      "cases": {
+        "completionDesc": "Completion Date (Newest)",
+        "completionAsc": "Completion Date (Oldest)",
+        "titleAsc": "Title (A→Z)",
+        "titleDesc": "Title (Z→A)",
+        "locationAsc": "Location (A→Z)"
+      },
+      "news": {
+        "publishedDesc": "Published (Newest)",
+        "publishedAsc": "Published (Oldest)",
+        "titleAsc": "Title (A→Z)",
+        "titleDesc": "Title (Z→A)"
+      },
+      "blog": {
+        "publishedDesc": "Published (Newest)",
+        "publishedAsc": "Published (Oldest)",
+        "titleAsc": "Title (A→Z)",
+        "titleDesc": "Title (Z→A)"
+      },
+      "tradeShows": {
+        "startDesc": "Event Date (Newest)",
+        "startAsc": "Event Date (Oldest)",
+        "titleAsc": "Title (A→Z)",
+        "titleDesc": "Title (Z→A)"
+      }
+    },
+    "categories": {
+      "cases": {
+        "types": {
+          "military": "Military",
+          "fire": "Fire & Rescue",
+          "police": "Police",
+          "scenic": "Scenic & Tourism",
+          "school": "Schools",
+          "enterprise": "Enterprise"
+        }
+      },
+      "news": {
+        "categories": {
+          "company": "Company News",
+          "industry": "Industry News",
+          "knowledge": "Training Knowledge",
+          "equipment": "Equipment Knowledge"
+        }
+      },
+      "blog": {
+        "categories": {
+          "training_facility": "Training Facilities",
+          "burn_room": "Burn Room Technology",
+          "modular": "Modular Systems",
+          "practice": "Training Practice",
+          "industry": "Industry Insights"
+        }
+      },
+      "tradeShows": {
+        "types": {
+          "exhibition": "Exhibition",
+          "seminar": "Seminar",
+          "roadshow": "Roadshow"
+        }
+      }
+    },
+    "list": {
+      "emptyCases": "No matching projects. Try adjusting your filters.",
+      "emptyNews": "No matching news items. Try adjusting your filters.",
+      "emptyBlog": "No matching articles. Try adjusting your filters.",
+      "emptyTradeShows": "No matching events. Try adjusting your filters.",
+      "readMore": "Read More",
+      "viewCase": "View Project",
+      "backToList": "Back to List",
+      "publishedAt": "Published",
+      "completedAt": "Completed",
+      "location": "Location",
+      "relatedContent": "Related"
+    },
+    "pagination": {
+      "prev": "Previous",
+      "next": "Next",
+      "page": "Page {page} of {totalPages}",
+      "units": {
+        "cases": "projects",
+        "articles": "articles",
+        "events": "events"
+      }
+    },
+    "labels": {
+      "client": "Client:",
+      "booth": "Booth:",
+      "featured": "Featured Event"
+    },
+    "detail": {
+      "projectOverview": "Project Overview",
+      "highlights": "Project Highlights",
+      "projectInfo": "Project Info",
+      "client": "Client",
+      "consultSimilar": "Discuss a Similar Project",
+      "viewAllCases": "View All Projects",
+      "readTime": "{minutes} min read · ",
+      "ctaTitle": "Want to discuss your training facility plans?",
+      "ctaDescription": "Our engineers and fire experts are ready to advise on your project and product selection.",
+      "ctaTitleNews": "Want to learn more about our projects and solutions?",
+      "ctaDescriptionNews": "Talk with our engineers and fire experts for professional advice and product guidance.",
+      "relatedArticles": "Related Articles",
+      "relatedNews": "Related News",
+      "readFull": "Read Full Article",
+      "viewDetail": "View Details",
+      "backToBlog": "Back to Blog",
+      "backToNews": "Back to News",
+      "bookConsultArrow": "Book a Consultation →",
+      "breadcrumbs": {
+        "cases": "Projects",
+        "blog": "Blog",
+        "news": "News"
+      }
+    },
+    "productGrid": {
+      "familyIndex": "Category {index} / {total}",
+      "familyIndexWithCount": "Category {index} / {total} · {count}",
+      "lineCount": "{count} product lines"
+    }
+  }
+}

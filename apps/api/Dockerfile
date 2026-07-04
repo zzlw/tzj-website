@@ -1,0 +1,48 @@
+# syntax=docker/dockerfile:1
+# ============================================================
+# TZJ API — NestJS 11 Production Dockerfile
+# ============================================================
+# Build context: monorepo root
+# Build command: docker build -f apps/api/Dockerfile -t tzj/api .
+# ============================================================
+
+# ── Stage 1: Builder ─────────────────────────────────────────
+FROM node:20-alpine AS builder
+WORKDIR /app
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/api/package.json apps/api/
+COPY packages/types/package.json packages/types/
+
+RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN apk add --no-cache libc6-compat python3 make g++
+RUN pnpm install --frozen-lockfile
+
+COPY . .
+
+RUN pnpm run build --filter=@tzj/api
+
+# ── Stage 2: Production ──────────────────────────────────────
+FROM node:20-alpine AS production
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+# 创建非 root 用户
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nestjs
+
+# 复制构建产物和依赖
+COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nestjs:nodejs /app/apps/api/dist ./dist
+COPY --from=builder --chown=nestjs:nodejs /app/apps/api/prisma ./prisma
+COPY --from=builder --chown=nestjs:nodejs /app/apps/api/package.json ./
+
+USER nestjs
+
+EXPOSE 3001
+
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3001/api/v1/health || exit 1
+
+CMD ["node", "dist/main.js"]

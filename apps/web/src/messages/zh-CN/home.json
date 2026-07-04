@@ -1,0 +1,101 @@
+{
+  "home": {
+    "hero": {
+      "eyebrow": "应急救援训练装备一体化供应商",
+      "titleLine1": "为实战而生的",
+      "titleLine2": "训练基地整体方案",
+      "description": "十六年深耕应急救援训练装备 —— 从训练塔与建筑、实火燃烧、专项场景到训练器械，{count} 大产品线、6 大服务领域，以交钥匙方式为消防、公安、部队等队伍打造完整训练基地。",
+      "browseProducts": "浏览产品",
+      "viewSolutions": "查看解决方案"
+    },
+    "products": {
+      "eyebrow": "产品中心 · {count} 大产品线",
+      "title": "覆盖训练基地的全部所需",
+      "description": "四大板块、{count} 大产品线 —— 从建筑主体到实火、专项与器械，一站式满足消防、公安、部队等各类队伍的训练需求。",
+      "browseAll": "浏览全部产品",
+      "familyTowers": "训练塔与建筑",
+      "familyBurn": "实火与燃烧",
+      "familySpecialized": "专项场景",
+      "familyAccessories": "训练器械",
+      "total": "合计"
+    },
+    "solutions": {
+      "eyebrow": "解决方案 · 6 大服务领域",
+      "title": "为不同队伍，量身匹配",
+      "description": "消防救援、公安武警、部队、矿山救援、院校教育、企业与园区 —— 我们把产品按客户任务重新聚合，帮您快速找到贴合自身的整体方案。",
+      "viewAll": "查看全部解决方案",
+      "viewSolution": "查看方案"
+    },
+    "mission": {
+      "eyebrow": "一个目标，一份热爱",
+      "titleLine1": "我们的训练塔",
+      "titleLine2": "由消防员与工程师",
+      "titleHighlight": "专为消防训练打造",
+      "statYears": "年行业深耕",
+      "statProjects": "训练基地项目",
+      "statLines": "大产品线",
+      "statDomains": "大服务领域",
+      "learnMore": "了解我们的不同之处"
+    },
+    "deliveries": {
+      "eyebrow": "工程案例",
+      "title": "训练基地案例遍布全国",
+      "description": "超过 1000 个训练基地项目，覆盖全国各省市的消防、公安、部队、院校等行业",
+      "viewAll": "查看全部案例",
+      "items": {
+        "henan-fire-rescue": {
+          "title": "某省消防救援总队训练基地",
+          "location": "河南",
+          "category": "消防救援"
+        },
+        "shandong-police": {
+          "title": "某市公安特警攀登训练楼",
+          "location": "山东",
+          "category": "公安武警"
+        },
+        "shanxi-mine-rescue": {
+          "title": "某矿山救援队训练设施",
+          "location": "山西",
+          "category": "矿山救援"
+        },
+        "jiangsu-university": {
+          "title": "某高校安全实训教育基地",
+          "location": "江苏",
+          "category": "院校教育"
+        },
+        "zhejiang-outdoor": {
+          "title": "某景区户外拓展训练基地",
+          "location": "浙江",
+          "category": "景区拓展"
+        },
+        "guangdong-cfbt": {
+          "title": "某消防救援支队CFBT训练中心",
+          "location": "广东",
+          "category": "CFBT"
+        }
+      }
+    },
+    "certification": {
+      "eyebrow": "资质与信任",
+      "title": "严苛标准，值得信赖",
+      "description": "多项行业资质认证与客户背书，是我们对品质与诚信的坚守。",
+      "items": {
+        "iso9001": { "title": "ISO 9001", "subtitle": "质量管理体系" },
+        "hitech": { "title": "高新技术企业", "subtitle": "国家认定" },
+        "patents": { "title": "多项专利", "subtitle": "实用新型 & 外观" },
+        "safety": { "title": "安全生产标准化", "subtitle": "三级达标" }
+      },
+      "clientsHeading": "服务客户行业",
+      "clients": {
+        "fire": "消防救援",
+        "police": "公安特警",
+        "mine": "矿山救援",
+        "university": "高等院校",
+        "tourism": "旅游景区",
+        "military": "部队训练",
+        "petrochemical": "石化企业",
+        "maritime": "港口海事"
+      }
+    }
+  }
+}

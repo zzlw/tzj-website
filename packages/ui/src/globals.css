@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #0a0a0b;
+  --color-primary: #c61516;
+  --color-primary-hover: #a81213;
+  --color-primary-foreground: #FFFFFF;
+  --color-surface: #141416;
+  --color-surface-hover: #1f1f22;
+  --color-border: #27272a;
+  --color-border-strong: #3f3f46;
+  --color-foreground: #fafafa;
+  --color-muted-foreground: #a1a1aa;
+  --color-secondary-text: #71717a;
+  --color-card: #141416;
+  --color-card-foreground: #fafafa;
+  --color-popover: #141416;
+  --color-popover-foreground: #fafafa;
+  --color-secondary: #141416;
+  --color-secondary-foreground: #fafafa;
+  --color-muted: #27272a;
+  --color-accent: #27272a;
+  --color-accent-foreground: #fafafa;
+  --color-destructive: #c61516;
+  --color-destructive-foreground: #fafafa;
+  --color-input: #27272a;
+  --color-ring: #c61516;
+
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+
+  --font-sans: "Inter", "Noto Sans SC", system-ui, -apple-system, sans-serif;
+
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  /*
+   * 交互光标 — 全局 baseline，组件内可覆盖。
+   * 参考 MDN / shadcn：可点击用 pointer，文本输入用 text，禁用用 not-allowed。
+   */
+  button:not(:disabled),
+  input[type="button"]:not(:disabled),
+  input[type="submit"]:not(:disabled),
+  input[type="reset"]:not(:disabled),
+  input[type="file"]:not(:disabled),
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled),
+  a[href],
+  label[for],
+  select:not(:disabled),
+  summary,
+  [role="button"]:not([aria-disabled="true"]),
+  [role="link"],
+  [role="menuitem"]:not([data-disabled]),
+  [role="option"]:not([data-disabled]),
+  [role="tab"]:not([aria-disabled="true"]),
+  [role="checkbox"]:not([aria-disabled="true"]),
+  [role="radio"]:not([aria-disabled="true"]),
+  [role="switch"]:not([aria-disabled="true"]),
+  [role="combobox"]:not([aria-disabled="true"]),
+  [role="slider"]:not([data-disabled]):not([aria-disabled="true"]),
+  [role="menuitemcheckbox"]:not([data-disabled]),
+  [role="menuitemradio"]:not([data-disabled]) {
+    cursor: pointer;
+  }
+
+  input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="checkbox"]):not([type="radio"]):not([type="file"]):not(:disabled),
+  textarea:not(:disabled),
+  [contenteditable="true"]:not([aria-disabled="true"]) {
+    cursor: text;
+  }
+
+  button:disabled,
+  input:disabled,
+  select:disabled,
+  textarea:disabled,
+  [aria-disabled="true"],
+  [data-disabled] {
+    cursor: not-allowed;
+  }
+}

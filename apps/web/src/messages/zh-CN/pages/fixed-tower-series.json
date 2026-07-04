@@ -1,0 +1,71 @@
+{
+  "meta": {
+    "title": "标准塔型系列",
+    "description": "拓之迹标准塔型系列 —— 涵盖高层、综合、五至一级报警等多种预设塔型，对标 NFPA 1400/1402 等实战训练标准，可快速选型与深度定制。"
+  },
+  "hero": {
+    "eyebrow": "固定训练塔 · 标准系列",
+    "title": "标准塔型系列",
+    "description": "从 15 套预设布局中直接选型，加速项目进度；也可任选一套作为起点，轻松定制属于您的方案。"
+  },
+  "complianceSection": {
+    "eyebrow": "标准合规",
+    "title": "对标国际实战训练标准",
+    "description": "我们的每一座训练结构与多种燃烧室方案，均满足实战训练设施的标准要求。无论单位规模大小，我们都能定制合适的基础设计、固定件与道具组合，最大化训练体验。"
+  },
+  "durabilitySection": {
+    "eyebrow": "经久耐用",
+    "title": "为什么拓之迹固定塔更耐用",
+    "description": "实战火场训练意味着高温、冲击与常年反复使用。我们从结构、连接到防护，每一个环节都为长期严苛使用而设计。",
+    "note": "相较混凝土/砌块结构，金属训练塔在反复热-冷循环中表现更稳定，整体建造与长期维护成本通常显著更低，且受损构件可局部拆换、无需整体报废。"
+  },
+  "durability": [
+    { "title": "高强度墙板包层", "desc": "结构化钢制包层经刚性处理，可承受登梯、索降等反复的物理冲击，远超普通薄板加自攻螺钉的做法。" },
+    { "title": "螺栓刚性连接", "desc": "包层以密集螺栓刚性连接为一体，形成整体受力的坚固外壳，经久耐用。" },
+    { "title": "逐缝密封防风雨", "desc": "每一道接缝均做密封处理，防风雨、防渗漏，支持全天候、全年候训练。" },
+    { "title": "热浸镀锌长寿命", "desc": "钢结构热浸镀锌防锈，维护成本低；受损板件可拆换，投资长期可靠。" }
+  ],
+  "seriesSectionTitle": "塔型系列",
+  "series": [
+    { "name": "高层系列", "variants": "五层 / 六层", "desc": "高层塔配电梯井与楼梯塔，模拟高层建筑灭火；另含两层居住单元与单层附属体。", "image": "/media/alarm-highrise.jpg" },
+    { "name": "五级报警系列", "variants": "四层 / 五层", "desc": "主塔含内部楼梯井，两层单元带阁楼与坡屋面，双破拆口与双燃烧室。", "image": "/media/alarm-5th.png" },
+    { "name": "三级报警系列", "variants": "三层 / 四层", "desc": "主塔、居住与附属结构，配双实战燃烧室，支持多场景训练。", "image": "/media/alarm-3rd.png" },
+    { "name": "一级报警系列", "variants": "二层 / 三层 / 四层", "desc": "含内部楼梯、爬梯与实战燃烧室，满足基础实战训练要求。", "image": "/media/alarm-1st.png" }
+  ],
+  "moreSeries": [
+    { "name": "综合报警系列", "variants": "四层 / 五层", "desc": "主塔 + 两层居住/工业单元（带阁楼），多房间、双破拆口与双燃烧室。" },
+    { "name": "四级报警系列", "variants": "四层 / 五层", "desc": "多层主塔含内部楼梯井，两层单元带坡屋面与阁楼，双燃烧室。" },
+    { "name": "二级报警系列", "variants": "标准 / 加长", "desc": "两层单元连接单层附属体，训练多房间布局（办公）与开放空间（仓储）。" }
+  ],
+  "compareSection": {
+    "eyebrow": "如何选择",
+    "title": "标准塔型 vs 定制塔型",
+    "description": "预设塔型让项目更快落地，定制塔型则完全贴合独特需求。两者皆享同样坚固的钢结构与交钥匙服务。"
+  },
+  "compare": {
+    "headers": { "feature": "对比项", "standard": "标准塔型", "custom": "定制塔型" },
+    "ariaSupported": "支持",
+    "ariaNotSupported": "不支持",
+    "rows": [
+      { "feature": "坚固镀锌钢结构", "standard": true, "custom": true },
+      { "feature": "交钥匙全流程服务", "standard": true, "custom": true },
+      { "feature": "完整技术规格与图纸", "standard": true, "custom": true },
+      { "feature": "后期可加建扩展", "standard": true, "custom": true },
+      { "feature": "多种外立面配色", "standard": "标准配色", "custom": "自由定制" },
+      { "feature": "定制训练道具", "standard": false, "custom": true },
+      { "feature": "建筑外立面与造型", "standard": false, "custom": true },
+      { "feature": "布局自由定制", "standard": false, "custom": true },
+      { "feature": "交付速度", "standard": "更快", "custom": "按方案而定" }
+    ]
+  },
+  "relatedLinks": [
+    { "label": "定制训练塔", "desc": "从构思到竣工，按精确要求打造专属火场。" },
+    { "label": "燃烧室与衬里", "desc": "安全、真实的实战燃烧环境与热防护方案。" },
+    { "label": "塔型设计中心", "desc": "浏览塔型规格、立面与平面图资料。" }
+  ],
+  "cta": {
+    "title": "想要量身定制的塔型？",
+    "description": "每一处尺寸、门窗与布局都可由您决定 —— 打造属于您的训练设施。",
+    "customLink": "了解定制训练塔"
+  }
+}

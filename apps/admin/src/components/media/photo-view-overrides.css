@@ -1,0 +1,18 @@
+/* 图片预览顶栏与关闭按钮始终可见（避免 clean 模式下需 hover 才出现） */
+.PhotoView-Portal {
+  z-index: 9999 !important;
+}
+
+.PhotoView-Slider__BannerWrap,
+.PhotoView-Slider__clean .PhotoView-Slider__BannerWrap {
+  opacity: 1 !important;
+}
+
+.PhotoView-Slider__toolbarIcon {
+  cursor: pointer;
+}
+
+/* 工具栏已含「关闭」，隐藏库默认 X 避免重复 */
+.PhotoView-Slider__BannerRight > .PhotoView-Slider__toolbarIcon {
+  display: none;
+}

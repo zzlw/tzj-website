@@ -1,0 +1,66 @@
+{
+  "meta": {
+    "title": "Custom Training Tower",
+    "description": "TZJ custom fixed training towers—collaborative design and build from concept to completion, tailored to your exact requirements and budget."
+  },
+  "hero": {
+    "eyebrow": "Fixed Tower · Custom",
+    "title": "Custom Training Tower",
+    "description": "From concept to completion, TZJ consultants work directly with your team to design and build a tower to your exact specifications."
+  },
+  "customSection": {
+    "eyebrow": "Deep customization",
+    "title": "Every detail, defined by you",
+    "description": "We assess and integrate your unit and regional requirements. Every live-fire training tower is designed and built to your exact specifications within budget."
+  },
+  "features": [
+    "Multiple roof forms available",
+    "Custom facade and trim colors",
+    "Custom training props",
+    "Structural design for high wind loads per building code",
+    "Joint design for specific scenario requirements",
+    "Engineering to seismic and wind load standards"
+  ],
+  "capabilitiesSection": {
+    "eyebrow": "Custom philosophy",
+    "title": "Spec-ready · Built on demand",
+    "description": "Four customization capabilities so your tower truly fits your mission, site, and future growth."
+  },
+  "capabilities": [
+    {
+      "title": "Spec-ready design",
+      "desc": "Structural engineering to seismic and wind load requirements for domestic and international projects."
+    },
+    {
+      "title": "Built on demand",
+      "desc": "Design and manufacturing teams create custom layouts, scenarios, and props around your mission objectives."
+    },
+    {
+      "title": "Fully customizable",
+      "desc": "Structure integrates training props and options; partner integration for specialized scenarios."
+    },
+    {
+      "title": "Expandable design",
+      "desc": "Add-on structures grow with your department; introduce advanced programs through increasing realism."
+    }
+  ],
+  "relatedLinks": [
+    {
+      "label": "Standard tower series",
+      "desc": "Quick selection from preset layouts or as a custom starting point."
+    },
+    {
+      "label": "Burn rooms & liners",
+      "desc": "Safe, realistic live-fire environments and thermal protection."
+    },
+    {
+      "label": "Project cases",
+      "desc": "Custom training facilities we have delivered."
+    }
+  ],
+  "cta": {
+    "title": "Start designing your custom tower",
+    "description": "Tell us your site, training programs, and budget—our engineers and fire service experts will design for you.",
+    "secondaryLabel": "View standard tower series"
+  }
+}

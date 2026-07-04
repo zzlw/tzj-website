@@ -1,0 +1,35 @@
+{
+  "meta": {
+    "titleSuffix": "训练解决方案"
+  },
+  "hero": {
+    "eyebrowPrefix": "解决方案 · "
+  },
+  "intro": {
+    "eyebrow": "需求洞察",
+    "titleSuffix": "需要怎样的训练设施"
+  },
+  "focus": {
+    "eyebrow": "关注重点",
+    "title": "我们如何贴合您的任务"
+  },
+  "recommended": {
+    "eyebrow": "推荐配置",
+    "title": "为您推荐的训练设施组合",
+    "description": "以下产品可组合成贴合您需求的整体训练方案，也可按场地与预算分期建设。"
+  },
+  "programs": {
+    "eyebrow": "典型科目",
+    "title": "可支撑的训练科目",
+    "caseLink": "查看相关工程案例"
+  },
+  "others": {
+    "title": "其他客户解决方案"
+  },
+  "cta": {
+    "titlePrefix": "为",
+    "titleSuffix": "定制专属训练方案",
+    "description": "告诉我们您的场地、科目与预算，我们的工程师与消防专家团队将为您量身设计整体方案。",
+    "backLink": "返回全部解决方案"
+  }
+}

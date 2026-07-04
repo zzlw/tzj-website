@@ -1,0 +1,535 @@
+@import "tailwindcss";
+@import "@tzj/ui/globals.css";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "overlayscrollbars/overlayscrollbars.css";
+
+/* Tailwind v4 默认只扫描本 app；显式纳入共享 UI 包源码，
+   否则 Select/Dialog 等仅在 @tzj/ui 中使用的工具类不会被生成 */
+@source "../../../../packages/ui/src";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * TZJ C 端主题 — Rosenbauer 工业浅色风格
+ * 参考 rosenbauer.com：白底 / 黑字 / 品牌红，锐利边角、流体大标题、
+ * 媒体深色渐变遮罩、动画图标按钮。
+ *
+ * 字体说明：Rosenbauer 官方使用专有授权字体 "Corporate S"。为符合版权与
+ * 业内最佳实践，此处改用开源工业感无衬线 Archivo 复刻其排版语言，中文回退到
+ * 系统黑体类字体。
+ */
+
+:root {
+  color-scheme: light;
+
+  /* ── 字体（next/font 注入 --font-geist / --font-archivo，中文回退系统黑体） ── */
+  --font-sans: var(--font-geist), "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-archivo), "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, -apple-system, sans-serif;
+
+  /* ── 基础语义色（浅色） ── */
+  --background: #ffffff;
+  --foreground: #1c1c1c;
+  --card: #ffffff;
+  --card-foreground: #1c1c1c;
+  --popover: #ffffff;
+  --popover-foreground: #1c1c1c;
+
+  /* 品牌红 */
+  --primary: #e3000f;
+  --primary-hover: #d4000e;
+  --primary-foreground: #ffffff;
+  /* 小字/标签用更深红，满足 WCAG AA 对比度（白底 ≥ 4.5:1） */
+  --primary-accessible: #b8000c;
+
+  --secondary: #f7f7f7;
+  --secondary-foreground: #1c1c1c;
+  --muted: #f7f7f7;
+  --muted-foreground: #5b6166;
+  --accent: #e0e0e0;
+  --accent-foreground: #1c1c1c;
+  --destructive: #e3000f;
+
+  --border: #e8e8e8;
+  --border-strong: #d4d4d4;
+  --input: #e8e8e8;
+  --ring: #d4000e;
+
+  /* 面板 / 次要文字 */
+  --surface: #f7f7f7;
+  --surface-hover: #efefef;
+  --secondary-text: #5b6166;
+  --text: #1c1c1c;
+
+  /* Rosenbauer 中性灰阶 */
+  --neutral-100: #f7f7f7;
+  --neutral-300: #e8e8e8;
+  --neutral-500: #b1b3b4;
+  --neutral-700: #2e363a;
+  --neutral-900: #1c1c1c;
+
+  /* 媒体遮罩（自底向上的深色 scrim：顶部通透保留画面，底部足够深保证白字可读） */
+  --media-shade: linear-gradient(
+    to top,
+    rgba(10, 10, 10, 0.88) 0%,
+    rgba(10, 10, 10, 0.55) 26%,
+    rgba(10, 10, 10, 0.18) 52%,
+    rgba(10, 10, 10, 0) 78%
+  );
+  --media-shade-strong: linear-gradient(
+    to top,
+    rgba(10, 10, 10, 0.9) 0%,
+    rgba(10, 10, 10, 0.62) 32%,
+    rgba(10, 10, 10, 0.34) 60%,
+    rgba(10, 10, 10, 0.15) 85%,
+    rgba(10, 10, 10, 0.05) 100%
+  );
+
+  --chart-1: #e3000f;
+  --chart-2: #2e363a;
+  --chart-3: #b1b3b4;
+  --chart-4: #d4d4d4;
+  --chart-5: #e8e8e8;
+
+  --radius: 0.25rem;
+
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1c1c1c;
+  --sidebar-primary: #e3000f;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f7f7f7;
+  --sidebar-accent-foreground: #1c1c1c;
+  --sidebar-border: #e8e8e8;
+  --sidebar-ring: #d4000e;
+
+  /* 固定 Header 与产品中心吸顶导航 — 全站统一偏移量 */
+  --site-header-height: 4rem;
+  --site-header-offset: var(--site-header-height);
+  --product-hub-nav-height: 5.75rem;
+  --product-line-nav-height: 3.25rem;
+  --header-hide-duration: 400ms;
+  --header-hide-ease: cubic-bezier(0.75, 0, 0.35, 1);
+}
+
+html[data-header-hidden] {
+  --site-header-offset: 0px;
+}
+
+/* Rosenbauer 式顶栏：向下滚动隐藏 / 向上滚动显示 */
+.site-header {
+  transform: translate3d(0, 0, 0);
+  transition:
+    transform var(--header-hide-duration) var(--header-hide-ease),
+    box-shadow 0.3s ease,
+    border-color 0.3s ease;
+  backface-visibility: hidden;
+}
+
+html[data-header-hidden] .site-header {
+  transform: translate3d(0, -100%, 0);
+}
+
+.product-hub-nav {
+  top: var(--site-header-height);
+  transition: top var(--header-hide-duration) var(--header-hide-ease);
+}
+
+html[data-header-hidden] .product-hub-nav {
+  top: 0;
+}
+
+.product-line-nav {
+  top: var(--site-header-offset);
+  transition: top var(--header-hide-duration) var(--header-hide-ease);
+}
+
+html[data-header-hidden] .product-line-nav {
+  top: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-header,
+  .product-hub-nav,
+  .product-line-nav {
+    transition: none;
+  }
+}
+
+@media (min-width: 768px) {
+  :root {
+    --product-hub-nav-height: 3.25rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --site-header-height: 5rem;
+  }
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--background);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Radix Select/Dialog 打开时会通过 RemoveScroll 给 body 加 margin/padding 补偿滚动条；
+   与 scrollbar-gutter: stable 叠加会导致页面宽度闪烁，此处取消二次补偿（须置于 @layer 外以覆盖注入样式） */
+body[data-scroll-locked] {
+  margin-right: 0 !important;
+  padding-right: 0 !important;
+}
+
+/* 标题统一使用展示字体（放入 base 层，确保 text-white 等工具类可覆盖默认色） */
+@layer base {
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: 0;
+    color: var(--neutral-900);
+  }
+}
+
+/* OverlayScrollbars — TZJ 工业浅色主题（锐利直角、中性灰、hover 品牌红） */
+.os-theme-tzj {
+  --os-size: 8px;
+  --os-padding-perpendicular: 2px;
+  --os-padding-axis: 4px;
+  --os-track-border-radius: 0;
+  --os-handle-border-radius: 0;
+  --os-track-bg: transparent;
+  --os-track-bg-hover: transparent;
+  --os-track-bg-active: transparent;
+  --os-handle-bg: color-mix(in srgb, var(--neutral-500) 88%, transparent);
+  --os-handle-bg-hover: var(--neutral-700);
+  --os-handle-bg-active: var(--primary);
+  --os-handle-min-size: 40px;
+  --os-handle-interactive-area-offset: 4px;
+}
+
+/* 局部滚动容器（抽屉/表格等）— 与全站滚动条视觉对齐的原生 thin 样式 */
+.rb-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--neutral-500) transparent;
+}
+.rb-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.rb-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.rb-scroll::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--neutral-500) 88%, transparent);
+  border-radius: 0;
+}
+.rb-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--neutral-700);
+}
+
+/* 自定义清除按钮时隐藏 type=search 原生取消图标，避免双 X 重叠 */
+.search-input-no-native-clear {
+  -webkit-appearance: none;
+  appearance: none;
+}
+.search-input-no-native-clear::-webkit-search-cancel-button,
+.search-input-no-native-clear::-webkit-search-decoration,
+.search-input-no-native-clear::-webkit-search-results-button,
+.search-input-no-native-clear::-webkit-search-results-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
+  height: 0;
+  width: 0;
+}
+.search-input-no-native-clear::-ms-clear,
+.search-input-no-native-clear::-ms-reveal {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+::selection {
+  background-color: var(--primary);
+  color: #ffffff;
+}
+
+@theme inline {
+  --font-heading: var(--font-display);
+  --font-display: var(--font-display);
+  --font-sans: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-accessible: var(--primary-accessible);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-border-strong: var(--border-strong);
+  --color-secondary-text: var(--secondary-text);
+  --color-text: var(--text);
+  --color-neutral-100: var(--neutral-100);
+  --color-neutral-300: var(--neutral-300);
+  --color-neutral-500: var(--neutral-500);
+  --color-neutral-700: var(--neutral-700);
+  --color-neutral-900: var(--neutral-900);
+  /* Rosenbauer 锐利边角 */
+  --radius-sm: 2px;
+  --radius-md: 2px;
+  --radius-lg: 4px;
+  --radius-xl: 4px;
+  --radius-2xl: 6px;
+  --radius-3xl: 8px;
+  --radius-4xl: 10px;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+    /* 全站使用 OverlayScrollbars overlay 滚动条，不再预留原生滚动条槽位 */
+  }
+  /* Tailwind v4 取消了按钮默认的 pointer 手势，这里统一补回 */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  label[for],
+  summary {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+}
+
+@layer components {
+  /* ── 流体标题排版（对齐 Rosenbauer 比例） ── */
+  .rb-display {
+    font-family: var(--font-display);
+    font-weight: 700;
+    line-height: 1.05;
+    font-size: clamp(2.25rem, 3.17vw + 1.4rem, 4.5rem);
+  }
+  .rb-h1 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    line-height: 1.1;
+    font-size: clamp(2rem, 3.17vw + 1.17rem, 4rem);
+  }
+  .rb-h2 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    line-height: 1.1;
+    font-size: clamp(1.63rem, 1.43vw + 1.25rem, 2.75rem);
+  }
+  .rb-h3 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    line-height: 1.3;
+    font-size: clamp(1.25rem, 1.11vw + 0.96rem, 2.13rem);
+  }
+  .rb-h4 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    line-height: 1.3;
+    font-size: clamp(1.13rem, 0.63vw + 0.96rem, 1.63rem);
+  }
+  .rb-h5 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    line-height: 1.4;
+    font-size: clamp(1rem, 0.32vw + 0.92rem, 1.25rem);
+  }
+
+  /* 红色 uppercase 眉标 */
+  .rb-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--primary-accessible);
+    font-weight: 700;
+    font-size: 0.75rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  .rb-eyebrow::before {
+    content: "";
+    width: 1.75rem;
+    height: 2px;
+    background: var(--primary);
+  }
+
+  /* 媒体深色遮罩 */
+  .rb-media-shade {
+    background-image: var(--media-shade);
+  }
+  .rb-media-shade-strong {
+    background-image: var(--media-shade-strong);
+  }
+
+  /* 图上叠字：轻微阴影做兜底，配合 scrim 保证任意图片上文字可读（text-shadow 可被子元素继承） */
+  .rb-on-media {
+    text-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.45),
+      0 2px 18px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Rosenbauer control-icon：白底方钮 + 阴影 + 斜切 hover */
+  .rb-control-icon {
+    appearance: none;
+    position: relative;
+    display: inline-grid;
+    place-items: center;
+    padding: 1rem;
+    font-size: 1rem;
+    color: #1c1c1c;
+    background-color: #fff;
+    border: none;
+    border-radius: 0.25rem;
+    overflow: hidden;
+    box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.2);
+    transition: color 0.2s ease;
+  }
+  .rb-control-icon::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: skew(-30deg) scaleX(1.5) translateX(-200%);
+    background: #f7f7f7;
+    transition: transform 0.33s cubic-bezier(0.75, 0, 0.35, 1);
+    z-index: 1;
+  }
+  .rb-control-icon:hover::before,
+  .rb-control-icon:focus-visible::before {
+    transform: skew(-30deg) scaleX(1.5);
+  }
+  .rb-control-icon:active::before {
+    background: #e8e8e8;
+  }
+  .rb-control-icon:focus-visible {
+    outline: 1px solid #1c1c1c;
+    outline-offset: 2px;
+  }
+  .rb-control-icon__icon {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* 内容列表（新闻等）— 灰底 + 白卡片行，避免与背景割裂 */
+  .rb-content-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    background-color: var(--neutral-100);
+    padding: 0.5rem;
+  }
+  @media (min-width: 640px) {
+    .rb-content-list {
+      gap: 0.625rem;
+      padding: 0.625rem;
+    }
+  }
+  .rb-content-list-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    background-color: #ffffff;
+    padding: 2rem 1.5rem;
+    transition: background-color 0.2s ease;
+  }
+  .rb-content-list-row:hover {
+    background-color: var(--neutral-100);
+  }
+  @media (min-width: 640px) {
+    .rb-content-list-row {
+      padding: 2.5rem 2rem;
+    }
+  }
+  @media (min-width: 768px) {
+    .rb-content-list-row {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      gap: 2rem;
+    }
+  }
+  @media (min-width: 1024px) {
+    .rb-content-list-row {
+      padding: 2.5rem 2.5rem;
+    }
+  }
+}
+
+/* 产品中心吸顶导航下方的锚点偏移（Header + 二级导航） */
+.scroll-mt-below-sticky-hub {
+  scroll-margin-top: calc(var(--site-header-offset) + var(--product-hub-nav-height));
+}
+
+.scroll-mt-below-product-line-nav {
+  scroll-margin-top: calc(var(--site-header-offset) + var(--product-line-nav-height));
+}
+
+.rb-product-line-nav-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x;
+  scrollbar-width: none;
+}
+.rb-product-line-nav-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* 产品中心桌面端横向 Tab 滚动（移动端改用换行网格，避免 iOS 嵌套滚动失效） */
+.rb-product-hub-nav-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x;
+  scrollbar-width: none;
+}
+.rb-product-hub-nav-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* 标题在浅色背景上的默认色已由 h1-h6 规则给出，
+   覆盖在媒体上的反白文字由组件用 text-white 处理 */

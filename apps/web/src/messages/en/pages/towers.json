@@ -1,0 +1,24 @@
+{
+  "meta": {
+    "title": "Products",
+    "description": "TZJ's 13 product lines — training towers, live-fire burn, specialized scenarios, and training equipment covering everything fire, police, military, and other teams need for training complexes."
+  },
+  "hero": {
+    "eyebrow": "Products · 13 Product Lines",
+    "title": "Everything your training complex needs",
+    "description": "Four categories, thirteen product lines — from industrial-grade training towers and building structures to live-fire burn, specialized scenarios, and training equipment. One-stop solutions for fire, police, military, and other teams."
+  },
+  "breadcrumb": {
+    "current": "Products"
+  },
+  "overview": {
+    "eyebrow": "Product matrix",
+    "title": "Four categories · Thirteen product lines",
+    "description": "From training towers and structures to live-fire burn, specialized scenarios, and training equipment — browse all product lines by category to find the right fit for your complex."
+  },
+  "cta": {
+    "title": "Not sure which product is right for you?",
+    "description": "Speak with our engineers and fire service experts to determine the best training facility combination for your site, disciplines, and budget.",
+    "secondaryLabel": "View solutions"
+  }
+}

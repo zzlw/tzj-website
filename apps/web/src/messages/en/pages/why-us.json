@@ -1,0 +1,118 @@
+{
+  "meta": {
+    "title": "Why TZJ",
+    "description": "TZJ — built by fire service and engineering experts for fire training. Three pillars of expertise, innovation, and quality deliver steel training facilities built to last."
+  },
+  "hero": {
+    "eyebrow": "Why TZJ",
+    "title": "Training towers built for fire service",
+    "description": "No one has built more steel training towers than TZJ. We are not just a vendor — we are fire training specialists. Designing, manufacturing, and installing better training solutions is all we do."
+  },
+  "pillarsSection": {
+    "eyebrow": "Built to Last",
+    "title": "Three pillars of TZJ training facilities",
+    "description": "Three qualities that set TZJ apart:"
+  },
+  "pillars": [
+    {
+      "title": "Expertise",
+      "desc": "We understand how many decisions go into investing in a training solution. From pre-sales planning through after-sales support, we provide a clear, direct turnkey process at every step. Most importantly — every tower we build is designed specifically for the fire service by firefighters, engineers, and construction specialists.",
+      "points": [
+        "Full turnkey process",
+        "Aligned with NFPA 1400/1402 and international standards",
+        "Compliance inspection services available"
+      ]
+    },
+    {
+      "title": "Innovation",
+      "desc": "To keep your training equipment as safe, rugged, and durable as possible, we continuously develop new products and improve existing ones. We collaborate with you and listen to your evolving needs.",
+      "points": [
+        "Interlocking thermal liner system",
+        "Modular training structures",
+        "Hazmat training tools"
+      ]
+    },
+    {
+      "title": "Quality",
+      "desc": "We want your investment to be low-maintenance and high-value. We build training towers with distinctive processes engineered to withstand time and fire.",
+      "points": [
+        "Heavy-gauge corrugated structural wall panels",
+        "Hot-dip galvanized steel for corrosion resistance",
+        "Secondary frame system for added rigidity"
+      ]
+    }
+  ],
+  "mission": {
+    "eyebrow": "Mission",
+    "body": "Committed to quality, innovation, and expertise — we design and build training facilities that support the emergency responders who protect our communities."
+  },
+  "vision": {
+    "eyebrow": "Vision",
+    "body": "To lead the emergency response training industry, continuously raising safety standards and building lasting partnerships with our customers."
+  },
+  "valuesSection": {
+    "eyebrow": "Core Values"
+  },
+  "values": [
+    "Safety",
+    "Quality",
+    "Integrity",
+    "Reliability",
+    "Collaboration"
+  ],
+  "productsSection": {
+    "eyebrow": "Our Products",
+    "title": "A product matrix covering the full training spectrum"
+  },
+  "products": [
+    {
+      "title": "Fixed Training Tower",
+      "desc": "Modern fireground tactics built into standard tower packages — choose preset layouts or deep customization.",
+      "href": "/fixed-tower"
+    },
+    {
+      "title": "Modular Training Tower",
+      "desc": "Unlike shipping containers, modular systems are purpose-built for emergency responders — all-galvanized steel frames with open floor plans and movable walls and doors.",
+      "href": "/modular-tower"
+    },
+    {
+      "title": "Interlocking Thermal Liner",
+      "desc": "Calcium silicate liner system combining a hard-wearing surface with factory-grade moisture protection for daily live-fire training.",
+      "href": "/burn-rooms"
+    },
+    {
+      "title": "Training Props & Accessories",
+      "desc": "From breach points to balconies, attics to elevator shafts — nearly unlimited fixtures, add-ons, and props to build the simulators you need.",
+      "href": "/accessories"
+    }
+  ],
+  "exploreSection": {
+    "eyebrow": "Learn More",
+    "title": "More about TZJ"
+  },
+  "explore": [
+    {
+      "title": "Our Story",
+      "desc": "A history of continuous innovation and sustained growth.",
+      "href": "/why-us/story"
+    },
+    {
+      "title": "Leadership Team",
+      "desc": "A professional team of fire service, engineering, and construction experts.",
+      "href": "/why-us/team"
+    },
+    {
+      "title": "Certifications",
+      "desc": "Industry certifications and management system credentials earned through rigorous standards.",
+      "href": "/why-us/certification"
+    },
+    {
+      "title": "Global Reach",
+      "desc": "1000+ training complex projects across 31 provinces and international markets.",
+      "href": "/why-us/global"
+    }
+  ],
+  "cta": {
+    "title": "Trust your project to a partner who delivers"
+  }
+}

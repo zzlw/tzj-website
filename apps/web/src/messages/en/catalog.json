@@ -1,0 +1,89 @@
+{
+  "catalog": {
+    "families": {
+      "towers": {
+        "title": "Towers & Structures",
+        "description": "Industrial steel building systems — from multi-story live-fire towers to climbing towers and education centers, forming the backbone of your training base."
+      },
+      "burn": {
+        "title": "Live Fire & Burn Training",
+        "description": "Safe, controlled live-fire and fire-behavior training — interlocking liners, CFBT, and simulation systems for high-intensity realistic drills."
+      },
+      "specialized": {
+        "title": "Specialized Scenario Training",
+        "description": "Highly specialized scenarios for specific missions — maritime, tactical, hazmat, rope rescue, and psychological training, realistic and repeatable."
+      },
+      "accessories": {
+        "title": "Training Equipment & Props",
+        "description": "Props, fitness equipment, and competition facilities — completing the loop from physical conditioning to operational training."
+      }
+    },
+    "lines": {
+      "fixed-tower": {
+        "title": "Fixed Training Tower (Steel Structure)",
+        "shortTitle": "Fixed Tower",
+        "description": "Industrial hot-dip galvanized steel, standard and custom — the most durable multi-story live-fire training structure."
+      },
+      "modular-tower": {
+        "title": "Modular Training Tower",
+        "shortTitle": "Modular Tower",
+        "description": "Open floor plans without interior load-bearing walls — reconfigure walls, doors, and windows; expand in phases as needs grow."
+      },
+      "climbing-tower": {
+        "title": "Police & SWAT Climbing Tower",
+        "shortTitle": "Climbing Tower",
+        "description": "Climbing tower structures for police, SWAT, and military — integrating climbing, rappelling, and tactical entry into the design."
+      },
+      "education-center": {
+        "title": "Fire Safety Education Center",
+        "shortTitle": "Education Center",
+        "description": "Immersive fire safety education experiences for schools and the public — learning through hands-on engagement."
+      },
+      "burn-rooms": {
+        "title": "Burn Room · Interlocking Liner",
+        "shortTitle": "Burn Room",
+        "description": "Calcium silicate interlocking insulation liners — high heat resistance, low maintenance, built for safe realistic live-fire training."
+      },
+      "cfbt": {
+        "title": "CFBT Fire Behavior Training",
+        "shortTitle": "CFBT",
+        "description": "Fire behavior recognition and control training — helping students understand fire development and tactical decision-making."
+      },
+      "fire-simulation": {
+        "title": "Fire Simulation Training Systems",
+        "shortTitle": "Fire Simulation",
+        "description": "Programmable smoke, heat, and alarm systems that recreate complex fire and evacuation scenarios in a controlled environment."
+      },
+      "maritime": {
+        "title": "Maritime Training Facilities",
+        "shortTitle": "Maritime",
+        "description": "Ship compartments, decks, and confined-space rescue scenarios for realistic maritime and port firefighting training."
+      },
+      "tactical": {
+        "title": "Tactical Training Facilities",
+        "shortTitle": "Tactical",
+        "description": "Reconfigurable tactical scenarios — breaching, CQB, and high-angle rope work for police and SWAT operational training."
+      },
+      "hazmat": {
+        "title": "Hazmat Training Facilities",
+        "shortTitle": "Hazmat",
+        "description": "Leak, plug, and decontamination scenarios for multi-agency hazmat response drills."
+      },
+      "rope-rescue": {
+        "title": "Mountain & Rope Rescue Facilities",
+        "shortTitle": "Rope Rescue",
+        "description": "High-angle, cliff, and confined-space rescue training for mountain and rope rescue disciplines."
+      },
+      "psychological": {
+        "title": "Psychological Challenge Course",
+        "shortTitle": "Psychological",
+        "description": "High-altitude bridges, trust falls, and team-building elements to strengthen coordination and mental resilience."
+      },
+      "accessories": {
+        "title": "Training Equipment & Props",
+        "shortTitle": "Equipment",
+        "description": "Heat and smoke, escape, search, forcible entry, and fitness competition equipment to complete your training base."
+      }
+    }
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "meta": {
+    "title": "Certifications",
+    "description": "TZJ holds ISO 9001, High-Tech Enterprise, and Work Safety Standardization certifications — earning customer trust through rigorous standards."
+  },
+  "hero": {
+    "eyebrow": "Why TZJ · Certifications",
+    "title": "Certifications",
+    "description": "ISO 9001, High-Tech Enterprise, Work Safety Standardization, and more — earning customer trust through rigorous standards."
+  },
+  "certsSection": {
+    "eyebrow": "Credentials & Systems",
+    "title": "Commitments you can verify"
+  },
+  "certs": [
+    {
+      "title": "ISO 9001 Quality Management",
+      "desc": "Standardized quality management system ensuring controlled design, manufacturing, and installation processes."
+    },
+    {
+      "title": "High-Tech Enterprise Certification",
+      "desc": "Continuous R&D investment with proprietary technology in thermal liner, modular systems, and more."
+    },
+    {
+      "title": "Multiple Patents",
+      "desc": "Utility model and design patents covering tower structures, liner systems, and training props."
+    },
+    {
+      "title": "Work Safety Standardization",
+      "desc": "Strict safety protocols ensuring quality and safety in production and on-site installation."
+    }
+  ],
+  "valueSection": {
+    "eyebrow": "Value of Certification",
+    "title": "What certification means for customers"
+  },
+  "value": [
+    {
+      "title": "Quality & Integrity",
+      "desc": "Rigorous certification processes affirm our commitment to quality, strategic planning, and ethical business practices."
+    },
+    {
+      "title": "Trusted Partnership",
+      "desc": "Customers can be confident that TZJ meets strict industry and operational standards."
+    },
+    {
+      "title": "Mission-Driven",
+      "desc": "Safety, precision, and innovation guide every project we deliver."
+    }
+  ],
+  "relatedLinks": [
+    {
+      "label": "Warranty Service",
+      "desc": "Integrated design, manufacturing, and installation warranty."
+    },
+    {
+      "label": "Annual Inspection Service",
+      "desc": "Professional inspections ensuring long-term compliance and safety."
+    },
+    {
+      "label": "Our Story",
+      "desc": "16 years of growth and innovation."
+    }
+  ],
+  "cta": {
+    "title": "Need credentials or inspection reports?",
+    "description": "Contact our team for project-specific certifications and compliance documentation."
+  }
+}

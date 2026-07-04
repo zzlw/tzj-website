@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "title": "Mountain & Rope Rescue Training Facilities",
+    "description": "TZJ mountain and rope rescue training facilities — replicating cliffs, elevation changes, and shafts to train rope skills, high-angle transfer, and litter rescue."
+  },
+  "hero": {
+    "eyebrow": "Specialized Training · Rope Rescue",
+    "title": "Mountain & Rope Rescue Training Facilities",
+    "description": "Bring cliffs, elevation changes, and shafts to the training ground — hone rope skills and high-angle rescue capability in a controlled environment.",
+    "imageAlt": "Mountain and rope rescue training facilities"
+  },
+  "breadcrumb": {
+    "parent": "Specialized Training",
+    "current": "Mountain & Rope Rescue Training Facilities"
+  },
+  "jsonLd": {
+    "productName": "Mountain & Rope Rescue Training Facilities",
+    "productDescription": "Replicating cliffs, elevation changes, and shafts to train rope skills, high-angle transfer, and litter rescue."
+  },
+  "overview": {
+    "eyebrow": "Higher and Deeper",
+    "title": "Rescue capability in complex terrain",
+    "description": "Mountain and high-angle rescue leaves no room for error. Only repeated training in terrain close to reality builds instinctive rope skills and team coordination.",
+    "lead": "Multi-path, multi-anchor, multi-elevation design supporting a complete training system from individual technique to team coordination.",
+    "body": "Belay stations and fall-protection redundancy enable high-intensity training of high-risk disciplines within safe boundaries."
+  },
+  "featuresSection": {
+    "eyebrow": "Core Features",
+    "title": "Six capabilities of rope rescue facilities"
+  },
+  "features": [
+    {
+      "title": "Complex Terrain Replication",
+      "desc": "Simulates cliffs, steep slopes, elevation changes, and shafts — close to real mountain rescue environments."
+    },
+    {
+      "title": "Vertical Lift & Transfer",
+      "desc": "Systematic training for descent, ascent, traverse, and haul rope techniques."
+    },
+    {
+      "title": "Diverse Anchor Systems",
+      "desc": "Pre-installed reliable anchors and deviation points for anchor building and system rigging training."
+    },
+    {
+      "title": "Litter Rescue",
+      "desc": "Supports vertical and diagonal litter transfer, casualty packaging, and escort disciplines."
+    },
+    {
+      "title": "Multi-Path Design",
+      "desc": "Multiple ascent/descent paths supporting team coordination and complex rescue drills."
+    },
+    {
+      "title": "Safety Assurance",
+      "desc": "Belay stations, fall-protection systems, and safety redundancy for high-risk disciplines."
+    }
+  ],
+  "programsSection": {
+    "eyebrow": "Training Disciplines",
+    "title": "Supported training disciplines"
+  },
+  "programs": [
+    "Rope descent, ascent, and traverse",
+    "Anchor building and system rigging",
+    "Vertical / diagonal litter transfer",
+    "Casualty packaging and escort",
+    "Shaft and confined-space vertical rescue",
+    "Team coordination and command"
+  ],
+  "relatedLinks": [
+    {
+      "label": "Psychological Expansion Training",
+      "desc": "High-angle courses building will and courage."
+    },
+    {
+      "label": "Mining Rescue Solutions",
+      "desc": "Underground and shaft vertical rescue."
+    },
+    {
+      "label": "Fixed Training Tower (Steel)",
+      "desc": "Multi-level high-angle training structure."
+    }
+  ],
+  "cta": {
+    "title": "Customize your rope rescue training ground",
+    "description": "Tell us your rescue mission and site conditions — we'll design rope rescue facilities tailored to your needs."
+  }
+}

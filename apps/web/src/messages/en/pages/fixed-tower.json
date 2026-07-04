@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "title": "Fixed Training Tower",
+    "description": "TZJ fixed steel fire training towers — standard models and deep customization aligned with NFPA 1400/1402 and international fire training standards. Built to last for generations."
+  },
+  "hero": {
+    "eyebrow": "Fixed Training Tower",
+    "title": "The most durable fixed fire training towers",
+    "description": "Standard or custom — no one has built more fixed training towers than TZJ. Designing training solutions purpose-built for fire service is all we do."
+  },
+  "breadcrumb": {
+    "current": "Fixed Training Tower"
+  },
+  "jsonLd": {
+    "productName": "Fixed Training Tower",
+    "productDescription": "TZJ fixed steel fire training towers with standard models and deep customization, aligned with NFPA 1400/1402 international fire training standards."
+  },
+  "overview": {
+    "eyebrow": "Standard · Custom",
+    "title": "Training towers built for fire service",
+    "description": "We study the most common tactical scenarios in modern firegrounds and integrate them into our standard tower packages. Every tower is designed to NFPA 1400/1402 and related international standards for exceptional live-fire training.",
+    "lead": "We use industrial-grade steel building systems to deliver the toughest, most resilient, and most customizable steel fire training towers available.",
+    "body": "This building system has been proven in extreme environments for decades and continues to evolve — it remains the industry benchmark."
+  },
+  "series": {
+    "eyebrow": "Standard Tower Series",
+    "title": "15 preset layouts for fast deployment",
+    "description": "Choose directly from 15 preset layouts to accelerate your project, or start from any layout and customize it to your needs.",
+    "linkText": "View all standard tower models"
+  },
+  "standardFeatures": [
+    "Structured steel plate walls, bolted and ribbed for impact resistance",
+    "Fully galvanized steel frame for extended service life",
+    "Burn rooms with no size or structural limits — rated for temperatures up to 1100°C"
+  ],
+  "custom": {
+    "eyebrow": "Custom Training Tower",
+    "title": "A live-fire environment tailored to your team",
+    "description": "From concept to completion, TZJ consultants work directly with your team to assess and integrate the specific needs of your organization and region. Every live-fire training tower is designed and built to your exact requirements within budget.",
+    "linkText": "Learn about custom towers"
+  },
+  "customFeatures": [
+    "Multiple roof configurations available",
+    "Custom exterior finishes and base/trim color schemes",
+    "Custom training props",
+    "Structural design rated for 290+ km/h wind loads (per building code)"
+  ],
+  "compareSection": {
+    "title": "Which option is right for your team?"
+  },
+  "compare": {
+    "standard": {
+      "title": "Standard Tower",
+      "points": [
+        "Robust dual-frame, fully galvanized training facility",
+        "Full turnkey service from design through completion",
+        "Complete drawings and specs — any qualified builder can construct",
+        "Expandable with future add-ons",
+        "8 base colors, 12 trim colors",
+        "Optional training props",
+        "Up to 7 stories"
+      ]
+    },
+    "custom": {
+      "title": "Custom Tower",
+      "points": [
+        "(Includes all standard tower features, plus:)",
+        "Custom building appearance and facade",
+        "Customizable floor plans",
+        "Co-design for specific scenario requirements",
+        "Engineered to seismic, wind load, and other code requirements"
+      ]
+    }
+  },
+  "relatedLinks": [
+    { "label": "Standard Tower Series", "desc": "Browse preset models for fast selection and deployment." },
+    { "label": "Custom Training Tower", "desc": "From concept to completion, built to your exact specs." },
+    { "label": "Burn Rooms & Liners", "desc": "Safe, realistic live-fire training environments." }
+  ],
+  "cta": {
+    "title": "Is a fixed training tower the best fit for your site?",
+    "description": "Speak with our engineers and fire service experts to determine the best training solution for your organization.",
+    "secondaryLink": "Explore modular training towers"
+  }
+}

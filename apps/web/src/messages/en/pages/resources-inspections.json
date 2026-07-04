@@ -1,0 +1,110 @@
+{
+  "meta": {
+    "title": "Annual Inspection Service",
+    "description": "TZJ annual inspection service for training towers and burn rooms — structural, burn room, and liner inspection by professional engineers with documented reports aligned with live-fire training facility standards."
+  },
+  "hero": {
+    "eyebrow": "Resources · Inspections",
+    "title": "Annual Inspection Service",
+    "description": "Regular inspection of structure, burn rooms, and liner with professional reports — keeping every live-fire drill safe."
+  },
+  "scheduleSection": {
+    "eyebrow": "Inspection Interval",
+    "title": "How often should you inspect?",
+    "description": "Based on live-fire training facility standards and engineering experience, we recommend periodic assessment by professionals with live-fire structure experience — documented in writing.",
+    "classA": {
+      "title": "Class A burn building",
+      "subtitle": "Fixed live-fire burn structure",
+      "interval": "Approx. every 5 years"
+    },
+    "classB": {
+      "title": "Class B burn building",
+      "subtitle": "Gas-simulated burn structure",
+      "interval": "Approx. every 10 years"
+    },
+    "footnote": "* Suggested intervals are reference only. Actual frequency should consider usage intensity, local requirements, and facility condition. We inspect metal, concrete, masonry, and container structures."
+  },
+  "reviewSection": {
+    "eyebrow": "Inspection Items",
+    "title": "Critical areas we inspect",
+    "description": "From structural shell to thermal liner — every critical area covered, no potential hazard overlooked."
+  },
+  "reviewItems": [
+    "Doors",
+    "Exterior seams",
+    "Windows",
+    "Roof",
+    "Burn room fasteners",
+    "Stairs",
+    "Walls and structural members",
+    "Guardrails",
+    "Thermal liner surfaces"
+  ],
+  "categoriesSection": {
+    "eyebrow": "Inspection Scope",
+    "title": "Five inspection categories and reporting"
+  },
+  "categories": [
+    {
+      "title": "Doors, Windows & Hardware",
+      "desc": "Visual inspection of doors, windows, hinges, closers, latches, and hardware for wear and function."
+    },
+    {
+      "title": "Structure & Building Envelope",
+      "desc": "Inspection of wall panels, roof panels, structural members, and overall envelope for wear, damage, and displacement."
+    },
+    {
+      "title": "Egress & Life Safety",
+      "desc": "Inspection of stairs, guardrails, ladders, and hatches including visible treads, sprinklers, and piping."
+    },
+    {
+      "title": "Panels & Fastening Systems",
+      "desc": "Inspection of thermal panels, panel positions, and fasteners; selective panel removal to inspect structure behind when needed."
+    },
+    {
+      "title": "Seals & Connections",
+      "desc": "Inspection of caulking, fasteners, and connections; sampling of installation quality and seal integrity."
+    },
+    {
+      "title": "Inspection Report",
+      "desc": "Illustrated report listing each finding with maintenance recommendations."
+    }
+  ],
+  "whySection": {
+    "eyebrow": "Why Annual Inspection",
+    "title": "The value of regular inspection"
+  },
+  "why": [
+    {
+      "title": "Ensure Safety",
+      "desc": "Training facilities endure repeated heat and mechanical loads — regular inspection finds hazards early and reduces risk."
+    },
+    {
+      "title": "Extend Service Life",
+      "desc": "Timely maintenance and local replacement significantly extend structure and liner life — protecting your investment."
+    },
+    {
+      "title": "Compliance & Traceability",
+      "desc": "Inspection reports provide documented basis for compliant operation and facility management."
+    }
+  ],
+  "relatedLinks": [
+    {
+      "label": "Warranty Service",
+      "desc": "Structural, liner, and accessory warranty details."
+    },
+    {
+      "label": "Interlocking Thermal Liner",
+      "desc": "Replaceable calcium silicate liner for easier maintenance."
+    },
+    {
+      "label": "Burn Room Retrofit",
+      "desc": "Upgrade legacy burn rooms to modern training facilities."
+    }
+  ],
+  "cta": {
+    "title": "Schedule annual inspection service",
+    "description": "Contact our team to develop an inspection and maintenance plan for your facility — keeping every live-fire drill safe.",
+    "secondaryLabel": "View warranty service"
+  }
+}

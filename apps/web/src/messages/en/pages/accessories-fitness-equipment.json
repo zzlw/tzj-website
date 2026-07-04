@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "title": "Fitness & Vestibular Training Equipment",
+    "description": "TZJ fitness and vestibular training equipment for fire, police, and military — strength conditioning and anti-vertigo training for high-angle, rotational, and high-intensity missions."
+  },
+  "hero": {
+    "eyebrow": "Training Equipment · Fitness",
+    "title": "Fitness & Vestibular Training Equipment",
+    "description": "Strong physical fitness and a stable vestibular system are foundational capabilities for high-angle, rotational, and high-intensity missions.",
+    "imageAlt": "Fitness and vestibular training equipment"
+  },
+  "breadcrumb": {
+    "parent": "Training Equipment",
+    "current": "Fitness & Vestibular Training Equipment"
+  },
+  "jsonLd": {
+    "productName": "Fitness & Vestibular Training Equipment",
+    "productDescription": "Strength conditioning and vestibular anti-vertigo training equipment for fire, police, and military."
+  },
+  "overview": {
+    "eyebrow": "Build Foundational Capability",
+    "title": "Fitness and vestibular stability — both essential",
+    "description": "High-angle work, aerial ladder climbing, and rotational rescue demand both physical fitness and vestibular stability. Systematic equipment training helps personnel stay steady and perform when it matters.",
+    "lead": "From strength and endurance to vestibular anti-vertigo training — covering foundational physical capabilities for high-risk missions.",
+    "body": "Graduated intensity settings suit daily conditioning as well as pre-event and pre-mission intensive camps."
+  },
+  "featuresSection": {
+    "eyebrow": "Core Features",
+    "title": "Six capabilities of fitness equipment"
+  },
+  "features": [
+    {
+      "title": "Strength Conditioning",
+      "desc": "Strength, endurance, and power equipment for comprehensive baseline fitness."
+    },
+    {
+      "title": "Vestibular Anti-Vertigo",
+      "desc": "Rotation and tumbling equipment to train vestibular function and stability in disorienting environments."
+    },
+    {
+      "title": "Balance & Coordination",
+      "desc": "Balance and coordination equipment for body control during complex movements."
+    },
+    {
+      "title": "Cardiovascular Endurance",
+      "desc": "Cardio training for high-intensity missions and sustained heavy workloads."
+    },
+    {
+      "title": "Adjustable Intensity",
+      "desc": "Graduated training intensity for different baselines and training phases."
+    },
+    {
+      "title": "Built to Last",
+      "desc": "Industrial-grade materials and construction for high-frequency use with easy maintenance."
+    }
+  ],
+  "programsSection": {
+    "eyebrow": "Training Disciplines",
+    "title": "Supported training disciplines"
+  },
+  "programs": [
+    "Strength and power training",
+    "Rotation / tumbling vestibular anti-vertigo training",
+    "Balance and coordination training",
+    "Cardiovascular endurance training",
+    "High-angle work stability training",
+    "Integrated fitness circuit training"
+  ],
+  "relatedLinks": [
+    {
+      "label": "Competition Training Facilities",
+      "desc": "Professional facilities aligned with competition rules."
+    },
+    {
+      "label": "Psychological Expansion Training",
+      "desc": "High-angle expansion courses that build will and courage."
+    },
+    {
+      "label": "Props & Accessories",
+      "desc": "Browse the full range of training props and accessories."
+    }
+  ],
+  "cta": {
+    "title": "Configure fitness training equipment for your team",
+    "description": "Tell us your training goals — we'll recommend the right fitness and vestibular equipment combination."
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "meta": {
+    "title": "Modular Training Tower",
+    "description": "TZJ MOD series modular fire training buildings feature hot-dip galvanized steel frames, open layouts, and stackable expansion—outlasting container conversion alternatives."
+  },
+  "hero": {
+    "eyebrow": "Modular Training Tower",
+    "title": "Modular Fire Training Buildings",
+    "description": "A modular training system built by firefighters for firefighters. Stackable, configurable, and expandable—maximum flexibility and value for your training program."
+  },
+  "overview": {
+    "eyebrow": "Built for fire service",
+    "title": "More than container conversion",
+    "description": "Many choose containers for perceived cost savings. The MOD series is purpose-built for fire training—structural integrity from a fully galvanized steel frame with open floor plans and no interior load-bearing walls.",
+    "lead": "Walls are independent of structure; doors and windows can be reconfigured freely. Service life exceeds stacked containers by more than double.",
+    "body": "Composite floors with slope and drainage design avoid the rot and corrosion common in stacked containers. An economical, grant-eligible solution that expands easily over time."
+  },
+  "seriesSection": {
+    "eyebrow": "Modular series",
+    "title": "Standard 8′ × 20′ × 8′6″ modules, freely combined",
+    "description": "Modules stack, position, and align in countless configurations to meet your training needs. Every building aligns with NFPA 1400/1402 and comparable live-fire training standards.",
+    "linkText": "View modular series details"
+  },
+  "series": [
+    { "name": "M Series", "desc": "Entry-level simulator for basic live-fire training; 2-story main tower plus single-story annex.", "spec": "24′W × 20′L footprint · 2 stories · 4 modules" },
+    { "name": "O Series", "desc": "Open floor plan for office/warehouse scenarios; 2-story residential/industrial units plus annex.", "spec": "40′W × 20′L footprint · 2 stories · 9+1 modules" },
+    { "name": "D Series", "desc": "Large open-span floor plan; 2-story residential/industrial units.", "spec": "32′W × 40′L footprint · 2 stories · 16 modules" },
+    { "name": "X Series", "desc": "4-story main tower plus 2-story residential/industrial units and single-story annex.", "spec": "56′W × 20′L footprint · 4 stories · 16 modules" }
+  ],
+  "compareSection": {
+    "eyebrow": "Modular vs. containers",
+    "title": "Better construction, longer life, greater flexibility",
+    "description": "Yes, containers can be adapted—but should firefighters face additional toxin exposure on top of an already high-risk profession?",
+    "linkText": "View full comparison",
+    "headers": { "feature": "Comparison item", "modular": "MOD modular series", "container": "Container conversion" }
+  },
+  "compareRows": [
+    { "label": "Structure protection", "modx": "Hot-dip galvanized steel; no recoating required", "container": "Rust begins at delivery; compromises structural capacity" },
+    { "label": "Layout & stacking", "modx": "Custom module sizes; stack up to 5 stories", "container": "Unrealistic layout—corridors too wide, rooms too small" },
+    { "label": "Materials & process", "modx": "Purpose-built with new materials; no welded assembly", "container": "Fumigation treatment; toxic coatings; hard to meet standards" },
+    { "label": "Drainage", "modx": "Sloped floors with integrated drainage", "container": "No interior drainage design; standing water" },
+    { "label": "Service life", "modx": "Built for durability; 50+ years", "container": "High conversion cost; ~15-year lifespan" }
+  ],
+  "customSection": {
+    "eyebrow": "Custom modular",
+    "title": "Modular construction proven over decades",
+    "description": "Built from new materials with more than double the lifespan of stacked containers. Galvanized steel frame supports open plans; walls, doors, and windows move, remove, or reconfigure.",
+    "linkText": "Learn about custom modular",
+    "lead": "Composite floors with slope, drainage, and engineering details avoid rot and corrosion common in stacked containers.",
+    "body": "High performance and quality departments already expect—delivered as an economical, grant-eligible solution with room to expand."
+  },
+  "relatedLinks": [
+    { "label": "Modular series", "desc": "M / O / D / X series in flexible combinations." },
+    { "label": "Modular vs. containers", "desc": "Full comparison from materials to load ratings." },
+    { "label": "Fixed training tower", "desc": "Durable multi-story steel training towers." }
+  ],
+  "cta": {
+    "title": "Design a modular training tower for your site",
+    "description": "Speak with our engineers and fire service experts to plan a modular solution tailored to your needs.",
+    "secondaryLink": "Explore burn room options"
+  }
+}

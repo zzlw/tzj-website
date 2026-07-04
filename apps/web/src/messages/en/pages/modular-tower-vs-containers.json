@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "title": "Modular vs Containers",
+    "description": "Compare TZJ modular training systems with container conversion — comprehensive comparison of interior space, materials, roof loads, and full lifecycle value."
+  },
+  "hero": {
+    "eyebrow": "Modular Training Tower · Comparison",
+    "title": "Modular vs Containers",
+    "description": "New materials and all-galvanized steel frames — longer life, more open space, and repeated reconfiguration that refurbished containers cannot match."
+  },
+  "overview": {
+    "eyebrow": "Better · Longer · More Flexible",
+    "title": "Why modular systems are the superior choice",
+    "description": "Modular systems use new materials and all-galvanized steel frames — longer life, more open space, and repeated reconfiguration that refurbished containers cannot match.",
+    "lead": "Containers were built for freight, not live-fire training. As training facilities, they often face corrosion, insufficient load capacity, difficult modification, and high secondary maintenance costs.",
+    "body": "Modular training systems are purpose-built for emergency training from day one: open floor plans, movable walls and doors, roof and floor designed for training loads — scenarios that grow freely with your mission."
+  },
+  "compareSection": {
+    "eyebrow": "Key Comparison",
+    "title": "Modular system vs container conversion"
+  },
+  "tableHeaders": {
+    "feature": "Comparison",
+    "modular": "TZJ Modular System",
+    "container": "Container Conversion"
+  },
+  "rows": [
+    {
+      "feature": "Interior space",
+      "modular": "Open floor plan, no fixed partitions, high space utilization",
+      "container": "Constrained by container dimensions, narrow and fixed layout"
+    },
+    {
+      "feature": "Walls / doors & windows",
+      "modular": "Freely added, removed, and rearranged for varied scenarios",
+      "container": "Openings require on-site cutting; changes are difficult and weaken structure"
+    },
+    {
+      "feature": "Structural materials",
+      "modular": "New materials, all-galvanized steel frame, corrosion and deformation resistant",
+      "container": "Refurbished used containers, plain steel prone to rust, inconsistent quality"
+    },
+    {
+      "feature": "Roof working surface",
+      "modular": "Designed to training load standards, smooth transition from roof to interior",
+      "container": "Not load-rated; major reinforcement required for training use"
+    },
+    {
+      "feature": "Flooring",
+      "modular": "Non-slip working surface + galvanized underside; full thermal liner in burn rooms",
+      "container": "Mostly hardwood floors; burn rooms with steel base only"
+    },
+    {
+      "feature": "Coating process",
+      "modular": "Factory paint on new steel surfaces, long-lasting stability",
+      "container": "Repainted over old surfaces, requires periodic recoating"
+    },
+    {
+      "feature": "Connection method",
+      "modular": "Bolted connections, reconfigurable and replaceable",
+      "container": "Welded assembly; changes require cutting and repainting"
+    },
+    {
+      "feature": "Expandability",
+      "modular": "Modules reconfigure and stack, expand as needed",
+      "container": "Limited expansion; stacking and connection constraints"
+    },
+    {
+      "feature": "Training realism",
+      "modular": "Close to real building layouts and heights",
+      "container": "Significant scale gap from real buildings"
+    },
+    {
+      "feature": "Full lifecycle",
+      "modular": "Reconfigurable and refurbishable, higher long-term value",
+      "container": "Modification limited, high later refurbishment cost"
+    }
+  ],
+  "relatedLinks": [
+    {
+      "label": "Modular Series",
+      "desc": "M / O / D / X four series with flexible combinations."
+    },
+    {
+      "label": "Fixed Training Tower",
+      "desc": "Rugged multi-level steel training towers."
+    },
+    {
+      "label": "Project Case Studies",
+      "desc": "Delivered modular training complex projects."
+    }
+  ],
+  "cta": {
+    "title": "Choose the better option for your budget",
+    "secondaryLabel": "View modular series"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "meta": {
+    "title": "News & Media",
+    "description": "TZJ news and media coverage — latest projects, product developments, industry events, and partnership updates in the training facilities sector."
+  },
+  "hero": {
+    "eyebrow": "Resources · News",
+    "title": "News & Media",
+    "description": "Latest projects, product developments, industry events, and partnership updates in the training facilities sector."
+  },
+  "listSection": {
+    "eyebrow": "Latest Updates",
+    "title": "News"
+  },
+  "relatedLinks": [
+    {
+      "label": "Project Case Studies",
+      "desc": "Browse delivered training complex projects."
+    },
+    {
+      "label": "Blog",
+      "desc": "Training facility design philosophy and technical insights."
+    },
+    {
+      "label": "Trade Shows",
+      "desc": "Recent trade shows and industry events."
+    }
+  ],
+  "cta": {
+    "title": "Want to learn more about our projects?"
+  }
+}

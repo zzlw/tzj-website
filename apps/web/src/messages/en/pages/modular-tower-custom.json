@@ -1,0 +1,50 @@
+{
+  "meta": {
+    "title": "Custom Modular",
+    "description": "TZJ custom modular training systems — flexible module count, burn rooms, breach points, and prop interfaces with phased construction and continuous value growth."
+  },
+  "hero": {
+    "eyebrow": "Modular Training Tower · Custom",
+    "title": "Custom Modular Training System",
+    "description": "Whether a budget-conscious starter project or a phased large-scale complex, modular systems begin with minimal investment and retain full expansion capacity."
+  },
+  "gallery": {
+    "imageAlt": "Modular training tower on-site assembly"
+  },
+  "optionsSection": {
+    "eyebrow": "Customization Options",
+    "title": "Flexible configuration, phased delivery",
+    "description": "Whether a budget-conscious starter project or a phased large-scale complex, modular systems begin with minimal investment and retain full expansion capacity."
+  },
+  "options": [
+    "Custom module count and floor stacking",
+    "Optional burn rooms and thermal liner configuration",
+    "Flexible door, window, breach point, and roof layout",
+    "Reserved interfaces for smoke/heat and hazmat props",
+    "Future add-on, reconfiguration, and relocation",
+    "Indoor and outdoor site adaptation"
+  ],
+  "exampleSection": {
+    "eyebrow": "Project Example",
+    "title": "Phased training complex development",
+    "body": "A regional training center started with a core module set for basic live-fire and forcible entry training. Phase two added multi-level modules and burn rooms for high-rise and fireground disciplines. Phase three integrated hazmat and tactical prop interfaces into a comprehensive emergency training complex — all without demolition, with investment that continuously appreciates."
+  },
+  "relatedLinks": [
+    {
+      "label": "Modular Series",
+      "desc": "M / O / D / X four series with flexible combinations."
+    },
+    {
+      "label": "Modular vs Containers",
+      "desc": "Comprehensive comparison from materials to load capacity."
+    },
+    {
+      "label": "Tower Design Center",
+      "desc": "Browse specifications, elevations, and floor plans."
+    }
+  ],
+  "cta": {
+    "title": "Plan your modular training complex",
+    "secondaryLabel": "View modular series"
+  }
+}

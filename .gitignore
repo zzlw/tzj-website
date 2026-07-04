@@ -1,0 +1,111 @@
+# ============================================================
+# TZJ Monorepo — Git Ignore
+# pnpm + Turbo | Next.js (web/admin) | NestJS + Prisma (api)
+# ============================================================
+
+# ── Dependencies ─────────────────────────────────────────────
+node_modules/
+.pnpm-store/
+
+# ── Build & cache outputs ────────────────────────────────────
+dist/
+build/
+out/
+.next/
+.turbo/
+.swc/
+*.tsbuildinfo
+
+# ── Environment & secrets ────────────────────────────────────
+# Keep *.example templates tracked; never commit real secrets.
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*.local
+!.env.example
+!.env*.example
+
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+
+# ── Logs & diagnostics ───────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.report/
+*.pid
+*.pid.lock
+
+# ── Testing ──────────────────────────────────────────────────
+coverage/
+.nyc_output/
+test-results/
+playwright-report/
+playwright/.cache/
+blob-report/
+junit.xml
+
+# ── Prisma (local DB files only) ─────────────────────────────
+# migrations/ MUST be committed — do not ignore.
+*.db
+*.db-journal
+
+# ── Tooling caches ───────────────────────────────────────────
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+.temp/
+tmp/
+
+# ── Deployment platforms ───────────────────────────────────────
+.vercel/
+.netlify/
+
+# ── IDE & editors ──────────────────────────────────────────────
+# Share team defaults; ignore personal/local IDE state.
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+
+.idea/
+*.iml
+*.ipr
+*.iws
+
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# ── OS ───────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ── Optional local tooling ───────────────────────────────────
+.cursor/
+*.local

@@ -1,0 +1,65 @@
+{
+  "meta": {
+    "title": "Burn Room",
+    "description": "TZJ interlocking insulation liner system — calcium silicate liners engineered for live-fire training, heat-resistant, low-maintenance, rated for temperatures up to 1100°C."
+  },
+  "hero": {
+    "eyebrow": "Burn Room",
+    "title": "Insulation liners that truly withstand extreme heat",
+    "description": "As live-fire training grows more intense and demanding, TZJ burn rooms deliver safe, realistic training environments you can rely on."
+  },
+  "overview": {
+    "eyebrow": "Training needs have evolved",
+    "title": "Calcium silicate — the optimal choice for live-fire training",
+    "description": "Advances in materials make calcium silicate the best balance of durability and heat resistance. TZJ interlocking liners are our latest development, purpose-built for burn rooms that support live-fire training.",
+    "lead": "The interlocking tile system combines the hardest calcium silicate surface with factory-grade waterproof polymer to stand up to day-after-day live-fire training.",
+    "body": "Insulation performance is exceptional — during an interior burn, you can touch the exterior wall without being burned."
+  },
+  "liner": {
+    "eyebrow": "Interlocking Insulation Liner",
+    "title": "Thermal performance with easy replacement",
+    "description": "Expansion joints between tiles allow independent movement and inspection; staggered mounting channels maximize airflow to maintain the insulation envelope through rapid heat cycles.",
+    "linkText": "Learn about interlocking liners",
+    "tableHeaders": {
+      "prop": "Design Metric",
+      "value": "Specification",
+      "why": "Why It Matters"
+    }
+  },
+  "specs": [
+    { "prop": "Continuous operating temperature", "value": "~930°C", "why": "Over-engineered continuous rating provides a high safety margin for fire training" },
+    { "prop": "Structural heat transfer (1.5″ / 3″ air gap)", "value": "~168°C / 114°C", "why": "At ~540°C exposure, protects all structural surfaces per live-fire training standards" },
+    { "prop": "Impact strength", "value": "4,000 psi", "why": "Highest impact rating on the market (15″ frame span)" },
+    { "prop": "Surface hardness (Shore D)", "value": "80", "why": "Best long-term resistance to abrasion, scraping, and hose stream impact" }
+  ],
+  "linerFeatures": [
+    "Highly durable, low-maintenance insulation",
+    "Asbestos-free calcium silicate",
+    "Protects metal, masonry, and concrete structures",
+    "Suitable for new builds, retrofits, or damaged structure repair",
+    "Realistic drywall appearance, thermal-imaging compatible",
+    "No restriction on fire source placement within the room",
+    "No freeze-thaw issues; no drying period between sessions",
+    "Mold-resistant and non-absorbent"
+  ],
+  "comparison": {
+    "eyebrow": "Liner comparison",
+    "title": "Retrofit legacy burn rooms for tomorrow's training",
+    "description": "Whatever the existing condition, our interlocking tile system can transform aging burn rooms into modern training facilities. Calcium silicate tiles protect concrete, steel, or container structures at temperatures up to 1100°C.",
+    "linkText": "View liner comparison and retrofit process",
+    "steps": [
+      "Install mounting channels and cover with insulation buttons to protect channels and set panel spacing.",
+      "Before retrofit: burn room interior without liner tiles installed.",
+      "After retrofit: liner tiles form a complete insulation envelope with an additional air layer between panels and walls."
+    ]
+  },
+  "relatedLinks": [
+    { "label": "Interlocking Insulation Liner", "desc": "Technical specs and performance of calcium silicate interlocking liners." },
+    { "label": "Liner Comparison", "desc": "Full comparison of interlocking vs. traditional liners." },
+    { "label": "Annual Inspection Service", "desc": "Regular inspections to extend burn room service life." }
+  ],
+  "cta": {
+    "title": "Choose the right liner for your burn room",
+    "description": "Contact our team for expert guidance on burn room design and insulation liner selection."
+  }
+}

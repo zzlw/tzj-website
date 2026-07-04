@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "title": "Hazmat Training",
+    "description": "TZJ hazmat training props — chlorine cylinders, leaking drums, reaction drums, falling cylinders, instructor series props, mobile training trailers, and integrated hazard training complexes for realistic leak, plug, and decon scenarios."
+  },
+  "hero": {
+    "eyebrow": "Specialized Training · Hazmat",
+    "title": "Hazmat Training",
+    "description": "Controllable, repeatable, combinable hazard props and mobile training trailers that replicate realistic leak, plug, and decon scenarios — prepare for the worst case."
+  },
+  "propsSection": {
+    "eyebrow": "Instructor Series Props",
+    "title": "Hazmat training scenarios",
+    "description": "Controllable, repeatable, combinable hazard props covering leak response, plugging, chemical reaction, and uncontrolled release scenarios."
+  },
+  "props": [
+    {
+      "title": "Chlorine cylinder",
+      "desc": "Full-size chlorine cylinder with controllable valve, pipe, and manifold leaks for locating, plugging, and valve shutoff training."
+    },
+    {
+      "title": "Leaking drum",
+      "desc": "Standard drum simulating forklift puncture, bung, or seam leaks for transfer, containment, and cover response."
+    },
+    {
+      "title": "Bulk tank leak",
+      "desc": "Contain and respond to flammable liquid leaks including valve, manifold, and tank rupture scenarios."
+    },
+    {
+      "title": "Reaction drum",
+      "desc": "In-drum chemical reaction with bubbling, gurgling, and vibration; bulging drum top signals rising pressure for risk assessment training."
+    },
+    {
+      "title": "Falling cylinder",
+      "desc": "Rack failure causing uncontrolled release of cylinders and manifolds — realistic field response challenges."
+    },
+    {
+      "title": "Control panel",
+      "desc": "Handheld tablet to manage all props with emergency stop, pause, and reset for training control and personnel safety."
+    }
+  ],
+  "trailer": {
+    "eyebrow": "Mobile Training Trailer",
+    "title": "Bring the training ground to your teams",
+    "description": "For agencies organizing cross-region or cross-unit training, mobile trailers deploy complete hazmat scenarios so teams at different locations train in a unified, realistic environment.",
+    "imageAlt": "Mobile hazmat training trailer",
+    "features": [
+      "Enclosed trailer with multiple flip-up side doors and rear ramp",
+      "Built-in equipment bay with front-end prop operation and electrical controls",
+      "Standard hazmat props included (chlorine cylinders, leaking drums, reaction drums, etc.)",
+      "Wireless portable control — one operator manages the entire scene",
+      "Full LED lighting, non-slip steel flooring, and floor drains",
+      "Customizable exterior graphics and color scheme"
+    ]
+  },
+  "facility": {
+    "eyebrow": "Integrated Hazard Training Complex",
+    "title": "Build an immersive live-fire training ground",
+    "description": "Industrial warehouse and site complexes integrating dozens of training simulators for coordinated, realistic hazmat response drills across regional teams.",
+    "point1": "Custom industrial buildings and sites integrating dozens of simulators to replicate real-world complex hazard scenarios.",
+    "point2": "Advanced control rooms generate sound, odor, and sudden actions for the most realistic hazmat training drills."
+  },
+  "relatedLinks": [
+    {
+      "label": "Training Props & Accessories",
+      "desc": "Hazard props can be combined with other training accessories."
+    },
+    {
+      "label": "Fixed Training Tower",
+      "desc": "Integrate hazmat scenarios into comprehensive training complexes."
+    },
+    {
+      "label": "Project Case Studies",
+      "desc": "Explore delivered TZJ training complex projects."
+    }
+  ],
+  "cta": {
+    "title": "Plan your hazmat training capability",
+    "description": "Our team can help identify and configure the props and facilities best suited to your needs — from individual props to full integrated complexes.",
+    "secondaryLabel": "Back to specialized training"
+  }
+}

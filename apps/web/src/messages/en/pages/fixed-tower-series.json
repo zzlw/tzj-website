@@ -1,0 +1,164 @@
+{
+  "meta": {
+    "title": "Standard Tower Series",
+    "description": "TZJ standard tower series — high-rise, integrated, and Level 1–5 alarm preset tower types aligned with NFPA 1400/1402 live-fire training standards for fast selection and deep customization."
+  },
+  "hero": {
+    "eyebrow": "Fixed Training Tower · Standard Series",
+    "title": "Standard Tower Series",
+    "description": "Choose from 15 preset layouts to accelerate your project — or start from any layout and customize easily."
+  },
+  "complianceSection": {
+    "eyebrow": "Standards Compliance",
+    "title": "Aligned with international live-fire training standards",
+    "description": "Every training structure and burn room option meets live-fire training facility requirements. We tailor base design, fixtures, and props to maximize the training experience for any department size."
+  },
+  "durabilitySection": {
+    "eyebrow": "Built to Last",
+    "title": "Why TZJ fixed towers last longer",
+    "description": "Live-fire training means heat, impact, and decades of repeated use. From structure to connections to protection — every element is designed for long-term demanding service.",
+    "note": "Compared to concrete/masonry, metal training towers perform more consistently through repeated thermal cycles, typically cost significantly less to build and maintain, and damaged components can be replaced locally without scrapping the whole structure."
+  },
+  "durability": [
+    {
+      "title": "High-strength wall cladding",
+      "desc": "Structured steel cladding with rigid treatment withstands repeated ladder climbs, rappelling, and physical impact — far beyond thin panels with self-tapping screws."
+    },
+    {
+      "title": "Bolted rigid connections",
+      "desc": "Cladding bolted at close spacing into a monolithic load-bearing shell that lasts."
+    },
+    {
+      "title": "Sealed against weather",
+      "desc": "Every seam sealed against wind, rain, and leakage — supporting all-weather, year-round training."
+    },
+    {
+      "title": "Hot-dip galvanized longevity",
+      "desc": "Hot-dip galvanized steel resists corrosion with low maintenance; damaged panels are replaceable for long-term reliability."
+    }
+  ],
+  "seriesSectionTitle": "Tower Series",
+  "series": [
+    {
+      "name": "High-Rise Series",
+      "variants": "5 / 6 stories",
+      "desc": "High-rise tower with elevator shaft and stair tower simulating high-rise firefighting; includes two-story residential unit and single-story annex.",
+      "image": "/media/alarm-highrise.jpg"
+    },
+    {
+      "name": "5th Alarm Series",
+      "variants": "4 / 5 stories",
+      "desc": "Main tower with interior stairwell; two-story unit with loft and pitched roof; dual breach points and dual burn rooms.",
+      "image": "/media/alarm-5th.png"
+    },
+    {
+      "name": "3rd Alarm Series",
+      "variants": "3 / 4 stories",
+      "desc": "Main tower with residential and annex structures; dual live-fire burn rooms for multi-scenario training.",
+      "image": "/media/alarm-3rd.png"
+    },
+    {
+      "name": "1st Alarm Series",
+      "variants": "2 / 3 / 4 stories",
+      "desc": "Interior stairs, climbing ladder, and live-fire burn room meeting baseline live-fire training requirements.",
+      "image": "/media/alarm-1st.png"
+    }
+  ],
+  "moreSeries": [
+    {
+      "name": "Integrated Alarm Series",
+      "variants": "4 / 5 stories",
+      "desc": "Main tower + two-story residential/industrial units (with loft); multiple rooms, dual breach points and dual burn rooms."
+    },
+    {
+      "name": "4th Alarm Series",
+      "variants": "4 / 5 stories",
+      "desc": "Multi-level main tower with interior stairwell; two-story unit with pitched roof and loft; dual burn rooms."
+    },
+    {
+      "name": "2nd Alarm Series",
+      "variants": "Standard / Extended",
+      "desc": "Two-story unit connected to single-story annex — multi-room layout (office) and open space (warehouse) training."
+    }
+  ],
+  "compareSection": {
+    "eyebrow": "How to Choose",
+    "title": "Standard tower vs. custom tower",
+    "description": "Preset towers get projects live faster; custom towers fit unique requirements exactly. Both get the same rugged steel structure and turnkey service."
+  },
+  "compare": {
+    "headers": {
+      "feature": "Comparison",
+      "standard": "Standard Tower",
+      "custom": "Custom Tower"
+    },
+    "ariaSupported": "Supported",
+    "ariaNotSupported": "Not supported",
+    "rows": [
+      {
+        "feature": "Rugged galvanized steel structure",
+        "standard": true,
+        "custom": true
+      },
+      {
+        "feature": "Turnkey full-service delivery",
+        "standard": true,
+        "custom": true
+      },
+      {
+        "feature": "Complete specs and drawings",
+        "standard": true,
+        "custom": true
+      },
+      {
+        "feature": "Future expansion capability",
+        "standard": true,
+        "custom": true
+      },
+      {
+        "feature": "Multiple facade color options",
+        "standard": "Standard palette",
+        "custom": "Fully custom"
+      },
+      {
+        "feature": "Custom training props",
+        "standard": false,
+        "custom": true
+      },
+      {
+        "feature": "Building facade and form",
+        "standard": false,
+        "custom": true
+      },
+      {
+        "feature": "Custom layout",
+        "standard": false,
+        "custom": true
+      },
+      {
+        "feature": "Delivery speed",
+        "standard": "Faster",
+        "custom": "Per project plan"
+      }
+    ]
+  },
+  "relatedLinks": [
+    {
+      "label": "Custom Training Tower",
+      "desc": "From concept to completion — built to your exact requirements."
+    },
+    {
+      "label": "Burn Rooms & Liner",
+      "desc": "Safe, realistic live-fire environments and thermal protection."
+    },
+    {
+      "label": "Tower Design Center",
+      "desc": "Browse tower specs, elevations, and floor plans."
+    }
+  ],
+  "cta": {
+    "title": "Want a fully custom tower type?",
+    "description": "Every dimension, door, window, and layout is yours to decide — build the training facility that belongs to you.",
+    "customLink": "Explore custom training towers"
+  }
+}

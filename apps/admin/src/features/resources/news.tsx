@@ -1,0 +1,97 @@
+import { z } from "zod";
+import type { ResourceConfig } from "@/components/crud/config";
+import type { NewsItem } from "@/features/types";
+import { contentAuditColumns } from "@/components/LastOperatorCell";
+import {
+  NEWS_CATEGORY_OPTIONS,
+  StatusBadge,
+  formatDate,
+  labelOf,
+  toDateInput,
+} from "@/features/constants";
+
+const schema = z.object({
+  title: z.string().min(1, "请输入标题"),
+  slug: z.string().min(1, "请填写标题"),
+  category: z.string().min(1, "请选择分类"),
+  summary: z.string().optional(),
+  content: z.string().optional(),
+  coverImage: z.string().optional(),
+  seoTitle: z.string().optional(),
+  seoDesc: z.string().optional(),
+  isTop: z.boolean().optional(),
+  publishedAt: z.string().optional(),
+});
+
+export const newsConfig: ResourceConfig<NewsItem> = {
+  resource: "news",
+  basePath: "/news",
+  title: "新闻动态",
+  singular: "新闻",
+  searchable: true,
+  filters: [{ key: "category", label: "全部分类", options: NEWS_CATEGORY_OPTIONS }],
+  columns: [
+    { key: "title", header: "标题", sortable: true },
+    { key: "category", header: "分类", sortable: true, cell: (r) => labelOf(NEWS_CATEGORY_OPTIONS, r.category) },
+    { key: "status", header: "状态", sortable: true, cell: (r) => <StatusBadge status={r.status} /> },
+    { key: "publishedAt", header: "发布时间", sortable: true, cell: (r) => formatDate(r.publishedAt) },
+    ...contentAuditColumns<NewsItem>(),
+  ],
+  fields: [
+    { name: "title", label: "标题", type: "text", required: true, colSpan: 2 },
+    {
+      name: "category",
+      label: "分类",
+      type: "select",
+      required: true,
+      options: NEWS_CATEGORY_OPTIONS,
+    },
+    {
+      name: "publishedAt",
+      label: "发布时间",
+      type: "date",
+      help: "留空则发布时自动取当前时间",
+    },
+    { name: "summary", label: "摘要", type: "textarea", colSpan: 2 },
+    { name: "content", label: "正文", type: "markdown", colSpan: 2, folder: "news" },
+    {
+      name: "coverImage",
+      label: "封面图",
+      type: "image",
+      colSpan: 2,
+      folder: "news",
+      help: "建议比例 16:9",
+    },
+    { name: "seoTitle", label: "SEO 标题", type: "text", colSpan: 2 },
+    { name: "seoDesc", label: "SEO 描述", type: "textarea", colSpan: 2 },
+    { name: "isTop", label: "置顶", type: "switch", placeholder: "设为置顶" },
+  ],
+  schema,
+  publishable: true,
+  previewPath: (r) => `/resources/news/${r.slug}`,
+  defaultSort: { column: "publishedAt", order: "desc" },
+  defaults: {
+    title: "",
+    slug: "",
+    category: "",
+    summary: "",
+    content: "",
+    coverImage: "",
+    seoTitle: "",
+    seoDesc: "",
+    isTop: false,
+    publishedAt: "",
+  },
+  toForm: (r) => ({
+    title: r.title,
+    slug: r.slug,
+    category: r.category,
+    publishedAt: toDateInput(r.publishedAt),
+    summary: r.summary ?? "",
+    content: r.content ?? "",
+    coverImage: r.coverImage ?? "",
+    seoTitle: r.seoTitle ?? "",
+    seoDesc: r.seoDesc ?? "",
+    isTop: r.isTop,
+  }),
+};

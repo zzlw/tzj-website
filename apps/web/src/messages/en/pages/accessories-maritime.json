@@ -1,0 +1,126 @@
+{
+  "meta": {
+    "title": "Maritime Training",
+    "description": "TZJ maritime training facilities — bridge, engine room, hatches, ship doors, and narrow-compartment rescue scenarios that replicate real ship fires for port, dock, shipyard, maritime, and offshore platform fire/rescue training."
+  },
+  "hero": {
+    "eyebrow": "Specialized Training · Maritime",
+    "title": "Maritime Training",
+    "description": "Based on real vessels, integrating bridge, engine room, cargo holds, ship doors, and gangways so teams build real skills on land before going to sea."
+  },
+  "gallery": [
+    {
+      "alt": "Maritime training facility · multi-deck hull exterior"
+    },
+    {
+      "alt": "Maritime training facility · deck and hatch"
+    },
+    {
+      "alt": "Maritime training facility · ship fire simulation"
+    }
+  ],
+  "why": {
+    "eyebrow": "Train for offshore firefighting",
+    "title": "Ship fires are a different battlefield",
+    "description": "For cruise ships, cargo vessels, offshore platforms, and high-speed craft, fire is the second-greatest threat after sinking. Narrow compartments, vertical passages, enclosed engine rooms, and hot metal structures demand tactics entirely different from land-based building fires.",
+    "lead": "Firefighters often enter at the hottest point and work downward — this reverse-advancement logic only becomes muscle memory through repeated drills in realistic hull structures.",
+    "body": "TZJ maritime training facilities are modeled on real vessels, integrating bridge, engine room, cargo holds, ship doors, and gangways so teams build real skills on land before going to sea."
+  },
+  "propsSection": {
+    "eyebrow": "Scenario Props",
+    "title": "Maritime training scenarios"
+  },
+  "props": [
+    {
+      "title": "Bridge / Wheelhouse",
+      "desc": "Authentic bridge layout with blackout windows for compartment search and command coordination in heavy smoke."
+    },
+    {
+      "title": "Ship Ladder / Hatch",
+      "desc": "Vertical passages between decks with steep ship ladders and hatches for boarding, vertical transfer, and casualty movement in tight spaces."
+    },
+    {
+      "title": "Ship Door (Multi-latch)",
+      "desc": "Six-latch and other ship door styles for opening, forcing, and advancing through compartments."
+    },
+    {
+      "title": "Engine-Room Fire",
+      "desc": "Hot, confined engine rooms and flange fire simulators for suppression, cooling, and evacuation in complex environments."
+    },
+    {
+      "title": "Reconfigurable Maze",
+      "desc": "Track-free maze panels reconfigurable inside compartments for search and orientation in low visibility."
+    },
+    {
+      "title": "Cargo / Storage Hold",
+      "desc": "Cargo holds, storage compartments, and porthole props for cargo fire and confined-space search and rescue."
+    }
+  ],
+  "extraSection": {
+    "eyebrow": "Additional Props",
+    "title": "Realistic shipboard firefighting simulation"
+  },
+  "extraFeatures": [
+    "Bridge (with blackout windows)",
+    "Cruise ship balconies",
+    "Flange and engine-room fire simulators",
+    "Full-loop protection systems with isolation valves",
+    "Reconfigurable maze systems",
+    "Cargo/storage compartments, doors, and porthole props"
+  ],
+  "configSection": {
+    "eyebrow": "Typical Configuration",
+    "title": "Maritime training complex",
+    "note": "All configurations can be customized by site, deck count, and training objectives, with capacity for future expansion."
+  },
+  "config": [
+    {
+      "label": "Deck levels",
+      "value": "3 – 4 decks"
+    },
+    {
+      "label": "Core compartments",
+      "value": "Bridge / crew quarters / galley / cargo hold / engine room"
+    },
+    {
+      "label": "Burn configuration",
+      "value": "Class A burn room + gas fire simulator"
+    },
+    {
+      "label": "Fire protection",
+      "value": "Standpipes / sprinklers / smoke distribution"
+    }
+  ],
+  "usersSection": {
+    "eyebrow": "Who Uses It",
+    "title": "Who uses maritime training facilities",
+    "description": "Teams across maritime and coastal rescue build unified, realistic live-fire training environments."
+  },
+  "users": [
+    "Port / dock fire departments",
+    "Maritime and salvage services",
+    "Shipyards and shipping companies",
+    "Coast guard and maritime law enforcement",
+    "Offshore oil and gas platforms",
+    "Maritime academies"
+  ],
+  "relatedLinks": [
+    {
+      "label": "Fixed Training Tower",
+      "desc": "Integrate maritime scenarios into multi-level fixed tower complexes."
+    },
+    {
+      "label": "Modular Training Tower",
+      "desc": "Flexible reconfigurable modular systems for diverse training objectives."
+    },
+    {
+      "label": "Training Props & Accessories",
+      "desc": "From ship doors to mazes — rich props for realistic scenarios."
+    }
+  ],
+  "cta": {
+    "title": "Customize your maritime training program",
+    "description": "Tell us your site conditions and training objectives — our engineers and fire service experts will design a maritime training complex tailored to your needs.",
+    "secondaryLabel": "Back to specialized training"
+  }
+}

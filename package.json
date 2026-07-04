@@ -1,0 +1,37 @@
+{
+  "name": "tzj-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "拓之迹（TZJ）企业级 Monorepo — 应急救援训练装备制造商官网",
+  "license": "UNLICENSED",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --parallel",
+    "dev:web": "turbo run dev --filter=@tzj/web",
+    "dev:admin": "turbo run dev --filter=@tzj/admin",
+    "dev:api": "turbo run dev --filter=@tzj/api",
+    "lint": "biome lint .",
+    "check": "biome check .",
+    "typecheck": "turbo run typecheck",
+    "clean": "turbo run clean",
+    "format": "biome format --write .",
+    "format:check": "biome check .",
+    "db:up": "docker compose -f infra/docker/docker-compose.dev.yml up -d",
+    "db:down": "docker compose -f infra/docker/docker-compose.dev.yml down",
+    "db:logs": "docker compose -f infra/docker/docker-compose.dev.yml logs -f",
+    "db:clean": "docker compose -f infra/docker/docker-compose.dev.yml down -v",
+    "db:migrate": "pnpm --filter @tzj/api prisma:migrate:deploy",
+    "db:baseline": "pnpm --filter @tzj/api prisma:baseline"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.1",
+    "@types/node": "^26.0.1",
+    "turbo": "^2.10.0",
+    "typescript": "^6.0.3"
+  },
+  "packageManager": "pnpm@11.9.0",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}

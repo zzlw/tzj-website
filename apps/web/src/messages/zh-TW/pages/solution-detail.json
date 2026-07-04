@@ -1,0 +1,35 @@
+{
+  "meta": {
+    "titleSuffix": "訓練解決方案"
+  },
+  "hero": {
+    "eyebrowPrefix": "解決方案 · "
+  },
+  "intro": {
+    "eyebrow": "需求洞察",
+    "titleSuffix": "需要怎樣的訓練設施"
+  },
+  "focus": {
+    "eyebrow": "關注重點",
+    "title": "我們如何貼合您的任務"
+  },
+  "recommended": {
+    "eyebrow": "推薦配置",
+    "title": "為您推薦的訓練設施組合",
+    "description": "以下產品可組合成貼合您需求的整體訓練方案，也可按場地與預算分期建設。"
+  },
+  "programs": {
+    "eyebrow": "典型科目",
+    "title": "可支撐的訓練科目",
+    "caseLink": "查看相關工程案例"
+  },
+  "others": {
+    "title": "其他客戶解決方案"
+  },
+  "cta": {
+    "titlePrefix": "為",
+    "titleSuffix": "定制專屬訓練方案",
+    "description": "告訴我們您的場地、科目與預算，我們的工程師與消防專家團隊將為您量身設計整體方案。",
+    "backLink": "返回全部解決方案"
+  }
+}
