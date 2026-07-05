@@ -122,7 +122,4 @@ stages:
           downloadArtifact: false
           executeUser: root
           run: |
-            set -euo pipefail
-            cd /opt/tzj
-            chmod +x deploy.sh
-            ./deploy.sh all "${CI_COMMIT_ID}"
+            /bin/bash -ec 'cd /opt/tzj && chmod +x deploy.sh && ./deploy.sh all "${CI_COMMIT_ID}"'
