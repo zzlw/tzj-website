@@ -33,9 +33,10 @@ echo "==> Pull images ${IMAGE_TAG}"
 docker compose -f docker-compose.prod.yml pull api web admin
 
 echo "==> Migrate"
+PRISMA_BIN="node_modules/.pnpm/node_modules/.bin/prisma"
 docker run --rm --network tzj_default --env-file .env.prod \
   "${IMAGE_REGISTRY}/tzj-api:${IMAGE_TAG}" \
-  ./node_modules/.bin/prisma migrate deploy
+  sh -c "${PRISMA_BIN} migrate deploy || ${PRISMA_BIN} db push --skip-generate"
 
 echo "==> Up api"
 docker compose -f docker-compose.prod.yml up -d --no-deps api
