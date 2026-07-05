@@ -37,7 +37,7 @@ acme.sh --install-cert -d "$BASE_DOMAIN" \
 
 if [ -n "${STATIC_DOMAIN:-}" ] && [ -n "${Ali_Key:-}" ]; then
   echo "==> 推送 CDN 证书（$STATIC_DOMAIN）"
-  sh /scripts/deploy-cdn.sh
+  sh /scripts/deploy-cdn.sh || echo "WARN: CDN 推送失败（域名未接入阿里云 CDN 可忽略）"
 fi
 
 echo "==> 完成。执行 make prod-gateway-reload"
