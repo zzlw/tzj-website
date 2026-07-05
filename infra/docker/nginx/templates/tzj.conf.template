@@ -16,7 +16,9 @@ server {
     include /etc/nginx/snippets/ssl.conf;
 
     location / {
-        proxy_pass http://web:3000;
+        include /etc/nginx/snippets/proxy-docker.conf;
+        set $upstream_web web:3000;
+        proxy_pass http://$upstream_web;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -31,7 +33,9 @@ server {
     include /etc/nginx/snippets/ssl.conf;
 
     location / {
-        proxy_pass http://admin:3000;
+        include /etc/nginx/snippets/proxy-docker.conf;
+        set $upstream_admin admin:3000;
+        proxy_pass http://$upstream_admin;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -48,7 +52,9 @@ server {
     client_max_body_size 100m;
 
     location / {
-        proxy_pass http://api:4000;
+        include /etc/nginx/snippets/proxy-docker.conf;
+        set $upstream_api api:4000;
+        proxy_pass http://$upstream_api;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
