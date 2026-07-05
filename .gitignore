@@ -123,3 +123,6 @@ apps/web/public/**/*.webm
 apps/web/public/**/*.mov
 apps/web/public/**/*.pdf
 apps/web/public/**/*.svg
+
+# ── API seed 生成物（upload-media.ts 输出，本地可重新生成）──
+apps/api/src/seed/media-map.json
