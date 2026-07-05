@@ -35,6 +35,7 @@ const nextConfig: NextConfig = {
         pathname: "/**",
       },
       { protocol: "https", hostname: "**.tzjii.com", pathname: "/**" },
+      { protocol: "https", hostname: "**.jiawen.live", pathname: "/**" },
       { protocol: "https", hostname: "localhost", pathname: "/**" },
     ],
   },
