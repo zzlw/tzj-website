@@ -96,7 +96,7 @@ build_app() {
   docker build \
     --platform "$DOCKER_PLATFORM" \
     -f "apps/${app}/Dockerfile" \
-    "${args[@]}" \
+    ${args[@]+"${args[@]}"} \
     -t "${image}:${IMAGE_TAG}" \
     -t "${image}:latest" \
     .
