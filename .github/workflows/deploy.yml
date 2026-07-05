@@ -1,0 +1,107 @@
+# ============================================================
+# TZJ — 生产部署（国内最佳实践）
+# ============================================================
+# GitHub Actions（海外 Runner）构建镜像 → push 阿里云 ACR（北京）
+# ECS 同区域 docker pull + compose up，不在国内服务器 docker build
+# ============================================================
+
+name: Deploy Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+env:
+  ACR_REGISTRY: ${{ vars.ACR_REGISTRY }}
+  ACR_NAMESPACE: ${{ vars.ACR_NAMESPACE }}
+  IMAGE_PREFIX: ${{ vars.ACR_REGISTRY }}/${{ vars.ACR_NAMESPACE }}
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.9.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check && pnpm typecheck && pnpm build
+
+  build-push:
+    name: Build & Push ACR (${{ matrix.app }})
+    runs-on: ubuntu-latest
+    needs: quality
+    strategy:
+      matrix:
+        app: [web, admin, api]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.ACR_REGISTRY }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/${{ matrix.app }}/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}/tzj-${{ matrix.app }}:${{ github.sha }}
+            ${{ env.IMAGE_PREFIX }}/tzj-${{ matrix.app }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
+            NEXT_PUBLIC_ADMIN_API_URL=${{ vars.NEXT_PUBLIC_ADMIN_API_URL }}
+            NEXT_PUBLIC_S3_PUBLIC_DOMAIN=${{ vars.NEXT_PUBLIC_S3_PUBLIC_DOMAIN }}
+            NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL }}
+            NEXT_PUBLIC_WEB_URL=${{ vars.NEXT_PUBLIC_WEB_URL }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-push
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Upload compose & deploy script
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ vars.ECS_HOST }}
+          username: ${{ vars.ECS_USER }}
+          key: ${{ secrets.ECS_SSH_KEY }}
+          source: "infra/docker/docker-compose.prod.yml,infra/docker/deploy.sh"
+          target: "/opt/tzj"
+          strip_components: 2
+
+      - name: Deploy on ECS (ACR pull)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ vars.ECS_HOST }}
+          username: ${{ vars.ECS_USER }}
+          key: ${{ secrets.ECS_SSH_KEY }}
+          envs: IMAGE_TAG,ACR_REGISTRY,ACR_NAMESPACE,ACR_USERNAME,ACR_PASSWORD
+          script: |
+            set -euo pipefail
+            cd /opt/tzj
+            chmod +x deploy.sh
+            echo "$ACR_PASSWORD" | docker login "$ACR_REGISTRY" -u "$ACR_USERNAME" --password-stdin
+            export IMAGE_TAG
+            export IMAGE_REGISTRY="${ACR_REGISTRY}/${ACR_NAMESPACE}"
+            ./deploy.sh
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+          ACR_REGISTRY: ${{ vars.ACR_REGISTRY }}
+          ACR_NAMESPACE: ${{ vars.ACR_NAMESPACE }}
+          ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
+          ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}

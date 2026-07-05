@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1
+# syntax=docker/dockerfile:1.4
 # ============================================================
 # TZJ API — NestJS 11 Production Dockerfile
 # ============================================================
@@ -20,6 +20,7 @@ RUN pnpm install --frozen-lockfile
 
 COPY . .
 
+RUN pnpm --filter @tzj/api exec prisma generate
 RUN pnpm run build --filter=@tzj/api
 
 # ── Stage 2: Production ──────────────────────────────────────
@@ -27,6 +28,9 @@ FROM node:20-alpine AS production
 WORKDIR /app
 
 ENV NODE_ENV=production
+ENV API_PORT=4000
+
+RUN apk add --no-cache wget openssl
 
 # 创建非 root 用户
 RUN addgroup --system --gid 1001 nodejs && \
@@ -40,9 +44,9 @@ COPY --from=builder --chown=nestjs:nodejs /app/apps/api/package.json ./
 
 USER nestjs
 
-EXPOSE 3001
+EXPOSE 4000
 
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3001/api/v1/health || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:4000/api/v1/health || exit 1
 
 CMD ["node", "dist/main.js"]
