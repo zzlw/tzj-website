@@ -54,11 +54,24 @@ docker_login_if_needed() {
 persist_tag() {
   local var=$1
   local tag=$2
+  if ! [[ "$var" =~ ^[A-Z0-9_]+$ ]]; then
+    echo "invalid tag variable: $var" >&2
+    exit 1
+  fi
   if grep -q "^${var}=" "$LOCAL_ENV_FILE"; then
     sed -i.bak "s|^${var}=.*|${var}=${tag}|" "$LOCAL_ENV_FILE" && rm -f "${LOCAL_ENV_FILE}.bak"
   else
     printf '%s=%s\n' "$var" "$tag" >>"$LOCAL_ENV_FILE"
   fi
+}
+
+service_tag_var() {
+  case "$1" in
+    api) echo API_TAG ;;
+    web) echo WEB_TAG ;;
+    admin) echo ADMIN_TAG ;;
+    *) echo "unknown service: $1" >&2; exit 1 ;;
+  esac
 }
 
 run_migrate() {
