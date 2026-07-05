@@ -11,8 +11,7 @@ server {
 }
 
 server {
-    listen 443 ssl;
-    http2 on;
+    listen 443 ssl http2;
     server_name ${WEB_DOMAIN};
     include /etc/nginx/snippets/ssl.conf;
 
@@ -27,8 +26,7 @@ server {
 }
 
 server {
-    listen 443 ssl;
-    http2 on;
+    listen 443 ssl http2;
     server_name ${ADMIN_DOMAIN};
     include /etc/nginx/snippets/ssl.conf;
 
@@ -43,8 +41,7 @@ server {
 }
 
 server {
-    listen 443 ssl;
-    http2 on;
+    listen 443 ssl http2;
     server_name ${API_DOMAIN};
     include /etc/nginx/snippets/ssl.conf;
 
