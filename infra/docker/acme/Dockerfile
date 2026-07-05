@@ -1,4 +1,4 @@
-FROM neilpang/acme.sh:3.1.0
+FROM docker.m.daocloud.io/neilpang/acme.sh:3.1.0
 
 ARG TARGETARCH
 RUN set -eux; \

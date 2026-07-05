@@ -1,0 +1,5 @@
+# 生产 ECS 使用已构建的 acme 镜像，避免每次 deploy 从 docker.io 拉基础镜像
+services:
+  acme:
+    image: tzj-acme:prod
+    build: !override null

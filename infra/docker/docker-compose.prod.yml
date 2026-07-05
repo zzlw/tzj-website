@@ -74,6 +74,7 @@ services:
       - admin
 
   acme:
+    image: tzj-acme:prod
     build: ./acme
     restart: unless-stopped
     command: daemon

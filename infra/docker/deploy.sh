@@ -21,8 +21,14 @@ cd "$DEPLOY_DIR"
 ENV_FILE=".env.prod"
 LOCAL_ENV_FILE=".env.prod.local"
 COMPOSE_FILE="docker-compose.prod.yml"
+ACME_OVERRIDE="docker-compose.acme.override.yml"
 PROJECT_NAME="tzj"
 NETWORK="${PROJECT_NAME}_default"
+
+COMPOSE_FILES=(-f "$COMPOSE_FILE")
+if [[ -f "$ACME_OVERRIDE" ]]; then
+  COMPOSE_FILES+=(-f "$ACME_OVERRIDE")
+fi
 
 if [[ ! -f "$ENV_FILE" ]]; then
   echo "缺少 ${DEPLOY_DIR}/${ENV_FILE}，请从 infra/docker/.env.prod.example 复制" >&2
@@ -35,7 +41,7 @@ if [[ ! -f "$LOCAL_ENV_FILE" ]]; then
 fi
 
 compose() {
-  docker compose -f "$COMPOSE_FILE" \
+  docker compose "${COMPOSE_FILES[@]}" \
     --env-file "$ENV_FILE" \
     --env-file "$LOCAL_ENV_FILE" \
     "$@"
@@ -189,8 +195,9 @@ fi
 echo "==> Prune dangling images"
 docker image prune -f >/dev/null
 
-echo "==> Ensure gateway + acme"
-compose up -d --force-recreate gateway acme
+echo "==> Ensure gateway (+ acme if needed)"
+compose up -d --force-recreate gateway
+compose up -d acme
 
 compose ps $SERVICES gateway
 
