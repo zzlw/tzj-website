@@ -14,7 +14,7 @@ WORKDIR /app
 
 # ── Stage 2: Dependencies ────────────────────────────────────
 FROM base AS deps
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY apps/admin/package.json apps/admin/
 COPY packages/types/package.json packages/types/
 COPY packages/ui/package.json packages/ui/
@@ -38,6 +38,7 @@ ENV NEXT_PUBLIC_S3_PUBLIC_DOMAIN=$NEXT_PUBLIC_S3_PUBLIC_DOMAIN
 ENV NEXT_PUBLIC_WEB_URL=$NEXT_PUBLIC_WEB_URL
 
 RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN node apps/admin/scripts/copy-vditor-assets.mjs
 RUN npx turbo run build --filter=@tzj/admin
 
 # ── Stage 4: Runner (Standalone 模式提取) ────────────────────
