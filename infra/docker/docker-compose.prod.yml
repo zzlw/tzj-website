@@ -81,6 +81,8 @@ services:
       STATIC_DOMAIN: ${STATIC_DOMAIN}
       Ali_Key: ${ALI_KEY}
       Ali_Secret: ${ALI_SECRET}
+      CF_API_TOKEN: ${CF_API_TOKEN:-}
+      CF_ZONE_ID: ${CF_ZONE_ID:-}
     volumes:
       - acme-data:/acme.sh
       - ./nginx/certs:/certs
