@@ -6,8 +6,8 @@
 # Uses: Next.js Standalone Output (最小化镜像体积)
 # ============================================================
 
-# 云效北京构建集群无法访问 docker.io，使用阿里云 Docker Hub 镜像
-ARG NODE_IMAGE=registry.cn-hangzhou.aliyuncs.com/dockerhub_mirror/node:22-alpine
+# 云效北京构建集群无法访问 docker.io，使用 DaoCloud 镜像加速
+ARG NODE_IMAGE=docker.m.daocloud.io/library/node:22-alpine
 
 # ── Stage 1: Base ────────────────────────────────────────────
 FROM ${NODE_IMAGE} AS base

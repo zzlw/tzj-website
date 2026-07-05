@@ -5,8 +5,8 @@
 # Build command: docker build -f apps/api/Dockerfile -t tzj/api .
 # ============================================================
 
-# 云效北京构建集群无法访问 docker.io，使用阿里云 Docker Hub 镜像
-ARG NODE_IMAGE=registry.cn-hangzhou.aliyuncs.com/dockerhub_mirror/node:22-alpine
+# 云效北京构建集群无法访问 docker.io，使用 DaoCloud 镜像加速
+ARG NODE_IMAGE=docker.m.daocloud.io/library/node:22-alpine
 
 # ── Stage 1: Builder ─────────────────────────────────────────
 FROM ${NODE_IMAGE} AS builder
@@ -31,7 +31,7 @@ RUN pnpm --filter @tzj/api exec prisma generate
 RUN npx turbo run build --filter=@tzj/api...
 
 # ── Stage 2: Production ──────────────────────────────────────
-ARG NODE_IMAGE=registry.cn-hangzhou.aliyuncs.com/dockerhub_mirror/node:22-alpine
+ARG NODE_IMAGE=REDACTED-ACR/REDACTED-NAMESPACE/node:22-alpine
 FROM ${NODE_IMAGE} AS production
 ENV NPM_CONFIG_REGISTRY=https://registry.npmmirror.com
 ENV COREPACK_NPM_REGISTRY=https://registry.npmmirror.com
