@@ -23,8 +23,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    ports:
-      - "127.0.0.1:4000:4000"
+    expose:
+      - "4000"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4000/api/v1/health"]
       interval: 30s
@@ -38,8 +38,8 @@ services:
     depends_on:
       api:
         condition: service_healthy
-    ports:
-      - "127.0.0.1:3000:3000"
+    expose:
+      - "3000"
 
   admin:
     image: ${IMAGE_REGISTRY}/tzj-admin:${ADMIN_TAG:-${IMAGE_TAG:-latest}}
@@ -47,8 +47,45 @@ services:
     depends_on:
       api:
         condition: service_healthy
+    expose:
+      - "3000"
+
+  gateway:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
     ports:
-      - "127.0.0.1:3002:3000"
+      - "80:80"
+      - "443:443"
+    environment:
+      WEB_DOMAIN: ${WEB_DOMAIN}
+      ADMIN_DOMAIN: ${ADMIN_DOMAIN}
+      API_DOMAIN: ${API_DOMAIN}
+      NGINX_ENVSUBST_FILTER: "DOMAIN"
+    volumes:
+      - ./nginx/templates:/etc/nginx/templates:ro
+      - ./nginx/entrypoint.d/90-periodic-reload.sh:/docker-entrypoint.d/90-periodic-reload.sh:ro
+      - ./nginx/snippets:/etc/nginx/snippets:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+    depends_on:
+      - api
+      - web
+      - admin
+
+  acme:
+    build: ./acme
+    restart: unless-stopped
+    command: daemon
+    environment:
+      ACME_EMAIL: ${ACME_EMAIL}
+      BASE_DOMAIN: ${BASE_DOMAIN}
+      STATIC_DOMAIN: ${STATIC_DOMAIN}
+      Ali_Key: ${ALI_KEY}
+      Ali_Secret: ${ALI_SECRET}
+    volumes:
+      - acme-data:/acme.sh
+      - ./nginx/certs:/certs
+      - ./acme:/scripts:ro
 
 volumes:
   pgdata:
+  acme-data:

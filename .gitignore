@@ -27,6 +27,8 @@ out/
 !.env.example
 !.env*.example
 infra/docker/.env.deploy.local
+infra/docker/nginx/certs/*
+!infra/docker/nginx/certs/.gitkeep
 
 *.pem
 *.key

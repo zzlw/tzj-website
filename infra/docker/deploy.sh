@@ -98,13 +98,16 @@ run_migrate() {
       else
         PB=node_modules/.pnpm/node_modules/.bin/prisma
       fi
-      "$PB" migrate deploy || "$PB" db push --skip-generate
+      if ! "$PB" migrate deploy; then
+        echo "migrate deploy 失败。全新空库请执行: ./scripts/bootstrap-fresh-db.sh <tag>" >&2
+        exit 1
+      fi
     '
 }
 
 wait_api_healthy() {
   for _ in $(seq 1 45); do
-    if curl -fsS http://127.0.0.1:4000/api/v1/health >/dev/null 2>&1; then
+    if compose exec -T api wget -qO- http://127.0.0.1:4000/api/v1/health >/dev/null 2>&1; then
       return 0
     fi
     sleep 2
@@ -114,9 +117,11 @@ wait_api_healthy() {
 }
 
 smoke_test() {
-  curl -fsS http://127.0.0.1:4000/api/v1/health
-  curl -fsS -o /dev/null -w "web:%{http_code}\n" http://127.0.0.1:3000/
-  curl -fsS -o /dev/null -w "admin:%{http_code}\n" http://127.0.0.1:3002/
+  compose exec -T api wget -qO- http://127.0.0.1:4000/api/v1/health
+  compose exec -T web wget -qO- http://127.0.0.1:3000/ >/dev/null
+  echo "web:ok"
+  compose exec -T admin wget -qO- http://127.0.0.1:3000/ >/dev/null
+  echo "admin:ok"
 }
 
 # ── 参数解析（兼容 VMDeploy：仅 export IMAGE_TAG）────────────────
@@ -144,7 +149,7 @@ esac
 docker_login_if_needed
 
 for s in $SERVICES; do
-  persist_tag "$(echo "$s" | tr '[:lower:]' '[:upper]')_TAG" "$TAG"
+  persist_tag "$(service_tag_var "$s")" "$TAG"
 done
 if [[ "$SERVICE" == "all" ]]; then
   persist_tag "IMAGE_TAG" "$TAG"
@@ -184,7 +189,10 @@ fi
 echo "==> Prune dangling images"
 docker image prune -f >/dev/null
 
-compose ps $SERVICES
+echo "==> Ensure gateway + acme"
+compose up -d gateway acme
+
+compose ps $SERVICES gateway
 
 if [[ "$SERVICE" == "all" || "$SERVICE" == "api" ]]; then
   smoke_test
