@@ -490,21 +490,22 @@ export function SearchBar({
                   );
                 }
 
-                const entity = item.result;
-                return (
-                  <div key={entity.id} role="presentation">
-                    <button
-                      type="button"
-                      id={`${listboxId}-option-${index}`}
-                      role="option"
-                      aria-selected={active}
-                      onMouseEnter={() => setActiveIndex(index)}
-                      onClick={() => goToEntity(entity)}
-                      className={cn(
-                        "flex w-full flex-col gap-1 border-b border-neutral-200/80 px-5 py-3 text-left transition-colors last:border-b-0 md:px-6",
-                        active ? "bg-white" : "hover:bg-white",
-                      )}
-                    >
+                if (item.kind === "entity") {
+                  const entity = item.result;
+                  return (
+                    <div key={entity.id} role="presentation">
+                      <button
+                        type="button"
+                        id={`${listboxId}-option-${index}`}
+                        role="option"
+                        aria-selected={active}
+                        onMouseEnter={() => setActiveIndex(index)}
+                        onClick={() => goToEntity(entity)}
+                        className={cn(
+                          "flex w-full flex-col gap-1 border-b border-neutral-200/80 px-5 py-3 text-left transition-colors last:border-b-0 md:px-6",
+                          active ? "bg-white" : "hover:bg-white",
+                        )}
+                      >
                       <span className="flex min-w-0 items-center gap-2">
                         <span
                           className={cn(
@@ -532,7 +533,9 @@ export function SearchBar({
                       ) : null}
                     </button>
                   </div>
-                );
+                  );
+                }
+                return null;
               })
             : null}
         </div>
