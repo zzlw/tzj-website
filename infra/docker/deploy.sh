@@ -196,8 +196,8 @@ echo "==> Prune dangling images"
 docker image prune -f >/dev/null
 
 echo "==> Ensure gateway (+ acme if needed)"
-compose up -d --force-recreate gateway
-compose up -d acme
+compose up -d --force-recreate --no-deps gateway
+compose up -d --no-deps acme
 
 compose ps $SERVICES gateway
 
