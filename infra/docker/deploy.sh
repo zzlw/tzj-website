@@ -33,10 +33,18 @@ echo "==> Pull images ${IMAGE_TAG}"
 docker compose -f docker-compose.prod.yml pull api web admin
 
 echo "==> Migrate"
-PRISMA_BIN="node_modules/.pnpm/node_modules/.bin/prisma"
 docker run --rm --network tzj_default --env-file .env.prod \
+  -e NPM_CONFIG_REGISTRY=https://registry.npmmirror.com \
+  -e COREPACK_NPM_REGISTRY=https://registry.npmmirror.com \
   "${IMAGE_REGISTRY}/tzj-api:${IMAGE_TAG}" \
-  sh -c "${PRISMA_BIN} migrate deploy || ${PRISMA_BIN} db push --skip-generate"
+  sh -c '
+    if [ -x node_modules/.bin/prisma ]; then
+      PB=node_modules/.bin/prisma
+    else
+      PB=node_modules/.pnpm/node_modules/.bin/prisma
+    fi
+    "$PB" migrate deploy || "$PB" db push --skip-generate
+  '
 
 echo "==> Up api"
 docker compose -f docker-compose.prod.yml up -d --no-deps api

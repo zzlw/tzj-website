@@ -29,6 +29,8 @@ COPY . .
 RUN find . -name '*.tsbuildinfo' -delete
 RUN pnpm --filter @tzj/api exec prisma generate
 RUN npx turbo run build --filter=@tzj/api...
+# 打包 api 及生产依赖（pnpm 扁平 node_modules，避免根 node_modules 软链在运行时失效）
+RUN pnpm --filter @tzj/api deploy --prod /prod/api
 
 # ── Stage 2: Production ──────────────────────────────────────
 ARG NODE_IMAGE=docker.m.daocloud.io/library/node:22-alpine
@@ -43,15 +45,10 @@ ENV API_PORT=4000
 RUN sed -i 's|https://dl-cdn.alpinelinux.org|https://mirrors.aliyun.com|g' /etc/apk/repositories \
   && apk add --no-cache wget openssl
 
-# 创建非 root 用户
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nestjs
 
-# 复制构建产物和依赖
-COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=nestjs:nodejs /app/apps/api/dist ./dist
-COPY --from=builder --chown=nestjs:nodejs /app/apps/api/prisma ./prisma
-COPY --from=builder --chown=nestjs:nodejs /app/apps/api/package.json ./
+COPY --from=builder --chown=nestjs:nodejs /prod/api ./
 
 USER nestjs
 
