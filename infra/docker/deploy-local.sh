@@ -34,7 +34,18 @@ IMAGE_PREFIX="${ACR_REGISTRY}/${ACR_NAMESPACE}"
 IMAGE_TAG="${IMAGE_TAG:-$(git rev-parse --short HEAD)}"
 ECS_HOST="${ECS_HOST:-REDACTED-IP}"
 ECS_USER="${ECS_USER:-root}"
-ECS_SSH_KEY="${ECS_SSH_KEY:-${HOME}/.ssh/id_rsa}"
+if [[ -z "${ECS_SSH_KEY:-}" ]]; then
+  for candidate in "${HOME}/.ssh/id_ed25519" "${HOME}/.ssh/id_rsa"; do
+    if [[ -f "$candidate" ]]; then
+      ECS_SSH_KEY="$candidate"
+      break
+    fi
+  done
+fi
+SSH_OPTS=(-o StrictHostKeyChecking=accept-new)
+if [[ -n "${ECS_SSH_KEY:-}" ]]; then
+  SSH_OPTS=(-i "$ECS_SSH_KEY" "${SSH_OPTS[@]}")
+fi
 DOCKER_PLATFORM="${DOCKER_PLATFORM:-linux/amd64}"
 
 NEXT_PUBLIC_API_URL="${NEXT_PUBLIC_API_URL:-https://tzj-api.jiawen.live/api/v1}"
@@ -113,13 +124,13 @@ push_app() {
 deploy_remote() {
   echo ""
   echo "==> Upload compose & deploy.sh → ${ECS_USER}@${ECS_HOST}:/opt/tzj/"
-  scp -i "$ECS_SSH_KEY" -o StrictHostKeyChecking=accept-new \
+  scp "${SSH_OPTS[@]}" \
     infra/docker/docker-compose.prod.yml \
     infra/docker/deploy.sh \
     "${ECS_USER}@${ECS_HOST}:/opt/tzj/"
 
   echo "==> Deploy on ECS (IMAGE_TAG=${IMAGE_TAG})"
-  ssh -i "$ECS_SSH_KEY" -o StrictHostKeyChecking=accept-new \
+  ssh "${SSH_OPTS[@]}" \
     "${ECS_USER}@${ECS_HOST}" \
     "ACR_REGISTRY=${ACR_REGISTRY} ACR_USERNAME=${ACR_USERNAME} ACR_PASSWORD=${ACR_PASSWORD} IMAGE_TAG=${IMAGE_TAG} IMAGE_REGISTRY=${IMAGE_PREFIX} bash -s" <<'REMOTE'
 set -euo pipefail
@@ -151,7 +162,7 @@ fi
 if [[ "$DO_DEPLOY" == 1 ]]; then
   require_var ACR_USERNAME
   require_var ACR_PASSWORD
-  if [[ ! -f "$ECS_SSH_KEY" ]]; then
+  if [[ -n "${ECS_SSH_KEY:-}" && ! -f "$ECS_SSH_KEY" ]]; then
     echo "SSH 密钥不存在: ${ECS_SSH_KEY}" >&2
     exit 1
   fi
