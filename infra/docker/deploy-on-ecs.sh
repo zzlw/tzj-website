@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # ============================================================
-# TZJ — 在 ECS 上执行：git 同步 → docker build → push ACR → deploy
+# TZJ — 【应急】在 ECS 上本地 build + push ACR + deploy
 # ============================================================
-# 由云效 VMDeploy / 手动 SSH 调用，工作目录 /opt/tzj/build
+# 默认 CI 已改为云效公共集群构建（见 infra/yunxiao/pipeline.yml），
+# 仅在云效不可用时手动 SSH 执行本脚本。工作目录 /opt/tzj/build
 # 依赖：/opt/tzj/.env.deploy（ACR 凭证）、/opt/tzj/.env.prod（运行时）
 # ============================================================
 

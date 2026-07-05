@@ -1,30 +1,12 @@
 #!/usr/bin/env bash
-# 在 ECS 上初始化 Codeup 克隆与部署凭证（root 执行）
+# 在 ECS 上初始化部署目录（root 执行，无需 git clone）
 # 本地：ssh root@REDACTED-IP 'bash -s' < infra/yunxiao/setup-ecs.sh
 set -euo pipefail
 
-BUILD_DIR=/opt/tzj/build
-REPO=git@codeup.aliyun.com:6a4a4fd4a6fcee143fa2797d/tzj-website.git
-DEPLOY_ENV=/opt/tzj/.env.deploy
+DEPLOY_DIR=/opt/tzj
+DEPLOY_ENV=$DEPLOY_DIR/.env.deploy
 
-mkdir -p /opt/tzj "$BUILD_DIR"
-
-if [[ ! -d "$BUILD_DIR/.git" ]]; then
-  echo "==> clone $REPO → $BUILD_DIR"
-  mkdir -p ~/.ssh
-  ssh-keyscan codeup.aliyun.com >> ~/.ssh/known_hosts 2>/dev/null || true
-  if [[ -f /root/.ssh/codeup_deploy ]]; then
-    cat > ~/.ssh/config <<'CFG'
-Host codeup.aliyun.com
-  IdentityFile ~/.ssh/codeup_deploy
-  IdentitiesOnly yes
-CFG
-    chmod 600 ~/.ssh/config
-  fi
-  git clone "$REPO" "$BUILD_DIR"
-else
-  echo "==> repo exists: $BUILD_DIR"
-fi
+mkdir -p "$DEPLOY_DIR"
 
 if [[ ! -f "$DEPLOY_ENV" ]]; then
   cat >"$DEPLOY_ENV" <<'EOF'
@@ -47,5 +29,6 @@ EOF
 systemctl restart docker
 
 echo "✅ ECS 初始化完成"
-echo "   代码目录: $BUILD_DIR"
-echo "   部署凭证: $DEPLOY_ENV"
+echo "   部署目录: $DEPLOY_DIR"
+echo "   ACR 凭证: $DEPLOY_ENV"
+echo "   需已有: docker-compose.prod.yml、deploy.sh、.env.prod（首次可 scp 上传）"
