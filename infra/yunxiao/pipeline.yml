@@ -134,11 +134,5 @@ stages:
           run: |
             set -euo pipefail
             cd /opt/tzj
-            set -a
-            source .env.deploy
-            set +a
-            echo "$ACR_PASSWORD" | docker login "$ACR_REGISTRY" -u "$ACR_USERNAME" --password-stdin
-            export IMAGE_TAG="${CI_COMMIT_ID}"
-            export IMAGE_REGISTRY="${ACR_REGISTRY}/${ACR_NAMESPACE}"
             chmod +x deploy.sh
-            ./deploy.sh
+            ./deploy.sh all "${CI_COMMIT_ID}"

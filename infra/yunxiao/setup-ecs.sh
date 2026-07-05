@@ -8,6 +8,11 @@ DEPLOY_ENV=$DEPLOY_DIR/.env.deploy
 
 mkdir -p "$DEPLOY_DIR"
 
+if [[ ! -f "$DEPLOY_DIR/.env.prod.local" ]] && [[ -f "$DEPLOY_DIR/.env.prod.local.example" ]]; then
+  cp "$DEPLOY_DIR/.env.prod.local.example" "$DEPLOY_DIR/.env.prod.local"
+  echo "⚠️  已创建 $DEPLOY_DIR/.env.prod.local，请按需编辑 tag"
+fi
+
 if [[ ! -f "$DEPLOY_ENV" ]]; then
   cat >"$DEPLOY_ENV" <<'EOF'
 ACR_REGISTRY=REDACTED-ACR
@@ -31,4 +36,4 @@ systemctl restart docker
 echo "✅ ECS 初始化完成"
 echo "   部署目录: $DEPLOY_DIR"
 echo "   ACR 凭证: $DEPLOY_ENV"
-echo "   需已有: docker-compose.prod.yml、deploy.sh、.env.prod（首次可 scp 上传）"
+echo "   需已有: docker-compose.prod.yml、deploy.sh、.env.prod、.env.prod.local"

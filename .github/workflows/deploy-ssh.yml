@@ -1,0 +1,60 @@
+# ============================================================
+# TZJ — ECS SSH 部署（云效 VMDeploy 备用 / 回滚）
+# ============================================================
+# 主 CI/CD：云效 Flow（Codeup → 北京构建 → ACR → VMDeploy）
+# 本 workflow：仅 SSH 到 ECS 执行 deploy.sh，不构建镜像
+#
+# Secrets / Vars（与 deploy-local 相同）：
+#   vars.ECS_HOST, vars.ECS_USER, secrets.ECS_SSH_KEY
+# ECS 需已有：/opt/tzj/.env.prod, .env.prod.local, .env.deploy
+# ============================================================
+
+name: Deploy ECS (SSH)
+
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: 要部署的服务
+        required: true
+        type: choice
+        options: [api, web, admin, all]
+      tag:
+        description: 镜像 tag（云效 CI_COMMIT_ID 或 git sha）
+        required: true
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Upload compose & deploy script
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ vars.ECS_HOST }}
+          username: ${{ vars.ECS_USER }}
+          key: ${{ secrets.ECS_SSH_KEY }}
+          source: "infra/docker/docker-compose.prod.yml,infra/docker/deploy.sh,infra/docker/.env.prod.local.example"
+          target: "/opt/tzj"
+          strip_components: 2
+
+      - name: SSH deploy
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ vars.ECS_HOST }}
+          username: ${{ vars.ECS_USER }}
+          key: ${{ secrets.ECS_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            cd /opt/tzj
+            chmod +x deploy.sh
+            if [[ ! -f .env.prod.local ]] && [[ -f .env.prod.local.example ]]; then
+              cp .env.prod.local.example .env.prod.local
+            fi
+            ./deploy.sh "${{ inputs.service }}" "${{ inputs.tag }}"

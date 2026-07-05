@@ -17,7 +17,7 @@ services:
       retries: 5
 
   api:
-    image: ${IMAGE_REGISTRY}/tzj-api:${IMAGE_TAG:-latest}
+    image: ${IMAGE_REGISTRY}/tzj-api:${API_TAG:-${IMAGE_TAG:-latest}}
     restart: unless-stopped
     env_file: .env.prod
     depends_on:
@@ -33,7 +33,7 @@ services:
       start_period: 40s
 
   web:
-    image: ${IMAGE_REGISTRY}/tzj-web:${IMAGE_TAG:-latest}
+    image: ${IMAGE_REGISTRY}/tzj-web:${WEB_TAG:-${IMAGE_TAG:-latest}}
     restart: unless-stopped
     depends_on:
       api:
@@ -42,7 +42,7 @@ services:
       - "127.0.0.1:3000:3000"
 
   admin:
-    image: ${IMAGE_REGISTRY}/tzj-admin:${IMAGE_TAG:-latest}
+    image: ${IMAGE_REGISTRY}/tzj-admin:${ADMIN_TAG:-${IMAGE_TAG:-latest}}
     restart: unless-stopped
     depends_on:
       api:

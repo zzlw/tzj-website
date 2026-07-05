@@ -1,16 +1,14 @@
 # ============================================================
-# TZJ — 生产部署（国内最佳实践）
+# TZJ — 完整构建 + 部署（备用，主路径请用云效 Flow）
 # ============================================================
-# GitHub Actions 构建镜像 → push 阿里云 ACR 个人版 → ECS pull + compose up
-# 质量门禁见 ci.yml；本 workflow 只负责 build-push-deploy
+# 跨境 GitHub Runner 构建 push ACR + SSH deploy
+# 日常发布：Codeup push → 云效 pipeline
+# Runner 离线 / 回滚：Actions → Deploy ECS (SSH)
 # ============================================================
 
-name: Deploy Production
+name: Deploy Production (Build + SSH)
 
 on:
-  # 临时停用 push 触发：跨境 SSH 慢/不稳定，改用 ./infra/docker/deploy-local.sh
-  # push:
-  #   branches: [main]
   workflow_dispatch:
 
 concurrency:
@@ -60,35 +58,24 @@ jobs:
     environment: production
     steps:
       - uses: actions/checkout@v4
-
-      - name: Upload compose & deploy script
-        uses: appleboy/scp-action@v0.1.7
+      - uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ vars.ECS_HOST }}
           username: ${{ vars.ECS_USER }}
           key: ${{ secrets.ECS_SSH_KEY }}
-          source: "infra/docker/docker-compose.prod.yml,infra/docker/deploy.sh"
+          source: "infra/docker/docker-compose.prod.yml,infra/docker/deploy.sh,infra/docker/.env.prod.local.example"
           target: "/opt/tzj"
           strip_components: 2
-
-      - name: Deploy on ECS (ACR pull)
-        uses: appleboy/ssh-action@v1.0.3
+      - uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ vars.ECS_HOST }}
           username: ${{ vars.ECS_USER }}
           key: ${{ secrets.ECS_SSH_KEY }}
-          envs: IMAGE_TAG,ACR_REGISTRY,ACR_NAMESPACE,ACR_USERNAME,ACR_PASSWORD
           script: |
             set -euo pipefail
             cd /opt/tzj
             chmod +x deploy.sh
-            echo "$ACR_PASSWORD" | docker login "$ACR_REGISTRY" -u "$ACR_USERNAME" --password-stdin
-            export IMAGE_TAG
-            export IMAGE_REGISTRY="${ACR_REGISTRY}/${ACR_NAMESPACE}"
-            ./deploy.sh
-        env:
-          IMAGE_TAG: ${{ github.sha }}
-          ACR_REGISTRY: ${{ vars.ACR_REGISTRY }}
-          ACR_NAMESPACE: ${{ vars.ACR_NAMESPACE }}
-          ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
-          ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
+            if [[ ! -f .env.prod.local ]] && [[ -f .env.prod.local.example ]]; then
+              cp .env.prod.local.example .env.prod.local
+            fi
+            ./deploy.sh all "${{ github.sha }}"
