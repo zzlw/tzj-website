@@ -11,8 +11,8 @@ import {
 } from "@/features/constants";
 
 const specSchema = z.object({
-  label: z.string(),
-  value: z.string(),
+  label: z.coerce.string(),
+  value: z.coerce.string(),
 });
 
 const schema = z.object({
@@ -119,8 +119,15 @@ export const casesConfig: ResourceConfig<CaseItem> = {
     client: r.client ?? "",
     completionDate: toDateInput(r.completionDate),
     summary: r.summary ?? "",
-    highlights: Array.isArray(r.highlights) ? r.highlights : [],
-    specs: Array.isArray(r.specs) ? r.specs : [],
+    highlights: Array.isArray(r.highlights)
+      ? r.highlights.map((h) => String(h ?? ""))
+      : [],
+    specs: Array.isArray(r.specs)
+      ? r.specs.map((s) => ({
+          label: String(s?.label ?? ""),
+          value: String(s?.value ?? ""),
+        }))
+      : [],
     description: r.description ?? "",
     coverImage: r.coverImage ?? "",
     seoTitle: r.seoTitle ?? "",

@@ -37,6 +37,8 @@ export interface FieldDef {
   colSpan?: 1 | 2;
   /** 媒体上传时的子目录（image/gallery/markdown 字段使用）。 */
   folder?: string;
+  /** 空值时向 API 提交 null（用于可清空的关联字段）。 */
+  emptyAsNull?: boolean;
 }
 
 export type ColumnDef<T> = DataTableColumn<T>;
@@ -67,4 +69,15 @@ export interface ResourceConfig<T> {
   previewPath?: (row: T) => string;
   /** 列表默认排序（通常为发布日期倒序）。 */
   defaultSort?: DataTableSort;
+  /** 自定义 RBAC（默认 content.*） */
+  permissions?: {
+    create?: readonly string[];
+    edit?: readonly string[];
+    delete?: string;
+    publish?: readonly string[];
+  };
+  /** 新建时额外合并进 API 请求体的字段（如 personal: true） */
+  createPayloadExtra?: Record<string, unknown>;
+  /** 后台内部阅读页路径（如内部文档 `/documents/:id`） */
+  detailPath?: (row: T) => string;
 }

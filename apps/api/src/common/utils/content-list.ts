@@ -26,6 +26,36 @@ export const CONTENT_ADMIN_USER_INCLUDE = {
   ...CREATED_BY_USER_INCLUDE,
 } as const;
 
+type OperatorUserRow = {
+  id: string;
+  username: string;
+  nickname: string | null;
+  email: string | null;
+  phone: string | null;
+  avatar: string | null;
+  role: string;
+  isActive: boolean;
+  lastLoginAt: Date | null;
+  createdAt: Date;
+};
+
+/** 将 Prisma 用户关联转为 API DTO（ISO 日期字符串） */
+export function mapOperatorUser(user: OperatorUserRow | null | undefined) {
+  if (!user) return null;
+  return {
+    id: user.id,
+    username: user.username,
+    nickname: user.nickname,
+    email: user.email,
+    phone: user.phone,
+    avatar: user.avatar,
+    role: user.role,
+    isActive: user.isActive,
+    lastLoginAt: user.lastLoginAt?.toISOString() ?? null,
+    createdAt: user.createdAt.toISOString(),
+  };
+}
+
 const INTERNAL_KEYS = [
   "systemPublishedAt",
   "createdBy",

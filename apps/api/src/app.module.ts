@@ -19,6 +19,12 @@ import { UsersModule } from "./users/users.module";
 import { AccessModule } from "./access/access.module";
 import { AuditModule } from "./audit/audit.module";
 import { AnalyticsModule } from "./analytics/analytics.module";
+import { SecurityModule } from "./security/security.module";
+import { SettingsModule } from "./settings/settings.module";
+import { IntegrationsModule } from "./integrations/integrations.module";
+import { NotificationModule } from "./notifications/notification.module";
+import { SystemModule } from "./system/system.module";
+import { DocumentsModule } from "./documents/documents.module";
 import { JwtAuthGuard } from "./auth/guards/jwt-auth.guard";
 import { RolesGuard } from "./auth/guards/roles.guard";
 import { TransformInterceptor } from "./common/interceptors/transform.interceptor";
@@ -61,6 +67,12 @@ import { validateEnv } from "./config/env.validation";
     AccessModule,
     AuditModule,
     AnalyticsModule,
+    SecurityModule,
+    SettingsModule,
+    IntegrationsModule,
+    NotificationModule,
+    SystemModule,
+    DocumentsModule,
   ],
   providers: [
     // 全局限流

@@ -17,7 +17,7 @@ import { SearchProvider } from "@/components/search/SearchProvider";
 import { DeferredVisitorTracker } from "@/components/performance/DeferredVisitorTracker";
 import { JsonLd } from "@/components/JsonLd";
 import { organizationJsonLd } from "@/lib/jsonld";
-import { siteConfig } from "@/lib/site";
+import { getSitePublicSettings, localizedAddress } from "@/lib/site-settings";
 import "../globals.css";
 
 const geist = Geist({
@@ -54,6 +54,8 @@ export default async function LocaleLayout({ children, params }: Props) {
   const tCommon = await getTranslations("common");
   const tContact = await getTranslations("contact");
   const mediaOrigin = getMediaOrigin();
+  const siteSettings = await getSitePublicSettings();
+  const streetAddress = localizedAddress(siteSettings, locale, tContact("address"));
 
   return (
     <html
@@ -76,9 +78,9 @@ export default async function LocaleLayout({ children, params }: Props) {
                 legalName: tCommon("legalName"),
                 brandName: tCommon("brandName"),
                 description: tCommon("siteDescription"),
-                phone: siteConfig.contact.phone,
-                email: siteConfig.contact.email,
-                streetAddress: tContact("address"),
+                phone: siteSettings.contact.phone,
+                email: siteSettings.contact.email,
+                streetAddress,
                 addressLocality: tContact("addressLocality"),
                 addressRegion: tContact("addressRegion"),
               })}

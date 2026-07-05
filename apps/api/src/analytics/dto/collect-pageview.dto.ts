@@ -1,5 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsOptional, IsString, MaxLength, MinLength } from "class-validator";
+import { Type } from "class-transformer";
+import {
+  IsNumber,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+  MinLength,
+} from "class-validator";
 
 export class CollectPageViewDto {
   @ApiProperty({ description: "匿名访客会话 ID（localStorage）" })
@@ -25,4 +34,20 @@ export class CollectPageViewDto {
   @IsString()
   @MaxLength(2000)
   referrer?: string;
+
+  @ApiPropertyOptional({ description: "GPS 纬度（geoMode=gps 且用户授权时）" })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(-90)
+  @Max(90)
+  latitude?: number;
+
+  @ApiPropertyOptional({ description: "GPS 经度（geoMode=gps 且用户授权时）" })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(-180)
+  @Max(180)
+  longitude?: number;
 }

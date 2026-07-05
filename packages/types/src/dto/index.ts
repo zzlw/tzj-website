@@ -117,3 +117,49 @@ export interface CreateUserDto {
   displayName: string;
   role?: string;
 }
+
+export type {
+  SitePublicSettings,
+  SocialChannelSetting,
+  SocialChannelPurpose,
+  SocialPlatformId,
+  AnalyticsGeoMode,
+  PageViewGeoSource,
+  LocalizedText,
+} from "./site-settings.js";
+export type {
+  SiteNotificationSettings,
+  NotificationLogItem,
+  NotificationTemplate,
+  NotificationChannel,
+  NotificationStatus,
+} from "./site-notifications.js";
+export type {
+  SiteMediaSettings,
+  WatermarkLayout,
+  WatermarkPosition,
+  WatermarkMode,
+  WatermarkFolder,
+} from "./site-media.js";
+export { WATERMARK_POSITION_LABELS } from "./site-media.js";
+export type { SystemStatusResponse, DependencyStatus } from "./system-status.js";
+export type {
+  IntegrationDef,
+  IntegrationFieldDef,
+  IntegrationSetupStep,
+  IntegrationOperatorUser,
+  IntegrationAdminItem,
+  IntegrationsAdminOverview,
+  InfrastructureSecretStatus,
+  UpdateIntegrationDto,
+  IntegrationTestResult,
+  IntegrationSecretMask,
+  IntegrationsPublicConfig,
+} from "./integrations.js";
+export type {
+  BlockIpDuration,
+  CreateBlockedIpDto,
+  BlockedIpItem,
+  AnalyticsIpTrafficRow,
+} from "./analytics.js";
+export { BLOCK_IP_DURATION_LABELS } from "./analytics.js";

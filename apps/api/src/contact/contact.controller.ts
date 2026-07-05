@@ -7,11 +7,13 @@ import {
   Body,
   Param,
   Query,
+  Headers,
   ParseIntPipe,
   DefaultValuePipe,
 } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiQuery, ApiBearerAuth } from "@nestjs/swagger";
 import { ContactService } from "./contact.service";
+import { AliyunCaptchaService } from "../integrations/aliyun-captcha.service";
 import { CreateContactDto, UpdateContactDto } from "./dto/contact.dto";
 import { Public } from "../auth/decorators/public.decorator";
 import { RequirePermissions } from "../auth/decorators/require-permissions.decorator";
@@ -21,7 +23,10 @@ import type { AuthUser } from "../auth/roles";
 @ApiTags("contact")
 @Controller("contact")
 export class ContactController {
-  constructor(private readonly contactService: ContactService) {}
+  constructor(
+    private readonly contactService: ContactService,
+    private readonly aliyunCaptchaService: AliyunCaptchaService,
+  ) {}
 
   @RequirePermissions("contacts.view", "contacts.manage")
   @ApiBearerAuth()
@@ -56,7 +61,11 @@ export class ContactController {
   @Public()
   @Post()
   @ApiOperation({ summary: "提交联系信息（官网留言）" })
-  create(@Body() dto: CreateContactDto) {
+  async create(
+    @Body() dto: CreateContactDto,
+    @Headers("x-captcha-verify-param") captchaVerifyParam: string | undefined,
+  ) {
+    await this.aliyunCaptchaService.verify(captchaVerifyParam);
     return this.contactService.create(dto);
   }
 

@@ -103,7 +103,8 @@ export interface WebsiteContactPayload {
   message: string;
   subject?: string;
   source?: string;
-  turnstileToken?: string;
+  /** 阿里云验证码 CaptchaVerifyParam */
+  captchaVerifyParam?: string;
 }
 
 export const getCases = (params?: Record<string, string | number | boolean | undefined>) =>
@@ -149,8 +150,8 @@ export const submitContact = (data: WebsiteContactPayload) => {
   };
 
   const headers: Record<string, string> = {};
-  if (data.turnstileToken) {
-    headers["X-Turnstile-Token"] = data.turnstileToken;
+  if (data.captchaVerifyParam) {
+    headers["X-Captcha-Verify-Param"] = data.captchaVerifyParam;
   }
 
   return fetchApi<ApiResponse<unknown>>("/contact", {

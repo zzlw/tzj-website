@@ -222,3 +222,38 @@ export interface AuditLogItem {
   traceId?: string | null;
   createdAt: string;
 }
+
+export interface DocFolderTreeNode {
+  id: string;
+  name: string;
+  slug: string;
+  parentId: string | null;
+  sortOrder: number;
+  children: DocFolderTreeNode[];
+}
+
+export interface InternalDocumentItem extends BaseEntity {
+  ownerId?: string | null;
+  title: string;
+  slug: string;
+  folderId?: string | null;
+  folder?: { id: string; name: string; slug: string } | null;
+  summary?: string | null;
+  content?: string | null;
+  status: string;
+  tags: string[];
+  isPinned: boolean;
+  viewCount: number;
+  publishedAt?: string | null;
+  createdBy?: string | null;
+  createdByUser?: ContentOperatorUser | null;
+  lastOperator?: string | null;
+  lastOperatorUser?: ContentOperatorUser | null;
+}
+
+export interface DocRevisionItem {
+  id: string;
+  title: string;
+  editor: { id: string; username: string; nickname?: string | null } | null;
+  createdAt: string;
+}

@@ -28,6 +28,8 @@ export function normalizeValues(
         v === "" || v === undefined || Number.isNaN(v) ? undefined : v;
     } else if (f.type === "switch") {
       out[f.name] = Boolean(v);
+    } else if (f.emptyAsNull && (v === "" || v === undefined)) {
+      out[f.name] = null;
     } else {
       out[f.name] = v === "" ? undefined : v;
     }

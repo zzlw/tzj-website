@@ -74,6 +74,8 @@ async function request<T>(
   return { data: body.data as T, pagination: body.pagination };
 }
 
+type ApiRemoveOpts = { purge?: boolean; query?: Params };
+
 export const api = {
   list: <T>(resource: string, params?: Params) =>
     request<T[]>(`/${resource}${qs(params)}`).then((r) => ({
@@ -92,20 +94,32 @@ export const api = {
       method: "PUT",
       body: JSON.stringify(payload),
     }).then((r) => r.data),
-  remove: (resource: string, id: string, opts?: { purge?: boolean }) =>
-    request<unknown>(`/${resource}/${id}${opts?.purge ? "/purge" : ""}`, {
-      method: "DELETE",
-    }).then(() => true),
+  remove: (resource: string, id: string, opts?: ApiRemoveOpts) =>
+    request<unknown>(
+      `/${resource}/${id}${opts?.purge ? "/purge" : ""}${qs(opts?.query)}`,
+      { method: "DELETE" },
+    ).then(() => true),
   patch: <T>(path: string, payload: unknown) =>
     request<T>(path, {
       method: "PATCH",
       body: JSON.stringify(payload),
     }).then((r) => r.data),
-  post: <T>(path: string, payload: unknown) =>
-    request<T>(path, {
-      method: "POST",
-      body: JSON.stringify(payload),
-    }).then((r) => r.data),
+  post: <T>(path: string, payload: unknown, params?: Params) =>
+    request<T>(
+      `${path.startsWith("/") ? path : `/${path}`}${qs(params)}`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+    ).then((r) => r.data),
+  put: <T>(path: string, payload: unknown, params?: Params) =>
+    request<T>(
+      `${path.startsWith("/") ? path : `/${path}`}${qs(params)}`,
+      {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      },
+    ).then((r) => r.data),
   /** GET 单资源或聚合接口（支持 query，如 analytics/overview） */
   query: <T>(path: string, params?: Params) =>
     request<T>(`/${path}${qs(params)}`).then((r) => r.data),

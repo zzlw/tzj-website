@@ -31,6 +31,8 @@ const EXTRA_SITE_MEDIA_PATHS = [
   "/og-default.jpg",
   "/favicon.ico",
   "/apple-touch-icon.png",
+  "/content/wechat.jpg",
+  "/content/douyin.jpg",
 ] as const;
 
 /** 展会种子默认封面（与 API TRADE_SHOW_COVERS 顺序对应）。 */
@@ -56,7 +58,7 @@ const QUICK_LINK_IMAGES = [
 ] as const;
 
 export function isSiteStaticMediaPath(url: string): boolean {
-  return url.startsWith("/media/") || /^\/og-/.test(url) || url === "/favicon.ico" || url === "/apple-touch-icon.png";
+  return url.startsWith("/media/") || /^\/og-/.test(url) || url === "/favicon.ico" || url === "/apple-touch-icon.png" || url.startsWith("/content/");
 }
 
 /** 收集站点引用的全部静态媒体路径，供 MinIO 同步脚本使用。 */

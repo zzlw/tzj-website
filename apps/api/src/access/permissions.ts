@@ -60,7 +60,39 @@ export const PERMISSION_GROUPS: PermissionGroupDef[] = [
       {
         id: "analytics.view",
         label: "查看访客分析",
-        description: "官网 PV/UV、页面排行、来源与设备分布",
+        description: "官网 PV/UV、页面排行、来源与设备分布（只读）",
+      },
+    ],
+  },
+  {
+    id: "security",
+    label: "网站安全",
+    permissions: [
+      {
+        id: "security.view",
+        label: "查看安全策略",
+        description: "查看 IP 封禁列表与异常流量",
+      },
+      {
+        id: "security.manage",
+        label: "管理安全策略",
+        description: "封禁 / 解封 IP，阻止恶意访问",
+      },
+    ],
+  },
+  {
+    id: "docs",
+    label: "内部文档",
+    permissions: [
+      { id: "docs.view", label: "查看内部文档", description: "阅读已发布的内部文档" },
+      { id: "docs.create", label: "创建内部文档" },
+      { id: "docs.edit", label: "编辑内部文档", description: "含查看草稿" },
+      { id: "docs.publish", label: "发布内部文档", description: "发布、下线，或将个人文档分享到公司知识库" },
+      { id: "docs.delete", label: "删除内部文档" },
+      {
+        id: "docs.manage",
+        label: "管理文档库结构",
+        description: "文件夹增删改、置顶等",
       },
     ],
   },
@@ -72,6 +104,23 @@ export const PERMISSION_GROUPS: PermissionGroupDef[] = [
       { id: "access.view", label: "查看角色与权限" },
       { id: "access.manage", label: "创建与管理自定义角色" },
       { id: "audit.view", label: "查看操作日志", description: "查看谁在何时做了什么" },
+      { id: "settings.view", label: "查看站点设置", description: "联系方式、备案、社媒等" },
+      { id: "settings.manage", label: "管理站点设置", description: "编辑官网联系方式、备案与社媒" },
+      {
+        id: "integrations.view",
+        label: "查看集成凭证",
+        description: "查看第三方 API 密钥（脱敏）与基础设施 env 状态",
+      },
+      {
+        id: "integrations.manage",
+        label: "管理集成凭证",
+        description: "编辑第三方 API 密钥（加密存储）",
+      },
+      {
+        id: "system.view",
+        label: "查看系统状态",
+        description: "服务健康、内存/CPU/磁盘与通知发送记录",
+      },
     ],
   },
 ];

@@ -1,26 +1,15 @@
-"use client";
+import { connection } from "next/server";
+import { getLocale, getTranslations } from "next-intl/server";
+import { ContactSectionDynamic } from "@/components/sections/ContactSectionDynamic";
+import { getSitePublicSettings, localizedAddress } from "@/lib/site-settings";
 
-import dynamic from "next/dynamic";
-import { Container } from "@/components/ui";
+/** 首页联系区块：服务端拉取 CMS 设置后 hydrate 客户端表单 */
+export async function ContactSectionLazy() {
+  await connection();
+  const settings = await getSitePublicSettings();
+  const locale = await getLocale();
+  const t = await getTranslations("contact");
+  const address = localizedAddress(settings, locale, t("address"));
 
-const ContactSection = dynamic(
-  () =>
-    import("@/components/sections/ContactSection").then((m) => ({
-      default: m.ContactSection,
-    })),
-  {
-    loading: () => (
-      <section className="border-t border-neutral-200 bg-neutral-50 py-16">
-        <Container>
-          <div className="mx-auto h-8 w-40 animate-pulse rounded bg-neutral-200" />
-          <div className="mt-10 h-64 animate-pulse rounded bg-neutral-100" />
-        </Container>
-      </section>
-    ),
-  },
-);
-
-/** 联系表单 + Turnstile：唯一值得 dynamic 的首页重组件（纯客户端）。 */
-export function ContactSectionLazy() {
-  return <ContactSection />;
+  return <ContactSectionDynamic settings={settings} address={address} />;
 }

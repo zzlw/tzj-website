@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
@@ -8,10 +8,14 @@ import { Alert, Button, Card, CardContent } from "@tzj/ui";
 import { Can } from "@/components/Can";
 import { useOne, useCreate, useUpdate } from "@/features/hooks";
 import { normalizeValues } from "@/features/normalize";
-import { ApiError } from "@/lib/apiClient";
+import { notifyError, notifySuccess } from "@/lib/notify";
 import type { ResourceConfig } from "./config";
 import { ResourceForm } from "./ResourceForm";
 import { ImagePreviewProvider } from "@/components/media/ImagePreviewProvider";
+
+function editPerms<T>(config: ResourceConfig<T>) {
+  return [...(config.permissions?.edit ?? ["content.create", "content.edit"])];
+}
 
 const FORM_ID = "resource-editor-form";
 
@@ -19,15 +23,17 @@ export function ResourceEditor<T extends { id: string }>({
   config,
   id,
   dynamicOptions,
+  tagSuggestions,
 }: {
   config: ResourceConfig<T>;
   /** 传入则为编辑模式；不传为新建。 */
   id?: string;
   dynamicOptions?: Record<string, { label: string; value: string }[]>;
+  /** tags 字段：已有标签建议列表 */
+  tagSuggestions?: string[];
 }) {
   const router = useRouter();
   const isEdit = Boolean(id);
-  const [formError, setFormError] = useState<string | null>(null);
 
   const { data: item, isLoading, isError, error } = useOne<T>(
     config.resource,
@@ -44,19 +50,22 @@ export function ResourceEditor<T extends { id: string }>({
   }, [isEdit, item, config]);
 
   async function handleSubmit(values: Record<string, unknown>) {
-    setFormError(null);
     const payload = normalizeValues(config.fields, values);
     try {
       if (isEdit && item) {
         await updateMut.mutateAsync({ id: item.id, payload });
+        notifySuccess(`${config.singular}已更新`);
       } else {
-        await createMut.mutateAsync(payload);
+        await createMut.mutateAsync({
+          ...payload,
+          ...config.createPayloadExtra,
+        });
+        notifySuccess(`${config.singular}已创建`);
       }
       router.push(config.basePath);
       router.refresh();
     } catch (e) {
-      setFormError(e instanceof ApiError ? e.message : "保存失败");
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      notifyError(e, "保存失败");
     }
   }
 
@@ -75,7 +84,13 @@ export function ResourceEditor<T extends { id: string }>({
             {title}
           </h1>
         </div>
-        <Can anyPerm={["content.create", "content.edit"]}>
+        <Can
+          anyPerm={
+            isEdit
+              ? editPerms(config)
+              : [...(config.permissions?.create ?? editPerms(config))]
+          }
+        >
           <div className="flex shrink-0 items-center gap-2 sm:ml-auto">
             <Button variant="ghost" asChild>
               <Link href={config.basePath}>取消</Link>
@@ -86,12 +101,6 @@ export function ResourceEditor<T extends { id: string }>({
           </div>
         </Can>
       </div>
-
-      {formError && (
-        <Alert variant="destructive" icon="error" className="mb-4">
-          {formError}
-        </Alert>
-      )}
 
       {isEdit && isError && (
         <Alert variant="destructive" icon="error" className="mb-4">
@@ -113,6 +122,7 @@ export function ResourceEditor<T extends { id: string }>({
                 schema={config.schema}
                 defaultValues={defaults}
                 dynamicOptions={dynamicOptions}
+                tagSuggestions={tagSuggestions}
                 onSubmit={handleSubmit}
               />
             </ImagePreviewProvider>

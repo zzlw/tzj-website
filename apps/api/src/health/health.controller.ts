@@ -1,35 +1,31 @@
 import { Controller, Get } from "@nestjs/common";
-import { ApiTags, ApiOperation } from "@nestjs/swagger";
-import { PrismaService } from "../prisma/prisma.service";
+import { ApiOperation, ApiTags } from "@nestjs/swagger";
 import { Public } from "../auth/decorators/public.decorator";
+import { HealthService } from "./health.service";
 
 @ApiTags("health")
 @Controller("health")
 export class HealthController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly healthService: HealthService) {}
 
   @Public()
   @Get()
-  @ApiOperation({ summary: "健康检查" })
-  async check() {
-    let dbStatus = "ok";
-    try {
-      await this.prisma.$queryRaw`SELECT 1`;
-    } catch {
-      dbStatus = "error";
-    }
+  @ApiOperation({ summary: "健康检查（兼容旧探针）" })
+  check() {
+    return this.healthService.check();
+  }
 
-    return {
-      status: dbStatus === "ok" ? "healthy" : "degraded",
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      checks: {
-        database: dbStatus,
-        memory: {
-          rss: `${Math.round(process.memoryUsage().rss / 1024 / 1024)}MB`,
-          heap: `${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`,
-        },
-      },
-    };
+  @Public()
+  @Get("live")
+  @ApiOperation({ summary: "存活探针（K8s liveness）" })
+  live() {
+    return this.healthService.live();
+  }
+
+  @Public()
+  @Get("ready")
+  @ApiOperation({ summary: "就绪探针（K8s readiness，含依赖）" })
+  ready() {
+    return this.healthService.ready();
   }
 }

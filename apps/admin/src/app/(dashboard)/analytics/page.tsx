@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
+import { ArrowRight, ShieldBan } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -20,11 +22,17 @@ import {
   HorizontalBarChart,
   TrendChart,
 } from "@/components/analytics/AnalyticsCharts";
+import { RichHint } from "@/components/RichHint";
+import { Can } from "@/components/Can";
+import { CopyableIp } from "@/components/CopyableText";
+import { GPS_GEO_RESOLVE_NOTE } from "@/lib/analytics-geo-hints";
 import {
   DEFAULT_PAGE_SORT,
   DEFAULT_REFERRER_SORT,
   DEFAULT_REGION_SORT,
   deviceLabel,
+  formatLastSeen,
+  useAnalyticsIpTraffic,
   useAnalyticsOverview,
   useAnalyticsPages,
   useAnalyticsReferrers,
@@ -33,6 +41,7 @@ import {
   type AnalyticsReferrerRow,
   type AnalyticsRegionRow,
 } from "@/features/analytics";
+import type { AnalyticsIpTrafficRow } from "@tzj/types";
 
 function StatCard({
   label,
@@ -75,6 +84,9 @@ export default function AnalyticsPage() {
   const [referrersSort, setReferrersSort] = useState<DataTableSort | null>(
     DEFAULT_REFERRER_SORT,
   );
+
+  const [ipTrafficPage, setIpTrafficPage] = useState(1);
+  const [ipTrafficPageSize, setIpTrafficPageSize] = useState(10);
 
   const dateParams = useMemo(
     () => ({
@@ -119,10 +131,20 @@ export default function AnalyticsPage() {
     [dateParams, referrersPage, referrersPageSize, referrersSort],
   );
 
+  const ipTrafficParams = useMemo(
+    () => ({
+      ...dateParams,
+      page: ipTrafficPage,
+      limit: ipTrafficPageSize,
+    }),
+    [dateParams, ipTrafficPage, ipTrafficPageSize],
+  );
+
   const { data, isLoading, isFetching } = useAnalyticsOverview(overviewParams);
   const pagesQuery = useAnalyticsPages(pagesParams);
   const regionsQuery = useAnalyticsRegions(regionsParams);
   const referrersQuery = useAnalyticsReferrers(referrersParams);
+  const ipTrafficQuery = useAnalyticsIpTraffic(ipTrafficParams);
 
   const overviewLoading = isLoading || isFetching;
 
@@ -157,6 +179,36 @@ export default function AnalyticsPage() {
     },
   ];
 
+  const ipTrafficColumns: DataTableColumn<AnalyticsIpTrafficRow>[] = [
+    {
+      key: "ip",
+      header: "IP",
+      cell: (r) => <CopyableIp ip={r.ip} ipMasked={r.ipMasked} />,
+    },
+    {
+      key: "region",
+      header: "地区",
+      cell: (r) => r.region || "—",
+    },
+    {
+      key: "pageViews",
+      header: "PV",
+      className: "tabular-nums",
+      cell: (r) => r.pageViews.toLocaleString("zh-CN"),
+    },
+    {
+      key: "uniqueVisitors",
+      header: "UV",
+      className: "tabular-nums",
+      cell: (r) => r.uniqueVisitors.toLocaleString("zh-CN"),
+    },
+    {
+      key: "lastSeenAt",
+      header: "最近访问",
+      cell: (r) => formatLastSeen(r.lastSeenAt),
+    },
+  ];
+
   const referrerColumns: DataTableColumn<AnalyticsReferrerRow>[] = [
     {
       key: "referrerHost",
@@ -169,6 +221,13 @@ export default function AnalyticsPage() {
       header: "地区",
       sortable: true,
       cell: (r) => r.region,
+    },
+    {
+      key: "geoSource",
+      header: "定位依据",
+      sortable: true,
+      className: "tabular-nums text-muted-foreground",
+      cell: (r) => r.geoSource,
     },
     {
       key: "pageViews",
@@ -185,6 +244,13 @@ export default function AnalyticsPage() {
       header: "地区",
       sortable: true,
       cell: (r) => r.region,
+    },
+    {
+      key: "geoSource",
+      header: "定位依据",
+      sortable: true,
+      className: "tabular-nums text-muted-foreground",
+      cell: (r) => r.geoSource,
     },
     {
       key: "pageViews",
@@ -228,6 +294,7 @@ export default function AnalyticsPage() {
     setPagesPage(1);
     setRegionsPage(1);
     setReferrersPage(1);
+    setIpTrafficPage(1);
   }
 
   return (
@@ -246,10 +313,37 @@ export default function AnalyticsPage() {
             onChange={({ from: f, to: t }) => resetDateFilters(f, t)}
           />
           <p className="text-xs text-muted-foreground">
-            未选日期时默认展示近 7 天；地区数据自本次升级后新产生的访问起记录。
+            未选日期时默认展示近 7 天。
           </p>
+          <RichHint
+            text={GPS_GEO_RESOLVE_NOTE}
+            className="w-full text-xs text-muted-foreground"
+          />
         </CardContent>
       </Card>
+
+      <Can anyPerm={["security.view", "security.manage"]}>
+        <Card className="mb-6 border-border/80 shadow-sm">
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
+            <div className="flex items-start gap-3">
+              <ShieldBan className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+              <div>
+                <p className="text-sm font-medium">发现异常 IP 刷量？</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  访客分析为只读统计。封禁 IP 属于访问控制，请在网站安全中处置。
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/security/ip-block"
+              className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+            >
+              前往 IP 封禁
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </CardContent>
+        </Card>
+      </Can>
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
@@ -289,7 +383,9 @@ export default function AnalyticsPage() {
         <Card className="border-border/80 shadow-sm">
           <CardHeader>
             <CardTitle className="text-base">访客地区</CardTitle>
-            <CardDescription>按 IP 离线解析的地理分布（Top 12）</CardDescription>
+            <CardDescription>
+              按 IP 或 GPS 解析的地理分布（Top 12）。GPS 模式详见上方逆地理说明。
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <HorizontalBarChart
@@ -388,6 +484,32 @@ export default function AnalyticsPage() {
             onPageSizeChange={(size) => {
               setRegionsPageSize(size);
               setRegionsPage(1);
+            }}
+          />
+        ) : null}
+      </div>
+
+      <div className="mb-6 space-y-2">
+        <h2 className="text-base font-semibold">访客 IP</h2>
+        <p className="text-xs text-muted-foreground">
+          按 IP 聚合的访问明细。完整 IP 自本次升级后的新访问起记录；更早数据可能仅显示脱敏地址。点击 IP 右侧图标可复制。
+        </p>
+        <DataTable
+          columns={ipTrafficColumns}
+          rows={ipTrafficQuery.data?.data ?? []}
+          loading={ipTrafficQuery.isLoading || ipTrafficQuery.isFetching}
+          emptyText="暂无 IP 访问记录"
+        />
+        {ipTrafficQuery.data?.pagination ? (
+          <TablePagination
+            page={ipTrafficPage}
+            totalPages={ipTrafficQuery.data.pagination.totalPages}
+            total={ipTrafficQuery.data.pagination.total}
+            pageSize={ipTrafficPageSize}
+            onPageChange={setIpTrafficPage}
+            onPageSizeChange={(size) => {
+              setIpTrafficPageSize(size);
+              setIpTrafficPage(1);
             }}
           />
         ) : null}

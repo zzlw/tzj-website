@@ -1,4 +1,13 @@
-import { Body, Controller, DefaultValuePipe, Get, ParseIntPipe, Post, Query, Req } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  DefaultValuePipe,
+  Get,
+  ParseIntPipe,
+  Post,
+  Query,
+  Req,
+} from "@nestjs/common";
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -10,12 +19,16 @@ import type { Request } from "express";
 import { Public } from "../auth/decorators/public.decorator";
 import { RequirePermissions } from "../auth/decorators/require-permissions.decorator";
 import { AnalyticsService } from "./analytics.service";
+import { SecurityService } from "../security/security.service";
 import { CollectPageViewDto } from "./dto/collect-pageview.dto";
 
 @ApiTags("analytics")
 @Controller("analytics")
 export class AnalyticsController {
-  constructor(private readonly analyticsService: AnalyticsService) {}
+  constructor(
+    private readonly analyticsService: AnalyticsService,
+    private readonly securityService: SecurityService,
+  ) {}
 
   @Public()
   @Post("collect")
@@ -99,5 +112,20 @@ export class AnalyticsController {
       sortBy,
       sortOrder,
     });
+  }
+
+  @RequirePermissions("analytics.view")
+  @ApiBearerAuth()
+  @Get("ip-traffic")
+  @ApiOperation({ summary: "按 IP 聚合的访客流量（后台只读）" })
+  @ApiQuery({ name: "from", required: false, description: "YYYY-MM-DD" })
+  @ApiQuery({ name: "to", required: false, description: "YYYY-MM-DD" })
+  listIpTraffic(
+    @Query("page", new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query("limit", new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    @Query("from") from?: string,
+    @Query("to") to?: string,
+  ) {
+    return this.securityService.listIpTraffic({ page, limit, from, to });
   }
 }

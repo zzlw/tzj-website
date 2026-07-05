@@ -13,6 +13,7 @@ import {
   PROTECTED_MEDIA_FOLDERS,
   SITE_ARCHIVE_PREFIX,
 } from "./media-guard.service";
+import { WatermarkService } from "./watermark.service";
 
 interface FindAllParams {
   page: number;
@@ -38,6 +39,7 @@ export class MediaService {
     private readonly prisma: PrismaService,
     private readonly s3: S3Service,
     private readonly guard: MediaGuardService,
+    private readonly watermark: WatermarkService,
   ) {}
 
   /** 规范化对象 key：`folder/时间戳-安全文件名`。 */
@@ -129,14 +131,21 @@ export class MediaService {
   ) {
     const dir = this.normalizeUploadFolder(folder);
     const key = this.buildKey(dir, file.originalname);
-    const result = await this.s3.upload(file.buffer, key, file.mimetype);
+    const processed = await this.watermark.processUpload(
+      file.buffer,
+      file.mimetype,
+      dir,
+    );
+    const result = await this.s3.upload(processed.buffer, key, processed.mimeType);
     return this.prisma.mediaAsset.create({
       data: {
         key: result.key,
         url: result.url,
         filename: file.originalname,
-        mimeType: file.mimetype,
-        size: file.size ?? result.size,
+        mimeType: processed.mimeType,
+        size: processed.buffer.length,
+        width: processed.width,
+        height: processed.height,
         folder: dir,
         uploadedById: userId,
       },

@@ -184,3 +184,71 @@ body {
   background: transparent;
 }
 
+/* 内部文档阅读页 Markdown 预览 */
+.markdown-preview.vditor-reset {
+  color: var(--color-foreground);
+}
+.markdown-preview-article.vditor-reset {
+  color: var(--color-foreground);
+  line-height: 1.75;
+}
+.markdown-preview-article.vditor-reset h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 1.75rem 0 1rem;
+  letter-spacing: -0.02em;
+}
+.markdown-preview-article.vditor-reset h2 {
+  font-size: 1.375rem;
+  font-weight: 600;
+  margin: 1.5rem 0 0.75rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--color-border);
+}
+.markdown-preview-article.vditor-reset h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 1.25rem 0 0.5rem;
+}
+.markdown-preview-article.vditor-reset p {
+  margin: 0.75rem 0;
+}
+.markdown-preview-article.vditor-reset ul,
+.markdown-preview-article.vditor-reset ol {
+  margin: 0.75rem 0;
+  padding-left: 1.5rem;
+}
+.markdown-preview-article.vditor-reset blockquote {
+  margin: 1rem 0;
+  padding-left: 1rem;
+  border-left: 3px solid var(--color-border);
+  color: var(--color-muted-foreground);
+}
+.markdown-preview.vditor-reset img,
+.markdown-preview-article.vditor-reset img {
+  max-width: 100%;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+}
+.markdown-preview.vditor-reset pre,
+.markdown-preview-article.vditor-reset pre {
+  background: var(--color-muted);
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+}
+.markdown-preview-article.vditor-reset table {
+  width: 100%;
+  margin: 1rem 0;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.markdown-preview-article.vditor-reset th,
+.markdown-preview-article.vditor-reset td {
+  border: 1px solid var(--color-border);
+  padding: 0.5rem 0.75rem;
+}
+.markdown-preview-article.vditor-reset th {
+  background: var(--color-muted);
+  font-weight: 600;
+}
+

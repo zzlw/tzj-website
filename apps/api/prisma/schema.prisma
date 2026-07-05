@@ -257,6 +257,15 @@ model User {
   blogsCreated          Blog[]      @relation("BlogCreatedBy")
   tradeShowsCreated     TradeShow[] @relation("TradeShowCreatedBy")
   contactsLastOperated  Contact[]   @relation("ContactLastOperator")
+  blockedIpsCreated     BlockedIp[] @relation("BlockedIpCreatedBy")
+  integrationsUpdated Integration[] @relation("IntegrationUpdatedBy")
+  docsCreated           InternalDocument[] @relation("DocCreatedBy")
+  docsLastOperated      InternalDocument[] @relation("DocLastOperator")
+  docRevisionsEdited    InternalDocumentRevision[] @relation("DocRevisionEditor")
+  docFoldersOwned       DocFolder[] @relation("DocFolderOwner")
+  personalDocuments     InternalDocument[] @relation("DocPersonalOwner")
+  docTagsOwned          DocTag[] @relation("DocTagOwner")
+  docTagsCreated        DocTag[] @relation("DocTagCreatedBy")
 
   @@map("users")
 }
@@ -358,9 +367,12 @@ model PageView {
   referrerHost String?
   userAgent    String?
   ipHash       String?
+  ip           String?
+  ipMasked     String?
   country      String?
   region       String?
   city         String?
+  geoSource    String?
   deviceType   String?
   browser      String?
   os           String?
@@ -373,7 +385,136 @@ model PageView {
   @@index([referrerHost, createdAt])
   @@index([isBot, createdAt])
   @@index([country, createdAt])
+  @@index([ipHash, createdAt])
   @@map("page_views")
+}
+
+// ═══════════════════════════════════════════
+// 访客 IP 封禁（哈希存储，支持临时封禁）
+// ═══════════════════════════════════════════
+model BlockedIp {
+  id          String    @id @default(cuid())
+  ipHash      String    @unique
+  ipMasked    String
+  reason      String?
+  expiresAt   DateTime?
+  createdById String?
+  createdBy   User?     @relation("BlockedIpCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime  @default(now())
+
+  @@index([expiresAt])
+  @@map("blocked_ips")
+}
+
+// ═══════════════════════════════════════════
+// 内部文档库（仅后台，不对 C 端公开）
+// ═══════════════════════════════════════════
+model DocFolder {
+  id        String      @id @default(cuid())
+  ownerId   String?     @map("owner_id")
+  owner     User?       @relation("DocFolderOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  parentId  String?     @map("parent_id")
+  parent    DocFolder?  @relation("DocFolderTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children  DocFolder[] @relation("DocFolderTree")
+  name      String
+  slug      String
+  sortOrder Int         @default(0) @map("sort_order")
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+
+  documents InternalDocument[]
+
+  @@unique([ownerId, parentId, slug])
+  @@index([sortOrder])
+  @@index([ownerId])
+  @@map("doc_folders")
+}
+
+model InternalDocument {
+  id          String     @id @default(cuid())
+  ownerId     String?    @map("owner_id")
+  owner       User?      @relation("DocPersonalOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  folderId    String?    @map("folder_id")
+  folder      DocFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  title       String
+  slug        String     @unique
+  summary     String?    @db.Text
+  content     String?    @db.Text
+  status      String     @default("draft")
+  tags        String[]   @default([])
+  isPinned    Boolean    @default(false) @map("is_pinned")
+  viewCount   Int        @default(0) @map("view_count")
+  publishedAt DateTime?  @map("published_at")
+  createdBy         String?  @map("created_by")
+  createdById       String?  @map("created_by_id")
+  createdByUser     User?    @relation("DocCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  lastOperator      String?  @map("last_operator")
+  lastOperatorId    String?  @map("last_operator_id")
+  lastOperatorUser  User?    @relation("DocLastOperator", fields: [lastOperatorId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  revisions InternalDocumentRevision[]
+
+  @@index([folderId])
+  @@index([ownerId])
+  @@index([status, updatedAt])
+  @@index([isPinned])
+  @@index([createdById])
+  @@index([lastOperatorId])
+  @@map("internal_documents")
+}
+
+model InternalDocumentRevision {
+  id         String           @id @default(cuid())
+  documentId String           @map("document_id")
+  document   InternalDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  title      String
+  content    String?          @db.Text
+  editorId   String?          @map("editor_id")
+  editor     User?            @relation("DocRevisionEditor", fields: [editorId], references: [id], onDelete: SetNull)
+  createdAt  DateTime         @default(now()) @map("created_at")
+
+  @@index([documentId, createdAt])
+  @@map("internal_document_revisions")
+}
+
+// 文档标签注册表（owner_id 为空 = 组织标签，非空 = 个人标签）
+model DocTag {
+  id          String   @id @default(cuid())
+  ownerId     String?  @map("owner_id")
+  owner       User?    @relation("DocTagOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  name        String
+  slug        String
+  createdById String?  @map("created_by_id")
+  createdBy   User?    @relation("DocTagCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([ownerId, slug])
+  @@index([ownerId])
+  @@map("doc_tags")
+}
+
+// ═══════════════════════════════════════════
+// 事务性通知发送记录（邮件等）
+// ═══════════════════════════════════════════
+model NotificationLog {
+  id             String    @id @default(cuid())
+  channel        String
+  template       String
+  recipient      String
+  subject        String
+  status         String
+  error          String?
+  idempotencyKey String    @unique @map("idempotency_key")
+  payload        Json?
+  sentAt         DateTime? @map("sent_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  @@index([template, createdAt])
+  @@index([status, createdAt])
+  @@map("notification_logs")
 }
 
 // ═══════════════════════════════════════════
@@ -391,4 +532,21 @@ model Setting {
 
   @@index([group])
   @@map("settings")
+}
+
+// ═══════════════════════════════════════════
+// 第三方集成凭证（加密存储）
+// ═══════════════════════════════════════════
+model Integration {
+  slug        String   @id
+  enabled     Boolean  @default(false)
+  config      Json     @default("{}")
+  secretsEnc  String?  @map("secrets_enc")
+  secretsMask Json     @default("{}") @map("secrets_mask")
+  updatedById String?  @map("updated_by_id")
+  updatedBy   User?    @relation("IntegrationUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("integrations")
 }

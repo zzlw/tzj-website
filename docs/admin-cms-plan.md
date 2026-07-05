@@ -456,6 +456,8 @@ export const useUpdateProduct = () => {
 
 ## 11. CI/CD 与部署
 
+> **完整方案（阿里云 ECS + OSS + ACR + GitHub Actions + ACME 证书）** 见 [cicd-aliyun-acme.md](./cicd-aliyun-acme.md)。
+
 - **CI**（GitHub Actions，`.github` 已存在）：`install → typecheck → lint(biome) → test → prisma migrate diff 校验 → build`；Turbo 缓存加速。
 - **DB 迁移**：CI/CD 用 `prisma migrate deploy`；PR 阶段校验迁移与 schema 漂移。
 - **镜像**：`apps/api`、`apps/admin` 已有 `Dockerfile`；多阶段构建、非 root 运行。

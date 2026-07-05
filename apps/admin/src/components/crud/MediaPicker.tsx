@@ -20,6 +20,7 @@ import { Can } from "@/components/Can";
 import { ImagePreviewProvider } from "@/components/media/ImagePreviewProvider";
 import { MediaPreviewDialog } from "@/components/media/MediaPreviewDialog";
 import { getMediaKind } from "@/components/media/media-utils";
+import { notifyError, notifySuccess } from "@/lib/notify";
 
 const PAGE_SIZE_OPTIONS = [24, 48, 96] as const;
 const DEFAULT_PAGE_SIZE = PAGE_SIZE_OPTIONS[0];
@@ -176,6 +177,7 @@ export function MediaPicker({
   const [searchInput, setSearchInput] = useState("");
   const [sort, setSort] = useState<string>(SORT_OPTIONS[0].value);
   const [previewAsset, setPreviewAsset] = useState<MediaAsset | null>(null);
+  const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<MediaAsset | null>(null);
   const [photoPreviewOpen, setPhotoPreviewOpen] = useState(false);
   const [dismissCooldown, setDismissCooldown] = useState(false);
@@ -273,9 +275,16 @@ export function MediaPicker({
 
   async function onFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
+    let ok = 0;
     for (const file of Array.from(files)) {
-      await upload.mutateAsync(file);
+      try {
+        await upload.mutateAsync(file);
+        ok += 1;
+      } catch (e) {
+        notifyError(e, `「${file.name}」上传失败`);
+      }
     }
+    if (ok > 0) notifySuccess(ok === 1 ? "上传成功" : `已上传 ${ok} 个文件`);
     if (fileRef.current) fileRef.current.value = "";
     setPage(1);
   }
@@ -293,9 +302,17 @@ export function MediaPicker({
       setSelectedUrls((prev) => prev.filter((u) => u !== deleteTarget.url));
       if (previewAsset?.id === deleteTarget.id) setPreviewAsset(null);
       setDeleteTarget(null);
+      notifySuccess("已移入回收站");
     } catch (e) {
-      alert(formatMediaDeleteError(e));
+      notifyError(e, formatMediaDeleteError(e));
     }
+  }
+
+  function copyUrl(url: string) {
+    void navigator.clipboard.writeText(url);
+    setCopiedUrl(url);
+    notifySuccess("链接已复制");
+    setTimeout(() => setCopiedUrl(null), 1500);
   }
 
   const deleteConfirmOverlay = deleteTarget ? (
@@ -496,8 +513,8 @@ export function MediaPicker({
       <MediaPreviewDialog
         asset={previewAsset}
         onClose={closePreviewDialog}
-        copied={false}
-        onCopy={() => {}}
+        copied={previewAsset !== null && copiedUrl === previewAsset.url}
+        onCopy={copyUrl}
       />
     </>
   );

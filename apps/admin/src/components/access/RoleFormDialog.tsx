@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Loader2 } from "lucide-react";
 import {
-  Alert,
   Button,
   Dialog,
   DialogContent,
@@ -17,7 +16,7 @@ import {
   cn,
 } from "@tzj/ui";
 import type { PermissionGroup } from "@/features/types";
-import { ApiError } from "@/lib/apiClient";
+import { notifyError } from "@/lib/notify";
 
 export interface RoleFormValues {
   name: string;
@@ -142,7 +141,6 @@ export function RoleFormDialog({
   onSubmit,
 }: RoleFormDialogProps) {
   const [values, setValues] = useState<RoleFormValues>(EMPTY);
-  const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   const isEdit = Boolean(initialValues);
@@ -150,7 +148,6 @@ export function RoleFormDialog({
   useEffect(() => {
     if (open) {
       setValues(initialValues ?? EMPTY);
-      setError(null);
     }
   }, [open, initialValues]);
 
@@ -163,12 +160,11 @@ export function RoleFormDialog({
     e.preventDefault();
     if (!canSubmit) return;
     setSaving(true);
-    setError(null);
     try {
       await onSubmit(values);
       onOpenChange(false);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "保存失败");
+      notifyError(err, "保存失败");
     } finally {
       setSaving(false);
     }
@@ -184,12 +180,6 @@ export function RoleFormDialog({
               <DialogDescription>{description}</DialogDescription>
             ) : null}
           </DialogHeader>
-
-          {error ? (
-            <Alert variant="destructive" icon="error" className="mt-4">
-              {error}
-            </Alert>
-          ) : null}
 
           <div className="mt-4 space-y-4">
             <div className="space-y-2">

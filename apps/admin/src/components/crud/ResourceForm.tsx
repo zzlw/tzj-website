@@ -6,6 +6,7 @@ import {
   useForm,
   Controller,
   type Control,
+  type FieldErrors,
   type FieldValues,
   type Resolver,
 } from "react-hook-form";
@@ -13,6 +14,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import type { ZodType } from "zod";
 import { ImagePlus, X } from "lucide-react";
 import { PhotoView } from "react-photo-view";
+import { notifyError } from "@/lib/notify";
 import {
   DatePicker,
   DateTimePicker,
@@ -29,11 +31,51 @@ import {
   KeyValueList,
   type KeyValuePair,
   StringList,
+  TagsInput,
 } from "@tzj/ui";
 import type { FieldDef, Option } from "./config";
 import { MediaPicker } from "./MediaPicker";
 import { slugifyTitle } from "@/features/constants";
 import { resolveMediaUrl } from "@/lib/media-url";
+
+/** 校验前补全 slug，避免隐藏字段校验失败却无任何提示 */
+function createFormResolver(
+  schema: ZodType,
+  autoSlug: boolean,
+): Resolver<FieldValues> {
+  const base = zodResolver(schema as never) as Resolver<FieldValues>;
+  return async (values, context, options) => {
+    const prepared = { ...values } as FieldValues;
+    if (autoSlug && !String(prepared.slug ?? "").trim()) {
+      prepared.slug = slugifyTitle(String(prepared.title ?? ""));
+    }
+    return base(prepared, context, options);
+  };
+}
+
+function firstValidationMessage(errors: FieldErrors<FieldValues>): string {
+  for (const err of Object.values(errors)) {
+    if (!err) continue;
+    if (typeof err.message === "string" && err.message) return err.message;
+    if (typeof err === "object") {
+      const nested = firstValidationMessage(err as FieldErrors<FieldValues>);
+      if (nested) return nested;
+    }
+  }
+  return "请检查表单中标红的必填项";
+}
+
+function focusFirstInvalidField(formId: string, errors: FieldErrors<FieldValues>) {
+  const firstKey = Object.keys(errors)[0];
+  if (!firstKey) return;
+  const targetId =
+    firstKey === "slug" ? `${formId}-title` : `${formId}-${firstKey}`;
+  const el = document.getElementById(targetId);
+  el?.scrollIntoView({ behavior: "smooth", block: "center" });
+  if (el instanceof HTMLElement && "focus" in el) {
+    el.focus();
+  }
+}
 
 /** 按字段类型/名称生成 placeholder；配置项优先。 */
 function fieldPlaceholder(f: FieldDef): string | undefined {
@@ -277,6 +319,7 @@ export function ResourceForm({
   schema,
   defaultValues,
   dynamicOptions,
+  tagSuggestions,
   onSubmit,
   autoSlug = true,
 }: {
@@ -285,6 +328,7 @@ export function ResourceForm({
   schema: ZodType;
   defaultValues: Record<string, unknown>;
   dynamicOptions?: Record<string, Option[]>;
+  tagSuggestions?: string[];
   onSubmit: (values: Record<string, unknown>) => void;
   autoSlug?: boolean;
 }) {
@@ -297,9 +341,16 @@ export function ResourceForm({
     formState: { errors },
   } = useForm<FieldValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(schema as any) as Resolver<FieldValues>,
+    resolver: createFormResolver(schema, autoSlug),
     defaultValues: defaultValues as FieldValues,
+    mode: "onSubmit",
+    reValidateMode: "onChange",
   });
+
+  function handleInvalid(errors: FieldErrors<FieldValues>) {
+    notifyError(firstValidationMessage(errors), "无法保存");
+    focusFirstInvalidField(formId, errors);
+  }
 
   const titleValue = watch("title") as string | undefined;
   const slugLockedRef = useRef(
@@ -325,13 +376,16 @@ export function ResourceForm({
   return (
     <form
       id={formId}
-      onSubmit={handleSubmit((v) => {
-        const values = { ...v } as Record<string, unknown>;
-        if (autoSlug && !values.slug) {
-          values.slug = slugifyTitle(String(values.title ?? ""));
-        }
-        onSubmit(values);
-      })}
+      onSubmit={handleSubmit(
+        (v) => {
+          const values = { ...v } as Record<string, unknown>;
+          if (autoSlug && !String(values.slug ?? "").trim()) {
+            values.slug = slugifyTitle(String(values.title ?? ""));
+          }
+          onSubmit(values);
+        },
+        handleInvalid,
+      )}
       className="grid grid-cols-1 gap-x-5 gap-y-6 sm:grid-cols-2"
     >
       {autoSlug ? <input type="hidden" {...register("slug")} /> : null}
@@ -350,7 +404,21 @@ export function ResourceForm({
 
             {controlled(f.type) ? (
               <ControlledField field={f} control={control} />
-            ) : f.type === "textarea" || f.type === "tags" ? (
+            ) : f.type === "tags" ? (
+              <Controller
+                name={f.name}
+                control={control}
+                render={({ field: rhf }) => (
+                  <TagsInput
+                    id={fieldId}
+                    value={String(rhf.value ?? "")}
+                    onChange={rhf.onChange}
+                    suggestions={tagSuggestions}
+                    placeholder={placeholder ?? "输入标签后按 Enter 添加…"}
+                  />
+                )}
+              />
+            ) : f.type === "textarea" ? (
               <Textarea
                 id={fieldId}
                 {...register(f.name)}

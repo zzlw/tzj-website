@@ -10,6 +10,8 @@ type OrderByEntry = Record<
   SortOrder | { sort: SortOrder; nulls?: "first" | "last" }
 >;
 
+export type { OrderByEntry };
+
 /** 可空日期字段：排序时空值置后。 */
 const NULLABLE_DATE_FIELDS = new Set([
   "completionDate",

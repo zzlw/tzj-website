@@ -27,16 +27,32 @@ import {
 import { Can } from "@/components/Can";
 import { WEB_BASE } from "@/lib/config";
 import { useList, useUpdate, useRemove } from "@/features/hooks";
-import { ApiError } from "@/lib/apiClient";
+import { notifyError, notifySuccess } from "@/lib/notify";
 import type { ResourceConfig } from "./config";
+
+function perms<T>(config: ResourceConfig<T>, key: "create" | "edit" | "publish") {
+  const map = {
+    create: ["content.create", "content.edit"],
+    edit: ["content.create", "content.edit"],
+    publish: ["content.create", "content.edit"],
+  } as const;
+  return [...(config.permissions?.[key] ?? map[key])];
+}
+
+function deletePerm<T>(config: ResourceConfig<T>) {
+  return config.permissions?.delete ?? "content.delete";
+}
 
 export function ResourceListView<T extends { id: string }>({
   config,
   defaultPageSize = 10,
+  extraListParams,
 }: {
   config: ResourceConfig<T>;
   /** 默认每页条数，用户可在分页器修改 */
   defaultPageSize?: number;
+  /** 附加列表查询参数（如 folderId） */
+  extraListParams?: Record<string, string | undefined>;
 }) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(defaultPageSize);
@@ -55,9 +71,10 @@ export function ResourceListView<T extends { id: string }>({
       search: search || undefined,
       sortBy: sort?.column,
       sortOrder: sort?.order,
+      ...extraListParams,
       ...filters,
     }),
-    [page, pageSize, search, filters, sort],
+    [page, pageSize, search, filters, sort, extraListParams],
   );
 
   const { data, isLoading, isError, error } = useList<T>(config.resource, params);
@@ -72,8 +89,9 @@ export function ResourceListView<T extends { id: string }>({
     const next = cur === "published" ? "draft" : "published";
     try {
       await updateMut.mutateAsync({ id: row.id, payload: { status: next } });
+      notifySuccess(next === "published" ? "已发布" : "已转为草稿");
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : "操作失败");
+      notifyError(e, "操作失败");
     }
   }
 
@@ -82,8 +100,9 @@ export function ResourceListView<T extends { id: string }>({
     try {
       await removeMut.mutateAsync(deleteTarget.id);
       setDeleteTarget(null);
+      notifySuccess(`${config.singular}已删除`);
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : "删除失败");
+      notifyError(e, "删除失败");
     }
   }
 
@@ -92,7 +111,7 @@ export function ResourceListView<T extends { id: string }>({
       <PageHeader
         title={config.title}
         action={
-          <Can anyPerm={["content.create", "content.edit"]}>
+          <Can anyPerm={perms(config, "create")}>
             <Button asChild>
               <Link href={`${config.basePath}/new`}>
                 <Plus className="mr-2 h-4 w-4" />
@@ -173,6 +192,18 @@ export function ResourceListView<T extends { id: string }>({
         }}
         renderActions={(row) => (
           <div className="flex items-center justify-end gap-1">
+            {config.detailPath && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                    <Link href={config.detailPath(row)}>
+                      <Eye className="h-4 w-4" />
+                    </Link>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>阅读</TooltipContent>
+              </Tooltip>
+            )}
             {config.previewPath && (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -190,7 +221,7 @@ export function ResourceListView<T extends { id: string }>({
               </Tooltip>
             )}
             {config.publishable && (
-              <Can anyPerm={["content.create", "content.edit"]}>
+              <Can anyPerm={perms(config, "publish")}>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -214,7 +245,7 @@ export function ResourceListView<T extends { id: string }>({
                 </Tooltip>
               </Can>
             )}
-            <Can anyPerm={["content.create", "content.edit"]}>
+            <Can anyPerm={perms(config, "edit")}>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
@@ -226,7 +257,7 @@ export function ResourceListView<T extends { id: string }>({
                 <TooltipContent>编辑</TooltipContent>
               </Tooltip>
             </Can>
-            <Can perm="content.delete">
+            <Can perm={deletePerm(config)}>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button

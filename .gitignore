@@ -109,3 +109,17 @@ $RECYCLE.BIN/
 # ── Optional local tooling ───────────────────────────────────
 .cursor/
 *.local
+
+# ── C 端 public 静态资源（图片/视频/文档 → OSS sync，不进 Git）──
+apps/web/public/media/
+apps/web/public/docs/
+apps/web/public/**/*.png
+apps/web/public/**/*.jpg
+apps/web/public/**/*.jpeg
+apps/web/public/**/*.webp
+apps/web/public/**/*.gif
+apps/web/public/**/*.mp4
+apps/web/public/**/*.webm
+apps/web/public/**/*.mov
+apps/web/public/**/*.pdf
+apps/web/public/**/*.svg

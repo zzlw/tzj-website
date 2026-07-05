@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useState } from "react";
 import {
   Avatar,
   AvatarFallback,
@@ -74,27 +75,71 @@ function OperatorProfileCard({ user }: { user: ContentOperatorUser }) {
   );
 }
 
+function OperatorInline({ user }: { user: ContentOperatorUser }) {
+  const nickname = displayNickname(user);
+
+  return (
+    <span className="inline-flex max-w-full items-center gap-1.5 text-left font-medium text-foreground">
+      <Avatar className="h-5 w-5">
+        {user.avatar ? <AvatarImage src={user.avatar} alt={nickname} /> : null}
+        <AvatarFallback className="text-[9px] font-medium">{initials(nickname)}</AvatarFallback>
+      </Avatar>
+      <span className="truncate">{nickname}</span>
+    </span>
+  );
+}
+
 export function LastOperatorCell({
   user,
   fallback,
+  profileOnHover = true,
 }: {
   user?: ContentOperatorUser | null;
   fallback?: string | null;
+  /** 为 false 时仅展示操作人，不弹出资料卡片（适用于 Dialog 等会自动聚焦的场景） */
+  profileOnHover?: boolean;
 }) {
+  const [open, setOpen] = useState(false);
+  const allowOpenRef = useRef(false);
+
   if (!user) {
     if (!fallback?.trim()) return <span className="text-muted-foreground">—</span>;
     const label = fallback.trim().split(/\s+/)[0] ?? fallback;
     return <span>{label}</span>;
   }
 
+  if (!profileOnHover) {
+    return <OperatorInline user={user} />;
+  }
+
   const nickname = displayNickname(user);
 
+  function handleOpenChange(next: boolean) {
+    if (next && !allowOpenRef.current) return;
+    setOpen(next);
+    if (!next) allowOpenRef.current = false;
+  }
+
   return (
-    <HoverCard openDelay={200} closeDelay={80}>
+    <HoverCard open={open} onOpenChange={handleOpenChange} openDelay={200} closeDelay={80}>
       <HoverCardTrigger asChild>
         <button
           type="button"
           className="inline-flex max-w-full cursor-pointer items-center gap-1.5 rounded-sm text-left font-medium text-foreground underline-offset-2 transition-colors hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          onPointerEnter={() => {
+            allowOpenRef.current = true;
+          }}
+          onPointerLeave={() => {
+            allowOpenRef.current = false;
+          }}
+          onFocus={(event) => {
+            if (event.target instanceof HTMLElement && event.target.matches(":focus-visible")) {
+              allowOpenRef.current = true;
+            }
+          }}
+          onBlur={() => {
+            allowOpenRef.current = false;
+          }}
         >
           <Avatar className="h-5 w-5">
             {user.avatar ? <AvatarImage src={user.avatar} alt={nickname} /> : null}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import type { AnalyticsIpTrafficRow } from "@tzj/types";
 import { api, type ListResult } from "@/lib/apiClient";
 
 export interface AnalyticsOverview {
@@ -26,10 +27,12 @@ export interface AnalyticsOverview {
   topReferrers: Array<{
     referrerHost: string;
     region: string;
+    geoSource: string;
     pageViews: number;
   }>;
   topRegions: Array<{
     region: string;
+    geoSource: string;
     pageViews: number;
     uniqueVisitors: number;
   }>;
@@ -48,6 +51,7 @@ export interface AnalyticsPageRow {
 export interface AnalyticsRegionRow {
   id: string;
   region: string;
+  geoSource: string;
   pageViews: number;
   uniqueVisitors: number;
 }
@@ -56,6 +60,7 @@ export interface AnalyticsReferrerRow {
   id: string;
   referrerHost: string;
   region: string;
+  geoSource: string;
   pageViews: number;
 }
 
@@ -90,6 +95,25 @@ export function useAnalyticsReferrers(params?: Params) {
     queryKey: ["analytics", "referrers", params ?? {}],
     queryFn: () => api.list<AnalyticsReferrerRow>("analytics/referrers", params),
     placeholderData: (prev) => prev,
+  });
+}
+
+export function useAnalyticsIpTraffic(params?: Params) {
+  return useQuery<ListResult<AnalyticsIpTrafficRow>>({
+    queryKey: ["analytics", "ip-traffic", params ?? {}],
+    queryFn: () => api.list<AnalyticsIpTrafficRow>("analytics/ip-traffic", params),
+    placeholderData: (prev) => prev,
+  });
+}
+
+export function formatLastSeen(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString("zh-CN", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 

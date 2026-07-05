@@ -19,6 +19,12 @@ import {
   Users,
   Shield,
   ScrollText,
+  Globe,
+  KeyRound,
+  ShieldBan,
+  Activity,
+  FileText,
+  FileUser,
 } from "lucide-react";
 import {
   Avatar,
@@ -51,6 +57,9 @@ type NavItemDef = {
   href: string;
   icon: LucideIcon;
   perm?: string;
+  anyPerm?: readonly string[];
+  /** 当前路径在此前缀下时不激活（避免 /documents 误匹配 /documents/mine） */
+  activeExcludePrefix?: string;
 };
 
 const NAV_GROUPS: Array<{
@@ -71,6 +80,24 @@ const NAV_GROUPS: Array<{
     ],
   },
   {
+    label: "知识库",
+    items: [
+      {
+        label: "内部文档",
+        href: "/documents",
+        icon: FileText,
+        perm: "docs.view",
+        activeExcludePrefix: "/documents/mine",
+      },
+      {
+        label: "我的文档",
+        href: "/documents/mine",
+        icon: FileUser,
+        perm: "docs.view",
+      },
+    ],
+  },
+  {
     label: "运营",
     items: [
       { label: "媒体库", href: "/media", icon: Images },
@@ -80,16 +107,39 @@ const NAV_GROUPS: Array<{
   },
 ];
 
+const SECURITY_NAV = {
+  label: "网站安全",
+  items: [
+    {
+      label: "IP 封禁",
+      href: "/security/ip-block",
+      icon: ShieldBan,
+      anyPerm: ["security.view", "security.manage"],
+    },
+  ],
+} as const;
+
 const SYSTEM_NAV = {
   label: "系统",
   items: [
     { label: "账号管理", href: "/users", icon: Users, perm: "users.manage" },
     { label: "角色与权限", href: "/access", icon: Shield, perm: "access.view" },
     { label: "操作日志", href: "/audit-logs", icon: ScrollText, perm: "audit.view" },
+    { label: "系统状态", href: "/system/status", icon: Activity, perm: "system.view" },
+    { label: "站点设置", href: "/settings/site", icon: Globe, perm: "settings.manage" },
+    { label: "集成与凭证", href: "/settings/integrations", icon: KeyRound, perm: "integrations.view" },
   ],
 } as const;
 
-function isActive(pathname: string, href: string) {
+function isActive(pathname: string, item: NavItemDef) {
+  const { href, activeExcludePrefix } = item;
+  if (
+    activeExcludePrefix &&
+    (pathname === activeExcludePrefix ||
+      pathname.startsWith(`${activeExcludePrefix}/`))
+  ) {
+    return false;
+  }
   if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(`${href}/`);
 }
@@ -108,7 +158,7 @@ function NavItem({
     <SidebarMenuItem>
       <SidebarMenuButton
         asChild
-        isActive={isActive(pathname, item.href)}
+        isActive={isActive(pathname, item)}
         tooltip={item.label}
       >
         <Link href={item.href}>
@@ -247,18 +297,28 @@ function SidebarNav({ pathname }: { pathname: string }) {
   const { permissions } = useSession();
 
   const filterItems = (items: NavItemDef[]) =>
-    items.filter((item) => !item.perm || permissions.includes(item.perm));
+    items.filter((item) => {
+      if (item.anyPerm?.some((p) => permissions.includes(p))) return true;
+      if (item.perm && permissions.includes(item.perm)) return true;
+      return !item.perm && !item.anyPerm;
+    });
 
   const navGroups = NAV_GROUPS.map((group) => ({
     ...group,
     items: filterItems(group.items),
   })).filter((group) => group.items.length > 0);
 
+  const securityItems = filterItems([...SECURITY_NAV.items]);
+  const groupsWithSecurity =
+    securityItems.length > 0
+      ? [...navGroups, { label: SECURITY_NAV.label, items: securityItems }]
+      : navGroups;
+
   const systemItems = filterItems([...SYSTEM_NAV.items]);
   const groups =
     systemItems.length > 0
-      ? [...navGroups, { label: SYSTEM_NAV.label, items: systemItems }]
-      : navGroups;
+      ? [...groupsWithSecurity, { label: SYSTEM_NAV.label, items: systemItems }]
+      : groupsWithSecurity;
 
   return (
     <>

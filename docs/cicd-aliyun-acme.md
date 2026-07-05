@@ -134,8 +134,8 @@ GitHub Variables（已配 / 脚本写入）：
 |----------|-----|
 | `ACR_REGISTRY` | `REDACTED-ACR` |
 | `ACR_INSTANCE_ID` | `REDACTED-ACR` |
-| `ACR_NAMESPACE` | `tzj` |
-| `IMAGE_REGISTRY` | `REDACTED-ACR/tzj` |
+| `ACR_NAMESPACE` | `REDACTED-NAMESPACE` |
+| `IMAGE_REGISTRY` | `REDACTED-ACR/REDACTED-NAMESPACE` |
 
 ---
 
@@ -264,8 +264,8 @@ DNS CNAME 生效后，在 **OSS 控制台** → Bucket `tzj-media-static-assets`
 | `ECS_USER` | `root` |
 | `ACR_REGISTRY` | `REDACTED-ACR` |
 | `ACR_INSTANCE_ID` | `REDACTED-ACR` |
-| `ACR_NAMESPACE` | `tzj` |
-| `IMAGE_REGISTRY` | `REDACTED-ACR/tzj` |
+| `ACR_NAMESPACE` | `REDACTED-NAMESPACE` |
+| `IMAGE_REGISTRY` | `REDACTED-ACR/REDACTED-NAMESPACE` |
 | `S3_BUCKET` | `tzj-media-static-assets` |
 | `S3_REGION` | `oss-cn-beijing` |
 | `S3_ENDPOINT` | `https://oss-cn-beijing.aliyuncs.com` |

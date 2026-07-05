@@ -29,6 +29,8 @@ const EXTRA_SITE_MEDIA_PATHS = [
   "/og-default.jpg",
   "/favicon.ico",
   "/apple-touch-icon.png",
+  "/content/wechat.jpg",
+  "/content/douyin.jpg",
 ] as const;
 
 const TRADE_SHOW_COVERS = [

@@ -8,6 +8,8 @@ export interface AnalyticsListParams {
   to?: string;
   sortBy?: string;
   sortOrder?: string;
+  /** 仅返回 PV 排名前 N 的 IP（安全页高频 IP 用） */
+  top?: number;
 }
 
 export function paginateMeta(page: number, limit: number, total: number) {
@@ -57,6 +59,10 @@ export function regionOrderClause(
       return dir === "asc"
         ? Prisma.sql`country ASC NULLS LAST, region ASC NULLS LAST, city ASC NULLS LAST`
         : Prisma.sql`country DESC NULLS LAST, region DESC NULLS LAST, city DESC NULLS LAST`;
+    case "geoSource":
+      return dir === "asc"
+        ? Prisma.sql`"geoSource" ASC NULLS LAST`
+        : Prisma.sql`"geoSource" DESC NULLS LAST`;
     case "uniqueVisitors":
       return dir === "asc"
         ? Prisma.sql`"uniqueVisitors" ASC`
@@ -83,6 +89,10 @@ export function referrerOrderClause(
       return dir === "asc"
         ? Prisma.sql`country ASC NULLS LAST, region ASC NULLS LAST, city ASC NULLS LAST`
         : Prisma.sql`country DESC NULLS LAST, region DESC NULLS LAST, city DESC NULLS LAST`;
+    case "geoSource":
+      return dir === "asc"
+        ? Prisma.sql`"geoSource" ASC NULLS LAST`
+        : Prisma.sql`"geoSource" DESC NULLS LAST`;
     case "pageViews":
     default:
       return dir === "asc"

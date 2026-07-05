@@ -1,12 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Alert, Button, Card, CardContent } from "@tzj/ui";
 import { useOne, useCreate, useUpdate } from "@/features/hooks";
-import { ApiError } from "@/lib/apiClient";
+import { notifyError, notifySuccess } from "@/lib/notify";
 import type { UserItem } from "@/features/types";
 import {
   createUserSchema,
@@ -25,7 +25,6 @@ const FORM_ID = "user-editor-form";
 export function UserEditor({ id }: { id?: string }) {
   const router = useRouter();
   const isEdit = Boolean(id);
-  const [formError, setFormError] = useState<string | null>(null);
 
   const { data: item, isLoading, isError, error } = useOne<UserItem>("users", id);
   const createMut = useCreate<UserItem>("users");
@@ -56,7 +55,6 @@ export function UserEditor({ id }: { id?: string }) {
   }, [isEdit, item]);
 
   async function handleSubmit(values: Record<string, unknown>) {
-    setFormError(null);
     const payload = { ...values };
     if (isEdit && !payload.password) delete payload.password;
     if (!payload.email) payload.email = undefined;
@@ -66,14 +64,15 @@ export function UserEditor({ id }: { id?: string }) {
     try {
       if (isEdit && item) {
         await updateMut.mutateAsync({ id: item.id, payload });
+        notifySuccess("账号已更新");
       } else {
         await createMut.mutateAsync(payload);
+        notifySuccess("账号已创建");
       }
       router.push("/users");
       router.refresh();
     } catch (e) {
-      setFormError(e instanceof ApiError ? e.message : "保存失败");
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      notifyError(e, "保存失败");
     }
   }
 
@@ -105,12 +104,6 @@ export function UserEditor({ id }: { id?: string }) {
           </Button>
         </div>
       </div>
-
-      {formError && (
-        <Alert variant="destructive" icon="error" className="mb-4">
-          {formError}
-        </Alert>
-      )}
 
       {isEdit && isError && (
         <Alert variant="destructive" icon="error" className="mb-4">

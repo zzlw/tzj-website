@@ -20,8 +20,8 @@ export const siteConfig = {
     "拓展训练",
   ],
   contact: {
-    phone: process.env.NEXT_PUBLIC_CONTACT_PHONE || "0371-6718-8888",
-    email: process.env.NEXT_PUBLIC_CONTACT_EMAIL || "sales@tzjii.com",
+    phone: process.env.NEXT_PUBLIC_CONTACT_PHONE || "0371-58691119",
+    email: process.env.NEXT_PUBLIC_CONTACT_EMAIL || "REDACTED-EMAIL",
     address:
       process.env.NEXT_PUBLIC_CONTACT_ADDRESS ||
       "河南省郑州市高新技术开发区科学大道",

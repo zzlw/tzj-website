@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
-import { ContactSection } from "@/components/sections/ContactSection";
+import { getLocale, getTranslations } from "next-intl/server";
+import { ContactSectionDynamic } from "@/components/sections/ContactSectionDynamic";
 import { generateSeo } from "@/lib/seo";
 import { PageHero } from "@/components/ui";
+import { getSitePublicSettings, localizedAddress } from "@/lib/site-settings";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("contact.page");
@@ -17,6 +18,10 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function ContactPage() {
   const t = await getTranslations("contact.page");
+  const tContact = await getTranslations("contact");
+  const settings = await getSitePublicSettings();
+  const locale = await getLocale();
+  const address = localizedAddress(settings, locale, tContact("address"));
 
   return (
     <div>
@@ -25,7 +30,7 @@ export default async function ContactPage() {
         title={t("title")}
         description={t("heroDescription")}
       />
-      <ContactSection />
+      <ContactSectionDynamic settings={settings} address={address} />
     </div>
   );
 }

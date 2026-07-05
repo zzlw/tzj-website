@@ -1,17 +1,29 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
+import { getLocale } from "next-intl/server";
 import { MediaImage as Image } from "@/components/MediaImage";
 import { Phone, Mail, MapPin } from "lucide-react";
 import { Container, Eyebrow, RbButton, RbLink } from "@/components/ui";
 import { FOOTER_BLOCKS } from "@/lib/navigation";
 import { FooterLanguageTrigger } from "@/components/i18n/FooterLanguageTrigger";
-import { siteConfig } from "@/lib/site";
+import { SocialChannelBar } from "@/components/contact/SocialChannelBar";
+import { getSitePublicSettings, localizedAddress } from "@/lib/site-settings";
+import { resolveSocialChannels } from "@/lib/resolve-social-channels";
 
 export async function Footer() {
   const tNav = await getTranslations("nav");
   const tFooter = await getTranslations("footer");
   const tContact = await getTranslations("contact");
   const tCommon = await getTranslations("common");
+  const locale = await getLocale();
+  const settings = await getSitePublicSettings();
+  const address = localizedAddress(settings, locale, tContact("address"));
+  const contactChannels = resolveSocialChannels(settings, "contact", (key) =>
+    tContact(key as Parameters<typeof tContact>[0]),
+  );
+  const followChannels = resolveSocialChannels(settings, "follow", (key) =>
+    tContact(key as Parameters<typeof tContact>[0]),
+  );
 
   return (
     <footer className="bg-white">
@@ -69,29 +81,47 @@ export async function Footer() {
 
       <div className="border-t border-neutral-300">
         <Container>
-          <div className="flex flex-col gap-5 py-8 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-secondary-text">
-              <a
-                href={`tel:${siteConfig.contact.phone.replace(/-/g, "")}`}
-                className="flex items-center gap-2 transition-colors hover:text-primary"
-              >
-                <Phone className="h-4 w-4 text-primary" aria-hidden="true" />
-                {siteConfig.contact.phone}
-              </a>
-              <a
-                href={`mailto:${siteConfig.contact.email}`}
-                className="flex items-center gap-2 transition-colors hover:text-primary"
-              >
-                <Mail className="h-4 w-4 text-primary" aria-hidden="true" />
-                {siteConfig.contact.email}
-              </a>
-              <span className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-primary" aria-hidden="true" />
-                {tContact("address")}
-              </span>
+          <div className="flex flex-col gap-5 py-8 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-secondary-text">
+                <a
+                  href={`tel:${settings.contact.phone.replace(/-/g, "")}`}
+                  className="inline-flex items-center gap-2 transition-colors hover:text-primary"
+                >
+                  <Phone className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                  {settings.contact.phone}
+                </a>
+                <a
+                  href={`mailto:${settings.contact.email}`}
+                  className="inline-flex items-center gap-2 transition-colors hover:text-primary"
+                >
+                  <Mail className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                  {settings.contact.email}
+                </a>
+                <span className="inline-flex items-center gap-2">
+                  <MapPin className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                  {address}
+                </span>
+              </div>
+
+              {contactChannels.length > 0 ? (
+                <SocialChannelBar
+                  sectionLabel={tContact("instantContact")}
+                  scanHint={tContact("scanToAdd")}
+                  channels={contactChannels}
+                />
+              ) : null}
             </div>
 
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-secondary-text">
+            {followChannels.length > 0 ? (
+              <SocialChannelBar
+                sectionLabel={tContact("followUs")}
+                scanHint={tContact("scanToFollow")}
+                channels={followChannels}
+              />
+            ) : null}
+
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-secondary-text lg:justify-end">
               <FooterLanguageTrigger />
               <Link href="/privacy" className="transition-colors hover:text-primary">
                 {tFooter("privacy")}
@@ -117,12 +147,12 @@ export async function Footer() {
               </span>
             </div>
             <a
-              href="https://beian.miit.gov.cn"
+              href={settings.legal.beianUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="transition-colors hover:text-primary"
             >
-              {siteConfig.beian}
+              {settings.legal.beian}
             </a>
           </div>
         </Container>

@@ -30,6 +30,7 @@ import {
 import { Can } from "@/components/Can";
 import { useList, useUpdate, useRemove } from "@/features/hooks";
 import { ApiError } from "@/lib/apiClient";
+import { notifyError, notifySuccess } from "@/lib/notify";
 import type { ContactItem } from "@/features/types";
 import { formatDateTime } from "@/features/constants";
 import { LastOperatorCell } from "@/components/LastOperatorCell";
@@ -202,8 +203,9 @@ export default function ContactsPage() {
         payload: { remark, isHandled: handledDraft },
       });
       setDetail(null);
+      notifySuccess("询盘已保存");
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : "保存失败");
+      notifyError(e, "保存失败");
     }
   }
 
@@ -216,8 +218,9 @@ export default function ContactsPage() {
     try {
       await removeMut.mutateAsync(deleteTarget.id);
       setDeleteTarget(null);
+      notifySuccess("询盘已删除");
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : "删除失败");
+      notifyError(e, "删除失败");
     }
   }
 
@@ -352,7 +355,11 @@ export default function ContactsPage() {
             <DetailRow label="更新时间" value={formatDateTime(detail.updatedAt)} />
             <div className="flex gap-3">
               <span className="w-16 shrink-0 text-muted-foreground">最后操作人</span>
-              <LastOperatorCell user={detail.lastOperatorUser} fallback={detail.lastOperator} />
+              <LastOperatorCell
+                user={detail.lastOperatorUser}
+                fallback={detail.lastOperator}
+                profileOnHover={false}
+              />
             </div>
             <div className="flex items-center gap-3">
               <span className="w-16 shrink-0 text-muted-foreground">状态</span>

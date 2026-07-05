@@ -14,6 +14,8 @@ export interface MarkdownEditorProps {
   folder?: string;
   minHeight?: number;
   placeholder?: string;
+  /** 默认编辑模式；知识库文档建议 ir（即时渲染，粘贴 Markdown 源码更可靠） */
+  defaultMode?: "wysiwyg" | "ir" | "sv";
 }
 
 type VditorInternal = Vditor & {
@@ -78,6 +80,40 @@ function updateSourceButton(root: HTMLElement): void {
   btn?.classList.toggle("vditor-menu--current", isSourceMode(root));
 }
 
+/** 粘贴内容是否像 Markdown 源码（多行结构） */
+function looksLikeMarkdown(text: string): boolean {
+  const lines = text.split("\n");
+  if (lines.length < 2) return false;
+  let score = 0;
+  for (const line of lines.slice(0, 40)) {
+    const t = line.trim();
+    if (/^#{1,6}\s/.test(t)) score += 2;
+    if (/^[-*+]\s/.test(t)) score++;
+    if (/^\d+\.\s/.test(t)) score++;
+    if (/^\|.+\|/.test(t)) score += 2;
+    if (/^```/.test(t)) score += 2;
+    if (/^>\s/.test(t)) score++;
+    if (/^[-*]\s\[[ xX]\]/.test(t)) score += 2;
+  }
+  return score >= 2;
+}
+
+/**
+ * 从 IDE / 网页复制的 Markdown 常带畸形 text/html（丢换行），
+ * 应优先用 text/plain 走 Markdown 解析，避免 wysiwyg 糊成一段。
+ */
+function shouldPreferPlainMarkdownPaste(plain: string, html: string): boolean {
+  if (!plain.trim() || !looksLikeMarkdown(plain)) return false;
+  if (!html.trim()) return false;
+  const plainLines = plain.split("\n").length;
+  const htmlLines = html.split("\n").length;
+  if (plainLines >= 3 && plainLines > htmlLines) return true;
+  if (!/<(?:p|div|br|h[1-6]|ul|ol|li|table|tr|pre|blockquote)\b/i.test(html)) {
+    return true;
+  }
+  return false;
+}
+
 /** 按 MIME 类型生成插入编辑器的 Markdown 片段 */
 function mediaMarkdown(asset: MediaAsset): string {
   const name = asset.filename || "file";
@@ -96,7 +132,8 @@ function mediaMarkdown(asset: MediaAsset): string {
 /**
  * Vditor Markdown 编辑器。
  *
- * - 所见即所得（wysiwyg）为默认模式：Markdown 语法即时转换，表格/链接等带操作浮层
+ * - 知识库（documents）默认 ir 即时渲染：粘贴 .md 源码、Typora/GitBook 体验
+ * - 官网 CMS 默认 wysiwyg：富文本粘贴、表格浮层编辑
  * - 粘贴 / 拖拽 / 工具栏上传均走媒体库接口（MinIO / 阿里 OSS 由后端切换）
  * - 图片、视频、音频、文档按类型插入对应 Markdown
  * - 动态加载 vditor 包，加载完成前用 textarea 兜底
@@ -107,7 +144,10 @@ export function MarkdownEditor({
   folder = "cms",
   minHeight = 420,
   placeholder = "支持 Markdown / GFM，可直接粘贴或拖拽图片、视频、音频、文档…",
+  defaultMode: defaultModeProp,
 }: MarkdownEditorProps) {
+  const defaultMode =
+    defaultModeProp ?? (folder === "documents" ? "ir" : "wysiwyg");
   const containerRef = useRef<HTMLDivElement>(null);
   const vditorRef = useRef<Vditor | null>(null);
   const mountIdRef = useRef(0);
@@ -116,10 +156,12 @@ export function MarkdownEditor({
   const valueRef = useRef(value);
   /** 编辑器最近一次向外发出的值，用于区分「内部输入」与「外部赋值」，避免 setValue 导致光标跳动 */
   const lastEmittedRef = useRef(value);
+  const defaultModeRef = useRef(defaultMode);
   const [editorReady, setEditorReady] = useState(false);
   onChangeRef.current = onChange;
   folderRef.current = folder;
   valueRef.current = value;
+  defaultModeRef.current = defaultMode;
 
   useEffect(() => {
     const host = containerRef.current;
@@ -130,6 +172,8 @@ export function MarkdownEditor({
     let pending: Vditor | null = null;
     let fullscreenObserver: MutationObserver | null = null;
     let layoutObserver: MutationObserver | null = null;
+
+    let removePasteListener: (() => void) | null = null;
 
     async function bootstrap() {
       await new Promise<void>((resolve) => {
@@ -143,13 +187,12 @@ export function MarkdownEditor({
       ]);
       if (cancelled || mountId !== mountIdRef.current || !containerRef.current) return;
 
-      // 模式设计（对齐 Typora / 语雀 / GitHub 等主流实践，仅三态）：
-      // 1. 编辑（默认）= wysiwyg 所见即所得：输入 Markdown 语法即时转换，
-      //    且表格/图片/链接自带操作浮层（增删行列、对齐、删除表格等）。
-      //    ir 即时渲染没有这些浮层，表格结构无法通过 UI 修改，故不采用
-      // 2. 源码 = sv 模式仅编辑列（edit-mode 下拉已隐藏，切换全部程序化完成）
-      // 3. 预览 = 只读渲染
+      // 模式设计（对齐 Typora / GitBook / 语雀）：
+      // - ir（即时渲染）：知识库默认，粘贴 Markdown 源码、写标题/列表体验最佳
+      // - wysiwyg：CMS 默认，表格/图片浮层编辑
+      // - sv：工具栏「源码模式」，纯 Markdown 文本编辑
       let sourceModeOn = false;
+      const editMode = defaultModeRef.current;
 
       const toggleSourceMode = () => {
         const vd = vditorRef.current as VditorInternal | null;
@@ -160,11 +203,9 @@ export function MarkdownEditor({
             `.vditor-toolbar button[data-mode="${m}"]`,
           );
         if (isSourceMode(rootEl)) {
-          // 退出源码模式 → 回到默认编辑（所见即所得）
           sourceModeOn = false;
-          modeBtn("wysiwyg")?.click();
+          modeBtn(editMode)?.click();
         } else {
-          // 进入源码模式：切到 sv 且只显示编辑列
           sourceModeOn = true;
           modeBtn("sv")?.click();
           vd.setPreviewMode("editor");
@@ -175,7 +216,7 @@ export function MarkdownEditor({
       const el = containerRef.current;
       pending = new VditorCtor(el, {
         height: minHeight,
-        mode: "wysiwyg",
+        mode: editMode,
         theme: "classic",
         icon: "material",
         cdn: vditorCdn(),
@@ -361,6 +402,25 @@ export function MarkdownEditor({
               },
               true,
             );
+
+            // 粘贴 Markdown 源码时优先 plain text，避免 IDE/网页 HTML 丢换行
+            const onPasteCapture = (event: ClipboardEvent) => {
+              if (sourceModeOn) return;
+              const vd = vditorRef.current;
+              if (!vd) return;
+              const plain = event.clipboardData?.getData("text/plain") ?? "";
+              const html = event.clipboardData?.getData("text/html") ?? "";
+              if (!shouldPreferPlainMarkdownPaste(plain, html)) return;
+              event.preventDefault();
+              event.stopImmediatePropagation();
+              vd.insertValue(plain);
+              const md = vd.getValue();
+              lastEmittedRef.current = md;
+              onChangeRef.current(md);
+            };
+            rootEl.addEventListener("paste", onPasteCapture, true);
+            removePasteListener = () =>
+              rootEl.removeEventListener("paste", onPasteCapture, true);
           }
         },
       });
@@ -386,13 +446,14 @@ export function MarkdownEditor({
       document.removeEventListener("mousedown", closePanelsOnOutsideClick);
       fullscreenObserver?.disconnect();
       layoutObserver?.disconnect();
+      removePasteListener?.();
       const instance = vditorRef.current ?? pending;
       vditorRef.current = null;
       pending = null;
       safeDestroy(instance);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [minHeight, placeholder]);
+  }, [minHeight, placeholder, defaultMode]);
 
   // 编辑器从隐藏容器切换为可见后，让 Vditor 以真实宽度重算布局
   useEffect(() => {

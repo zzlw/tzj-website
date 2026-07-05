@@ -1,5 +1,5 @@
 /** 剥离 Markdown 语法，保留可读文本用于字数统计。 */
-function stripMarkdown(markdown: string): string {
+export function stripMarkdown(markdown: string): string {
   return markdown
     .replace(/```[\s\S]*?```/g, " ")
     .replace(/`[^`]+`/g, " ")

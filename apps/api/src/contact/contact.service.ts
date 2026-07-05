@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client/index";
 import { CreateContactDto, UpdateContactDto } from "./dto/contact.dto";
 import { resolveContentAuthor } from "../common/utils/content-author";
 import { LAST_OPERATOR_USER_SELECT } from "../common/utils/content-list";
+import { NotificationService } from "../notifications/notification.service";
 
 interface FindAllParams {
   page: number;
@@ -18,7 +19,10 @@ const CONTACT_OPERATOR_INCLUDE = {
 
 @Injectable()
 export class ContactService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationService,
+  ) {}
 
   async findAll(params: FindAllParams) {
     const { page, limit, isRead, isHandled } = params;
@@ -55,9 +59,11 @@ export class ContactService {
   }
 
   async create(dto: CreateContactDto) {
-    return this.prisma.contact.create({
+    const contact = await this.prisma.contact.create({
       data: { ...dto, source: dto.source ?? "website" },
     });
+    this.notifications.dispatchContactCreated(contact);
+    return contact;
   }
 
   async update(id: string, dto: UpdateContactDto, operatorId?: string) {

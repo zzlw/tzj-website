@@ -42,6 +42,41 @@ export type {
   CreateContactDto,
   LoginDto,
   CreateUserDto,
+  SitePublicSettings,
+  SocialChannelSetting,
+  SocialChannelPurpose,
+  SocialPlatformId,
+  AnalyticsGeoMode,
+  PageViewGeoSource,
+  LocalizedText,
+  SiteNotificationSettings,
+  NotificationLogItem,
+  SystemStatusResponse,
+  DependencyStatus,
+  NotificationTemplate,
+  SiteMediaSettings,
+  WatermarkLayout,
+  WatermarkPosition,
+  WatermarkMode,
+  WatermarkFolder,
+} from "./dto/index.js";
+export type {
+  IntegrationDef,
+  IntegrationFieldDef,
+  IntegrationSetupStep,
+  IntegrationOperatorUser,
+  IntegrationAdminItem,
+  IntegrationsAdminOverview,
+  InfrastructureSecretStatus,
+  UpdateIntegrationDto,
+  IntegrationTestResult,
+  IntegrationsPublicConfig,
+} from "./dto/index.js";
+export type {
+  BlockIpDuration,
+  CreateBlockedIpDto,
+  BlockedIpItem,
+  AnalyticsIpTrafficRow,
 } from "./dto/index.js";
 
 // Responses

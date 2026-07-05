@@ -68,6 +68,16 @@ export class S3Service implements OnModuleInit {
     );
   }
 
+  /** 健康探针：检查存储桶是否可访问 */
+  async ping(): Promise<boolean> {
+    try {
+      await this.client.send(new HeadBucketCommand({ Bucket: this.bucket }));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   /** 存储桶不存在时自动创建（本地 MinIO 便于开箱即用）。 */
   private async ensureBucket(): Promise<void> {
     try {
@@ -189,6 +199,25 @@ export class S3Service implements OnModuleInit {
     } catch {
       return false;
     }
+  }
+
+  /**
+   * 下载对象内容为 Buffer（用于水印 Logo 等）
+   */
+  async getObjectBuffer(key: string): Promise<Buffer> {
+    const result = await this.client.send(
+      new GetObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+      }),
+    );
+    const body = result.Body;
+    if (!body) throw new Error(`对象为空: ${key}`);
+    const chunks: Uint8Array[] = [];
+    for await (const chunk of body as AsyncIterable<Uint8Array>) {
+      chunks.push(chunk);
+    }
+    return Buffer.concat(chunks);
   }
 
   /**

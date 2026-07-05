@@ -23,7 +23,7 @@ import {
 } from "@tzj/ui";
 import { useList, useRemove } from "@/features/hooks";
 import { useRoleOptions, type RoleOption } from "@/features/access";
-import { ApiError } from "@/lib/apiClient";
+import { notifyError, notifySuccess } from "@/lib/notify";
 import type { UserItem } from "@/features/types";
 import { roleLabel } from "@/features/users";
 import { formatDate } from "@/features/constants";
@@ -109,8 +109,9 @@ export default function UsersPage() {
     try {
       await removeMut.mutateAsync(deleteTarget.id);
       setDeleteTarget(null);
+      notifySuccess("账号已删除");
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : "删除失败");
+      notifyError(e, "删除失败");
     }
   }
 

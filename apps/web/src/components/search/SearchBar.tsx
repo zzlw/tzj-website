@@ -43,17 +43,17 @@ function useDebouncedValue<T>(value: T, delayMs: number): T {
 }
 
 function HighlightMatch({ text, query }: { text: string; query: string }) {
-  if (!query) return <>{text}</>;
+  if (!query) return text;
   const lower = text.toLowerCase();
   const q = query.toLowerCase();
   const idx = lower.indexOf(q);
-  if (idx === -1) return <>{text}</>;
+  if (idx === -1) return text;
   return (
-    <>
+    <span>
       {text.slice(0, idx)}
       <strong className="font-bold text-neutral-900">{text.slice(idx, idx + query.length)}</strong>
       {text.slice(idx + query.length)}
-    </>
+    </span>
   );
 }
 
@@ -284,7 +284,30 @@ export function SearchBar({
     setRecentSearches([]);
   }
 
-  let panelIndex = -1;
+  function renderGuideItem(item: PanelItem, index: number) {
+    if (item.kind !== "recent" && item.kind !== "popular") return null;
+    const active = index === activeIndex;
+    return (
+      <div key={`${item.kind}-${item.query}`} role="presentation">
+        <button
+          type="button"
+          id={`${listboxId}-option-${index}`}
+          role="option"
+          aria-selected={active}
+          onMouseEnter={() => setActiveIndex(index)}
+          onClick={() =>
+            goToSearch(item.query, item.kind === "recent" ? "recent_click" : "popular_click")
+          }
+          className={cn(
+            "flex w-full px-5 py-3 text-left text-sm transition-colors md:px-6 md:text-base",
+            active ? "bg-white text-primary" : "text-neutral-800 hover:bg-white hover:text-primary",
+          )}
+        >
+          {item.query}
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div ref={rootRef} className={cn("relative", className)}>
@@ -403,63 +426,23 @@ export function SearchBar({
                       {t("clearRecent")}
                     </button>
                   </div>
-                  {recentSearches.map((item) => {
-                    panelIndex += 1;
-                    const index = panelIndex;
-                    const active = index === activeIndex;
-                    return (
-                      <div key={`recent-${item}`} role="presentation">
-                        <button
-                          type="button"
-                          id={`${listboxId}-option-${index}`}
-                          role="option"
-                          aria-selected={active}
-                          onMouseEnter={() => setActiveIndex(index)}
-                          onClick={() => goToSearch(item, "recent_click")}
-                          className={cn(
-                            "flex w-full px-5 py-3 text-left text-sm transition-colors md:px-6 md:text-base",
-                            active ? "bg-white text-primary" : "text-neutral-800 hover:bg-white hover:text-primary",
-                          )}
-                        >
-                          {item}
-                        </button>
-                      </div>
-                    );
-                  })}
+                  {panelItems.map((item, index) =>
+                    item.kind === "recent" ? renderGuideItem(item, index) : null,
+                  )}
                 </div>
               ) : null}
 
-              <div>
-                <p className="flex items-center gap-1.5 px-5 pb-1 pt-3 text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-500 md:px-6">
-                  <TrendingUp className="h-3 w-3" aria-hidden="true" />
-                  {t("popularSearches")}
-                </p>
-                {popularSearches
-                  .filter((item) => !recentSearches.includes(item))
-                  .map((item) => {
-                    panelIndex += 1;
-                    const index = panelIndex;
-                    const active = index === activeIndex;
-                    return (
-                      <div key={`popular-${item}`} role="presentation">
-                        <button
-                          type="button"
-                          id={`${listboxId}-option-${index}`}
-                          role="option"
-                          aria-selected={active}
-                          onMouseEnter={() => setActiveIndex(index)}
-                          onClick={() => goToSearch(item, "popular_click")}
-                          className={cn(
-                            "flex w-full px-5 py-3 text-left text-sm transition-colors md:px-6 md:text-base",
-                            active ? "bg-white text-primary" : "text-neutral-800 hover:bg-white hover:text-primary",
-                          )}
-                        >
-                          {item}
-                        </button>
-                      </div>
-                    );
-                  })}
-              </div>
+              {panelItems.some((item) => item.kind === "popular") ? (
+                <div>
+                  <p className="flex items-center gap-1.5 px-5 pb-1 pt-3 text-[10px] font-bold uppercase tracking-[0.14em] text-neutral-500 md:px-6">
+                    <TrendingUp className="h-3 w-3" aria-hidden="true" />
+                    {t("popularSearches")}
+                  </p>
+                  {panelItems.map((item, index) =>
+                    item.kind === "popular" ? renderGuideItem(item, index) : null,
+                  )}
+                </div>
+              ) : null}
             </>
           ) : null}
 

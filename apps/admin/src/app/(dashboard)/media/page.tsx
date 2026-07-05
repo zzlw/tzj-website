@@ -30,6 +30,7 @@ import {
   useReplaceSiteMedia,
 } from "@/features/media";
 import { ApiError } from "@/lib/apiClient";
+import { notifyError, notifySuccess } from "@/lib/notify";
 import type { MediaAsset } from "@/features/types";
 import { MediaCard } from "@/components/media/MediaCard";
 import { MediaPreviewDialog } from "@/components/media/MediaPreviewDialog";
@@ -92,12 +93,17 @@ export default function MediaPage() {
 
   async function onFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
+    let ok = 0;
     for (const file of Array.from(files)) {
       try {
         await upload.mutateAsync(file);
+        ok += 1;
       } catch (e) {
-        alert(e instanceof ApiError ? e.message : "上传失败");
+        notifyError(e, `「${file.name}」上传失败`);
       }
+    }
+    if (ok > 0) {
+      notifySuccess(ok === 1 ? "上传成功" : `已上传 ${ok} 个文件`);
     }
     if (fileRef.current) fileRef.current.value = "";
   }
@@ -108,8 +114,9 @@ export default function MediaPage() {
       await remove.mutateAsync(deleteTarget.id);
       if (previewAsset?.id === deleteTarget.id) setPreviewAsset(null);
       setDeleteTarget(null);
+      notifySuccess("已移入回收站");
     } catch (e) {
-      alert(formatMediaDeleteError(e));
+      notifyError(e, formatMediaDeleteError(e));
     }
   }
 
@@ -117,8 +124,9 @@ export default function MediaPage() {
     try {
       await restore.mutateAsync(asset.id);
       if (previewAsset?.id === asset.id) setPreviewAsset(null);
+      notifySuccess("已恢复");
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : "恢复失败");
+      notifyError(e, "恢复失败");
     }
   }
 
@@ -128,8 +136,9 @@ export default function MediaPage() {
       await purge.mutateAsync(purgeTarget.id);
       if (previewAsset?.id === purgeTarget.id) setPreviewAsset(null);
       setPurgeTarget(null);
+      notifySuccess("已永久删除");
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : "永久删除失败");
+      notifyError(e, "永久删除失败");
     }
   }
 
@@ -155,15 +164,16 @@ export default function MediaPage() {
       if (previewAsset?.id === replaceTarget.id) setPreviewAsset(null);
       setReplaceTarget(null);
       setReplaceFile(null);
-      alert("站点资源已替换。若浏览器仍显示旧图，请强制刷新或清除 CDN 缓存。");
+      notifySuccess("站点资源已替换", "若仍见旧图，请强制刷新或清除 CDN 缓存");
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : "替换失败");
+      notifyError(e, "替换失败");
     }
   }
 
   function copyUrl(url: string) {
     navigator.clipboard.writeText(url);
     setCopiedUrl(url);
+    notifySuccess("链接已复制");
     setTimeout(() => setCopiedUrl(null), 1500);
   }
 

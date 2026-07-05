@@ -38,6 +38,16 @@ const envSchema = z.object({
   S3_PUBLIC_DOMAIN: z
     .string()
     .default("http://localhost:9000/tzj-uploads-dev"),
+
+  // Analytics
+  /** 高德 Web 服务 Key — GPS 逆地理（优先读后台集成凭证，env 兜底） */
+  AMAP_WEB_KEY: z.string().optional(),
+  /** 加密 integration secrets（至少 32 字符，生产务必配置） */
+  SECRETS_ENCRYPTION_KEY: z.string().optional(),
+  ALIYUN_CAPTCHA_ACCESS_KEY_ID: z.string().optional(),
+  ALIYUN_CAPTCHA_ACCESS_KEY_SECRET: z.string().optional(),
+  ALIYUN_CAPTCHA_REGION: z.string().optional(),
+  ANALYTICS_IP_SALT: z.string().optional(),
 });
 
 export type ApiEnv = z.infer<typeof envSchema>;

@@ -19,8 +19,8 @@ import {
   useProfile,
   useUpdateProfile,
 } from "@/features/account";
-import { ApiError } from "@/lib/apiClient";
 import { roleLabel } from "@/features/users";
+import { notifyError, notifySuccess } from "@/lib/notify";
 import { useSession } from "@/components/session";
 
 export default function AccountSettingsPage() {
@@ -34,10 +34,6 @@ export default function AccountSettingsPage() {
   const [phone, setPhone] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
-  const [profileMsg, setProfileMsg] = useState<string | null>(null);
-  const [passwordMsg, setPasswordMsg] = useState<string | null>(null);
-  const [profileErr, setProfileErr] = useState<string | null>(null);
-  const [passwordErr, setPasswordErr] = useState<string | null>(null);
 
   useEffect(() => {
     if (profile) {
@@ -49,31 +45,27 @@ export default function AccountSettingsPage() {
 
   async function saveProfile(e: React.FormEvent) {
     e.preventDefault();
-    setProfileMsg(null);
-    setProfileErr(null);
     try {
       await updateProfile.mutateAsync({
         nickname: nickname.trim() || undefined,
         email: email.trim() || undefined,
         phone: phone.trim() || undefined,
       });
-      setProfileMsg("资料已保存");
+      notifySuccess("资料已保存");
     } catch (err) {
-      setProfileErr(err instanceof ApiError ? err.message : "保存失败");
+      notifyError(err, "保存失败");
     }
   }
 
   async function savePassword(e: React.FormEvent) {
     e.preventDefault();
-    setPasswordMsg(null);
-    setPasswordErr(null);
     try {
       await changePassword.mutateAsync({ currentPassword, newPassword });
-      setPasswordMsg("密码已更新，请重新登录");
+      notifySuccess("密码已更新", "请重新登录以生效");
       setCurrentPassword("");
       setNewPassword("");
     } catch (err) {
-      setPasswordErr(err instanceof ApiError ? err.message : "修改失败");
+      notifyError(err, "修改失败");
     }
   }
 
@@ -133,16 +125,6 @@ export default function AccountSettingsPage() {
                     placeholder="可选"
                   />
                 </div>
-                {profileErr ? (
-                  <Alert variant="destructive" icon="error">
-                    {profileErr}
-                  </Alert>
-                ) : null}
-                {profileMsg ? (
-                  <Alert variant="success" icon="success">
-                    {profileMsg}
-                  </Alert>
-                ) : null}
                 <Button type="submit" disabled={updateProfile.isPending}>
                   {updateProfile.isPending ? "保存中…" : "保存资料"}
                 </Button>
@@ -182,16 +164,6 @@ export default function AccountSettingsPage() {
                     required
                   />
                 </div>
-                {passwordErr ? (
-                  <Alert variant="destructive" icon="error">
-                    {passwordErr}
-                  </Alert>
-                ) : null}
-                {passwordMsg ? (
-                  <Alert variant="success" icon="success">
-                    {passwordMsg}
-                  </Alert>
-                ) : null}
                 <Button type="submit" disabled={changePassword.isPending}>
                   {changePassword.isPending ? "提交中…" : "更新密码"}
                 </Button>

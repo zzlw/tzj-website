@@ -3,7 +3,6 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  Alert,
   Button,
   Card,
   CardContent,
@@ -14,18 +13,17 @@ import {
   Label,
 } from "@tzj/ui";
 import { BASE_PATH } from "@/lib/config";
+import { notifyError } from "@/lib/notify";
 
 function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
     setLoading(true);
     try {
       const res = await fetch(`${BASE_PATH}/api/auth/login`, {
@@ -35,14 +33,14 @@ function LoginForm() {
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok || !body.success) {
-        setError(body.message || "登录失败，请检查用户名或密码");
+        notifyError(body.message || "登录失败，请检查用户名或密码");
         return;
       }
       const from = params.get("from");
       router.replace(from && from.startsWith("/") ? from : "/");
       router.refresh();
     } catch {
-      setError("网络错误，请稍后重试");
+      notifyError("网络错误，请稍后重试");
     } finally {
       setLoading(false);
     }
@@ -88,12 +86,6 @@ function LoginForm() {
                 placeholder="请输入密码"
               />
             </div>
-
-            {error && (
-              <Alert variant="destructive" icon="error">
-                {error}
-              </Alert>
-            )}
 
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "登录中…" : "登录"}

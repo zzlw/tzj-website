@@ -2,17 +2,25 @@
 
 import { useState, useCallback, useMemo } from "react";
 import { useTranslations } from "next-intl";
+import type { SitePublicSettings } from "@tzj/types";
+import { useLocale } from "next-intl";
 import { submitContact } from "@/lib/api";
-import { siteConfig } from "@/lib/site";
 import {
   validateContactForm,
   isHoneypotTriggered,
   type ContactFormValues,
   type ContactFieldErrors,
 } from "@/lib/validation/contact";
-import { Turnstile, isTurnstileEnabled } from "@/components/Turnstile";
+import {
+  AliyunCaptchaEmbed,
+  SUBMIT_BUTTON_ID,
+  useAliyunCaptchaConfig,
+  type CaptchaLanguage,
+} from "@/components/AliyunCaptcha";
 import { Phone, Mail, MapPin, Send } from "lucide-react";
 import { Container, Eyebrow } from "@/components/ui";
+import { SocialConnectPanel } from "@/components/contact/SocialConnectPanel";
+import { resolveAllSocialQrChannels } from "@/lib/resolve-social-channels";
 
 const FIELD_CLASS =
   "w-full border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 placeholder:text-neutral-500 transition-colors focus:border-neutral-900 focus:outline-none";
@@ -28,13 +36,26 @@ const INITIAL_FORM: ContactFormValues = {
   website: "",
 };
 
-export function ContactSection() {
+function localeToCaptchaLanguage(locale: string): CaptchaLanguage {
+  if (locale === "zh-TW") return "tw";
+  if (locale === "en") return "en";
+  return "cn";
+}
+
+export function ContactSection({
+  settings,
+  address,
+}: {
+  settings: SitePublicSettings;
+  address: string;
+}) {
   const t = useTranslations("contact");
+  const locale = useLocale();
   const [formData, setFormData] = useState<ContactFormValues>(INITIAL_FORM);
   const [fieldErrors, setFieldErrors] = useState<ContactFieldErrors>({});
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [statusMessage, setStatusMessage] = useState("");
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const { config: captchaConfig, enabled: captchaEnabled } = useAliyunCaptchaConfig();
 
   const validationMessages = useMemo(
     () => ({
@@ -47,51 +68,47 @@ export function ContactSection() {
     [t],
   );
 
+  const socialConnectChannels = useMemo(
+    () => resolveAllSocialQrChannels(settings, (key) => t(key as Parameters<typeof t>[0])),
+    [settings, t],
+  );
+
   const contactInfo = useMemo(
     () => [
       {
         icon: Phone,
         label: t("phoneLabel"),
-        value: siteConfig.contact.phone,
-        href: `tel:${siteConfig.contact.phone.replace(/-/g, "")}`,
+        value: settings.contact.phone,
+        href: `tel:${settings.contact.phone.replace(/-/g, "")}`,
       },
       {
         icon: Mail,
         label: t("emailLabel"),
-        value: siteConfig.contact.email,
-        href: `mailto:${siteConfig.contact.email}`,
+        value: settings.contact.email,
+        href: `mailto:${settings.contact.email}`,
       },
       {
         icon: MapPin,
         label: t("addressLabel"),
-        value: t("address"),
+        value: address,
         href: undefined,
       },
     ],
-    [t],
+    [settings, address, t],
   );
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setFieldErrors({});
-    setStatusMessage("");
-
+  const submitPayload = useCallback(async (captchaVerifyParam?: string) => {
     if (isHoneypotTriggered(formData)) {
       setStatus("success");
       setStatusMessage(t("status.success"));
-      return;
+      return true;
     }
 
     const errors = validateContactForm(formData, validationMessages);
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       setStatusMessage(t("validation.formFix"));
-      return;
-    }
-
-    if (isTurnstileEnabled() && !turnstileToken) {
-      setStatusMessage(t("validation.turnstile"));
-      return;
+      return false;
     }
 
     setStatus("loading");
@@ -103,16 +120,25 @@ export function ContactSection() {
         company: formData.company.trim() || undefined,
         message: formData.message.trim() || t("emptyMessage"),
         source: "website",
-        turnstileToken: turnstileToken ?? undefined,
+        captchaVerifyParam,
       });
       setStatus("success");
       setStatusMessage(t("status.success"));
       setFormData(INITIAL_FORM);
-      setTurnstileToken(null);
+      return true;
     } catch {
       setStatus("error");
       setStatusMessage(t("status.error"));
+      return false;
     }
+  }, [formData, t, validationMessages]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (captchaEnabled) return;
+    setFieldErrors({});
+    setStatusMessage("");
+    await submitPayload();
   };
 
   const updateField = useCallback(
@@ -167,6 +193,13 @@ export function ContactSection() {
                 );
               })}
             </div>
+
+            {socialConnectChannels.length > 0 ? (
+              <SocialConnectPanel
+                channels={socialConnectChannels}
+                sectionTitle={t("instantContact")}
+              />
+            ) : null}
           </div>
 
           <div className="border border-neutral-300 bg-neutral-100 p-6 md:p-8">
@@ -271,7 +304,7 @@ export function ContactSection() {
                 </label>
                 <textarea
                   id="message"
-                  rows={5}
+                  rows={10}
                   placeholder={t("form.messagePlaceholder")}
                   className={FIELD_CLASS}
                   value={formData.message}
@@ -279,13 +312,27 @@ export function ContactSection() {
                 />
               </div>
 
-              <Turnstile
-                onVerify={setTurnstileToken}
-                onExpire={() => setTurnstileToken(null)}
-                onError={() => setTurnstileToken(null)}
-              />
+              {captchaEnabled && captchaConfig ? (
+                <AliyunCaptchaEmbed
+                  config={captchaConfig}
+                  language={localeToCaptchaLanguage(locale)}
+                  onSubmit={async (captchaVerifyParam) => {
+                    setFieldErrors({});
+                    setStatusMessage("");
+                    return submitPayload(captchaVerifyParam);
+                  }}
+                  onSuccess={() => {}}
+                  onError={() => {
+                    if (status !== "error") {
+                      setStatus("error");
+                      setStatusMessage(t("status.error"));
+                    }
+                  }}
+                />
+              ) : null}
 
               <button
+                id={captchaEnabled ? SUBMIT_BUTTON_ID : undefined}
                 type="submit"
                 disabled={status === "loading"}
                 className="group inline-flex w-full items-center justify-center gap-2 bg-primary py-3.5 font-display text-base font-bold text-white transition-colors hover:bg-primary-hover disabled:opacity-60"

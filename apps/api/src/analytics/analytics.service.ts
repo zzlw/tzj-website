@@ -3,14 +3,19 @@ import { ConfigService } from "@nestjs/config";
 import type { Request } from "express";
 import { Prisma } from "@prisma/client/index";
 import { PrismaService } from "../prisma/prisma.service";
+import { SettingsService } from "../settings/settings.service";
+import { IntegrationsService } from "../integrations/integrations.service";
+import { IpBanService } from "../security/ip-ban.service";
 import { CollectPageViewDto } from "./dto/collect-pageview.dto";
 import {
   extractClientIp,
   hashIp,
+  maskIp,
   parseReferrerHost,
 } from "./utils/client-ip";
-import { formatGeoLabel } from "./utils/geo-label";
+import { formatGeoLabel, formatGeoSource } from "./utils/geo-label";
 import { lookupGeo } from "./utils/geo-ip";
+import { lookupGeoFromCoordinates } from "./utils/geo-reverse";
 import {
   type AnalyticsListParams,
   pageOrderClause,
@@ -59,15 +64,45 @@ export class AnalyticsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
+    private readonly settingsService: SettingsService,
+    private readonly integrationsService: IntegrationsService,
+    private readonly ipBanService: IpBanService,
   ) {}
 
   async collect(dto: CollectPageViewDto, req: Request) {
     const ua = req.headers["user-agent"];
     const parsed = parseUserAgent(typeof ua === "string" ? ua : undefined);
     const ip = extractClientIp(req);
+
+    if (ip && (await this.ipBanService.isBlocked(ip))) {
+      return { ok: true };
+    }
+
     const salt =
       this.config.get<string>("ANALYTICS_IP_SALT") ?? "tzj-analytics-default";
-    const geo = lookupGeo(ip);
+
+    const siteSettings = await this.settingsService.getSitePublicSettings();
+    const geoMode = siteSettings.analytics?.geoMode ?? "ip";
+
+    let geo = lookupGeo(ip);
+    let geoSource: "ip" | "gps" = "ip";
+
+    if (
+      geoMode === "gps" &&
+      dto.latitude != null &&
+      dto.longitude != null
+    ) {
+      const amapKey = await this.integrationsService.resolveSecret("amap", "webKey");
+      const gpsGeo = await lookupGeoFromCoordinates(
+        dto.latitude,
+        dto.longitude,
+        amapKey,
+      );
+      if (gpsGeo.country || gpsGeo.region || gpsGeo.city) {
+        geo = gpsGeo;
+        geoSource = "gps";
+      }
+    }
 
     await this.prisma.pageView.create({
       data: {
@@ -78,9 +113,12 @@ export class AnalyticsService {
         referrerHost: parseReferrerHost(dto.referrer),
         userAgent: typeof ua === "string" ? ua.slice(0, 512) : null,
         ipHash: ip ? hashIp(ip, salt) : null,
+        ip: ip ?? null,
+        ipMasked: ip ? maskIp(ip) : null,
         country: geo.country,
         region: geo.region,
         city: geo.city,
+        geoSource,
         deviceType: parsed.deviceType,
         browser: parsed.browser,
         os: parsed.os,
@@ -151,6 +189,7 @@ export class AnalyticsService {
           country: string | null;
           region: string | null;
           city: string | null;
+          geoSource: string | null;
           pageViews: bigint;
         }>
       >`
@@ -159,13 +198,14 @@ export class AnalyticsService {
           country,
           region,
           city,
+          "geoSource",
           COUNT(*)::bigint AS "pageViews"
         FROM "page_views"
         WHERE "isBot" = false
           AND "referrerHost" IS NOT NULL
           AND "createdAt" >= ${range.from}
           AND "createdAt" <= ${range.to}
-        GROUP BY "referrerHost", country, region, city
+        GROUP BY "referrerHost", country, region, city, "geoSource"
         ORDER BY "pageViews" DESC
         LIMIT 15
       `,
@@ -174,6 +214,7 @@ export class AnalyticsService {
           country: string | null;
           region: string | null;
           city: string | null;
+          geoSource: string | null;
           pageViews: bigint;
           uniqueVisitors: bigint;
         }>
@@ -182,13 +223,14 @@ export class AnalyticsService {
           country,
           region,
           city,
+          "geoSource",
           COUNT(*)::bigint AS "pageViews",
           COUNT(DISTINCT "sessionId")::bigint AS "uniqueVisitors"
         FROM "page_views"
         WHERE "isBot" = false
           AND "createdAt" >= ${range.from}
           AND "createdAt" <= ${range.to}
-        GROUP BY country, region, city
+        GROUP BY country, region, city, "geoSource"
         ORDER BY "pageViews" DESC
         LIMIT 12
       `,
@@ -255,6 +297,7 @@ export class AnalyticsService {
           region: row.region,
           city: row.city,
         }),
+        geoSource: formatGeoSource(row.geoSource),
         pageViews: Number(row.pageViews),
       })),
       topRegions: topRegionsRaw.map((row) => ({
@@ -263,6 +306,7 @@ export class AnalyticsService {
           region: row.region,
           city: row.city,
         }),
+        geoSource: formatGeoSource(row.geoSource),
         pageViews: Number(row.pageViews),
         uniqueVisitors: Number(row.uniqueVisitors),
       })),
@@ -343,11 +387,11 @@ export class AnalyticsService {
     const [countRow, rows] = await Promise.all([
       this.prisma.$queryRaw<Array<{ count: bigint }>>`
         SELECT COUNT(*)::bigint AS count FROM (
-          SELECT country, region, city FROM "page_views"
+          SELECT country, region, city, "geoSource" FROM "page_views"
           WHERE "isBot" = false
             AND "createdAt" >= ${range.from}
             AND "createdAt" <= ${range.to}
-          GROUP BY country, region, city
+          GROUP BY country, region, city, "geoSource"
         ) grouped
       `,
       this.prisma.$queryRaw<
@@ -355,6 +399,7 @@ export class AnalyticsService {
           country: string | null;
           region: string | null;
           city: string | null;
+          geoSource: string | null;
           pageViews: bigint;
           uniqueVisitors: bigint;
         }>
@@ -364,15 +409,16 @@ export class AnalyticsService {
             country,
             region,
             city,
+            "geoSource",
             COUNT(*)::bigint AS "pageViews",
             COUNT(DISTINCT "sessionId")::bigint AS "uniqueVisitors"
           FROM "page_views"
           WHERE "isBot" = false
             AND "createdAt" >= ${range.from}
             AND "createdAt" <= ${range.to}
-          GROUP BY country, region, city
+          GROUP BY country, region, city, "geoSource"
         )
-        SELECT country, region, city, "pageViews", "uniqueVisitors"
+        SELECT country, region, city, "geoSource", "pageViews", "uniqueVisitors"
         FROM grouped
         ORDER BY ${order}
         LIMIT ${limit} OFFSET ${skip}
@@ -383,12 +429,13 @@ export class AnalyticsService {
 
     return {
       data: rows.map((row, i) => ({
-        id: `${row.country ?? ""}-${row.region ?? ""}-${row.city ?? ""}-${i}`,
+        id: `${row.country ?? ""}-${row.region ?? ""}-${row.city ?? ""}-${row.geoSource ?? ""}-${i}`,
         region: formatGeoLabel({
           country: row.country,
           region: row.region,
           city: row.city,
         }),
+        geoSource: formatGeoSource(row.geoSource),
         pageViews: Number(row.pageViews),
         uniqueVisitors: Number(row.uniqueVisitors),
       })),
@@ -405,12 +452,12 @@ export class AnalyticsService {
     const [countRow, rows] = await Promise.all([
       this.prisma.$queryRaw<Array<{ count: bigint }>>`
         SELECT COUNT(*)::bigint AS count FROM (
-          SELECT "referrerHost", country, region, city FROM "page_views"
+          SELECT "referrerHost", country, region, city, "geoSource" FROM "page_views"
           WHERE "isBot" = false
             AND "referrerHost" IS NOT NULL
             AND "createdAt" >= ${range.from}
             AND "createdAt" <= ${range.to}
-          GROUP BY "referrerHost", country, region, city
+          GROUP BY "referrerHost", country, region, city, "geoSource"
         ) grouped
       `,
       this.prisma.$queryRaw<
@@ -419,6 +466,7 @@ export class AnalyticsService {
           country: string | null;
           region: string | null;
           city: string | null;
+          geoSource: string | null;
           pageViews: bigint;
         }>
       >`
@@ -428,15 +476,16 @@ export class AnalyticsService {
             country,
             region,
             city,
+            "geoSource",
             COUNT(*)::bigint AS "pageViews"
           FROM "page_views"
           WHERE "isBot" = false
             AND "referrerHost" IS NOT NULL
             AND "createdAt" >= ${range.from}
             AND "createdAt" <= ${range.to}
-          GROUP BY "referrerHost", country, region, city
+          GROUP BY "referrerHost", country, region, city, "geoSource"
         )
-        SELECT "referrerHost", country, region, city, "pageViews"
+        SELECT "referrerHost", country, region, city, "geoSource", "pageViews"
         FROM grouped
         ORDER BY ${order}
         LIMIT ${limit} OFFSET ${skip}
@@ -447,13 +496,14 @@ export class AnalyticsService {
 
     return {
       data: rows.map((row, i) => ({
-        id: `${row.referrerHost ?? ""}-${row.country ?? ""}-${row.region ?? ""}-${i}`,
+        id: `${row.referrerHost ?? ""}-${row.country ?? ""}-${row.region ?? ""}-${row.geoSource ?? ""}-${i}`,
         referrerHost: row.referrerHost ?? "—",
         region: formatGeoLabel({
           country: row.country,
           region: row.region,
           city: row.city,
         }),
+        geoSource: formatGeoSource(row.geoSource),
         pageViews: Number(row.pageViews),
       })),
       pagination: paginateMeta(page, limit, total),

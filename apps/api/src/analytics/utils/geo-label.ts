@@ -9,6 +9,7 @@ export interface GeoParts {
 /** 将 GeoIP 字段格式化为中文地区标签。 */
 export function formatGeoLabel(parts: GeoParts): string {
   const { country, region, city } = parts;
+  if (country === "LOCAL") return "本地网络";
   if (!country && !region && !city) return "未知";
 
   const countryLabel = country
@@ -25,4 +26,11 @@ export function formatGeoLabel(parts: GeoParts): string {
   }
 
   return countryLabel ?? "未知";
+}
+
+/** 定位依据展示标签 */
+export function formatGeoSource(source?: string | null): string {
+  if (source === "gps") return "GPS";
+  if (source === "ip") return "IP";
+  return "—";
 }

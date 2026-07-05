@@ -25,7 +25,7 @@ export function lookupGeo(ip?: string | null): GeoLookup {
 
   const normalized = normalizeIp(ip);
   if (isPrivateIp(normalized)) {
-    return { country: null, region: null, city: null };
+    return { country: "LOCAL", region: null, city: null };
   }
 
   const hit = geoip.lookup(normalized);

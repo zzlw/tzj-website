@@ -64,15 +64,20 @@ function ChartSkeleton({ height = 280 }: { height?: number }) {
 export function TrendChart({
   daily,
   loading,
+  height = 320,
 }: {
   daily: AnalyticsOverview["daily"];
   loading?: boolean;
+  height?: number;
 }) {
-  if (loading) return <ChartSkeleton height={320} />;
+  if (loading) return <ChartSkeleton height={height} />;
 
   if (daily.length === 0) {
     return (
-      <p className="flex h-[320px] items-center justify-center text-sm text-muted-foreground">
+      <p
+        className="flex items-center justify-center text-sm text-muted-foreground"
+        style={{ height }}
+      >
         所选时段暂无访问数据
       </p>
     );
@@ -84,7 +89,7 @@ export function TrendChart({
   }));
 
   return (
-    <ResponsiveContainer width="100%" height={320}>
+    <ResponsiveContainer width="100%" height={height}>
       <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
         <defs>
           <linearGradient id="pvGradient" x1="0" y1="0" x2="0" y2="1">

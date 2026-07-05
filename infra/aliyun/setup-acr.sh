@@ -8,7 +8,7 @@ REGION="cn-beijing"
 # 2024-09 后新建的个人版实例使用独立域名（控制台 → 概览 → 公网）
 INSTANCE_ID="${ACR_INSTANCE_ID:-REDACTED-ACR}"
 REGISTRY="${ACR_REGISTRY:-${INSTANCE_ID}.${REGION}.personal.cr.aliyuncs.com}"
-NAMESPACE="${ACR_NAMESPACE:-tzj}"
+NAMESPACE="${ACR_NAMESPACE:-REDACTED-NAMESPACE}"
 REPO="${GITHUB_REPO:-zzlw/tzj-website}"
 
 echo "==> ACR 个人版"

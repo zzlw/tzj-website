@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { VisitorTracker } from "@/components/analytics/VisitorTracker";
+import { prefetchClientCoordinates } from "@/lib/analytics";
 
 /**
  * 分析上报延后到浏览器空闲时段，避免与 LCP/INP 争抢主线程。
@@ -11,7 +12,10 @@ export function DeferredVisitorTracker() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const activate = () => setReady(true);
+    const activate = () => {
+      prefetchClientCoordinates();
+      setReady(true);
+    };
 
     if (typeof window.requestIdleCallback === "function") {
       const id = window.requestIdleCallback(activate, { timeout: 4000 });

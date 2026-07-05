@@ -33,7 +33,7 @@ import {
   useRemoveRole,
   useUpdateRole,
 } from "@/features/access";
-import { ApiError } from "@/lib/apiClient";
+import { notifyError, notifySuccess } from "@/lib/notify";
 import type { PermissionGroup, RoleAccessItem } from "@/features/types";
 import {
   RoleFormDialog,
@@ -114,7 +114,6 @@ export default function AccessPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<RoleAccessItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<RoleAccessItem | null>(null);
-  const [formError, setFormError] = useState<string | null>(null);
 
   const selected = useMemo(
     () => roles.find((r) => r.id === selectedRoleId) ?? null,
@@ -129,7 +128,6 @@ export default function AccessPage() {
   }, [roles, selectedRoleId]);
 
   async function handleCreate(values: RoleFormValues) {
-    setFormError(null);
     const created = await createMut.mutateAsync({
       name: values.name.trim(),
       slug: values.slug.trim() || undefined,
@@ -137,11 +135,11 @@ export default function AccessPage() {
       permissions: values.permissions,
     });
     if (created?.id) setSelectedRoleId(created.id);
+    notifySuccess("角色已创建");
   }
 
   async function handleEdit(values: RoleFormValues) {
     if (!editTarget) return;
-    setFormError(null);
     await updateMut.mutateAsync({
       id: editTarget.id,
       payload: {
@@ -151,17 +149,18 @@ export default function AccessPage() {
       },
     });
     setEditTarget(null);
+    notifySuccess("角色已更新");
   }
 
   async function handleDelete() {
     if (!deleteTarget) return;
-    setFormError(null);
     try {
       await removeMut.mutateAsync(deleteTarget.id);
       if (selectedRoleId === deleteTarget.id) setSelectedRoleId(null);
       setDeleteTarget(null);
+      notifySuccess("角色已删除");
     } catch (e) {
-      setFormError(e instanceof ApiError ? e.message : "删除失败");
+      notifyError(e, "删除失败");
       setDeleteTarget(null);
     }
   }
@@ -230,12 +229,6 @@ export default function AccessPage() {
         {isError && (
           <Alert variant="destructive" icon="error" className="mb-4">
             加载失败：{error instanceof Error ? error.message : "未知错误"}
-          </Alert>
-        )}
-
-        {formError && (
-          <Alert variant="destructive" icon="error" className="mb-4">
-            {formError}
           </Alert>
         )}
 

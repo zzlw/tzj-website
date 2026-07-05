@@ -14,7 +14,7 @@ export function VisitorTracker() {
     lastPath.current = pathname;
 
     const title = typeof document !== "undefined" ? document.title : undefined;
-    trackPageView({ path: pathname, title });
+    void trackPageView({ path: pathname, title });
   }, [pathname]);
 
   return null;
