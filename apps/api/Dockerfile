@@ -33,7 +33,7 @@ RUN npx turbo run build --filter=@tzj/api...
 RUN pnpm --filter @tzj/api deploy --prod --legacy /prod/api
 # deploy 不会带上 prisma generate 产物，需在 deploy 目录重新生成 client
 WORKDIR /prod/api
-RUN pnpm exec prisma generate
+RUN ./node_modules/.bin/prisma generate --schema=prisma/schema.prisma
 WORKDIR /app
 
 # ── Stage 2: Production ──────────────────────────────────────
