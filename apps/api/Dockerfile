@@ -38,7 +38,7 @@ RUN set -e; \
     DOT_PRISMA="$(dirname "$(dirname "$ENGINE")")"; \
     cp -r "$DOT_PRISMA" /prod/api/node_modules/.prisma; \
     find /prod/api/node_modules -type d -path '*/node_modules/@prisma/client' | while read -r client; do \
-      dest="$(dirname "$client")/.prisma"; \
+      dest="$(dirname "$(dirname "$client")")/.prisma"; \
       rm -rf "$dest"; \
       cp -r "$DOT_PRISMA" "$dest"; \
     done
