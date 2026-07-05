@@ -31,7 +31,7 @@ RUN pnpm --filter @tzj/api exec prisma generate
 RUN npx turbo run build --filter=@tzj/api...
 
 # ── Stage 2: Production ──────────────────────────────────────
-ARG NODE_IMAGE=REDACTED-ACR/REDACTED-NAMESPACE/node:22-alpine
+ARG NODE_IMAGE=docker.m.daocloud.io/library/node:22-alpine
 FROM ${NODE_IMAGE} AS production
 ENV NPM_CONFIG_REGISTRY=https://registry.npmmirror.com
 ENV COREPACK_NPM_REGISTRY=https://registry.npmmirror.com
