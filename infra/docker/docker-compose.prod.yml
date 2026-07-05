@@ -51,7 +51,7 @@ services:
       - "3000"
 
   gateway:
-    image: nginx:1.27-alpine
+    image: docker.m.daocloud.io/library/nginx:1.27-alpine
     restart: unless-stopped
     ports:
       - "80:80"
