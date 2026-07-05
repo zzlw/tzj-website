@@ -1,0 +1,134 @@
+name: TZJ Deploy Production
+
+variables:
+  - key: ACR_REGISTRY
+    value: REDACTED-ACR
+  - key: ACR_NAMESPACE
+    value: REDACTED-NAMESPACE
+  - key: IMAGE_PREFIX
+    value: ${ACR_REGISTRY}/${ACR_NAMESPACE}
+  - key: IMAGE_TAG
+    value: ${CI_COMMIT_ID}
+  - key: NEXT_PUBLIC_API_URL
+    value: https://tzj-api.jiawen.live/api/v1
+  - key: NEXT_PUBLIC_ADMIN_API_URL
+    value: https://tzj-api.jiawen.live/api/v1
+  - key: NEXT_PUBLIC_S3_PUBLIC_DOMAIN
+    value: https://tzj-static.jiawen.live
+  - key: NEXT_PUBLIC_SITE_URL
+    value: https://tzj.jiawen.live
+  - key: NEXT_PUBLIC_WEB_URL
+    value: https://tzj.jiawen.live
+
+sources:
+  tzj_repo:
+    type: codeup
+    name: tzj-website
+    endpoint: https://codeup.aliyun.com/6a4a4fd4a6fcee143fa2797d/tzj-website.git
+    branch: main
+    triggerEvents: push
+    certificate:
+      type: serviceConnection
+      serviceConnection: g1ih89rjqm3z1z5h
+
+stages:
+  build_stage:
+    name: 云效构建推送 ACR
+    jobs:
+      build_api:
+        name: 构建 tzj-api
+        runsOn:
+          group: public/cn-beijing
+          container: build-steps-public-registry.cn-beijing.cr.aliyuncs.com/build-steps/alinux3:latest
+        steps:
+          login_api:
+            step: DockerLogin
+            name: ACR login
+            with:
+              dockerRepository: ${ACR_REGISTRY}
+              serviceConnection: xf774jhfe99ddcb4
+          build_api_step:
+            step: DockerBuildPush
+            name: api build push
+            workspace: tzj_repo
+            with:
+              artifact: tzj_api_image
+              image: ${IMAGE_PREFIX}/tzj-api:${IMAGE_TAG}
+              dockerfilePath: apps/api/Dockerfile
+              contextPath: .
+      build_web:
+        name: 构建 tzj-web
+        runsOn:
+          group: public/cn-beijing
+          container: build-steps-public-registry.cn-beijing.cr.aliyuncs.com/build-steps/alinux3:latest
+        steps:
+          login_web:
+            step: DockerLogin
+            name: ACR login
+            with:
+              dockerRepository: ${ACR_REGISTRY}
+              serviceConnection: xf774jhfe99ddcb4
+          build_web_step:
+            step: DockerBuildPush
+            name: web build push
+            workspace: tzj_repo
+            with:
+              artifact: tzj_web_image
+              image: ${IMAGE_PREFIX}/tzj-web:${IMAGE_TAG}
+              dockerfilePath: apps/web/Dockerfile
+              contextPath: .
+              options: >-
+                --build-arg NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+                --build-arg NEXT_PUBLIC_ADMIN_API_URL=${NEXT_PUBLIC_ADMIN_API_URL}
+                --build-arg NEXT_PUBLIC_S3_PUBLIC_DOMAIN=${NEXT_PUBLIC_S3_PUBLIC_DOMAIN}
+                --build-arg NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
+                --build-arg NEXT_PUBLIC_WEB_URL=${NEXT_PUBLIC_WEB_URL}
+      build_admin:
+        name: 构建 tzj-admin
+        runsOn:
+          group: public/cn-beijing
+          container: build-steps-public-registry.cn-beijing.cr.aliyuncs.com/build-steps/alinux3:latest
+        steps:
+          login_admin:
+            step: DockerLogin
+            name: ACR login
+            with:
+              dockerRepository: ${ACR_REGISTRY}
+              serviceConnection: xf774jhfe99ddcb4
+          build_admin_step:
+            step: DockerBuildPush
+            name: admin build push
+            workspace: tzj_repo
+            with:
+              artifact: tzj_admin_image
+              image: ${IMAGE_PREFIX}/tzj-admin:${IMAGE_TAG}
+              dockerfilePath: apps/admin/Dockerfile
+              contextPath: .
+              options: >-
+                --build-arg NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+                --build-arg NEXT_PUBLIC_ADMIN_API_URL=${NEXT_PUBLIC_ADMIN_API_URL}
+                --build-arg NEXT_PUBLIC_S3_PUBLIC_DOMAIN=${NEXT_PUBLIC_S3_PUBLIC_DOMAIN}
+                --build-arg NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
+                --build-arg NEXT_PUBLIC_WEB_URL=${NEXT_PUBLIC_WEB_URL}
+
+  deploy_stage:
+    name: ECS 拉镜像部署
+    jobs:
+      deploy_job:
+        name: pull compose up
+        component: VMDeploy
+        with:
+          machineGroup: at8qhfefzyif3ao8
+          downloadArtifact: false
+          executeUser: root
+          run: |
+            set -euo pipefail
+            cd /opt/tzj
+            set -a
+            source .env.deploy
+            set +a
+            echo "$ACR_PASSWORD" | docker login "$ACR_REGISTRY" -u "$ACR_USERNAME" --password-stdin
+            export IMAGE_TAG="${CI_COMMIT_ID}"
+            export IMAGE_REGISTRY="${ACR_REGISTRY}/${ACR_NAMESPACE}"
+            chmod +x deploy.sh
+            ./deploy.sh
