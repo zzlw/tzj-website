@@ -21,7 +21,7 @@ COPY packages/ui/package.json packages/ui/
 COPY packages/theme/package.json packages/theme/
 
 RUN corepack enable && corepack prepare pnpm@latest --activate
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --ignore-scripts
 
 # ── Stage 3: Builder (Turbo Build) ───────────────────────────
 FROM base AS builder
