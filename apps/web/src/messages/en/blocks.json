@@ -32,6 +32,7 @@
     "downloadPdf": "Download Product Specs PDF"
   },
   "breadcrumbs": {
-    "home": "Home"
+    "home": "Home",
+    "solutions": "Solutions"
   }
 }
