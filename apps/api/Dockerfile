@@ -31,12 +31,17 @@ RUN pnpm --filter @tzj/api exec prisma generate
 RUN npx turbo run build --filter=@tzj/api...
 # 打包 api 及生产依赖（pnpm 扁平 node_modules，避免根 node_modules 软链在运行时失效）
 RUN pnpm --filter @tzj/api deploy --prod --legacy /prod/api
-# deploy --prod 不含 devDependency prisma CLI，复制后在 deploy 目录重新 generate
-WORKDIR /prod/api
-RUN PRISMA_PKG="$(find /app/node_modules/.pnpm -maxdepth 1 -type d -name 'prisma@*' | head -1)/node_modules/prisma" && \
-    mkdir -p node_modules/prisma && cp -r "$PRISMA_PKG"/. node_modules/prisma/ && \
-    node node_modules/prisma/build/index.js generate --schema=prisma/schema.prisma
-WORKDIR /app
+# deploy --prod 会留下未初始化的 @prisma/client stub；复制 builder 内已 generate 的完整 .prisma（含 query engine）
+RUN set -e; \
+    ENGINE="$(find /app/node_modules -path '*/.prisma/client/libquery_engine*' -print -quit)"; \
+    test -n "$ENGINE"; \
+    DOT_PRISMA="$(dirname "$(dirname "$ENGINE")")"; \
+    cp -r "$DOT_PRISMA" /prod/api/node_modules/.prisma; \
+    find /prod/api/node_modules -type d -path '*/node_modules/@prisma/client' | while read -r client; do \
+      dest="$(dirname "$client")/.prisma"; \
+      rm -rf "$dest"; \
+      cp -r "$DOT_PRISMA" "$dest"; \
+    done
 
 # ── Stage 2: Production ──────────────────────────────────────
 ARG NODE_IMAGE=docker.m.daocloud.io/library/node:22-alpine
