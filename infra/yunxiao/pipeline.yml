@@ -1,0 +1,26 @@
+name: TZJ Deploy Production
+
+sources:
+  tzj_repo:
+    type: codeup
+    name: tzj-website
+    endpoint: https://codeup.aliyun.com/6a4a4fd4a6fcee143fa2797d/tzj-website.git
+    branch: main
+    triggerEvents: push
+
+stages:
+  deploy_stage:
+    name: ECS 构建部署
+    jobs:
+      deploy_job:
+        name: ECS 原生 build + ACR + compose
+        component: VMDeploy
+        with:
+          machineGroup: at8qhfefzyif3ao8
+          executeUser: root
+          run: |
+            set -euo pipefail
+            cd /opt/tzj/build
+            git fetch origin main
+            git reset --hard origin/main
+            bash infra/docker/deploy-on-ecs.sh
