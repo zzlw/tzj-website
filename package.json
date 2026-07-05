@@ -21,7 +21,9 @@
     "db:logs": "docker compose -f infra/docker/docker-compose.dev.yml logs -f",
     "db:clean": "docker compose -f infra/docker/docker-compose.dev.yml down -v",
     "db:migrate": "pnpm --filter @tzj/api prisma:migrate:deploy",
-    "db:baseline": "pnpm --filter @tzj/api prisma:baseline"
+    "db:baseline": "pnpm --filter @tzj/api prisma:baseline",
+    "deploy:prod": "bash infra/docker/deploy-local.sh",
+    "deploy:ecs": "bash infra/docker/deploy-ecs-build.sh"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.1",

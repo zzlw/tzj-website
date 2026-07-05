@@ -8,8 +8,9 @@
 name: Deploy Production
 
 on:
-  push:
-    branches: [main]
+  # 临时停用 push 触发：跨境 SSH 慢/不稳定，改用 ./infra/docker/deploy-local.sh
+  # push:
+  #   branches: [main]
   workflow_dispatch:
 
 concurrency:

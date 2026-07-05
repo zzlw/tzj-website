@@ -7,7 +7,10 @@ export DEBIAN_FRONTEND=noninteractive
 mkdir -p /etc/docker
 tee /etc/docker/daemon.json <<'EOF'
 {
-  "registry-mirrors": ["https://bxkt6ohk.mirror.aliyuncs.com"]
+  "registry-mirrors": [
+    "https://docker.1ms.run",
+    "https://docker.m.daocloud.io"
+  ]
 }
 EOF
 

@@ -9,7 +9,10 @@
 
 # ── Stage 1: Base ────────────────────────────────────────────
 FROM node:22-alpine AS base
-RUN apk add --no-cache libc6-compat
+ENV NPM_CONFIG_REGISTRY=https://registry.npmmirror.com
+ENV COREPACK_NPM_REGISTRY=https://registry.npmmirror.com
+RUN sed -i 's|https://dl-cdn.alpinelinux.org|https://mirrors.aliyun.com|g' /etc/apk/repositories \
+  && apk add --no-cache libc6-compat
 WORKDIR /app
 
 # ── Stage 2: Dependencies ────────────────────────────────────
@@ -20,7 +23,7 @@ COPY packages/types/package.json packages/types/
 COPY packages/ui/package.json packages/ui/
 COPY packages/theme/package.json packages/theme/
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@11.9.0 --activate
 RUN pnpm install --frozen-lockfile
 
 # ── Stage 3: Builder (Turbo Build) ───────────────────────────
@@ -39,7 +42,7 @@ ENV NEXT_PUBLIC_S3_PUBLIC_DOMAIN=$NEXT_PUBLIC_S3_PUBLIC_DOMAIN
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 ENV NEXT_PUBLIC_WEB_URL=$NEXT_PUBLIC_WEB_URL
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@11.9.0 --activate
 RUN npx turbo run build --filter=@tzj/web
 
 # ── Stage 4: Runner (Standalone 模式提取) ────────────────────

@@ -26,6 +26,7 @@ out/
 .env.*.local
 !.env.example
 !.env*.example
+infra/docker/.env.deploy.local
 
 *.pem
 *.key
