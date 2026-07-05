@@ -6,8 +6,11 @@
 # Uses: Next.js Standalone Output (最小化镜像体积)
 # ============================================================
 
+# 云效北京构建集群无法访问 docker.io，使用阿里云 Docker Hub 镜像
+ARG NODE_IMAGE=registry.cn-hangzhou.aliyuncs.com/dockerhub_mirror/node:22-alpine
+
 # ── Stage 1: Base ────────────────────────────────────────────
-FROM node:22-alpine AS base
+FROM ${NODE_IMAGE} AS base
 ENV NPM_CONFIG_REGISTRY=https://registry.npmmirror.com
 ENV COREPACK_NPM_REGISTRY=https://registry.npmmirror.com
 RUN sed -i 's|https://dl-cdn.alpinelinux.org|https://mirrors.aliyun.com|g' /etc/apk/repositories \
