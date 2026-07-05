@@ -31,10 +31,9 @@ RUN pnpm --filter @tzj/api exec prisma generate
 RUN npx turbo run build --filter=@tzj/api...
 # 打包 api 及生产依赖（pnpm 扁平 node_modules，避免根 node_modules 软链在运行时失效）
 RUN pnpm --filter @tzj/api deploy --prod --legacy /prod/api
-# deploy 不会带上 prisma generate 产物，需在 deploy 目录重新生成 client
-WORKDIR /prod/api
-RUN ./node_modules/.bin/prisma generate --schema=prisma/schema.prisma
-WORKDIR /app
+# deploy --prod 不含 prisma generate 产物，从 builder 复制 .prisma 引擎目录
+RUN PRISMA_DOT="$(find /app/node_modules -type d -path '*/node_modules/.prisma' | head -1)" && \
+    test -n "$PRISMA_DOT" && cp -r "$PRISMA_DOT" /prod/api/node_modules/.prisma
 
 # ── Stage 2: Production ──────────────────────────────────────
 ARG NODE_IMAGE=docker.m.daocloud.io/library/node:22-alpine
