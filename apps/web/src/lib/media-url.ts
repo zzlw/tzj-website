@@ -8,24 +8,28 @@ export function getS3PublicDomain(): string {
 /** MinIO 中站点静态资源的 key 前缀（与 sync-content-media 上传路径一致）。 */
 export const STATIC_MEDIA_OBJECT_PREFIX = "content";
 
-/** 从 MediaPicker / 历史数据中的绝对 URL 提取对象 key（uploads/…、content/…）
- *  兼容不同环境的 bucket 名（tzj-uploads-dev / tzj-static 等） */
+/** 从 MediaPicker / 历史数据中的绝对 URL 提取对象 key
+ *  兼容不同环境的 bucket 名（tzj-uploads-dev / tzj-static 等）
+ *  支持所有路径前缀（uploads/、content/、cases/、images/ 等） */
 export function extractMediaObjectKey(url?: string | null): string | undefined {
   if (!url?.trim()) return undefined;
   const src = url.trim();
-  if (/^(uploads|content)\//.test(src)) return src;
+  // Relative key — any path-like string without protocol
+  if (!/^https?:\/\//i.test(src) && !src.startsWith("/") && src.includes("/")) {
+    return src;
+  }
 
   if (/^https?:\/\//i.test(src)) {
     try {
       const u = new URL(src);
       const path = u.pathname.replace(/^\/+/, "");
-      if (/^(uploads|content)\//.test(path)) return path;
-      // Strip any bucket name (first path segment) to get the object key
+      if (!path) return undefined;
+      // If path has multiple segments, strip the first (bucket name) to get the key
       const slashIdx = path.indexOf("/");
       if (slashIdx > 0) {
-        const rest = path.slice(slashIdx + 1);
-        if (/^(uploads|content)\//.test(rest)) return rest;
+        return path.slice(slashIdx + 1);
       }
+      return undefined;
     } catch {
       return undefined;
     }
@@ -52,7 +56,7 @@ export function resolveSocialQrUrl(raw?: string | null): string {
 
 /**
  * 将 CMS 路径解析为 MinIO 绝对 URL。
- * - uploads/…、content/… → MinIO 对象
+ * - uploads/…、content/…、cases/…、images/… → MinIO 对象
  * - /media/…、/wechat.jpg 等 public 根路径 → content/…（sync-content-media 同步目标）
  */
 export function resolveMediaUrl(url?: string | null): string {
@@ -64,7 +68,8 @@ export function resolveMediaUrl(url?: string | null): string {
     return toMinioUrl(`${STATIC_MEDIA_OBJECT_PREFIX}/${src.slice("/media/".length)}`);
   }
 
-  if (/^(uploads|content)\//.test(src)) {
+  // Any relative path containing "/" is treated as an S3 object key
+  if (!src.startsWith("/") && !src.startsWith("//") && src.includes("/")) {
     return toMinioUrl(src);
   }
 

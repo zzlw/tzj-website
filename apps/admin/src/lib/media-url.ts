@@ -1,5 +1,5 @@
 /** 对象存储公开访问域名（与 API S3_PUBLIC_DOMAIN 一致）。 */
-function getS3PublicDomain(): string {
+export function getS3PublicDomain(): string {
   return (
     process.env.NEXT_PUBLIC_S3_PUBLIC_DOMAIN ??
     process.env.S3_PUBLIC_DOMAIN ??
@@ -18,7 +18,8 @@ export function normalizeSocialQrForSave(url?: string | null): string {
   if (!url?.trim()) return "";
   const src = url.trim();
 
-  if (/^(uploads|content)\//.test(src)) return src;
+  // Already a relative key
+  if (!/^https?:\/\//i.test(src) && !src.startsWith("/") && src.includes("/")) return src;
 
   const base = getS3PublicDomain().replace(/\/$/, "");
   let s = src;
@@ -29,18 +30,16 @@ export function normalizeSocialQrForSave(url?: string | null): string {
     try {
       const u = new URL(s);
       s = u.pathname.replace(/^\/+/, "");
-      // Strip any bucket name (first path segment) if key not at root
-      if (!/^(uploads|content)\//.test(s)) {
-        const slashIdx = s.indexOf("/");
-        if (slashIdx > 0) s = s.slice(slashIdx + 1);
-      }
+      // Strip any bucket name (first path segment) to get the object key
+      const slashIdx = s.indexOf("/");
+      if (slashIdx > 0) s = s.slice(slashIdx + 1);
     } catch {
       return src;
     }
   }
 
   s = s.replace(/^\/+/, "");
-  if (/^(uploads|content)\//.test(s)) return s;
+  if (s && s.includes("/")) return s;
 
   // /wechat.jpg 等站点静态资源 → content/wechat.jpg
   if (/^(wechat|douyin)\.(jpg|jpeg|png|webp|svg)$/i.test(s)) {
@@ -62,12 +61,12 @@ export function resolveMediaUrl(url?: string | null): string {
     try {
       const u = new URL(src);
       const path = u.pathname.replace(/^\/+/, "");
-      if (/^(uploads|content)\//.test(path)) return toMinioUrl(path);
-      // Strip any bucket name (first path segment)
+      if (!path) return src;
+      // Strip the first path segment (bucket name) to get the object key
       const slashIdx = path.indexOf("/");
       if (slashIdx > 0) {
-        const rest = path.slice(slashIdx + 1);
-        if (/^(uploads|content)\//.test(rest)) return toMinioUrl(rest);
+        const key = path.slice(slashIdx + 1);
+        if (key) return toMinioUrl(key);
       }
     } catch {
       return src;
@@ -79,7 +78,8 @@ export function resolveMediaUrl(url?: string | null): string {
     return toMinioUrl(`${OBJECT_PREFIX}/${src.slice("/media/".length)}`);
   }
 
-  if (/^(uploads|content)\//.test(src)) {
+  // Any relative path containing "/" is treated as an S3 object key
+  if (!src.startsWith("/") && !src.startsWith("//") && src.includes("/")) {
     return toMinioUrl(src);
   }
 
