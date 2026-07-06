@@ -17,15 +17,36 @@ async function loadCore(
 }
 
 /**
- * 按需模块。import 路径必须在调用点写死模板字面量，
- * 不能经函数参数透传，否则 bundler 无法建立 context。
+ * 按需模块。显式枚举路径确保 bundler 可靠解析（Turbopack 对动态 import 支持有限）。
  */
 async function loadModule(
   locale: AppLocale,
   name: string,
 ): Promise<Record<string, unknown> | null> {
   try {
-    const mod = await import(`@/messages/${locale}/${name}.json`);
+    let mod;
+    const key = `${locale}/${name}`;
+    switch (key) {
+      case "zh-CN/blocks": mod = await import("@/messages/zh-CN/blocks.json"); break;
+      case "zh-CN/content": mod = await import("@/messages/zh-CN/content.json"); break;
+      case "zh-CN/error": mod = await import("@/messages/zh-CN/error.json"); break;
+      case "zh-CN/catalog": mod = await import("@/messages/zh-CN/catalog.json"); break;
+      case "zh-CN/home": mod = await import("@/messages/zh-CN/home.json"); break;
+      case "zh-CN/solutions": mod = await import("@/messages/zh-CN/solutions.json"); break;
+      case "zh-TW/blocks": mod = await import("@/messages/zh-TW/blocks.json"); break;
+      case "zh-TW/content": mod = await import("@/messages/zh-TW/content.json"); break;
+      case "zh-TW/error": mod = await import("@/messages/zh-TW/error.json"); break;
+      case "zh-TW/catalog": mod = await import("@/messages/zh-TW/catalog.json"); break;
+      case "zh-TW/home": mod = await import("@/messages/zh-TW/home.json"); break;
+      case "zh-TW/solutions": mod = await import("@/messages/zh-TW/solutions.json"); break;
+      case "en/blocks": mod = await import("@/messages/en/blocks.json"); break;
+      case "en/content": mod = await import("@/messages/en/content.json"); break;
+      case "en/error": mod = await import("@/messages/en/error.json"); break;
+      case "en/catalog": mod = await import("@/messages/en/catalog.json"); break;
+      case "en/home": mod = await import("@/messages/en/home.json"); break;
+      case "en/solutions": mod = await import("@/messages/en/solutions.json"); break;
+      default: return null;
+    }
     return mod.default as Record<string, unknown>;
   } catch {
     return null;
