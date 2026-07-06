@@ -78,11 +78,11 @@
   );
   --media-shade-strong: linear-gradient(
     to top,
-    rgba(10, 10, 10, 0.9) 0%,
-    rgba(10, 10, 10, 0.62) 32%,
-    rgba(10, 10, 10, 0.34) 60%,
-    rgba(10, 10, 10, 0.15) 85%,
-    rgba(10, 10, 10, 0.05) 100%
+    rgba(0, 0, 0, 0.95) 0%,
+    rgba(0, 0, 0, 0.75) 28%,
+    rgba(0, 0, 0, 0.45) 55%,
+    rgba(0, 0, 0, 0.20) 80%,
+    rgba(0, 0, 0, 0.08) 100%
   );
 
   --chart-1: #e3000f;
@@ -426,11 +426,11 @@ body[data-scroll-locked] {
     background-image: var(--media-shade-strong);
   }
 
-  /* 图上叠字：轻微阴影做兜底，配合 scrim 保证任意图片上文字可读（text-shadow 可被子元素继承） */
+  /* 图上叠字：增强阴影做兜底，配合 scrim 保证任意图片上文字可读（text-shadow 可被子元素继承） */
   .rb-on-media {
     text-shadow:
-      0 1px 2px rgba(0, 0, 0, 0.45),
-      0 2px 18px rgba(0, 0, 0, 0.4);
+      0 2px 4px rgba(0, 0, 0, 0.6),
+      0 3px 12px rgba(0, 0, 0, 0.5);
   }
 
   /* Rosenbauer control-icon：白底方钮 + 阴影 + 斜切 hover */

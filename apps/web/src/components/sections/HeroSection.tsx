@@ -58,7 +58,7 @@ export async function HeroSection() {
           <span className="text-primary">{t("titleLine2")}</span>
         </h1>
 
-        <p className="mt-6 mb-9 max-w-2xl text-base leading-relaxed text-white/75 md:text-lg">
+        <p className="mt-6 mb-9 max-w-2xl text-base leading-relaxed text-white/85 md:text-lg">
           {t("description", { count: PRODUCT_LINE_COUNT })}
         </p>
 
