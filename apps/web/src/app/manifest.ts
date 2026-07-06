@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next";
 import { siteConfig } from "@/lib/site";
-import { resolveMediaUrl } from "@/lib/media-url";
+import { getS3PublicDomain } from "@/lib/media-url";
+
+const s3Base = getS3PublicDomain().replace(/\/$/, "");
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
@@ -14,12 +16,12 @@ export default function manifest(): MetadataRoute.Manifest {
     lang: "zh-CN",
     icons: [
       {
-        src: resolveMediaUrl("/favicon.ico"),
+        src: `${s3Base}/statics/favicon.ico`,
         sizes: "any",
         type: "image/x-icon",
       },
       {
-        src: resolveMediaUrl("/apple-touch-icon.png"),
+        src: `${s3Base}/statics/apple-touch-icon.png`,
         sizes: "180x180",
         type: "image/png",
       },

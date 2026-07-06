@@ -18,7 +18,7 @@ import { SearchProvider } from "@/components/search/SearchProvider";
 import { DeferredVisitorTracker } from "@/components/performance/DeferredVisitorTracker";
 import { JsonLd } from "@/components/JsonLd";
 import { organizationJsonLd } from "@/lib/jsonld";
-import { getSitePublicSettings, localizedAddress } from "@/lib/site-settings";
+import { getSitePublicSettings, localizedAddress, getFaviconUrl } from "@/lib/site-settings";
 import "../globals.css";
 
 const geist = Geist({
@@ -57,6 +57,7 @@ export default async function LocaleLayout({ children, params }: Props) {
   const mediaOrigin = getMediaOrigin();
   const siteSettings = await getSitePublicSettings();
   const streetAddress = localizedAddress(siteSettings, locale, tContact("address"));
+  const faviconUrl = await getFaviconUrl();
 
   return (
     <html
@@ -65,6 +66,7 @@ export default async function LocaleLayout({ children, params }: Props) {
       style={{ scrollPaddingTop: "var(--site-header-offset)" }}
     >
       <head>
+        {faviconUrl && <link rel="icon" href={faviconUrl} />}
         <link rel="preconnect" href={mediaOrigin} crossOrigin="anonymous" />
         <link rel="dns-prefetch" href={mediaOrigin} />
         <link rel="dns-prefetch" href="https://flagcdn.com" />

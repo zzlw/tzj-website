@@ -1,6 +1,7 @@
 import type { SitePublicSettings } from "@tzj/types";
 import { siteConfig } from "./site";
 import { DEFAULT_SITE_PUBLIC_SETTINGS } from "./site-defaults";
+import { getS3PublicDomain } from "./media-url";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api/v1";
 
@@ -67,4 +68,22 @@ export function localizedAddress(
     map.en ??
     fallback
   );
+}
+
+/**
+ * 获取网站 favicon URL（ISR 5 分钟）。
+ * 优先从 API 查询，回退到 S3 静态路径。
+ */
+export async function getFaviconUrl(): Promise<string | null> {
+  try {
+    const res = await fetch(`${API_BASE}/site-settings/favicon`, {
+      next: { revalidate: 300, tags: ["site-settings"] },
+    });
+    if (!res.ok) throw new Error(`favicon ${res.status}`);
+    const json = (await res.json()) as { data?: { url: string | null } };
+    return json.data?.url ?? null;
+  } catch {
+    // 回退：直接构造 S3 静态路径（文件不存在时浏览器静默 404）
+    return `${getS3PublicDomain().replace(/\/$/, "")}/statics/favicon.ico`;
+  }
 }

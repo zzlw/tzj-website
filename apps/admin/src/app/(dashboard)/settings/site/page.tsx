@@ -35,6 +35,7 @@ import { normalizeSocialQrForSave, resolveMediaUrl } from "@/lib/media-url";
 import { RichHint } from "@/components/RichHint";
 import { GPS_GEO_MODE_HINT } from "@/lib/analytics-geo-hints";
 import { WatermarkSettingsCard } from "@/components/settings/WatermarkSettingsCard";
+import { FaviconSettingsCard } from "@/components/settings/FaviconSettingsCard";
 
 const PLATFORMS: { id: SocialPlatformId; label: string }[] = [
   { id: "wechat", label: "微信" },
@@ -500,6 +501,8 @@ export default function SiteSettingsPage() {
         </Card>
 
         <WatermarkSettingsCard />
+
+        <FaviconSettingsCard />
 
         <Card>
           <CardHeader>

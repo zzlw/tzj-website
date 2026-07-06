@@ -16,3 +16,4 @@ allowBuilds:
 minimumReleaseAgeExclude:
   - lucide-react@1.22.0
   - postcss@8.5.16
+  - png-to-ico@3.0.2
