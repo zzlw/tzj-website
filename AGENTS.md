@@ -1,4 +1,4 @@
-# AI Agent 行为规范 — TZJ Monorepo Harness
+# AI Agent 行为规范 — TZJ Monorepo
 
 > 本文件定义了 AI Agent 在 Monorepo 中的行为边界、职责划分和协作协议。
 > 参考：Anthropic Constitutional AI、OpenAI Guardrails、Vercel AI SDK 最佳实践。

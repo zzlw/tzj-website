@@ -38,7 +38,7 @@
   refactor(scope): 描述
   chore(scope): 描述
   ```
-- **scope**: `web` / `admin` / `api` / `ui` / `types` / `config` / `harness` / `root`
+- **scope**: `web` / `admin` / `api` / `ui` / `types` / `config` / `infra` / `root`
 
 ## 文件组织
 

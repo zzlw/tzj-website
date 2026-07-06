@@ -9,15 +9,15 @@
 │   apps/web    │   apps/admin    │     apps/api          │
 │   Next.js 16  │   Next.js 16    │     NestJS 11         │
 │   React 19    │   React 19      │     Prisma 7          │
-│   Port 3001   │   Port 3002     │     Port 3000         │
+│   Port 3001   │   Port 3002     │     Port 4000         │
 ├───────────────┴─────────────────┴───────────────────────┤
 │              Shared Packages Layer                       │
 ├─────────┬───────────┬─────────────┬─────────────────────┤
 │ @tzj/ui │ @tzj/types│ @tzj/config │    @tzj/theme       │
 │ Shadcn  │ Entities  │ Biome/TS    │    Design Tokens    │
 ├─────────┴───────────┴─────────────┴─────────────────────┤
-│              Harness (AI Governance)                     │
-│  contracts → inspectors → evaluators → pipeline → reports│
+│              Infrastructure (Docker + CI/CD)                │
+│  deploy.sh + deploy-local.sh + 云效 Flow + acme.sh         │
 └─────────────────────────────────────────────────────────┘
 ```
 
