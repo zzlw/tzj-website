@@ -63,15 +63,25 @@ server {
     }
 }
 
-# 静态资源：LE 证书终结 + 本地/OSS 同步目录（账号禁止 OSS 公共读时的回退方案）
+# 静态资源：全部代理到 OSS（去除 force-download header，使图片可内联显示）
 server {
     listen 443 ssl http2;
     server_name ${STATIC_DOMAIN};
     include /etc/nginx/snippets/ssl.conf;
 
-    root /var/www/static;
     location / {
-        try_files $uri =404;
+        resolver 127.0.0.11 valid=30s;
+        proxy_pass https://${OSS_DOMAIN}$uri;
+        proxy_ssl_server_name on;
+        proxy_hide_header Content-Disposition;
+        proxy_hide_header x-oss-force-download;
+        proxy_hide_header x-oss-request-id;
+        proxy_hide_header x-oss-object-type;
+        proxy_hide_header x-oss-hash-crc64ecma;
+        proxy_hide_header x-oss-storage-class;
+        proxy_hide_header x-oss-ec;
+        proxy_hide_header x-oss-server-time;
+        proxy_hide_header Content-MD5;
         expires 30d;
         add_header Cache-Control "public, max-age=2592000";
         add_header Access-Control-Allow-Origin "*";

@@ -61,13 +61,13 @@ services:
       ADMIN_DOMAIN: ${ADMIN_DOMAIN}
       API_DOMAIN: ${API_DOMAIN}
       STATIC_DOMAIN: ${STATIC_DOMAIN}
+      OSS_DOMAIN: ${OSS_DOMAIN}
       NGINX_ENVSUBST_FILTER: "DOMAIN"
     volumes:
       - ./nginx/templates:/etc/nginx/templates:ro
       - ./nginx/entrypoint.d/90-periodic-reload.sh:/docker-entrypoint.d/90-periodic-reload.sh:ro
       - ./nginx/snippets:/etc/nginx/snippets:ro
       - ./nginx/certs:/etc/nginx/certs:ro
-      - ./static:/var/www/static:ro
     depends_on:
       - api
       - web
