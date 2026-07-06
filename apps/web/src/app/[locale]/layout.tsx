@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Geist, Archivo } from "next/font/google";
+import { ViewTransitions } from "next-view-transitions";
 import { cn } from "@/lib/utils";
 import { routing, type AppLocale } from "@/i18n/routing";
 import { LOCALE_HTML_LANG } from "@/lib/locale-config";
@@ -90,7 +91,9 @@ export default async function LocaleLayout({ children, params }: Props) {
             </Suspense>
             <Header />
             <ProductLineNav />
+            <ViewTransitions>
             <main className="min-h-screen">{children}</main>
+            </ViewTransitions>
             <Footer />
             </SearchProvider>
           </LanguageSelectorProvider>

@@ -500,19 +500,24 @@ export function Header() {
               onNavigate={close}
             />
           ) : current ? (
-            <nav className="flex flex-col divide-y divide-neutral-200 px-6 py-4" aria-label="子导航">
-              {/* 有子菜单的父级仅作为分组标题，不作为可跳转页面（内容在子页） */}
-              <h2 className="py-4 font-display text-lg font-extrabold text-neutral-900">
+            <nav className="flex flex-col px-6 py-4" aria-label="子导航">
+              {/* 当前层级标题 */}
+              <h2 className="py-6 font-display text-2xl font-extrabold text-neutral-900 border-b-0">
                 {current.label}
               </h2>
-              {current.children?.map((child) =>
-                hasChildren(child) ? (
+              
+              {/* 子菜单项列表 */}
+              {current.children?.map((child, idx) => {
+                const isLastChild = idx === (current.children?.length ?? 0) - 1;
+                return hasChildren(child) ? (
                   <button
                     key={child.label}
                     onClick={() => drillInto(child)}
-                    className="flex items-center justify-between py-4 text-left transition-colors hover:text-primary"
+                    className={`flex items-center justify-between py-5 text-left transition-colors hover:text-primary ${
+                      !isLastChild ? "border-b border-neutral-200" : ""
+                    }`}
                   >
-                    <span className="font-display text-lg font-bold text-neutral-900">
+                    <span className="font-display text-base font-medium text-neutral-800">
                       {child.label}
                     </span>
                     <ChevronRight className="h-5 w-5 text-neutral-400" aria-hidden="true" />
@@ -522,12 +527,14 @@ export function Header() {
                     key={child.label}
                     href={child.href}
                     onClick={close}
-                    className="py-4 font-display text-lg font-bold text-neutral-900 transition-colors hover:text-primary"
+                    className={`py-5 font-display text-base font-medium text-neutral-800 transition-colors hover:text-primary ${
+                      !isLastChild ? "border-b border-neutral-200" : ""
+                    }`}
                   >
                     {child.label}
                   </Link>
-                ),
-              )}
+                );
+              })}
             </nav>
           ) : (
             <div className="py-2">
@@ -536,13 +543,13 @@ export function Header() {
                   <button
                     key={item.label}
                     onClick={() => (hasChildren(item) ? drillInto(item) : go(item.href))}
-                    className="flex w-full items-center justify-between border-b border-neutral-300 px-6 py-4 text-left transition-colors hover:bg-neutral-100"
+                    className="pointer group flex w-full items-center justify-between border-b border-neutral-300 px-6 py-5 text-left transition-colors hover:text-primary"
                   >
-                    <span className="font-display text-lg font-bold text-neutral-900">
+                    <span className="font-display text-2xl font-bold text-neutral-900 group-hover:text-primary">
                       {item.label}
                     </span>
                     {hasChildren(item) && (
-                      <ChevronRight className="h-5 w-5 text-neutral-400" aria-hidden="true" />
+                      <ChevronRight className="h-5 w-5 text-neutral-900 group-hover:text-primary" aria-hidden="true" />
                     )}
                   </button>
                 ))}

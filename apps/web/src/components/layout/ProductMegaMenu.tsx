@@ -133,7 +133,7 @@ export function ProductMobileAccordion({
   return (
     <nav className="px-6 py-4" aria-label={title}>
       <div className="flex items-center justify-between gap-4 border-b border-neutral-200 pb-4">
-        <h2 className="font-display text-lg font-extrabold text-neutral-900">{title}</h2>
+        <h2 className="font-display text-2xl font-extrabold text-neutral-900">{title}</h2>
         <Link
           href={PRODUCTS_HREF}
           onClick={onNavigate}
@@ -145,8 +145,8 @@ export function ProductMobileAccordion({
 
       <div className="mt-2 flex flex-col divide-y divide-neutral-200">
         {PRODUCT_NAV_GROUPS.map(({ family, lines, groupIndex, familyHref }) => (
-          <details key={family.id} className="group py-1">
-            <summary className="flex cursor-pointer list-none items-center justify-between py-4 marker:content-none">
+          <details key={family.id} className="py-1">
+            <summary className="flex cursor-pointer list-none items-center justify-between py-4 marker:content-none group hover:text-primary">
               <div className="min-w-0 pr-4">
                 <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-primary">
                   {tHeader("productFamilyIndexShort", {
@@ -155,11 +155,11 @@ export function ProductMobileAccordion({
                     count: lines.length,
                   })}
                 </p>
-                <span className="font-display text-base font-bold text-neutral-900">
+                <span className="font-display text-base font-bold text-neutral-900 group-hover:text-primary">
                   {label(family.navKey)}
                 </span>
               </div>
-              <ArrowRight className="h-4 w-4 shrink-0 rotate-90 text-neutral-400 transition-transform group-open:rotate-[135deg]" />
+              <ArrowRight className="h-4 w-4 shrink-0 rotate-90 text-neutral-400 transition-transform group-open:rotate-[135deg] group-hover:text-primary" />
             </summary>
             <div className="pb-4 pl-1">
               <Link

@@ -155,6 +155,31 @@ html[data-header-hidden] .product-line-nav {
   }
 }
 
+/* ── View Transitions — 页面切换淡入淡出 ── */
+::view-transition-old(root) {
+  animation: vt-fade-out 0.25s ease forwards;
+}
+::view-transition-new(root) {
+  animation: vt-fade-in 0.25s ease forwards;
+}
+
+@keyframes vt-fade-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+@keyframes vt-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* 尊重用户偏好：关闭过渡动画 */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+}
+
 @media (min-width: 768px) {
   :root {
     --product-hub-nav-height: 3.25rem;

@@ -69,25 +69,48 @@ export function SearchOverlay({ open, onOpenChange }: SearchOverlayProps) {
           {t("title")}
         </p>
 
-        <div ref={panelRef} className="mx-auto flex w-full max-w-3xl items-start gap-3">
-          <SearchBar
-            key={open ? "open" : "closed"}
-            className="min-w-0 flex-1"
-            size="large"
-            onSubmitted={close}
-            autoFocus
-          />
+        <div ref={panelRef} className="mx-auto flex w-full max-w-3xl gap-3">
+          {/* 移动端：纵向排列，关闭按钮在上 */}
+          <div className="flex w-full flex-col items-end md:hidden">
+            <button
+              type="button"
+              onClick={close}
+              className="rb-control-icon shrink-0 mb-3"
+              aria-label={t("close")}
+            >
+              <span className="rb-control-icon__icon">
+                <X className="h-4 w-4" strokeWidth={2.25} />
+              </span>
+            </button>
+            <SearchBar
+              key={open ? "open" : "closed"}
+              className="min-w-0 flex-1 self-stretch"
+              size="large"
+              onSubmitted={close}
+              autoFocus
+            />
+          </div>
 
-          <button
-            type="button"
-            onClick={close}
-            className="rb-control-icon shrink-0"
-            aria-label={t("close")}
-          >
-            <span className="rb-control-icon__icon">
-              <X className="h-4 w-4" strokeWidth={2.25} />
-            </span>
-          </button>
+          {/* 桌面端：横向排列，关闭按钮在右 */}
+          <div className="hidden w-full items-center gap-3 md:flex">
+            <SearchBar
+              key={open ? "open" : "closed"}
+              className="min-w-0 flex-1"
+              size="large"
+              onSubmitted={close}
+              autoFocus
+            />
+            <button
+              type="button"
+              onClick={close}
+              className="rb-control-icon shrink-0"
+              aria-label={t("close")}
+            >
+              <span className="rb-control-icon__icon">
+                <X className="h-4 w-4" strokeWidth={2.25} />
+              </span>
+            </button>
+          </div>
         </div>
 
         <p className="mx-auto mt-4 max-w-3xl text-center text-xs text-white/70">{t("hint")}</p>

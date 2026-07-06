@@ -21,6 +21,8 @@ type SocialChannelBarProps = {
   scanHint: string;
   channels: SocialChannelItem[];
   className?: string;
+  /** 是否只显示图标（不显示二维码弹窗） */
+  iconOnly?: boolean;
 };
 
 const BTN_CLASS =
@@ -32,6 +34,7 @@ export function SocialChannelBar({
   scanHint,
   channels,
   className,
+  iconOnly = false,
 }: SocialChannelBarProps) {
   const [openKey, setOpenKey] = useState<string | null>(null);
 
@@ -44,6 +47,7 @@ export function SocialChannelBar({
       </span>
       <ul className="flex items-center gap-2" aria-label={sectionLabel}>
         {channels.map((channel) => {
+          // 外链直接跳转
           if (channel.href) {
             return (
               <li key={channel.key}>
@@ -61,6 +65,23 @@ export function SocialChannelBar({
             );
           }
 
+          // iconOnly 模式：只显示图标，不弹二维码
+          if (iconOnly) {
+            return (
+              <li key={channel.key}>
+                <button
+                  type="button"
+                  className={BTN_CLASS}
+                  aria-label={channel.label}
+                  title={channel.label}
+                >
+                  <SocialIcon id={channel.platform} />
+                </button>
+              </li>
+            );
+          }
+
+          // 默认模式：有二维码则弹出
           if (!channel.qr) return null;
 
           const isOpen = openKey === channel.key;
