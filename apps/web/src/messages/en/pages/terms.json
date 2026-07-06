@@ -1,6 +1,54 @@
 {
   "meta": {
     "title": "Terms of Use",
+    "description": "Henan TZJ Industrial Co., Ltd. Terms of Use — understand your rights and obligations when using this website."
+  },
+  "hero": {
+    "eyebrow": "Terms of Use",
+    "title": "Terms of Use"
+  },
+  "sections": [
+    {
+      "title": "1. Acceptance of Terms",
+      "body": "Welcome to the official website of Henan TZJ Industrial Co., Ltd. (hereinafter referred to as 'the Company'). By accessing or using this website (www.tzjii.com), you accept and agree to be bound by these Terms of Use. If you do not agree to these terms, please do not use this website."
+    },
+    {
+      "title": "2. Website Content & Intellectual Property",
+      "body": "All content on this website, including but not limited to text, images, video, design, logos, and product specifications, is owned by Henan TZJ Industrial Co., Ltd. or used under lawful authorization. Reproduction, modification, distribution, reprinting, or commercial use without the Company's written permission is prohibited. The Company reserves the right to pursue legal action against any infringement."
+    },
+    {
+      "title": "3. Product Information",
+      "body": "Product information displayed on this website, including emergency rescue training equipment, training towers, and outdoor adventure facilities, is for reference only. Actual specifications, materials, appearance, and performance may vary based on customization requirements. Final product parameters, pricing, and delivery terms are subject to the signed contract between both parties. The Company reserves the right to make technical improvements to products."
+    },
+    {
+      "title": "4. User Conduct",
+      "body": "When using this website, you agree not to: engage in unlawful activities through this website, disseminate false or misleading information, interfere with normal website operation, access website systems or databases without authorization, use automated means (such as crawlers or bots) to bulk-collect website content, or engage in any activity that infringes upon the legitimate rights of the Company or other users."
+    },
+    {
+      "title": "5. Inquiries & Transactions",
+      "body": "Product inquiries or cooperation intentions submitted through this website do not constitute a final contract. Specific transaction terms, including product pricing, specifications, payment methods, delivery schedules, and warranty conditions, are subject to a separate written agreement signed by both parties."
+    },
+    {
+      "title": "6. Disclaimer",
+      "body": "This website is provided as-is without warranty of accuracy, completeness, or fitness for any purpose. The Company is not liable for service interruptions caused by force majeure events (including but not limited to natural disasters, network failures, or policy changes). To the maximum extent permitted by law, we are not liable for any direct or indirect damages arising from use of this website."
+    },
+    {
+      "title": "7. Changes to Terms",
+      "body": "The Company reserves the right to modify these Terms of Use at any time as business needs evolve. Updated terms will be posted on this page. Continued use of this website constitutes acceptance of the revised terms."
+    }
+  ],
+  "contactSection": {
+    "title": "8. Contact",
+    "intro": "If you have questions about these Terms of Use or need business cooperation, please contact us:",
+    "email": "Email: REDACTED-EMAIL",
+    "phone": "Phone: +86 371-58691119",
+    "address": "Address: Kexue Avenue, High-tech Development Zone, Zhengzhou, Henan Province, China"
+  },
+  "lastUpdated": "Last updated: July 6, 2025"
+}
+{
+  "meta": {
+    "title": "Terms of Use",
     "description": "TZJ Terms of Use — understand your rights and obligations when using this website."
   },
   "hero": {

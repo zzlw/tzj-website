@@ -1,6 +1,58 @@
 {
   "meta": {
     "title": "Privacy Policy",
+    "description": "Henan TZJ Industrial Co., Ltd. Privacy Policy — learn how we collect, use, and protect your personal information."
+  },
+  "hero": {
+    "eyebrow": "Privacy Policy",
+    "title": "Privacy Policy"
+  },
+  "sections": [
+    {
+      "title": "1. Data Controller",
+      "body": "Henan TZJ Industrial Co., Ltd. (hereinafter referred to as 'we', 'us', or 'the Company'), as the operator of this website (www.tzjii.com), is committed to protecting your personal information. This Privacy Policy applies to your interactions with us through this website."
+    },
+    {
+      "title": "2. Information Collection",
+      "body": "We may collect personal information you voluntarily provide when visiting this website, submitting contact forms, or requesting product quotations, including but not limited to: name, email address, phone number, company/organization name, inquiry details, and business requirements. Server logs may automatically record non-personally identifiable information such as browser type, operating system, and access time."
+    },
+    {
+      "title": "3. Information Use",
+      "body": "Collected information is used only for the following lawful purposes: responding to your inquiries and business needs, providing product quotations and technical support, sending product information (with your explicit consent), improving website service experience, fulfilling contractual obligations, and complying with applicable laws and regulations."
+    },
+    {
+      "title": "4. Information Protection & Security",
+      "body": "We implement industry-standard technical and administrative measures to protect your personal information from unauthorized access, use, or disclosure. We will not sell or rent your personal information to third parties without your consent. We only share necessary information with third parties when required by law or with your authorization."
+    },
+    {
+      "title": "5. Cookie Usage",
+      "body": "This website may use cookies and similar technologies to enhance user experience and website performance. You can manage or delete cookies through your browser settings. Disabling cookies may affect the proper functioning of certain website features."
+    },
+    {
+      "title": "6. Data Retention",
+      "body": "We retain your personal information only for as long as necessary to fulfill the purposes for which it was collected, unless otherwise required by law. Upon expiration of the retention period, your personal information will be deleted or anonymized."
+    },
+    {
+      "title": "7. Your Rights",
+      "body": "You have the right to access, correct, or delete personal information we hold about you. To exercise these rights or if you have questions about this Privacy Policy, please contact us using the information below."
+    },
+    {
+      "title": "8. Policy Updates",
+      "body": "We reserve the right to update this Privacy Policy in response to changes in laws, regulations, or business needs. Updated policies will be posted on this page. Material changes will be communicated through website announcements."
+    }
+  ],
+  "contactSection": {
+    "title": "9. Contact Us",
+    "intro": "If you have questions about this Privacy Policy or wish to exercise your personal information rights, please contact us:",
+    "email": "Email: REDACTED-EMAIL",
+    "phone": "Phone: +86 371-58691119",
+    "address": "Address: Kexue Avenue, High-tech Development Zone, Zhengzhou, Henan Province, China"
+  },
+  "lastUpdated": "Last updated: July 6, 2025"
+}
+{
+  "meta": {
+    "title": "Privacy Policy",
     "description": "TZJ Privacy Policy — learn how we collect, use, and protect your personal information."
   },
   "hero": {
