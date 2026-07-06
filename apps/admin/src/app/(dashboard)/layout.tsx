@@ -8,25 +8,18 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Middleware 已确保有 token，这里只需获取 session 和权限
   const session = await getSession();
   if (!session) redirect("/login");
 
-  // 尝试从 API 获取最新权限，失败时使用 JWT 中的角色作为 fallback
-  let permissions: string[] = session.permissions ?? [];
+  // 从 API 获取最新权限（middleware 已保证 token 有效）
+  let permissions: string[] = [];
   try {
     const me = await apiFetch<{ permissions?: string[] }>('/auth/me');
-    permissions = me.permissions ?? permissions;
-    
-    // 如果 API 返回空权限但用户是超级管理员，可能是后端数据问题
-    if (permissions.length === 0 && session.role === 'admin') {
-      console.error('[Dashboard] Admin user has no permissions from /auth/me');
-      // admin 角色默认拥有所有权限（fallback）
-      permissions = ['*'];
-    }
+    permissions = me.permissions ?? [];
   } catch (error) {
-    // JWT 会话仍可用，权限由 API 再次校验
+    // API 临时失败，使用 fallback：超级管理员拥有所有权限
     console.warn('[Dashboard] Failed to fetch permissions from /auth/me:', error);
-    // 如果是超级管理员，给予全部权限作为 fallback
     if (session.role === 'admin') {
       permissions = ['*'];
     }

@@ -1,7 +1,6 @@
 "use client";
 
 import { createContext, useContext } from "react";
-import { useRouter } from "next/navigation";
 
 export interface ClientSession {
   username: string;
@@ -11,6 +10,12 @@ export interface ClientSession {
 
 const SessionContext = createContext<ClientSession | null>(null);
 
+/**
+ * SessionProvider: 仅提供 session 数据给客户端组件
+ * 
+ * 注意：认证检查已由 middleware 处理，自动刷新由 useAuthRefresh 处理
+ * 此组件只负责将 Server Component 获取的 session 传递给 Client Components
+ */
 export function SessionProvider({
   session,
   children,
@@ -18,18 +23,6 @@ export function SessionProvider({
   session: ClientSession;
   children: React.ReactNode;
 }) {
-  const router = useRouter();
-
-  // 只有在完全没有用户信息时才重定向（说明 token 完全失效）
-  // permissions 为空可能是 API 临时失败，不应立即登出
-  if (!session.username || !session.role) {
-    console.warn("[Session] No user info detected, redirecting to login...");
-    setTimeout(() => {
-      router.replace("/login?reason=session_expired");
-    }, 100);
-    return null;
-  }
-
   return (
     <SessionContext.Provider value={session}>
       {children}
