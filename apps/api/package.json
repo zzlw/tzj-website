@@ -23,7 +23,8 @@
     "prisma:seed": "node --env-file=../../.env ./node_modules/tsx/dist/cli.mjs prisma/seed.ts",
     "prisma:seed:content": "node --env-file=../../.env ./node_modules/tsx/dist/cli.mjs prisma/seed-content.ts",
     "prisma:seed:content:media": "node --env-file=../../.env ./node_modules/tsx/dist/cli.mjs prisma/seed-content-media.ts",
-    "prisma:sync:static-media": "node --env-file=../../.env ./node_modules/tsx/dist/cli.mjs prisma/seed-content-media.ts"
+    "prisma:sync:static-media": "node --env-file=../../.env ./node_modules/tsx/dist/cli.mjs prisma/seed-content-media.ts",
+    "test:favicon": "node --env-file=../../.env ./node_modules/tsx/dist/cli.mjs scripts/test-favicon.ts"
   },
   "dependencies": {
     "@alicloud/captcha20230305": "^1.1.4",

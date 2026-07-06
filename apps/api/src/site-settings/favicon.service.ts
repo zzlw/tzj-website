@@ -36,31 +36,48 @@ export class FaviconService {
   ): Promise<FaviconUploadResult> {
     let icoBuffer: Buffer;
 
+    this.logger.log(`Uploading favicon: mimeType=${mimeType}, size=${buffer.length} bytes`);
+
     if (this.isIcoFormat(mimeType)) {
       // ICO 格式直接存储，无需转换
+      this.logger.log("ICO format detected, storing directly");
       icoBuffer = buffer;
     } else if (this.isSupportedImageFormat(mimeType)) {
       // 图片格式 → 转换为 ICO
-      icoBuffer = await this.convertToIco(buffer);
+      this.logger.log(`Converting ${mimeType} to ICO format...`);
+      try {
+        icoBuffer = await this.convertToIco(buffer);
+        this.logger.log(`Conversion successful: ${icoBuffer.length} bytes`);
+      } catch (error) {
+        this.logger.error(`ICO conversion failed: ${(error as Error).message}`, (error as Error).stack);
+        throw new BadRequestException(
+          `图片转换 ICO 失败: ${(error as Error).message}`,
+        );
+      }
     } else {
       throw new BadRequestException(
         `不支持的文件格式: ${mimeType}。支持 ICO、PNG、JPEG、WebP`,
       );
     }
 
-    const result = await this.s3.upload(
-      icoBuffer,
-      this.FAVICON_KEY,
-      "image/x-icon",
-    );
-
-    this.logger.log(`Favicon uploaded: ${result.url} (${icoBuffer.length} bytes)`);
-
-    return {
-      key: result.key,
-      url: result.url,
-      size: icoBuffer.length,
-    };
+    this.logger.log(`Uploading to S3: key=${this.FAVICON_KEY}, contentType=image/x-icon`);
+    
+    try {
+      const result = await this.s3.upload(
+        icoBuffer,
+        this.FAVICON_KEY,
+        "image/x-icon",
+      );
+      this.logger.log(`Favicon uploaded successfully: ${result.url} (${icoBuffer.length} bytes)`);
+      return {
+        key: result.key,
+        url: result.url,
+        size: icoBuffer.length,
+      };
+    } catch (error) {
+      this.logger.error(`S3 upload failed: ${(error as Error).message}`, (error as Error).stack);
+      throw error;
+    }
   }
 
   /** 获取当前 favicon URL（不存在返回 null） */

@@ -54,10 +54,11 @@ export class S3Service implements OnModuleInit {
           "minioadmin",
         ),
       },
-      // 强制 Path Style (MinIO 和阿里云 OSS 都支持)
-      // Path:   http://domain/bucket/key
-      // Virtual: http://bucket.domain/key
-      forcePathStyle: true,
+      // MinIO 使用 Path Style, 阿里云 OSS 使用 Virtual Hosted Style
+      // Path:   http://domain/bucket/key (MinIO)
+      // Virtual: http://bucket.domain/key (OSS)
+      forcePathStyle: this.config.get<string>("S3_ENDPOINT", "").includes("localhost") || 
+                      this.config.get<string>("S3_ENDPOINT", "").includes("minio"),
     });
   }
 
