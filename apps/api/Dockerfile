@@ -22,6 +22,7 @@ COPY packages/types/package.json packages/types/
 RUN corepack enable && corepack prepare pnpm@11.9.0 --activate
 RUN sed -i 's|https://dl-cdn.alpinelinux.org|https://mirrors.aliyun.com|g' /etc/apk/repositories \
   && apk add --no-cache libc6-compat python3 make g++ vips-dev
+RUN pnpm add -g node-gyp
 RUN pnpm install --frozen-lockfile
 
 COPY . .
