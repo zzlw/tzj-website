@@ -62,9 +62,17 @@ export class S3Service implements OnModuleInit {
   }
 
   async onModuleInit(): Promise<void> {
-    await this.ensureBucket();
+    // 异步初始化存储桶，不阻塞应用启动
+    // 如果 S3/MinIO/OSS 未就绪，后续请求会自动重试或返回错误
+    this.ensureBucket().catch((err) => {
+      this.logger.warn(
+        `S3 bucket initialization failed (will retry on next request): ${
+          (err as Error).message
+        }`,
+      );
+    });
     this.logger.log(
-      `S3 Storage initialized — bucket: ${this.bucket}, endpoint: ${this.config.get("S3_ENDPOINT")}`,
+      `S3 Storage module loaded — bucket: ${this.bucket}, endpoint: ${this.config.get("S3_ENDPOINT")}`,
     );
   }
 
