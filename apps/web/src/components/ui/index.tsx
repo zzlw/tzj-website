@@ -160,6 +160,7 @@ export function VideoHero({
           alt=""
           fill
           priority
+          loading="eager"
           fetchPriority="high"
           quality={90}
           sizes="100vw"
