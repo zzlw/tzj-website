@@ -21,7 +21,7 @@ COPY packages/types/package.json packages/types/
 
 RUN corepack enable && corepack prepare pnpm@11.9.0 --activate
 RUN sed -i 's|https://dl-cdn.alpinelinux.org|https://mirrors.aliyun.com|g' /etc/apk/repositories \
-  && apk add --no-cache libc6-compat python3 make g++ libvips-dev
+  && apk add --no-cache libc6-compat python3 make g++ vips-dev
 RUN pnpm install --frozen-lockfile
 
 COPY . .
@@ -54,7 +54,7 @@ ENV NODE_ENV=production
 ENV API_PORT=4000
 
 RUN sed -i 's|https://dl-cdn.alpinelinux.org|https://mirrors.aliyun.com|g' /etc/apk/repositories \
-  && apk add --no-cache wget openssl libvips
+  && apk add --no-cache wget openssl vips
 
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nestjs
