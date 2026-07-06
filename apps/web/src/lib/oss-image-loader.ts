@@ -15,9 +15,10 @@ export function ossImageLoader({ src, width, quality }: ImageLoaderProps): strin
   try {
     const url = new URL(src);
 
-    // 本地开发 MinIO — 不做 OSS 处理
+    // 本地开发 MinIO — 不做 OSS 处理，但附加 width 以满足 next/image 检查
     if (url.hostname === "localhost" || url.hostname === "127.0.0.1") {
-      return src;
+      if (width) url.searchParams.set("w", String(width));
+      return url.toString();
     }
 
     // SVG / GIF 不适合 OSS 缩放处理

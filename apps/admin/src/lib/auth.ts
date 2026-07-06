@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { API_BASE, COOKIE, type Role, type SessionUser } from "./config";
+import { retryFetch } from "./fetch-retry";
 
 /** 解析 JWT payload（不校验签名，仅用于读取 UI 展示信息，真正校验在 API）。 */
 function decodeJwt(token: string): Record<string, unknown> | null {
@@ -56,7 +57,7 @@ async function rawRequest(
   let token = store.get(COOKIE.access)?.value;
 
   const doFetch = (bearer?: string) =>
-    fetch(`${API_BASE}${path}`, {
+    retryFetch(`${API_BASE}${path}`, {
       ...init,
       headers: {
         "Content-Type": "application/json",

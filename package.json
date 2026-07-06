@@ -6,7 +6,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "turbo run build",
-    "dev": "turbo run dev --parallel",
+    "dev": "node scripts/dev.mjs",
     "dev:web": "turbo run dev --filter=@tzj/web",
     "dev:admin": "turbo run dev --filter=@tzj/admin",
     "dev:api": "turbo run dev --filter=@tzj/api",

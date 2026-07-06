@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { API_BASE, COOKIE } from "@/lib/config";
 import { applyTokenCookies, refreshAccessToken } from "@/lib/tokenRefresh";
+import { retryFetch } from "@/lib/fetch-retry";
 
 async function proxy(req: NextRequest, path: string[]) {
   const store = await cookies();
@@ -16,7 +17,7 @@ async function proxy(req: NextRequest, path: string[]) {
   const rawBody = hasBody ? await req.text() : undefined;
 
   const forward = (bearer?: string) =>
-    fetch(target, {
+    retryFetch(target, {
       method,
       headers: {
         "Content-Type": req.headers.get("content-type") || "application/json",
@@ -24,7 +25,7 @@ async function proxy(req: NextRequest, path: string[]) {
       },
       body: rawBody,
       cache: "no-store",
-    });
+    }); // 仅 GET/HEAD/OPTIONS 自动重试，写操作不重试
 
   let apiRes = await forward(accessToken);
   let rotated = null;

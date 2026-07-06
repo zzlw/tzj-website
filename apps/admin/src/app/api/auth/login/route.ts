@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { API_BASE, COOKIE } from "@/lib/config";
+import { retryFetch } from "@/lib/fetch-retry";
 
 export async function POST(req: NextRequest) {
   let payload: { username?: string; password?: string };
@@ -21,12 +22,16 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const res = await fetch(`${API_BASE}/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, password }),
-    cache: "no-store",
-  });
+  const res = await retryFetch(
+    `${API_BASE}/auth/login`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+      cache: "no-store",
+    },
+    { retryWrites: true }, // login 无副作用，安全重试
+  );
 
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
