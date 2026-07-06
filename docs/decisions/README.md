@@ -34,19 +34,19 @@
 - Rosenbauer 作为全球消防设备制造商，其网站调性与拓之迹的应急救援训练装备定位高度契合
 - WHP 的信息架构清晰展示了产品线分类和方案对比的最佳实践
 
-## ADR-003: Harness 治理体系
+## ADR-003: 代码质量保障
 
 **状态**: 已采纳
 **日期**: 2026-06-25
 
 **决策**:
-- 采用 R.E.S.T 四维评分 (Reliability/Efficiency/Security/Traceability)
-- 最低通过分 80/100
-- 6 个 Inspector + 2 个 Evaluator + 5 个 Pipeline + 2 个 Reporter
+- Biome 2.x 统一 lint + format
+- TypeScript strict mode 强制类型安全
+- CI 流水线自动检查（云效 Flow）
 
 **理由**:
-- 参考 Anthropic Constitutional AI、OpenAI Guardrails、Vercel AI SDK 最佳实践
-- 结构化治理确保 AI 生成代码的质量门禁
+- 轻量级工具链，无需额外治理框架
+- Biome 速度快、规则全面，替代 ESLint + Prettier
 
 ## ADR-004: CI/CD 与部署
 

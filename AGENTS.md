@@ -105,7 +105,7 @@ interface AgentMessage {
 | `turbo.json` | A1 | 否（A1 专属） |
 | `*.config.*` (根) | A1 | 否（A1 专属） |
 | `prisma/schema.prisma` | A2 提议, A1 审批 | 是 |
-| `harness/**` | 系统层 | 禁止 AI 自修改 |
+
 
 ---
 
@@ -216,7 +216,5 @@ tzj-uploads-dev/
 
 ## 持续改进
 
-- 每次 PR 合并后，Harness 自动运行 R.E.S.T 评分
-- 评分趋势记录在 `harness/metrics/scores.json`
-- 连续 3 次评分下降 → 触发 A1 架构审查
-- 月度生成质量报告 → 人类审核 + 规范更新
+- 每次 PR 合并后，通过 Biome lint + TypeScript strict 模式保障代码质量
+- 月度代码质量回顾 → 人类审核 + 规范更新
