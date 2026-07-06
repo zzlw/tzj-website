@@ -48,9 +48,5 @@ cert-renew:
 	$(PROD) exec acme acme.sh --renew-all --force
 	$(PROD) exec gateway nginx -s reload
 
-bootstrap-db:
-	cd $(DEPLOY_DIR) && ./scripts/bootstrap-fresh-db.sh $(TAG)
-
 deploy-ssh-help:
 	@echo "主路径：云效 Flow；备用：GitHub Actions → Deploy ECS (SSH)"
-	@echo "全新空库：make bootstrap-db TAG=<commit>"

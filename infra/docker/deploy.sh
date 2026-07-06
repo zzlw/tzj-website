@@ -105,7 +105,7 @@ run_migrate() {
         PB=node_modules/.pnpm/node_modules/.bin/prisma
       fi
       if ! "$PB" migrate deploy; then
-        echo "migrate deploy 失败。全新空库请执行: ./scripts/bootstrap-fresh-db.sh <tag>" >&2
+        echo "migrate deploy 失败" >&2
         exit 1
       fi
     '
