@@ -28,7 +28,7 @@ export function ContentListToolbar({
   sortOptions,
   defaultSort,
 }: ContentListToolbarProps) {
-  const t = useTranslations("content.sort");
+  const t = useTranslations("content");
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -103,7 +103,7 @@ export function ContentListToolbar({
             sideOffset={4}
             className="w-[var(--radix-popover-trigger-width)] rounded-none border-neutral-300 p-1 shadow-md"
           >
-            <div role="listbox" aria-label={t("ariaLabel")} className="flex flex-col">
+            <div role="listbox" aria-label={t("sort.ariaLabel")} className="flex flex-col">
               {sortOptions.map((o) => {
                 const value = sortPresetValue(o);
                 const active = value === currentSortValue;

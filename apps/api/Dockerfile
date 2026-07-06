@@ -29,9 +29,6 @@ COPY . .
 RUN find . -name '*.tsbuildinfo' -delete
 RUN pnpm --filter @tzj/api exec prisma generate
 RUN npx turbo run build --filter=@tzj/api...
-# 测试 favicon ICO 转换功能（验证 png-to-ico 在 Alpine 环境中正常工作）
-RUN echo "Testing favicon ICO conversion..." && \
-    node --env-file=/app/.env ./node_modules/tsx/dist/cli.mjs apps/api/scripts/test-favicon.ts
 # 打包 api 及生产依赖（pnpm 扁平 node_modules，避免根 node_modules 软链在运行时失效）
 RUN pnpm --filter @tzj/api deploy --prod --legacy /prod/api
 # deploy --prod 会留下未初始化的 @prisma/client stub；复制 builder 内已 generate 的完整 .prisma（含 query engine）
