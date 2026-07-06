@@ -1,6 +1,7 @@
 import type { Components } from "react-markdown";
 import { MediaImage as Image } from "@/components/MediaImage";
 import { resolveMediaUrl } from "@/lib/media-url";
+import { ossImageLoader } from "@/lib/oss-image-loader";
 import { isExternalHref } from "@/lib/markdown";
 
 export const markdownComponents: Components = {
@@ -88,11 +89,13 @@ export const markdownComponents: Components = {
   ),
   img: ({ src, alt }) => {
     if (!src || typeof src !== "string") return null;
+    const resolved = resolveMediaUrl(src);
+    const optimized = ossImageLoader({ src: resolved, width: 960, quality: 80 });
     return (
       <span className="my-8 block overflow-hidden bg-neutral-100">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={resolveMediaUrl(src)}
+          src={optimized}
           alt={alt ?? "正文配图"}
           className="h-auto w-full object-cover"
           loading="lazy"

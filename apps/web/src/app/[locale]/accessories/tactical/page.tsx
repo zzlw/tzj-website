@@ -39,6 +39,7 @@ export default async function TacticalPage() {
               src="/media/tactical.jpg"
               alt={t("heroImageAlt")}
               fill
+              quality={90}
               sizes="100vw"
               className="object-cover"
             />

@@ -75,6 +75,7 @@ export default async function HazmatPage() {
                 src="/media/hazmat-trailer.webp"
                 alt={t("trailer.imageAlt")}
                 fill
+                quality={80}
                 sizes="(max-width: 768px) 100vw, 50vw"
                 className="object-cover"
               />

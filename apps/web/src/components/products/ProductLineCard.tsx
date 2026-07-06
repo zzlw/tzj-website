@@ -27,6 +27,7 @@ export function ProductLineCard({ line, variant = "default" }: ProductLineCardPr
             src={line.image}
             alt={line.title}
             fill
+            quality={70}
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             className="object-cover transition-transform duration-700 group-hover:scale-105"
           />
@@ -58,6 +59,7 @@ export function ProductLineCard({ line, variant = "default" }: ProductLineCardPr
           src={line.image}
           alt={line.title}
           fill
+          quality={70}
           sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
           className="object-cover transition-transform duration-700 group-hover:scale-105"
         />

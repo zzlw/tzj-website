@@ -44,6 +44,7 @@ export default async function AccessoriesPage() {
           src={HERO_IMAGE}
           alt={t("hero.imageAlt")}
           fill
+          quality={90}
           sizes="100vw"
           className="object-cover object-center"
           priority

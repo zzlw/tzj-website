@@ -57,6 +57,7 @@ export default async function MaritimePage() {
                   src={GALLERY_SRCS[i]!}
                   alt={g.alt}
                   fill
+                  quality={70}
                   sizes="(max-width: 768px) 100vw, 33vw"
                   className="object-cover"
                 />

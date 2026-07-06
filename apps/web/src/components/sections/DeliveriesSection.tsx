@@ -48,6 +48,7 @@ export async function DeliveriesSection() {
                   src={DELIVERY_IMAGES[slug]}
                   alt={t(`items.${slug}.title`)}
                   fill
+                  quality={70}
                   sizes="(max-width: 768px) 50vw, 33vw"
                   className="object-cover transition-transform duration-700 group-hover:scale-105"
                 />

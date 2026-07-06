@@ -82,7 +82,7 @@ export default async function BlogDetailPage({ params }: BlogPageProps) {
 
       <div className="pb-20">
         <section className="relative h-[360px] overflow-hidden bg-neutral-900 lg:h-[460px]">
-          <Image src={coverImage} alt={post.title} fill priority sizes="100vw" className="object-cover" />
+          <Image src={coverImage} alt={post.title} fill priority quality={90} sizes="100vw" className="object-cover" />
           <div className="absolute inset-0 rb-media-shade-strong" />
           <Container className="rb-on-media relative z-10 flex h-full flex-col justify-end pb-12 pt-24">
             <Eyebrow inverted>{blogCategoryLabelI18n(post.category, tBlog)}</Eyebrow>

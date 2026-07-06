@@ -77,7 +77,7 @@ export default async function FixedTowerSeriesPage() {
             {series.map((s) => (
               <div key={s.name} className="flex flex-col border border-neutral-300 bg-white">
                 <div className="relative aspect-[16/10] overflow-hidden border-b border-neutral-300 bg-white">
-                  <Image src={s.image} alt={s.name} fill sizes="(max-width: 640px) 100vw, 50vw" className="object-contain p-4" />
+                  <Image src={s.image} alt={s.name} fill quality={80} sizes="(max-width: 640px) 100vw, 50vw" className="object-contain p-4" />
                 </div>
                 <div className="p-6">
                   <h3 className="rb-h5 text-neutral-900">{s.name}</h3>

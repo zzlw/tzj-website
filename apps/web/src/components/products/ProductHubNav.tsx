@@ -23,10 +23,10 @@ function hubLinkClass(active: boolean) {
     "inline-flex shrink-0 items-center font-bold transition-colors",
     "border border-neutral-300 bg-white text-secondary-text",
     "hover:border-neutral-900 hover:text-neutral-900",
-    "md:h-full md:border-0 md:border-b-2 md:bg-transparent",
+    "2xl:h-full 2xl:border-0 2xl:border-b-2 2xl:bg-transparent",
     active
-      ? "border-primary text-neutral-900 md:border-primary md:text-primary"
-      : "md:border-transparent md:hover:border-primary",
+      ? "border-primary text-neutral-900 2xl:border-primary 2xl:text-primary"
+      : "2xl:border-transparent 2xl:hover:border-primary",
   );
 }
 
@@ -107,11 +107,11 @@ export function ProductHubNav() {
         "shadow-[0_1px_0_rgba(0,0,0,0.06)]",
       )}
     >
-      <div className="mx-auto w-full max-w-[1680px] px-4 py-3 md:px-8 md:py-0 lg:px-12 xl:px-16">
+      <div className="mx-auto w-full max-w-[1680px] px-4 py-3 2xl:px-8 2xl:py-0 lg:px-12 xl:px-16">
         <div
           className={cn(
             "flex flex-wrap gap-1.5",
-            "md:rb-product-hub-nav-scroll md:h-[var(--product-hub-nav-height)] md:flex-nowrap md:gap-0.5 md:overflow-x-auto",
+            "2xl:rb-scroll 2xl:h-[var(--product-hub-nav-height)] 2xl:flex-nowrap 2xl:gap-0.5 2xl:overflow-x-auto",
           )}
         >
           <a
@@ -131,7 +131,7 @@ export function ProductHubNav() {
               <span key={line.id} className="flex shrink-0 items-stretch">
                 {dividerSet.has(index) ? (
                   <span
-                    className="mx-1 hidden w-px self-center bg-neutral-300 md:block md:h-5"
+                    className="mx-1 hidden w-px self-center bg-neutral-300 2xl:block 2xl:h-5"
                     aria-hidden="true"
                   />
                 ) : null}

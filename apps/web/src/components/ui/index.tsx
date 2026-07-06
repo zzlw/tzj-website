@@ -161,6 +161,7 @@ export function VideoHero({
           fill
           priority
           fetchPriority="high"
+          quality={90}
           sizes="100vw"
           className="absolute inset-0 z-0 h-full w-full object-cover object-center"
           aria-hidden

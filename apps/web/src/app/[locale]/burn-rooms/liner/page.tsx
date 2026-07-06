@@ -34,10 +34,10 @@ export default async function LinerPage() {
         <Container className="pt-16 lg:pt-24">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="relative aspect-[4/3] overflow-hidden bg-neutral-900">
-              <Image src="/media/burn-room.webp" alt={t("gallery.linerAlt")} fill sizes="(max-width: 768px) 50vw, 25vw" className="object-cover" />
+              <Image src="/media/burn-room.webp" alt={t("gallery.linerAlt")} fill quality={70} sizes="(max-width: 768px) 50vw, 25vw" className="object-cover" />
             </div>
             <div className="relative aspect-[4/3] overflow-hidden bg-neutral-900">
-              <Image src="/media/galvanized-stair.webp" alt={t("gallery.steelAlt")} fill sizes="(max-width: 768px) 50vw, 25vw" className="object-cover" />
+              <Image src="/media/galvanized-stair.webp" alt={t("gallery.steelAlt")} fill quality={70} sizes="(max-width: 768px) 50vw, 25vw" className="object-cover" />
             </div>
           </div>
         </Container>
