@@ -29,11 +29,17 @@ export function mergeSiteSettings(cms: SitePublicSettings): SitePublicSettings {
   };
 }
 
-/** 从 API 拉取官网站点设置（ISR 5 分钟，失败回退默认值） */
+/** 从 API 拉取官网站点设置（ISR 缓存策略）
+ * - 生产环境：300 秒（5 分钟），平衡性能与时效性
+ * - 开发环境：0 秒，即时生效便于调试
+ */
 export async function getSitePublicSettings(): Promise<SitePublicSettings> {
+  const isDev = process.env.NODE_ENV === "development";
+  const revalidateTime = isDev ? 0 : 300; // 开发环境不缓存，生产环境 5 分钟
+  
   try {
     const res = await fetch(`${API_BASE}/settings/site/public`, {
-      next: { revalidate: 300, tags: ["site-settings"] },
+      next: { revalidate: revalidateTime, tags: ["site-settings"] },
     });
     if (!res.ok) throw new Error(`settings ${res.status}`);
     const json = (await res.json()) as { data?: SitePublicSettings };
@@ -71,13 +77,18 @@ export function localizedAddress(
 }
 
 /**
- * 获取网站 favicon URL（ISR 5 分钟）。
+ * 获取网站 favicon URL（ISR 缓存策略）。
+ * - 生产环境：300 秒（5 分钟）
+ * - 开发环境：0 秒，即时生效
  * 优先从 API 查询，回退到 S3 静态路径。
  */
 export async function getFaviconUrl(): Promise<string | null> {
+  const isDev = process.env.NODE_ENV === "development";
+  const revalidateTime = isDev ? 0 : 300;
+  
   try {
     const res = await fetch(`${API_BASE}/site-settings/favicon`, {
-      next: { revalidate: 300, tags: ["site-settings"] },
+      next: { revalidate: revalidateTime, tags: ["site-settings"] },
     });
     if (!res.ok) throw new Error(`favicon ${res.status}`);
     const json = (await res.json()) as { data?: { url: string | null } };
