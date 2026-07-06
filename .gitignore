@@ -16,6 +16,9 @@ out/
 .swc/
 *.tsbuildinfo
 
+# ── Next.js auto-generated type entries (recreated on each dev/build) ──
+apps/*/next-env.d.ts
+
 # ── Environment & secrets ────────────────────────────────────
 # Keep *.example templates tracked; never commit real secrets.
 .env
