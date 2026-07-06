@@ -1,7 +1,6 @@
 # TZJ 生产部署 — 云效 Flow（北京公共构建集群）
 # Codeup push → 云效 build ×3 → push ACR → ECS pull + compose（ECS 不参与构建）
 #
-# 控制台：可直接粘贴 infra/yunxiao/pipeline.console.yml（与本文件同步）
 # 一次性配置：
 #   1. Codeup 服务连接 g1ih89rjqm3z1z5h
 #   2. ACR 登录服务连接 xf774jhfe99ddcb4（用户名密码）
