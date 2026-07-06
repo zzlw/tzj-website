@@ -59,7 +59,7 @@ export function SearchOverlay({ open, onOpenChange }: SearchOverlayProps) {
         role="dialog"
         aria-modal="true"
         aria-labelledby={`${dialogId}-title`}
-        aria-hidden={!open}
+        inert={!open}
         className={cn(
           "fixed inset-x-0 top-0 z-[81] px-4 pt-[10vh] transition-all duration-300 md:pt-[14vh] md:px-6",
           open ? "pointer-events-auto translate-y-0 opacity-100" : "pointer-events-none -translate-y-2 opacity-0",
