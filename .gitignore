@@ -12,7 +12,6 @@ dist/
 build/
 out/
 .next/
-!.next/env.d.ts
 .turbo/
 .swc/
 *.tsbuildinfo
