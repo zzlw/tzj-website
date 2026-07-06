@@ -296,8 +296,14 @@ function SidebarNavUser({
 function SidebarNav({ pathname }: { pathname: string }) {
   const { permissions } = useSession();
 
+  // 超级管理员拥有所有权限（通配符）
+  const hasAllPermissions = permissions.includes('*');
+
   const filterItems = (items: NavItemDef[]) =>
     items.filter((item) => {
+      // 如果有通配符权限，显示所有菜单
+      if (hasAllPermissions) return true;
+      
       if (item.anyPerm?.some((p) => permissions.includes(p))) return true;
       if (item.perm && permissions.includes(item.perm)) return true;
       return !item.perm && !item.anyPerm;
