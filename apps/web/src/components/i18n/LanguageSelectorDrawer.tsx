@@ -187,20 +187,23 @@ function LanguageOptionRow({
         aria-current={active ? "true" : undefined}
         aria-label={`${marketLabel} · ${optionName} (${option.code})`}
         className={cn(
-          "flex w-full min-h-[3.25rem] items-center justify-between gap-4 py-4 text-left transition-colors",
-          "hover:bg-neutral-50 active:bg-neutral-100",
-          active && "bg-neutral-50",
+          "group flex w-full min-h-[3.25rem] items-center justify-between gap-4 py-4 text-left transition-colors",
         )}
       >
         <span className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
           <LocaleFlag country={option.flagCountry} />
-          <span className="truncate text-sm font-medium text-neutral-800 sm:text-base">
+          <span
+            className={cn(
+            "truncate text-base font-medium text-neutral-800 sm:text-base group-hover:text-primary",
+            active ? "text-primary" : "text-neutral-900",
+          )}
+          >
             {marketLabel}
           </span>
         </span>
         <span
           className={cn(
-            "shrink-0 font-display text-sm font-bold uppercase tracking-wide",
+            "shrink-0 font-display text-base font-bold uppercase tracking-wide group-hover:text-primary",
             active ? "text-primary" : "text-neutral-900",
           )}
         >

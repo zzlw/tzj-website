@@ -12,7 +12,7 @@ export async function SearchResultsList({ results }: { results: SearchResult[] }
         <li key={item.id}>
           <Link
             href={item.href}
-            className="group flex items-start gap-5 py-8 transition-colors hover:bg-neutral-50 md:gap-8 md:py-10"
+            className="group flex items-center gap-5 py-8 transition-colors md:gap-8 md:py-10"
           >
             <div
               className="flex h-14 w-14 shrink-0 items-center justify-center bg-neutral-900 md:h-16 md:w-16"
@@ -28,7 +28,7 @@ export async function SearchResultsList({ results }: { results: SearchResult[] }
                 {item.title}
               </h2>
               {item.excerpt ? (
-                <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-secondary-text md:text-base">
+                <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-secondary-text md:text-base group-hover:text-primary">
                   {item.excerpt}
                 </p>
               ) : null}
@@ -44,7 +44,7 @@ export async function SearchResultsList({ results }: { results: SearchResult[] }
                   />
                 </span>
               </span>
-              <span className="hidden text-sm font-bold text-neutral-900 sm:inline">{t("moreDetails")}</span>
+              <span className="hidden text-sm font-bold text-neutral-900 sm:inline group-hover:text-primary">{t("moreDetails")}</span>
             </span>
           </Link>
         </li>

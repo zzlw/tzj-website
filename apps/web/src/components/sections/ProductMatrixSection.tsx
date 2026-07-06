@@ -23,20 +23,18 @@ export async function ProductMatrixSection() {
           </div>
         </div>
 
-        <div className="mt-8 flex flex-wrap gap-3">
+        <div className="mt-8 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
           {FAMILY_KEYS.map((key, i) => (
-            <div
-              key={key}
-              className="flex items-center gap-2 border border-neutral-300 bg-neutral-100 px-4 py-2"
-            >
-              <span className="font-display text-lg font-extrabold text-primary">{FAMILY_COUNTS[i]}</span>
-              <span className="text-sm font-bold text-neutral-900">{t(key)}</span>
-            </div>
+            <span key={key} className="text-secondary-text">
+              <span className="font-display font-bold text-primary">{FAMILY_COUNTS[i]}</span>
+              <span className="ml-1">{t(key)}</span>
+            </span>
           ))}
-          <div className="flex items-center gap-2 border border-neutral-900 bg-neutral-900 px-4 py-2">
-            <span className="font-display text-lg font-extrabold text-white">{PRODUCT_LINE_COUNT}</span>
-            <span className="text-sm font-bold text-white">{t("total")}</span>
-          </div>
+          <span className="text-neutral-400">·</span>
+          <span className="text-neutral-900">
+            <span className="font-display font-bold text-primary">{PRODUCT_LINE_COUNT}</span>
+            <span className="ml-1">{t("total")}</span>
+          </span>
         </div>
 
         <ProductLinesGrid showFamilyHeaders headerVariant="compact" className="mt-10" />
