@@ -33,6 +33,7 @@ export async function Footer() {
             src="/media/fixed-tower-hero.jpg"
             alt=""
             fill
+            loading="lazy"
             sizes="(max-width: 1024px) 100vw, 50vw"
             className="object-cover object-center"
           />
