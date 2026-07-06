@@ -13,7 +13,7 @@ import { ossImageLoader } from "@/lib/oss-image-loader";
 export function MediaImage({ priority, loading, ...props }: ImageProps) {
   const rawSrc = typeof props.src === "string" ? props.src : "";
   const src = rawSrc ? resolveMediaUrl(rawSrc) : rawSrc;
-  const resolvedLoading = loading ?? (priority ? undefined : "lazy");
+  const resolvedLoading = loading ?? (priority ? "eager" : "lazy");
 
   return (
     <NextImage
