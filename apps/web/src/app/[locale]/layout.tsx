@@ -16,6 +16,7 @@ import { DocumentScrollbars } from "@/components/layout/DocumentScrollbars";
 import { LanguageSelectorProvider } from "@/components/i18n/LanguageSelector";
 import { SearchProvider } from "@/components/search/SearchProvider";
 import { DeferredVisitorTracker } from "@/components/performance/DeferredVisitorTracker";
+import { ConsoleBranding } from "@/components/ConsoleBranding";
 import { JsonLd } from "@/components/JsonLd";
 import { organizationJsonLd } from "@/lib/jsonld";
 import { getSitePublicSettings, localizedAddress, getFaviconUrl } from "@/lib/site-settings";
@@ -91,6 +92,7 @@ export default async function LocaleLayout({ children, params }: Props) {
             <Suspense fallback={null}>
               <DeferredVisitorTracker />
             </Suspense>
+            <ConsoleBranding />
             <Header />
             <ProductLineNav />
             <ViewTransitions>
