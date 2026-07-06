@@ -23,7 +23,8 @@ export function FaviconSettingsCard() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
 
-  const faviconUrl = data?.url ?? null;
+  // 优先使用 PNG 预览图（用于 <img> 显示），否则用原始 .ico URL
+  const faviconUrl = data?.previewUrl ?? data?.url ?? null;
   const busy = upload.isPending || remove.isPending;
 
   async function handleFile(file: File) {

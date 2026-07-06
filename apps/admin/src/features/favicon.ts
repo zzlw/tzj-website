@@ -7,17 +7,18 @@ import { BASE_PATH } from "@/lib/config";
 interface FaviconResult {
   key: string;
   url: string;
+  previewUrl?: string; // PNG 预览 URL
   size: number;
 }
 
 /** 查询当前 favicon URL（通过 BFF 代理到 Nest 公开接口） */
 export function useFavicon() {
-  return useQuery<{ url: string | null }>({
+  return useQuery<{ url: string | null; previewUrl?: string | null }>({
     queryKey: ["settings", "favicon"],
     queryFn: async () => {
       const res = await fetch(`${BASE_PATH}/api/bff/site-settings/favicon`);
       const body = await res.json().catch(() => null);
-      return body?.data ?? { url: null };
+      return body?.data ?? { url: null, previewUrl: null };
     },
   });
 }

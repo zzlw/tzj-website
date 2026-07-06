@@ -94,9 +94,10 @@ export class FaviconController {
   @Public()
   @Get("favicon")
   @ApiOperation({ summary: "获取当前网站 favicon URL" })
-  async getFavicon(): Promise<{ url: string | null }> {
+  async getFavicon(): Promise<{ url: string | null; previewUrl?: string | null }> {
     const url = await this.faviconService.getFaviconUrl();
-    return { url };
+    const previewUrl = await this.faviconService.getFaviconPreviewUrl();
+    return { url, previewUrl };
   }
 
   // ── 删除 favicon ──────────────────────────────────────────

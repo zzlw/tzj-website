@@ -15,6 +15,7 @@ import { S3Service } from "../storage/s3.service";
 export interface FaviconUploadResult {
   key: string;
   url: string;
+  previewUrl?: string; // PNG 预览 URL（用于 <img> 标签显示）
   size: number;
 }
 
@@ -35,6 +36,7 @@ export class FaviconService {
     mimeType: string,
   ): Promise<FaviconUploadResult> {
     let icoBuffer: Buffer;
+    let pngPreviewBuffer: Buffer | null = null;
 
     this.logger.log(`Uploading favicon: mimeType=${mimeType}, size=${buffer.length} bytes`);
 
@@ -42,12 +44,28 @@ export class FaviconService {
       // ICO 格式直接存储，无需转换
       this.logger.log("ICO format detected, storing directly");
       icoBuffer = buffer;
+      
+      // 为预览生成 PNG 版本
+      try {
+        pngPreviewBuffer = await sharp(buffer)
+          .png({ quality: 95 })
+          .toBuffer();
+        this.logger.log(`PNG preview generated: ${pngPreviewBuffer.length} bytes`);
+      } catch (err) {
+        this.logger.warn(`Failed to generate PNG preview: ${(err as Error).message}`);
+      }
     } else if (this.isSupportedImageFormat(mimeType)) {
       // 图片格式 → 转换为 ICO
       this.logger.log(`Converting ${mimeType} to ICO format...`);
       try {
         icoBuffer = await this.convertToIco(buffer);
         this.logger.log(`Conversion successful: ${icoBuffer.length} bytes`);
+        
+        // 保留原始图片作为预览
+        pngPreviewBuffer = await sharp(buffer)
+          .resize(64, 64, { fit: "cover", position: "centre" })
+          .png({ quality: 95 })
+          .toBuffer();
       } catch (error) {
         this.logger.error(`ICO conversion failed: ${(error as Error).message}`, (error as Error).stack);
         throw new BadRequestException(
@@ -68,10 +86,26 @@ export class FaviconService {
         this.FAVICON_KEY,
         "image/x-icon",
       );
+      
+      let previewUrl: string | undefined;
+      
+      // 如果有 PNG 预览，上传到 S3
+      if (pngPreviewBuffer) {
+        const previewKey = "statics/favicon-preview.png";
+        const previewResult = await this.s3.upload(
+          pngPreviewBuffer,
+          previewKey,
+          "image/png",
+        );
+        previewUrl = previewResult.url;
+        this.logger.log(`PNG preview uploaded: ${previewUrl}`);
+      }
+      
       this.logger.log(`Favicon uploaded successfully: ${result.url} (${icoBuffer.length} bytes)`);
       return {
         key: result.key,
         url: result.url,
+        previewUrl,
         size: icoBuffer.length,
       };
     } catch (error) {
@@ -87,9 +121,19 @@ export class FaviconService {
     return this.s3.getUrl(this.FAVICON_KEY);
   }
 
+  /** 获取 favicon 预览 URL（PNG 格式，用于 <img> 标签显示） */
+  async getFaviconPreviewUrl(): Promise<string | null> {
+    const previewKey = "statics/favicon-preview.png";
+    const exists = await this.s3.exists(previewKey);
+    if (!exists) return null;
+    return this.s3.getUrl(previewKey);
+  }
+
   /** 删除 favicon */
   async deleteFavicon(): Promise<void> {
     await this.s3.delete(this.FAVICON_KEY);
+    // 同时删除预览文件
+    await this.s3.delete("statics/favicon-preview.png").catch(() => {});
     this.logger.log("Favicon deleted");
   }
 
