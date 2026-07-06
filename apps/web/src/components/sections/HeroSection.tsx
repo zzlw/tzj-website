@@ -19,7 +19,7 @@ export async function HeroSection() {
         src={HERO_POSTER}
         alt=""
         fill
-        priority
+        preload
         loading="eager"
         fetchPriority="high"
         quality={90}

@@ -159,7 +159,7 @@ export function VideoHero({
           src={poster}
           alt=""
           fill
-          priority
+          preload
           loading="eager"
           fetchPriority="high"
           quality={90}

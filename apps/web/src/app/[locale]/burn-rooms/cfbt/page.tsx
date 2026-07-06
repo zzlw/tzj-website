@@ -48,7 +48,7 @@ export default async function CfbtPage() {
 
       <div className="pb-20">
         <section className="relative h-[420px] overflow-hidden bg-neutral-900 lg:h-[500px]">
-          <Image src={IMAGE} alt={t("hero.imageAlt")} fill priority quality={90} sizes="100vw" className="object-cover" />
+          <Image src={IMAGE} alt={t("hero.imageAlt")} fill preload loading="eager" quality={90} sizes="100vw" className="object-cover" />
           <div className="absolute inset-0 rb-media-shade-strong" />
           <Container className="rb-on-media relative z-10 flex h-full flex-col justify-end pb-12 pt-24">
             <Eyebrow inverted>{t("hero.eyebrow")}</Eyebrow>

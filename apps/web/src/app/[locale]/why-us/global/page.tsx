@@ -25,7 +25,7 @@ export default async function GlobalPage() {
   return (
     <div className="pb-20">
       <section className="relative flex min-h-[620px] items-center justify-center overflow-hidden bg-neutral-900 pt-16 lg:min-h-[720px]">
-        <Image src={HERO_IMAGE} alt={t("hero.imageAlt")} fill sizes="100vw" className="object-cover object-center" priority />
+        <Image src={HERO_IMAGE} alt={t("hero.imageAlt")} fill sizes="100vw" className="object-cover object-center" preload loading="eager" />
         <div className="absolute inset-0 rb-media-shade-strong" />
         <Container className="rb-on-media relative z-10 flex flex-col items-center py-16 text-center lg:py-24">
           <Eyebrow inverted>{t("hero.eyebrow")}</Eyebrow>

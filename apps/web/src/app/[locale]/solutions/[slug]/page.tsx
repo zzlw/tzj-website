@@ -65,7 +65,7 @@ export default async function SolutionDetailPage({ params }: SolutionPageProps) 
             src={solution.image}
             alt={solution.name}
             fill
-            priority
+            preload loading="eager"
             sizes="100vw"
             className="object-cover"
           />

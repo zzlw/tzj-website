@@ -92,7 +92,7 @@ export default async function CaseDetailPage({ params }: CasePageProps) {
             src={coverImage}
             alt={caseStudy.title}
             fill
-            priority
+            preload loading="eager"
             sizes="100vw"
             className="object-cover"
           />

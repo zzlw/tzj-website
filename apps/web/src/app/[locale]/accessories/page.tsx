@@ -47,7 +47,8 @@ export default async function AccessoriesPage() {
           quality={90}
           sizes="100vw"
           className="object-cover object-center"
-          priority
+          preload
+          loading="eager"
         />
         <div className="absolute inset-0 rb-media-shade-strong" />
         <Container className="rb-on-media relative z-10 py-14 lg:py-20">
