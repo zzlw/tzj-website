@@ -34,7 +34,8 @@ export function useUpdateSiteMediaSettings() {
   });
 }
 
-/** MediaPicker URL → 存储 key（与 API normalizeWatermarkImageKey 对齐） */
+/** MediaPicker URL → 存储 key（与 API normalizeWatermarkImageKey 对齐）
+ *  兼容不同环境的 bucket 名（tzj-uploads-dev / tzj-static 等） */
 export function watermarkImageKeyFromUrl(url: string | undefined): string | undefined {
   if (!url?.trim()) return undefined;
   let s = url.trim();
@@ -47,9 +48,10 @@ export function watermarkImageKeyFromUrl(url: string | undefined): string | unde
     try {
       const u = new URL(s);
       s = u.pathname.replace(/^\/+/, "");
-      const bucket = base.split("/").pop();
-      if (bucket && s.startsWith(`${bucket}/`)) {
-        s = s.slice(bucket.length + 1);
+      // Strip any bucket name (first path segment) if key not at root
+      if (!/^(uploads|cms)\//.test(s)) {
+        const slashIdx = s.indexOf("/");
+        if (slashIdx > 0) s = s.slice(slashIdx + 1);
       }
     } catch {
       return undefined;

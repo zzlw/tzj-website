@@ -29,9 +29,10 @@ export function normalizeSocialQrForSave(url?: string | null): string {
     try {
       const u = new URL(s);
       s = u.pathname.replace(/^\/+/, "");
-      const bucket = base.split("/").pop();
-      if (bucket && s.startsWith(`${bucket}/`)) {
-        s = s.slice(bucket.length + 1);
+      // Strip any bucket name (first path segment) if key not at root
+      if (!/^(uploads|content)\//.test(s)) {
+        const slashIdx = s.indexOf("/");
+        if (slashIdx > 0) s = s.slice(slashIdx + 1);
       }
     } catch {
       return src;
@@ -57,15 +58,17 @@ export function resolveMediaUrl(url?: string | null): string {
     const base = getS3PublicDomain().replace(/\/$/, "");
     if (src.startsWith(`${base}/`)) return src;
     // 历史 localhost 等域名 → 提取 key 重写为当前 MinIO 域名
-    let path = src;
+    // 兼容不同环境的 bucket 名（tzj-uploads-dev / tzj-static 等）
     try {
       const u = new URL(src);
-      path = u.pathname.replace(/^\/+/, "");
-      const bucket = base.split("/").pop();
-      if (bucket && path.startsWith(`${bucket}/`)) {
-        path = path.slice(bucket.length + 1);
-      }
+      const path = u.pathname.replace(/^\/+/, "");
       if (/^(uploads|content)\//.test(path)) return toMinioUrl(path);
+      // Strip any bucket name (first path segment)
+      const slashIdx = path.indexOf("/");
+      if (slashIdx > 0) {
+        const rest = path.slice(slashIdx + 1);
+        if (/^(uploads|content)\//.test(rest)) return toMinioUrl(rest);
+      }
     } catch {
       return src;
     }

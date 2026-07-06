@@ -32,9 +32,10 @@ export function normalizeSocialQrPath(
     try {
       const u = new URL(s);
       s = u.pathname.replace(/^\/+/, "");
-      const bucketPrefix = base.split("/").pop();
-      if (bucketPrefix && s.startsWith(`${bucketPrefix}/`)) {
-        s = s.slice(bucketPrefix.length + 1);
+      // Strip any bucket name (first path segment) if key not at root
+      if (!/^(uploads|content)\//.test(s)) {
+        const slashIdx = s.indexOf("/");
+        if (slashIdx > 0) s = s.slice(slashIdx + 1);
       }
     } catch {
       return undefined;

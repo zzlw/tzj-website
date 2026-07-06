@@ -8,7 +8,8 @@ export function getS3PublicDomain(): string {
 /** MinIO 中站点静态资源的 key 前缀（与 sync-content-media 上传路径一致）。 */
 export const STATIC_MEDIA_OBJECT_PREFIX = "content";
 
-/** 从 MediaPicker / 历史数据中的绝对 URL 提取对象 key（uploads/…、content/…） */
+/** 从 MediaPicker / 历史数据中的绝对 URL 提取对象 key（uploads/…、content/…）
+ *  兼容不同环境的 bucket 名（tzj-uploads-dev / tzj-static 等） */
 export function extractMediaObjectKey(url?: string | null): string | undefined {
   if (!url?.trim()) return undefined;
   const src = url.trim();
@@ -17,13 +18,14 @@ export function extractMediaObjectKey(url?: string | null): string | undefined {
   if (/^https?:\/\//i.test(src)) {
     try {
       const u = new URL(src);
-      let path = u.pathname.replace(/^\/+/, "");
-      const base = getS3PublicDomain().replace(/\/$/, "");
-      const bucket = base.split("/").pop();
-      if (bucket && path.startsWith(`${bucket}/`)) {
-        path = path.slice(bucket.length + 1);
-      }
+      const path = u.pathname.replace(/^\/+/, "");
       if (/^(uploads|content)\//.test(path)) return path;
+      // Strip any bucket name (first path segment) to get the object key
+      const slashIdx = path.indexOf("/");
+      if (slashIdx > 0) {
+        const rest = path.slice(slashIdx + 1);
+        if (/^(uploads|content)\//.test(rest)) return rest;
+      }
     } catch {
       return undefined;
     }
