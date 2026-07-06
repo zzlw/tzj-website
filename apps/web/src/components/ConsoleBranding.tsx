@@ -8,6 +8,8 @@ import { useEffect } from "react";
  */
 export function ConsoleBranding() {
   useEffect(() => {
+    // 仅在生产环境执行，避免 React DevTools 冲突
+    if (process.env.NODE_ENV !== "production") return;
     if (typeof window === "undefined") return;
 
     const timer = window.setTimeout(() => {
