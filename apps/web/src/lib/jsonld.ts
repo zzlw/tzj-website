@@ -123,3 +123,46 @@ export function articleJsonLd({
     },
   };
 }
+
+export function eventJsonLd({
+  title,
+  description,
+  path,
+  image,
+  startDate,
+  endDate,
+  location,
+}: {
+  title: string;
+  description: string;
+  path: string;
+  image?: string;
+  startDate?: string;
+  endDate?: string;
+  location?: string;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Event",
+    name: title,
+    description,
+    url: `${siteConfig.url}${path}`,
+    image: image ? resolveMediaUrl(image) : undefined,
+    startDate,
+    endDate,
+    location: location
+      ? {
+          "@type": "Place",
+          name: location,
+          address: {
+            "@type": "PostalAddress",
+            addressCountry: "CN",
+          },
+        }
+      : undefined,
+    organizer: {
+      "@type": "Organization",
+      name: siteConfig.legalName,
+    },
+  };
+}

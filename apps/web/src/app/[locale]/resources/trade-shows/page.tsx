@@ -1,4 +1,5 @@
 import { CalendarDays, MapPin, Eye, MessagesSquare, Handshake } from "lucide-react";
+import Link from "next/link";
 import { getTradeShows } from "@/lib/api";
 import { formatContentDate, tradeShowTypeLabel } from "@/lib/content-labels";
 import { buildListQuery, normalizePagination, parseContentListState, pickSummary } from "@/lib/content-list";
@@ -134,9 +135,13 @@ export default async function TradeShowsPage({ searchParams }: PageProps) {
                     }
 
                     return (
-                      <div key={e.id} className="border border-neutral-300 bg-white p-6">
+                      <Link
+                        key={e.id}
+                        href={`/resources/trade-shows/${e.slug}`}
+                        className="group block border border-neutral-300 bg-white p-6 transition-colors hover:border-neutral-900"
+                      >
                         {cardInner}
-                      </div>
+                      </Link>
                     );
                   })}
                 </div>

@@ -110,15 +110,21 @@
       "ctaDescriptionNews": "Talk with our engineers and fire experts for professional advice and product guidance.",
       "relatedArticles": "Related Articles",
       "relatedNews": "Related News",
+      "relatedTradeShows": "Related Events",
       "readFull": "Read Full Article",
       "viewDetail": "View Details",
       "backToBlog": "Back to Blog",
       "backToNews": "Back to News",
+      "backToTradeShows": "Back to Events",
       "bookConsultArrow": "Book a Consultation →",
+      "booth": "Booth:",
+      "ctaTitleTradeShow": "Want to learn more about this event?",
+      "ctaDescriptionTradeShow": "Talk with our industry experts for exhibition advice and collaboration opportunities.",
       "breadcrumbs": {
         "cases": "Projects",
         "blog": "Blog",
-        "news": "News"
+        "news": "News",
+        "tradeShows": "Events"
       }
     },
     "productGrid": {
