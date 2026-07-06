@@ -20,10 +20,10 @@ export function SessionProvider({
 }) {
   const router = useRouter();
 
-  // 如果 permissions 为空且不是访客角色，说明 session 可能已失效
-  if (session.permissions.length === 0 && session.role !== "guest") {
-    console.warn("[Session] Empty permissions detected, redirecting to login...");
-    // 延迟重定向，避免渲染闪烁
+  // 只有在完全没有用户信息时才重定向（说明 token 完全失效）
+  // permissions 为空可能是 API 临时失败，不应立即登出
+  if (!session.username || !session.role) {
+    console.warn("[Session] No user info detected, redirecting to login...");
     setTimeout(() => {
       router.replace("/login?reason=session_expired");
     }, 100);
