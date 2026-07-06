@@ -1,8 +1,8 @@
 import { locales, type AppLocale } from "@/i18n/routing";
 import { pageContentIdFromPath, PAGE_IDS } from "./page-ids";
 
-/** 各路由共享、体积较小的模块（cta 已含于 blocks.json）。 */
-const ALWAYS_EXTRA = ["blocks", "error", "catalog"] as const;
+/** 各路由共享、体积较小的模块（cta 已含于 blocks.json；content 多路由共用，始终加载）。 */
+const ALWAYS_EXTRA = ["blocks", "error", "catalog", "content"] as const;
 
 const PRODUCT_PATH_PREFIXES = [
   "/fixed-tower",
@@ -39,17 +39,6 @@ function isProductPath(path: string): boolean {
   );
 }
 
-function isContentPath(path: string): boolean {
-  return (
-    path === "/cases" ||
-    path.startsWith("/cases/") ||
-    path === "/resources" ||
-    path.startsWith("/resources/blog") ||
-    path.startsWith("/resources/news") ||
-    path.startsWith("/resources/trade-shows")
-  );
-}
-
 function isSolutionsPath(path: string): boolean {
   return path === "/solutions" || path.startsWith("/solutions/");
 }
@@ -62,17 +51,12 @@ export function resolveMessageLoadPlan(pathname: string): MessageLoadPlan {
 
   if (isHomePath(path)) {
     extraModules.add("home");
-    extraModules.add("content");
     extraModules.add("solutions");
-  }
-  if (path === "/towers") {
-    extraModules.add("content");
   }
   if (path === "/search") {
     extraModules.add("solutions");
   }
   if (isProductPath(path)) extraModules.add("catalog");
-  if (isContentPath(path)) extraModules.add("content");
   if (isSolutionsPath(path)) extraModules.add("solutions");
 
   const staticId = pageContentIdFromPath(path);

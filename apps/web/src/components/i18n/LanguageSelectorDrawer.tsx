@@ -65,7 +65,7 @@ export function LanguageSelectorDrawer({
         role="dialog"
         aria-modal="true"
         aria-labelledby="language-selector-title"
-        aria-hidden={!open}
+        inert={!open || undefined}
         className={cn(
           "fixed inset-y-0 right-0 z-[71] flex w-full max-w-xl flex-col overflow-hidden bg-white shadow-2xl transition-transform duration-300 ease-[cubic-bezier(.75,0,.35,1)]",
           "lg:inset-y-5 lg:right-5 lg:w-[36rem] lg:max-w-none",

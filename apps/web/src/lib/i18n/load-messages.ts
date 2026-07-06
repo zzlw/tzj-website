@@ -48,7 +48,8 @@ async function loadModule(
       default: return null;
     }
     return mod.default as Record<string, unknown>;
-  } catch {
+  } catch (err) {
+    console.error(`[i18n] Failed to load module ${locale}/${name}:`, err);
     return null;
   }
 }
@@ -60,7 +61,8 @@ async function loadPageFile(
   try {
     const mod = await import(`@/messages/${locale}/pages/${id}.json`);
     return mod.default as Record<string, unknown>;
-  } catch {
+  } catch (err) {
+    console.error(`[i18n] Failed to load page ${locale}/${id}:`, err);
     return null;
   }
 }

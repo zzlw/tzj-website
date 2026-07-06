@@ -27,10 +27,11 @@ export async function HeroSection() {
         className="absolute inset-0 z-0 h-full w-full object-cover object-center"
         aria-hidden
       />
+      {/* poster 留给底层 eager <img> 承担，避免 <video poster> 的原始 URL
+          与 allImgs 中 eager 图片的 ?w= 键不匹配导致 LCP 误报 */}
       <MediaVideo
         className="absolute inset-0 z-[1] h-full w-full object-cover object-center"
         src={HERO_VIDEO}
-        poster={HERO_POSTER}
         autoPlay
         muted
         loop
