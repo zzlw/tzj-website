@@ -249,6 +249,8 @@ export interface InternalDocumentItem extends BaseEntity {
   createdByUser?: ContentOperatorUser | null;
   lastOperator?: string | null;
   lastOperatorUser?: ContentOperatorUser | null;
+  /** 可见范围：private(仅自己) | partial(部分人) | public(全局) */
+  visibility?: "private" | "partial" | "public";
 }
 
 export interface DocRevisionItem {

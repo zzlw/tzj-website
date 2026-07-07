@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { ZodType } from "zod";
 
 import type { DataTableColumn, DataTableSort } from "@tzj/ui";
@@ -80,4 +81,6 @@ export interface ResourceConfig<T> {
   createPayloadExtra?: Record<string, unknown>;
   /** 后台内部阅读页路径（如内部文档 `/documents/:id`） */
   detailPath?: (row: T) => string;
+  /** 自定义操作按钮（插入到默认操作之前） */
+  extraActions?: (row: T) => ReactNode;
 }

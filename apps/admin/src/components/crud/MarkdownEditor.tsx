@@ -62,8 +62,8 @@ function vditorCdn(): string {
   if (process.env.NODE_ENV === "production") {
     return "https://unpkg.com/vditor@3.11.2";
   }
-  // 开发环境：从 node_modules 加载（需要 next.config.js 配置）
-  return "";
+  // 开发环境：从 public/vditor-assets 加载
+  return "/vditor-assets";
 }
 
 /** 源码模式按钮图标（Material “code”，fill 风格与 vditor 图标一致） */

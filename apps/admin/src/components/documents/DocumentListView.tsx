@@ -50,6 +50,7 @@ import {
 import { Can } from "@/components/Can";
 import { DocumentMoveDialog } from "@/components/documents/DocumentMoveDialog";
 import { DocumentTagsManageDialog } from "@/components/documents/DocumentTagsManageDialog";
+import { DocumentPermissionDialog } from "@/components/DocumentPermissionDialog";
 import { LastOperatorCell } from "@/components/LastOperatorCell";
 import type { DocumentsResourceConfig } from "@/features/resources/documents";
 import { buildDocListHref, useDocTags } from "@/features/documents";
@@ -103,6 +104,7 @@ function DocumentRowActions({
 }) {
   const readHref = config.detailPath?.(doc) ?? `/documents/mine/${doc.id}`;
   const editHref = `${config.basePath}/${doc.id}/edit`;
+  const [permOpen, setPermOpen] = useState(false);
 
   return (
     <>
@@ -134,6 +136,26 @@ function DocumentRowActions({
             </DropdownMenuItem>
           </Can>
           <Can anyPerm={perms(config, "edit")}>
+            <DropdownMenuItem onClick={() => setPermOpen(true)}>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="mr-2 h-4 w-4"
+              >
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+              权限管理
+            </DropdownMenuItem>
+          </Can>
+          <Can anyPerm={perms(config, "edit")}>
             <DropdownMenuItem onClick={onMove}>
               <FolderInput className="mr-2 h-4 w-4" />
               移动到…
@@ -151,6 +173,13 @@ function DocumentRowActions({
           </Can>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <DocumentPermissionDialog
+        documentId={doc.id}
+        documentTitle={doc.title}
+        open={permOpen}
+        onOpenChange={setPermOpen}
+      />
     </>
   );
 }
@@ -249,6 +278,25 @@ function DocumentListRow({
               </span>
             </>
           )}
+          {/* 可见范围 */}
+          <MetaDot />
+          <span className="inline-flex items-center gap-1">
+            {doc.visibility === "public" && (
+              <Badge variant="outline" className="h-5 px-1.5 text-[10px] border-green-600 text-green-700 dark:border-green-500 dark:text-green-400">
+                全局可见
+              </Badge>
+            )}
+            {doc.visibility === "partial" && (
+              <Badge variant="outline" className="h-5 px-1.5 text-[10px] border-blue-600 text-blue-700 dark:border-blue-500 dark:text-blue-400">
+                部分人可见
+              </Badge>
+            )}
+            {doc.visibility === "private" && (
+              <Badge variant="outline" className="h-5 px-1.5 text-[10px] border-gray-600 text-gray-700 dark:border-gray-500 dark:text-gray-400">
+                仅自己可见
+              </Badge>
+            )}
+          </span>
         </>
       }
       actions={

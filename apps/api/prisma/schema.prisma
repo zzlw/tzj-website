@@ -266,6 +266,8 @@ model User {
   personalDocuments     InternalDocument[] @relation("DocPersonalOwner")
   docTagsOwned          DocTag[] @relation("DocTagOwner")
   docTagsCreated        DocTag[] @relation("DocTagCreatedBy")
+  docPermissionsGranted DocumentPermission[] @relation("DocPermissionGrantor")
+  docPermissionsAsUser  DocumentPermission[] @relation("DocPermissionUser")
 
   @@map("users")
 }
@@ -455,6 +457,7 @@ model InternalDocument {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   revisions InternalDocumentRevision[]
+  permissions DocumentPermission[]
 
   @@index([folderId])
   @@index([ownerId])
@@ -477,6 +480,38 @@ model InternalDocumentRevision {
 
   @@index([documentId, createdAt])
   @@map("internal_document_revisions")
+}
+
+/** 文档权限模型（参考 Notion/Confluence 最佳实践） */
+model DocumentPermission {
+  id         String           @id @default(cuid())
+  documentId String           @map("document_id")
+  document   InternalDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  
+  /** 权限类型：viewer(查看者) | editor(编辑者) | owner(所有者，自动分配给创建者) */
+  role       String           @map("role_type") // viewer | editor | owner
+  
+  /** 授权对象类型：user(用户) | role(角色) | public(公开) */
+  targetType String           @map("target_type") // user | role | public
+  
+  /** 目标ID：当 targetType=user 时为 userId；当 targetType=role 时为 role slug；public 时为 null */
+  targetId   String?          @map("target_id")
+  
+  /** 关联的用户或角色（可选，用于查询优化） */
+  user       User?            @relation("DocPermissionUser", fields: [targetId], references: [id], onDelete: Cascade)
+  
+  /** 授予者 */
+  grantedBy  String?          @map("granted_by")
+  grantor    User?            @relation("DocPermissionGrantor", fields: [grantedBy], references: [id], onDelete: SetNull)
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([documentId, targetType, targetId])
+  @@index([documentId])
+  @@index([targetId])
+  @@index([role])
+  @@map("document_permissions")
 }
 
 // 文档标签注册表（owner_id 为空 = 组织标签，非空 = 个人标签）

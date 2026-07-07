@@ -192,6 +192,7 @@ export function ResourceListView<T extends { id: string }>({
         }}
         renderActions={(row) => (
           <div className="flex items-center justify-end gap-1">
+            {config.extraActions?.(row)}
             {config.detailPath && (
               <Tooltip>
                 <TooltipTrigger asChild>

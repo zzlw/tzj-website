@@ -9,8 +9,8 @@ function vditorCdn(): string {
   if (process.env.NODE_ENV === "production") {
     return "https://unpkg.com/vditor@3.11.2";
   }
-  // 开发环境：从 node_modules 加载
-  return "";
+  // 开发环境：从 public/vditor-assets 加载
+  return "/vditor-assets";
 }
 
 export function MarkdownPreview({

@@ -26,6 +26,12 @@ import {
   RenameDocTagDto,
   UpdateDocumentDto,
 } from "./dto/document.dto";
+import {
+  BatchUpdatePermissionsDto,
+  CreateDocumentPermissionDto,
+  PermissionRole,
+  PermissionTargetType,
+} from "./dto/document-permission.dto";
 
 @ApiTags("documents")
 @ApiBearerAuth()
@@ -243,6 +249,67 @@ export class DocumentsController {
   @ApiOperation({ summary: "删除文档" })
   remove(@Param("id") id: string, @CurrentUser() user: AuthUser) {
     return this.documentsService.remove(id, user.id, this.canManage(user));
+  }
+
+  // ==================== 权限管理 API ====================
+
+  @RequirePermissions("docs.view")
+  @Get(":id/permissions")
+  @ApiOperation({ summary: "获取文档权限列表" })
+  getPermissions(@Param("id") id: string, @CurrentUser() user: AuthUser) {
+    return this.documentsService.getPermissions(
+      id,
+      user.id,
+      this.canManage(user),
+    );
+  }
+
+  @RequirePermissions("docs.edit")
+  @Put(":id/permissions")
+  @ApiOperation({ summary: "更新文档权限（批量替换）" })
+  updatePermissions(
+    @Param("id") id: string,
+    @Body() dto: BatchUpdatePermissionsDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.documentsService.updatePermissions(
+      id,
+      dto.permissions,
+      user.id,
+      this.canManage(user),
+    );
+  }
+
+  @RequirePermissions("docs.edit")
+  @Post(":id/permissions")
+  @ApiOperation({ summary: "添加单个权限" })
+  addPermission(
+    @Param("id") id: string,
+    @Body() dto: CreateDocumentPermissionDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.documentsService.addPermission(
+      id,
+      dto,
+      user.id,
+      this.canManage(user),
+    );
+  }
+
+  @RequirePermissions("docs.edit")
+  @Delete(":id/permissions/:permissionId")
+  @ApiOperation({ summary: "删除权限" })
+  removePermission(
+    @Param("id") id: string,
+    @Param("permissionId") permissionId: string,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.documentsService.removePermission(
+      id,
+      permissionId,
+      user.id,
+      this.canManage(user),
+    );
   }
 
   private tagScope(user: AuthUser, mine?: string) {

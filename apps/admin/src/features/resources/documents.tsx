@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { ResourceConfig } from "@/components/crud/config";
 import type { InternalDocumentItem } from "@/features/types";
 import { contentAuditColumns } from "@/components/LastOperatorCell";
+import { DocumentPermissionButton } from "@/components/DocumentPermissionButton";
 import { StatusBadge, formatDate, toDateInput } from "@/features/constants";
 
 const schema = z.object({
@@ -125,6 +126,9 @@ function buildDocumentsConfig(): DocumentsResourceConfig {
       publishedAt: toDateInput(r.publishedAt),
     }),
     detailPath: (r) => `/documents/mine/${r.id}`,
+    extraActions: (r) => (
+      <DocumentPermissionButton documentId={r.id} documentTitle={r.title} />
+    ),
   };
 }
 

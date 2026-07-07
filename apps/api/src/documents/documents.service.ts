@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { Prisma } from "@prisma/client/index";
 import { PrismaService } from "../prisma/prisma.service";
 import { ContentStatus } from "../common/enums/content-status.enum";
@@ -20,6 +20,7 @@ import {
 } from "../common/utils/slug";
 import { DocTagsService } from "./doc-tags.service";
 import { generateDocumentSummary } from "../common/utils/document-summary";
+import { DocumentPermissionsService } from "./document-permissions.service";
 
 const LIST_SORT_FIELDS = [
   "title",
@@ -37,6 +38,30 @@ const DEFAULT_ORDER: OrderByEntry[] = [
   { isPinned: "desc" },
   { updatedAt: "desc" },
 ];
+
+/**
+ * 计算文档的可见范围
+ * - private: 仅自己可见（有 ownerId 且无 public 权限）
+ * - partial: 部分人可见（有特定用户/角色权限但无 public）
+ * - public: 全局可见（有 public 权限）
+ */
+function calculateVisibility(
+  ownerId: string | null,
+  permissions: Array<{ targetType: string; role: string }> = [],
+): "private" | "partial" | "public" {
+  // 如果有 public 权限，则是全局可见
+  const hasPublic = permissions.some((p) => p.targetType === "public");
+  if (hasPublic) return "public";
+
+  // 如果是个人文档（有 ownerId），且没有其他权限配置，则仅自己可见
+  if (ownerId && permissions.length === 0) return "private";
+
+  // 如果有任何用户或角色权限，则是部分人可见
+  if (permissions.length > 0) return "partial";
+
+  // 默认情况：组织文档无权限配置，视为私有
+  return "private";
+}
 
 interface FindAllParams {
   page: number;
@@ -64,6 +89,7 @@ export class DocumentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly docTagsService: DocTagsService,
+    private readonly permissionsService: DocumentPermissionsService,
   ) {}
 
   private assertDocumentAccess(
@@ -209,13 +235,25 @@ export class DocumentsService {
     const orderBy = buildListOrderBy(sort, DEFAULT_ORDER);
     const richInclude = includeDrafts || (mine && Boolean(userId));
 
+    // 构建 include 对象，添加 permissions
+    const baseInclude = richInclude ? CONTENT_ADMIN_USER_INCLUDE : { folder: true };
+    const includeWithPermissions = {
+      ...baseInclude,
+      permissions: {
+        select: {
+          targetType: true,
+          role: true,
+        },
+      },
+    };
+
     const [rawData, total] = await Promise.all([
       this.prisma.internalDocument.findMany({
         where,
         skip,
         take: limit,
         orderBy,
-        include: richInclude ? CONTENT_ADMIN_USER_INCLUDE : { folder: true },
+        include: includeWithPermissions,
       }),
       this.prisma.internalDocument.count({ where }),
     ]);
@@ -225,11 +263,22 @@ export class DocumentsService {
     }
 
     return {
-      data: rawData.map((item) =>
-        richInclude
+      data: rawData.map((item) => {
+        const strippedItem = richInclude
           ? stripInternalContentFields(item, true)
-          : { ...item, content: undefined },
-      ),
+          : { ...item, content: undefined };
+        
+        // 计算可见范围
+        const visibility = calculateVisibility(
+          item.ownerId ?? null,
+          item.permissions ?? [],
+        );
+        
+        return {
+          ...strippedItem,
+          visibility,
+        };
+      }),
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     };
   }
@@ -245,16 +294,25 @@ export class DocumentsService {
     });
     if (!item) throw new NotFoundException(`文档 "${idOrSlug}" 未找到`);
 
+    // 使用权限服务检查访问权限
+    const accessInfo = await this.permissionsService.checkAccess(
+      item.id,
+      viewerId,
+      canManage,
+    );
+
+    // 个人文档：只有所有者和管理员可访问
     const isPersonal = Boolean(item.ownerId);
-    if (isPersonal) {
-      this.assertDocumentAccess(item, viewerId, canManage);
-      const canSeeDraft =
-        item.ownerId === viewerId || canManage;
+    if (isPersonal && !accessInfo.canView) {
+      throw new NotFoundException(`文档 "${idOrSlug}" 未找到`);
+    }
+
+    // 组织文档：根据状态和权限检查
+    if (!isPersonal) {
+      const canSeeDraft = accessInfo.canEdit || includeDrafts;
       if (!canSeeDraft && item.status !== ContentStatus.PUBLISHED) {
         throw new NotFoundException(`文档 "${idOrSlug}" 未找到`);
       }
-    } else if (!includeDrafts && item.status !== ContentStatus.PUBLISHED) {
-      throw new NotFoundException(`文档 "${idOrSlug}" 未找到`);
     }
 
     const draftPreview =
@@ -345,7 +403,16 @@ export class DocumentsService {
   ) {
     const item = await this.prisma.internalDocument.findUnique({ where: { id } });
     if (!item) throw new NotFoundException(`文档 ID "${id}" 未找到`);
-    this.assertDocumentAccess(item, editorId, canManage);
+
+    // 使用权限服务检查编辑权限
+    const accessInfo = await this.permissionsService.checkAccess(
+      id,
+      editorId,
+      canManage,
+    );
+    if (!accessInfo.canEdit) {
+      throw new ForbiddenException("无权编辑此文档");
+    }
 
     const contentChanged =
       dto.content !== undefined && dto.content !== item.content;
@@ -429,7 +496,17 @@ export class DocumentsService {
   async remove(id: string, viewerId?: string, canManage = false) {
     const item = await this.prisma.internalDocument.findUnique({ where: { id } });
     if (!item) throw new NotFoundException(`文档 ID "${id}" 未找到`);
-    this.assertDocumentAccess(item, viewerId, canManage);
+
+    // 使用权限服务检查删除权限（需要编辑权限）
+    const accessInfo = await this.permissionsService.checkAccess(
+      id,
+      viewerId,
+      canManage,
+    );
+    if (!accessInfo.canEdit) {
+      throw new ForbiddenException("无权删除此文档");
+    }
+
     await this.prisma.internalDocument.delete({ where: { id } });
     return { deleted: true };
   }
@@ -491,6 +568,70 @@ export class DocumentsService {
       documentId,
       { title: revision.title, content: revision.content ?? "" },
       editorId,
+      canManage,
+    );
+  }
+
+  // ==================== 权限管理方法 ====================
+
+  /**
+   * 获取文档权限列表
+   */
+  async getPermissions(
+    documentId: string,
+    userId: string | undefined,
+    canManage: boolean,
+  ) {
+    return this.permissionsService.getPermissions(documentId, userId, canManage);
+  }
+
+  /**
+   * 更新文档权限（批量替换）
+   */
+  async updatePermissions(
+    documentId: string,
+    permissions: any[],
+    userId: string | undefined,
+    canManage: boolean,
+  ) {
+    return this.permissionsService.updatePermissions(
+      documentId,
+      permissions,
+      userId,
+      canManage,
+    );
+  }
+
+  /**
+   * 添加单个权限
+   */
+  async addPermission(
+    documentId: string,
+    permission: any,
+    userId: string | undefined,
+    canManage: boolean,
+  ) {
+    return this.permissionsService.addPermission(
+      documentId,
+      permission,
+      userId,
+      canManage,
+    );
+  }
+
+  /**
+   * 删除权限
+   */
+  async removePermission(
+    documentId: string,
+    permissionId: string,
+    userId: string | undefined,
+    canManage: boolean,
+  ) {
+    return this.permissionsService.removePermission(
+      documentId,
+      permissionId,
+      userId,
       canManage,
     );
   }
