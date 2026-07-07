@@ -10,7 +10,7 @@ import {
   TRADE_SHOW_COVERS,
   patchContentImageUrls,
   resolveContentUrl,
-  syncContentMedia,
+  syncSiteStaticMedia,
 } from "./lib/sync-content-media";
 
 const prisma = new PrismaClient();
@@ -243,7 +243,7 @@ async function seedTradeShows(urlMap: Map<string, string>): Promise<number> {
 async function main(): Promise<void> {
   console.log("📦 导入 C 端静态内容到数据库…");
 
-  const urlMap = await syncContentMedia(prisma);
+  const urlMap = await syncSiteStaticMedia(prisma);
 
   const [cases, news, blogs, tradeShows] = await Promise.all([
     seedCases(urlMap),
