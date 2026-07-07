@@ -1,17 +1,17 @@
 {
   "home": {
     "hero": {
-      "eyebrow": "應急救援訓練装备一體化供應商",
+      "eyebrow": "應急救援訓練装備一體化供應商",
       "titleLine1": "為實戰而生的",
       "titleLine2": "訓練基地整體方案",
-      "description": "十六年深耕應急救援訓練装备 —— 从訓練塔與建筑、實火燃燒、專項場景到訓練器械，{count} 大產品线、6 大服務领域，以交钥匙方式為消防、公安、部隊等隊伍打造完整訓練基地。",
+      "description": "十六年深耕應急救援訓練装備 —— 從訓練塔與建筑、實火燃燒、專項場景到訓練器械，{count} 大產品線、6 大服務領域，以交钥匙方式為消防、公安、部隊等隊伍打造完整訓練基地。",
       "browseProducts": "浏览產品",
       "viewSolutions": "查看解決方案"
     },
     "products": {
-      "eyebrow": "產品中心 · {count} 大產品线",
+      "eyebrow": "產品中心 · {count} 大產品線",
       "title": "覆蓋訓練基地的全部所需",
-      "description": "四大板組、{count} 大產品线 —— 从建筑主體到實火、專項與器械，一站式满足消防、公安、部隊等各类隊伍的訓練需求。",
+      "description": "四大板組、{count} 大產品線 —— 從建筑主體到實火、專項與器械，一站式满足消防、公安、部隊等各类隊伍的訓練需求。",
       "browseAll": "浏览全部產品",
       "familyTowers": "訓練塔與建筑",
       "familyBurn": "實火與燃燒",
@@ -20,31 +20,31 @@
       "total": "合計"
     },
     "solutions": {
-      "eyebrow": "解決方案 · 6 大服務领域",
+      "eyebrow": "解決方案 · 6 大服務領域",
       "title": "為不同隊伍，量身匹配",
-      "description": "消防救援、公安武警、部隊、礦山救援、院校教育、企業與園區 —— 我們把產品按客户任務重新聚合，帮您快速找到贴合自身的整體方案。",
+      "description": "消防救援、公安武警、部隊、礦山救援、院校教育、企業與園區 —— 我們把產品按客户任務重新聚合，幫您快速找到贴合自身的整體方案。",
       "viewAll": "查看全部解決方案",
       "viewSolution": "查看方案"
     },
     "mission": {
-      "eyebrow": "一个目標，一份熱爱",
+      "eyebrow": "一个目標，一份熱愛",
       "titleLine1": "我們的訓練塔",
       "titleLine2": "由消防员與工程师",
       "titleHighlight": "專為消防訓練打造",
       "statYears": "年行業深耕",
       "statProjects": "訓練基地項目",
-      "statLines": "大產品线",
-      "statDomains": "大服務领域",
+      "statLines": "大產品線",
+      "statDomains": "大服務領域",
       "learnMore": "了解我們的不同之处"
     },
     "deliveries": {
       "eyebrow": "工程案例",
       "title": "訓練基地案例遍布全國",
-      "description": "超过 1000 个訓練基地項目，覆蓋全國各省市的消防、公安、部隊、院校等行業",
+      "description": "超過 1000 个訓練基地項目，覆蓋全國各省市的消防、公安、部隊、院校等行業",
       "viewAll": "查看全部案例",
       "items": {
         "henan-fire-rescue": {
-          "title": "某省消防救援总隊訓練基地",
+          "title": "某省消防救援總隊訓練基地",
           "location": "河南",
           "category": "消防救援"
         },
@@ -78,7 +78,7 @@
     "certification": {
       "eyebrow": "資質與信任",
       "title": "嚴苛標準，值得信赖",
-      "description": "多項行業資質認證與客户背书，是我們对品質與诚信的坚守。",
+      "description": "多項行業資質認證與客户背書，是我們對品質與诚信的坚守。",
       "items": {
         "iso9001": {
           "title": "ISO 9001",
@@ -90,11 +90,11 @@
         },
         "patents": {
           "title": "多項專利",
-          "subtitle": "實用新型 & 外观"
+          "subtitle": "實用新型 & 外觀"
         },
         "safety": {
           "title": "安全生產標準化",
-          "subtitle": "三级达標"
+          "subtitle": "三级達標"
         }
       },
       "clientsHeading": "服務客户行業",

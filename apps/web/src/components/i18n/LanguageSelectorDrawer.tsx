@@ -46,6 +46,12 @@ export function LanguageSelectorDrawer({
       onOpenChange(false);
       return;
     }
+    /**
+     * 双重保障：在 router.replace 之前手动设置 cookie，
+     * 避免 cookie path 绑定到当前路径前缀（如 /en），
+     * 导致后续访问无前缀路由时 locale 回退。
+     */
+    document.cookie = `NEXT_LOCALE=${nextLocale};path=/;SameSite=Lax`;
     router.replace(pathname, { locale: nextLocale });
     onOpenChange(false);
   }

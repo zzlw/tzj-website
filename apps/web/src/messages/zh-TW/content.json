@@ -7,21 +7,21 @@
     "sort": {
       "ariaLabel": "排序方式",
       "cases": {
-        "completionDesc": "完成時间（新→旧）",
-        "completionAsc": "完成時间（旧→新）",
+        "completionDesc": "完成時間（新→旧）",
+        "completionAsc": "完成時間（旧→新）",
         "titleAsc": "標題（A→Z）",
         "titleDesc": "標題（Z→A）",
-        "locationAsc": "地点（A→Z）"
+        "locationAsc": "地點（A→Z）"
       },
       "news": {
-        "publishedDesc": "發布時间（新→旧）",
-        "publishedAsc": "發布時间（旧→新）",
+        "publishedDesc": "發布時間（新→旧）",
+        "publishedAsc": "發布時間（旧→新）",
         "titleAsc": "標題（A→Z）",
         "titleDesc": "標題（Z→A）"
       },
       "blog": {
-        "publishedDesc": "發布時间（新→旧）",
-        "publishedAsc": "發布時间（旧→新）",
+        "publishedDesc": "發布時間（新→旧）",
+        "publishedAsc": "發布時間（旧→新）",
         "titleAsc": "標題（A→Z）",
         "titleDesc": "標題（Z→A）"
       },
@@ -39,7 +39,7 @@
           "fire": "消防类",
           "police": "公安类",
           "scenic": "景區类",
-          "school": "学校类",
+          "school": "學校类",
           "enterprise": "企業类"
         }
       },
@@ -69,16 +69,16 @@
       }
     },
     "list": {
-      "emptyCases": "暂无匹配的案例，請调整筛選條件。",
-      "emptyNews": "暂无匹配的新闻，請调整筛選條件。",
-      "emptyBlog": "暂无匹配的文章，請调整筛選條件。",
-      "emptyTradeShows": "暂无匹配的活動，請调整筛選條件。",
+      "emptyCases": "暂無匹配的案例，請調整筛選條件。",
+      "emptyNews": "暂無匹配的新闻，請調整筛選條件。",
+      "emptyBlog": "暂無匹配的文章，請調整筛選條件。",
+      "emptyTradeShows": "暂無匹配的活動，請調整筛選條件。",
       "readMore": "阅读全文",
       "viewCase": "查看案例",
       "backToList": "返回列表",
       "publishedAt": "發布于",
       "completedAt": "完成于",
-      "location": "地点",
+      "location": "地點",
       "relatedContent": "相關內容"
     },
     "pagination": {
@@ -110,21 +110,27 @@
       "ctaDescriptionNews": "與我們的工程師和消防專家團隊溝通，獲取專業建議與選型支援。",
       "relatedArticles": "相關文章",
       "relatedNews": "相關動態",
+      "relatedTradeShows": "相關展會活動",
       "readFull": "閱讀全文",
       "viewDetail": "查看詳情",
       "backToBlog": "返回博客",
       "backToNews": "返回新聞動態",
+      "backToTradeShows": "返回展會列表",
       "bookConsultArrow": "預約諮詢 →",
+      "booth": "展位：",
+      "ctaTitleTradeShow": "想了解該展會的詳細信息？",
+      "ctaDescriptionTradeShow": "與我們的行業專家溝通，獲取參展建議與合作方案。",
       "breadcrumbs": {
         "cases": "工程案例",
         "blog": "博客",
-        "news": "媒體報導"
+        "news": "媒體報導",
+        "tradeShows": "展會與活動"
       }
     },
     "productGrid": {
       "familyIndex": "板組 {index} / {total}",
       "familyIndexWithCount": "板組 {index} / {total} · {count}",
-      "lineCount": "{count} 條產品线"
+      "lineCount": "{count} 條產品線"
     }
   }
 }
