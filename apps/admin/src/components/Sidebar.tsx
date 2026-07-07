@@ -83,7 +83,7 @@ const NAV_GROUPS: Array<{
     label: "知识库",
     items: [
       {
-        label: "我的文档",
+        label: "文档中心",
         href: "/documents/mine",
         icon: FileUser,
         perm: "docs.view",

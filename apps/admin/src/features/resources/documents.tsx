@@ -21,7 +21,7 @@ function buildDocumentsConfig(): DocumentsResourceConfig {
     resource: "documents",
     basePath: "/documents/mine",
     createPayloadExtra: { personal: true },
-    title: "我的文档",
+    title: "文档中心",
     singular: "文档",
     searchable: true,
     defaultSort: { column: "updatedAt", order: "desc" },

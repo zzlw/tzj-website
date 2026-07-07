@@ -61,7 +61,7 @@ export class DocumentsController {
 
   @RequirePermissions("docs.create")
   @Post("folders/personal")
-  @ApiOperation({ summary: "创建个人文件夹（我的文档）" })
+  @ApiOperation({ summary: "创建个人文件夹（文档中心）" })
   createPersonalFolder(
     @Body() dto: CreatePersonalDocFolderDto,
     @CurrentUser() user: AuthUser,
@@ -71,7 +71,7 @@ export class DocumentsController {
 
   @RequirePermissions("docs.create")
   @Delete("folders/personal/:id")
-  @ApiOperation({ summary: "删除个人文件夹（我的文档）" })
+  @ApiOperation({ summary: "删除个人文件夹（文档中心）" })
   removePersonalFolder(
     @Param("id") id: string,
     @CurrentUser() user: AuthUser,

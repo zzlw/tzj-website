@@ -57,7 +57,7 @@ export class CreateDocumentDto {
   publishedAt?: string;
 
   @ApiPropertyOptional({
-    description: "true = 个人文档（仅「我的文档」），false/省略 = 组织内部文档",
+    description: "true = 个人文档（仅「文档中心」），false/省略 = 组织内部文档",
   })
   @IsOptional()
   @IsBoolean()
@@ -66,7 +66,7 @@ export class CreateDocumentDto {
 
 export class UpdateDocumentDto extends PartialType(CreateDocumentDto) {}
 
-/** 我的文档 — 个人文件夹（slug 服务端自动生成） */
+/** 文档中心 — 个人文件夹（slug 服务端自动生成） */
 export class CreatePersonalDocFolderDto {
   @ApiProperty({ description: "文件夹名称" })
   @IsString()

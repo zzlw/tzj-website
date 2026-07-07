@@ -8,7 +8,7 @@ export default function MyDocumentsPage() {
     <DocumentsHub
       config={myDocumentsConfig}
       staticListParams={{ mine: "1" }}
-      loadingLabel="加载我的文档…"
+      loadingLabel="加载文档中心…"
     />
   );
 }
