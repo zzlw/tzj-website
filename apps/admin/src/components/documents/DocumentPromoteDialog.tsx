@@ -16,7 +16,6 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Switch,
 } from "@tzj/ui";
 import {
   useDocFolderOptions,
@@ -40,11 +39,10 @@ export function DocumentPromoteDialog({
   const { options, isLoading: foldersLoading } = useDocFolderOptions("shared");
   const promoteMut = usePromoteDocument(documentId);
   const [folderId, setFolderId] = useState("");
-  const [publish, setPublish] = useState(true);
 
   useEffect(() => {
     if (open) {
-      setPublish(true);
+      setFolderId(""); // 默认选择"未分类"
     }
   }, [open]);
 
@@ -52,17 +50,13 @@ export function DocumentPromoteDialog({
     try {
       await promoteMut.mutateAsync({
         folderId: folderId || null,
-        publish,
+        publish: true,
       });
-      notifySuccess(
-        publish
-          ? "已分享到公司知识库，同事现在可以阅读"
-          : "已移入内部文档草稿，发布前仅编辑者可见",
-      );
+      notifySuccess("已发布到内部文档，同事现在可以阅读");
       onOpenChange(false);
       onSuccess();
     } catch (e) {
-      notifyError(e, "分享失败");
+      notifyError(e, "发布失败");
     }
   }
 
@@ -72,15 +66,10 @@ export function DocumentPromoteDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Building2 className="h-5 w-5 text-muted-foreground" />
-            分享到公司知识库
+            发布到内部文档
           </DialogTitle>
-          <DialogDescription className="space-y-2 pt-1">
-            <span className="block">
-              「{documentTitle}」将移入「内部文档」，从「我的文档」中移除。
-            </span>
-            <span className="block text-xs">
-              与 Notion「移入团队空间」、Confluence「发布到团队空间」相同：个人草稿区 → 组织知识库。
-            </span>
+          <DialogDescription>
+            将「{documentTitle}」发布到内部文档库，同事即可阅读。发布后将从「我的文档」中移除。
           </DialogDescription>
         </DialogHeader>
 
@@ -108,21 +97,6 @@ export function DocumentPromoteDialog({
             </Select>
           </div>
 
-          <div className="flex items-start justify-between gap-4 rounded-lg border border-border/80 bg-muted/30 px-3 py-3">
-            <div className="space-y-0.5">
-              <Label htmlFor="promote-publish" className="text-sm font-medium">
-                立即对同事可见
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                开启后拥有「查看内部文档」权限的同事即可阅读；关闭则先进入内部草稿，需另行发布
-              </p>
-            </div>
-            <Switch
-              id="promote-publish"
-              checked={publish}
-              onCheckedChange={setPublish}
-            />
-          </div>
         </div>
 
         <DialogFooter>
@@ -130,11 +104,7 @@ export function DocumentPromoteDialog({
             取消
           </Button>
           <Button onClick={() => void handleConfirm()} disabled={promoteMut.isPending}>
-            {promoteMut.isPending
-              ? "处理中…"
-              : publish
-                ? "确认分享"
-                : "移入内部草稿"}
+            {promoteMut.isPending ? "发布中…" : "确认发布"}
           </Button>
         </DialogFooter>
       </DialogContent>

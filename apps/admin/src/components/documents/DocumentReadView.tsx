@@ -128,7 +128,7 @@ export function DocumentReadView({
                 <Can anyPerm={["docs.publish", "docs.manage"]}>
                   <Button variant="outline" size="sm" onClick={onPromoteClick}>
                     <Share2 className="mr-1.5 h-4 w-4" />
-                    分享到公司知识库
+                    发布到内部文档
                   </Button>
                 </Can>
               ) : null}

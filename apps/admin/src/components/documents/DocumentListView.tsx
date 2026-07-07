@@ -159,7 +159,7 @@ function DocumentRowActions({
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={onPromoteToOrg}>
                   <Share2 className="mr-2 h-4 w-4" />
-                  分享到公司知识库
+                  发布到内部文档
                 </DropdownMenuItem>
               </Can>
             ) : null}
@@ -429,7 +429,7 @@ export function DocumentListView({
       {config.promotable ? (
         <Alert icon="info" title="个人工作区，仅自己可见" className="mb-4 border-blue-200/80 bg-blue-50/50 dark:border-blue-900/50 dark:bg-blue-950/20">
           <p className="text-muted-foreground">
-            整理完成后，在文档菜单中选择「分享到公司知识库」，即可移入内部文档供同事阅读。
+            整理完成后，在文档菜单中选择「发布到内部文档」，即可让同事阅读。
           </p>
         </Alert>
       ) : null}
@@ -512,7 +512,7 @@ export function DocumentListView({
             search
               ? "没有匹配的文档，试试其他关键词"
               : config.promotable
-                ? "在此撰写个人草稿；完成后可通过「分享到公司知识库」让同事阅读"
+                ? "在此撰写个人草稿；完成后可通过「发布到内部文档」让同事阅读"
                 : "暂无已发布的文档"
           }
           action={
