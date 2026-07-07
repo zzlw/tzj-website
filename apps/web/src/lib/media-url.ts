@@ -24,6 +24,18 @@ export function extractMediaObjectKey(url?: string | null): string | undefined {
       const u = new URL(src);
       const path = u.pathname.replace(/^\/+/, "");
       if (!path) return undefined;
+      
+      // 判断是否为自定义 CDN 域名（如 tzj-static.jiawen.live）
+      // 这类域名已直接指向 bucket，URL 中不包含 bucket 名，path 就是完整的 object key
+      const hostname = u.hostname.toLowerCase();
+      const isCustomCdnDomain = hostname.includes(".jiawen.live") || hostname.includes("static");
+      
+      if (isCustomCdnDomain) {
+        // 自定义 CDN：path 即为完整 key（如 content/tower-chino.jpg）
+        return path;
+      }
+      
+      // MinIO/OSS 原生域名（如 oss-cn-beijing.aliyuncs.com）：需要剥离 bucket 名
       // If path has multiple segments, strip the first (bucket name) to get the key
       const slashIdx = path.indexOf("/");
       if (slashIdx > 0) {

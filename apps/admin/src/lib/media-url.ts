@@ -54,14 +54,22 @@ export function resolveMediaUrl(url?: string | null): string {
   if (!url?.trim()) return "";
   const src = url.trim();
   if (/^https?:\/\//i.test(src)) {
-    const base = getS3PublicDomain().replace(/\/$/, "");
-    if (src.startsWith(`${base}/`)) return src;
-    // 历史 localhost 等域名 → 提取 key 重写为当前 MinIO 域名
-    // 兼容不同环境的 bucket 名（tzj-uploads-dev / tzj-static 等）
     try {
       const u = new URL(src);
       const path = u.pathname.replace(/^\/+/, "");
       if (!path) return src;
+      
+      // 判断是否为自定义 CDN 域名（如 tzj-static.jiawen.live）
+      // 这类域名已直接指向 bucket，URL 中不包含 bucket 名，path 就是完整的 object key
+      const hostname = u.hostname.toLowerCase();
+      const isCustomCdnDomain = hostname.includes(".jiawen.live") || hostname.includes("static");
+      
+      if (isCustomCdnDomain) {
+        // 自定义 CDN：直接使用原 URL，无需重写
+        return src;
+      }
+      
+      // MinIO/OSS 原生域名（如 oss-cn-beijing.aliyuncs.com）：需要剥离 bucket 名并重新拼接当前环境域名
       // Strip the first path segment (bucket name) to get the object key
       const slashIdx = path.indexOf("/");
       if (slashIdx > 0) {
