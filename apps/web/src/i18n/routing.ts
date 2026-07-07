@@ -6,17 +6,14 @@ export type AppLocale = (typeof locales)[number];
 export const routing = defineRouting({
   locales,
   defaultLocale: "zh-CN",
-  /** 默认语言无前缀，保持现有 URL；其他语言使用 /zh-TW、/en 前缀 */
-  localePrefix: "as-needed",
   /**
-   * 显式设置 cookie path 为 "/"，避免浏览器默认将 cookie 绑定到当前路径。
-   * 例如用户在 /en 切换回 zh-CN 后，cookie 若仅作用于 /en 路径，
-   * 后续访问无前缀路由（如 /cases）时 cookie 不会被发送，导致 locale 回退。
+   * 所有语言都使用 URL 前缀（如 /zh-CN/cases、/en/cases）
    *
-   * maxAge: 365 天，确保语言偏好在会话间持久化。
+   * 采用此策略的原因：
+   * 1. SEO 友好：每个语言版本有独立 URL，便于搜索引擎索引
+   * 2. CDN 缓存友好：不同语言的页面可以独立缓存
+   * 3. 实现简单可靠：不需要处理 cookie 作用域问题
+   * 4. 符合主流实践：大型国际化站点（Shopify、Stripe、Vercel）都采用此策略
    */
-  localeCookie: {
-    path: "/",
-    maxAge: 60 * 60 * 24 * 365, // 1 year
-  },
+  localePrefix: "always",
 });

@@ -48,9 +48,9 @@ export function LanguageSelectorDrawer({
     }
 
     /**
-     * 直接调用 router.replace，让 next-intl 内部处理 cookie 设置。
-     * routing.ts 中已配置 localeCookie: { path: "/", maxAge: 1 year }，
-     * 确保 cookie 作用于根路径并持久化。
+     * 直接调用 router.replace，让 next-intl 内部处理语言切换。
+     * routing.ts 中已配置 localePrefix: "always"，所有语言都有 URL 前缀，
+     * 无需依赖 cookie 持久化语言偏好，彻底避免 cookie 作用域问题。
      */
     router.replace(pathname, { locale: nextLocale });
     onOpenChange(false);
