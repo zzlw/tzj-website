@@ -126,6 +126,23 @@ function DocumentRowActions({
   const readHref = config.detailPath?.(doc) ?? `/documents/${doc.id}`;
   const editHref = `${config.basePath}/${doc.id}/edit`;
 
+  // 内部文档页面只保留预览功能
+  if (config.folderScope === "shared") {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+            <Link href={readHref}>
+              <Eye className="h-4 w-4" />
+            </Link>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>阅读</TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  // 我的文档页面保留所有操作
   return (
     <>
       <Tooltip>
@@ -165,23 +182,6 @@ function DocumentRowActions({
               <DropdownMenuItem onClick={onPromoteToOrg}>
                 <Share2 className="mr-2 h-4 w-4" />
                 分享到公司知识库
-              </DropdownMenuItem>
-            </Can>
-          ) : null}
-          {config.publishable && config.folderScope === "shared" ? (
-            <Can anyPerm={perms(config, "publish")}>
-              <DropdownMenuItem onClick={onPublish}>
-                {doc.status === "published" ? (
-                  <>
-                    <Undo2 className="mr-2 h-4 w-4" />
-                    下线为草稿
-                  </>
-                ) : (
-                  <>
-                    <Send className="mr-2 h-4 w-4" />
-                    发布供同事阅读
-                  </>
-                )}
               </DropdownMenuItem>
             </Can>
           ) : null}
@@ -452,33 +452,37 @@ export function DocumentListView({
       <PageHeader
         title={config.title}
         action={
-          <div className="flex flex-wrap items-center gap-2">
-            <Can anyPerm={["docs.create", "docs.manage"]}>
-              <Button
-                variant="outline"
-                onClick={() => setTagsManageOpen(true)}
-              >
-                <Tags className="mr-2 h-4 w-4" />
-                标签管理
-              </Button>
-            </Can>
-            <Can anyPerm={perms(config, "create")}>
-              <Button asChild>
-                <Link href={`${config.basePath}/new`}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  新增{config.singular}
-                </Link>
-              </Button>
-            </Can>
-          </div>
+          config.folderScope === "shared" ? undefined : (
+            <div className="flex flex-wrap items-center gap-2">
+              <Can anyPerm={["docs.create", "docs.manage"]}>
+                <Button
+                  variant="outline"
+                  onClick={() => setTagsManageOpen(true)}
+                >
+                  <Tags className="mr-2 h-4 w-4" />
+                  标签管理
+                </Button>
+              </Can>
+              <Can anyPerm={perms(config, "create")}>
+                <Button asChild>
+                  <Link href={`${config.basePath}/new`}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    新增{config.singular}
+                  </Link>
+                </Button>
+              </Can>
+            </div>
+          )
         }
       />
 
-      <DocumentTagsManageDialog
-        open={tagsManageOpen}
-        onOpenChange={setTagsManageOpen}
-        folderScope={config.folderScope}
-      />
+      {config.folderScope !== "shared" ? (
+        <DocumentTagsManageDialog
+          open={tagsManageOpen}
+          onOpenChange={setTagsManageOpen}
+          folderScope={config.folderScope}
+        />
+      ) : null}
 
       {config.promotable ? (
         <Alert icon="info" title="个人工作区，仅自己可见" className="mb-4 border-blue-200/80 bg-blue-50/50 dark:border-blue-900/50 dark:bg-blue-950/20">
@@ -543,11 +547,15 @@ export function DocumentListView({
               loading={tagsLoading}
               buildTagHref={buildTagHref}
               onTagChange={(tag) => router.push(buildTagHref(tag))}
-              onManageTags={() => setTagsManageOpen(true)}
+              onManageTags={
+                config.folderScope === "shared"
+                  ? undefined
+                  : () => setTagsManageOpen(true)
+              }
             />
           </CardContent>
         </Card>
-      ) : (
+      ) : config.folderScope === "shared" ? null : (
         <Can anyPerm={["docs.create", "docs.manage"]}>
           <div className="mb-4 flex justify-end">
             <Button
@@ -585,14 +593,16 @@ export function DocumentListView({
                 : "点击右上角新建，或从文件夹开始整理"
           }
           action={
-            <Can anyPerm={perms(config, "create")}>
-              <Button variant="outline" size="sm" asChild>
-                <Link href={`${config.basePath}/new`}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  新建{config.singular}
-                </Link>
-              </Button>
-            </Can>
+            config.folderScope === "shared" ? undefined : (
+              <Can anyPerm={perms(config, "create")}>
+                <Button variant="outline" size="sm" asChild>
+                  <Link href={`${config.basePath}/new`}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    新建{config.singular}
+                  </Link>
+                </Button>
+              </Can>
+            )
           }
         />
       ) : (
@@ -696,7 +706,7 @@ export function DocumentListView({
         />
       ) : null}
 
-      {publishTarget ? (
+      {config.folderScope === "shared" && publishTarget ? (
         <DocumentPublishDialog
           documentId={publishTarget.id}
           documentTitle={publishTarget.title}
