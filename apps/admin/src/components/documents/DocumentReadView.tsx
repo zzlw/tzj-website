@@ -126,7 +126,6 @@ export function DocumentReadView({
           {/* 正文区 */}
           <article className="min-w-0">
             <div className="mb-4 flex flex-wrap items-center gap-2">
-              <StatusBadge status={doc.status} />
               {doc.isPinned ? (
                 <Badge
                   variant="outline"
@@ -201,8 +200,8 @@ export function DocumentReadView({
                 />
                 <InfoRow
                   icon={Calendar}
-                  label="发布时间"
-                  value={formatDateTime(doc.publishedAt) || "—"}
+                  label="创建时间"
+                  value={formatDateTime(doc.createdAt)}
                 />
                 <InfoRow
                   icon={Clock}
