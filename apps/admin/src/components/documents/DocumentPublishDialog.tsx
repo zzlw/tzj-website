@@ -49,12 +49,17 @@ export function DocumentPublishDialog({
 
   async function handleConfirm() {
     try {
+      const payload: Record<string, unknown> = {
+        status: "published",
+      };
+      // 只有当用户明确选择了非“未分类”的文件夹时，才更新 folderId
+      if (folderId) {
+        payload.folderId = folderId;
+      }
+      
       await publishMut.mutateAsync({
         id: documentId,
-        payload: {
-          status: "published",
-          folderId: folderId || null,
-        },
+        payload,
       });
       notifySuccess("已发布，同事现在可以阅读");
       onOpenChange(false);

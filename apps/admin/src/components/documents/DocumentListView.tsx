@@ -168,7 +168,7 @@ function DocumentRowActions({
               </DropdownMenuItem>
             </Can>
           ) : null}
-          {config.publishable ? (
+          {config.publishable && config.folderScope === "shared" ? (
             <Can anyPerm={perms(config, "publish")}>
               <DropdownMenuItem onClick={onPublish}>
                 {doc.status === "published" ? (
