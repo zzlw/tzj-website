@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   Eye,
   FileText,
@@ -12,11 +12,9 @@ import {
   Pencil,
   Pin,
   Plus,
-  Send,
   Share2,
   Tags,
   Trash2,
-  Undo2,
 } from "lucide-react";
 import {
   Alert,
@@ -53,13 +51,12 @@ import {
 import { Can } from "@/components/Can";
 import { DocumentMoveDialog } from "@/components/documents/DocumentMoveDialog";
 import { DocumentPromoteDialog } from "@/components/documents/DocumentPromoteDialog";
-import { DocumentPublishDialog } from "@/components/documents/DocumentPublishDialog";
 import { DocumentTagsManageDialog } from "@/components/documents/DocumentTagsManageDialog";
 import { LastOperatorCell } from "@/components/LastOperatorCell";
 import type { DocumentsResourceConfig } from "@/features/resources/documents";
-import { buildDocListHref, useDocTags, type DocListStatusFilter } from "@/features/documents";
+import { buildDocListHref, useDocTags } from "@/features/documents";
 import { StatusBadge, formatDateTime } from "@/features/constants";
-import { useList, useRemove, useUpdate } from "@/features/hooks";
+import { useList, useRemove } from "@/features/hooks";
 import type { InternalDocumentItem } from "@/features/types";
 import { notifyError, notifySuccess } from "@/lib/notify";
 
@@ -87,18 +84,6 @@ function deletePerm(config: DocumentsResourceConfig) {
   return config.permissions?.delete ?? "docs.delete";
 }
 
-const STATUS_FILTER_OPTIONS: { label: string; value: DocListStatusFilter }[] = [
-  { label: "已发布", value: "published" },
-  { label: "草稿", value: "draft" },
-  { label: "全部", value: "all" },
-];
-
-function parseStatusFilter(raw: string | null): DocListStatusFilter {
-  if (raw === "draft") return "draft";
-  if (raw === "all") return "all";
-  return "published";
-}
-
 function MetaDot() {
   return (
     <span className="text-border" aria-hidden>
@@ -110,14 +95,12 @@ function MetaDot() {
 function DocumentRowActions({
   doc,
   config,
-  onPublish,
   onMove,
   onPromoteToOrg,
   onDelete,
 }: {
   doc: InternalDocumentItem;
   config: DocumentsResourceConfig;
-  onPublish: () => void;
   onMove: () => void;
   onPromoteToOrg?: () => void;
   onDelete: () => void;
@@ -125,23 +108,12 @@ function DocumentRowActions({
   const readHref = config.detailPath?.(doc) ?? `/documents/${doc.id}`;
   const editHref = `${config.basePath}/${doc.id}/edit`;
 
-  // 内部文档页面只保留预览功能
-  if (config.folderScope === "shared") {
-    return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-            <Link href={readHref}>
-              <Eye className="h-4 w-4" />
-            </Link>
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>阅读</TooltipContent>
-      </Tooltip>
-    );
-  }
+  const hasActions =
+    config.editable ||
+    config.movable ||
+    (config.promotable && onPromoteToOrg) ||
+    config.deletable;
 
-  // 我的文档页面保留所有操作
   return (
     <>
       <Tooltip>
@@ -155,47 +127,57 @@ function DocumentRowActions({
         <TooltipContent>阅读</TooltipContent>
       </Tooltip>
 
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8">
-            <MoreHorizontal className="h-4 w-4" />
-            <span className="sr-only">更多操作</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="min-w-56">
-          <Can anyPerm={perms(config, "edit")}>
-            <DropdownMenuItem asChild>
-              <Link href={editHref}>
-                <Pencil className="mr-2 h-4 w-4" />
-                编辑
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onMove}>
-              <FolderInput className="mr-2 h-4 w-4" />
-              移动到…
-            </DropdownMenuItem>
-          </Can>
-          {config.promotable && onPromoteToOrg ? (
-            <Can anyPerm={["docs.publish", "docs.manage"]}>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={onPromoteToOrg}>
-                <Share2 className="mr-2 h-4 w-4" />
-                分享到公司知识库
-              </DropdownMenuItem>
-            </Can>
-          ) : null}
-          <Can perm={deletePerm(config)}>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="text-destructive focus:text-destructive"
-              onClick={onDelete}
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              删除
-            </DropdownMenuItem>
-          </Can>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      {hasActions ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <MoreHorizontal className="h-4 w-4" />
+              <span className="sr-only">更多操作</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="min-w-56">
+            {config.editable ? (
+              <Can anyPerm={perms(config, "edit")}>
+                <DropdownMenuItem asChild>
+                  <Link href={editHref}>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    编辑
+                  </Link>
+                </DropdownMenuItem>
+              </Can>
+            ) : null}
+            {config.movable ? (
+              <Can anyPerm={perms(config, "edit")}>
+                <DropdownMenuItem onClick={onMove}>
+                  <FolderInput className="mr-2 h-4 w-4" />
+                  移动到…
+                </DropdownMenuItem>
+              </Can>
+            ) : null}
+            {config.promotable && onPromoteToOrg ? (
+              <Can anyPerm={["docs.publish", "docs.manage"]}>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={onPromoteToOrg}>
+                  <Share2 className="mr-2 h-4 w-4" />
+                  分享到公司知识库
+                </DropdownMenuItem>
+              </Can>
+            ) : null}
+            {config.deletable ? (
+              <Can perm={deletePerm(config)}>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive"
+                  onClick={onDelete}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  删除
+                </DropdownMenuItem>
+              </Can>
+            ) : null}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : null}
     </>
   );
 }
@@ -214,8 +196,6 @@ function DocumentListRow({
   config,
   folderId,
   activeTag,
-  listStatus,
-  onPublish,
   onMove,
   onPromoteToOrg,
   onDelete,
@@ -224,8 +204,6 @@ function DocumentListRow({
   config: DocumentsResourceConfig;
   folderId?: string;
   activeTag?: string;
-  listStatus?: DocListStatusFilter;
-  onPublish: () => void;
   onMove: () => void;
   onPromoteToOrg?: () => void;
   onDelete: () => void;
@@ -270,7 +248,6 @@ function DocumentListRow({
                 href={buildDocListHref(config.basePath, {
                   folder: folderId,
                   tag,
-                  status: listStatus,
                 })}
                 onClick={(e) => e.stopPropagation()}
               />
@@ -314,7 +291,6 @@ function DocumentListRow({
         <DocumentRowActions
           doc={doc}
           config={config}
-          onPublish={onPublish}
           onMove={onMove}
           onPromoteToOrg={onPromoteToOrg}
           onDelete={onDelete}
@@ -334,19 +310,6 @@ export function DocumentListView({
   defaultPageSize?: number;
 }) {
   const router = useRouter();
-  const sp = useSearchParams();
-  // 内部文档取消草稿概念，不再显示状态筛选，默认只查已发布
-  const showStatusFilter = false;
-  const statusFilter: DocListStatusFilter = "published";
-
-  function setStatusFilter(next: DocListStatusFilter) {
-    const params = new URLSearchParams(sp.toString());
-    if (next === "published") params.delete("status");
-    else params.set("status", next);
-    const q = params.toString();
-    router.push(q ? `${config.basePath}?${q}` : config.basePath);
-    setPage(1);
-  }
 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(defaultPageSize);
@@ -363,10 +326,6 @@ export function DocumentListView({
   const [promoteTarget, setPromoteTarget] = useState<InternalDocumentItem | null>(
     null,
   );
-  const [publishTarget, setPublishTarget] = useState<InternalDocumentItem | null>(
-    null,
-  );
-
   const sort = SORT_OPTIONS[sortIdx] ?? SORT_OPTIONS[0];
   const folderId = extraListParams?.folderId;
   const activeTag = extraListParams?.tag;
@@ -379,7 +338,6 @@ export function DocumentListView({
     buildDocListHref(config.basePath, {
       folder: folderId,
       tag,
-      status: showStatusFilter ? statusFilter : undefined,
     });
 
   const params = useMemo(
@@ -401,7 +359,6 @@ export function DocumentListView({
     config.resource,
     params,
   );
-  const updateMut = useUpdate<InternalDocumentItem>(config.resource);
   const removeMut = useRemove(config.resource);
 
   const rows = data?.data ?? [];
@@ -416,21 +373,6 @@ export function DocumentListView({
     }
     return { pinnedRows: pinned, restRows: rest };
   }, [rows]);
-
-  async function handleTogglePublish(doc: InternalDocumentItem) {
-    if (doc.status === "published") {
-      // 下线为草稿，直接执行
-      try {
-        await updateMut.mutateAsync({ id: doc.id, payload: { status: "draft" } });
-        notifySuccess("已转为草稿，仅编辑者可见");
-      } catch (e) {
-        notifyError(e, "操作失败");
-      }
-    } else {
-      // 发布供同事阅读，打开对话框选文件夹
-      setPublishTarget(doc);
-    }
-  }
 
   async function handleDeleteConfirm() {
     if (!deleteTarget) return;
@@ -448,31 +390,35 @@ export function DocumentListView({
       <PageHeader
         title={config.title}
         action={
-          config.folderScope === "shared" ? undefined : (
+          config.creatable || config.tagManageable ? (
             <div className="flex flex-wrap items-center gap-2">
-              <Can anyPerm={["docs.create", "docs.manage"]}>
-                <Button
-                  variant="outline"
-                  onClick={() => setTagsManageOpen(true)}
-                >
-                  <Tags className="mr-2 h-4 w-4" />
-                  标签管理
-                </Button>
-              </Can>
-              <Can anyPerm={perms(config, "create")}>
-                <Button asChild>
-                  <Link href={`${config.basePath}/new`}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    新增{config.singular}
-                  </Link>
-                </Button>
-              </Can>
+              {config.tagManageable ? (
+                <Can anyPerm={["docs.create", "docs.manage"]}>
+                  <Button
+                    variant="outline"
+                    onClick={() => setTagsManageOpen(true)}
+                  >
+                    <Tags className="mr-2 h-4 w-4" />
+                    标签管理
+                  </Button>
+                </Can>
+              ) : null}
+              {config.creatable ? (
+                <Can anyPerm={perms(config, "create")}>
+                  <Button asChild>
+                    <Link href={`${config.basePath}/new`}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      新增{config.singular}
+                    </Link>
+                  </Button>
+                </Can>
+              ) : null}
             </div>
-          )
+          ) : undefined
         }
       />
 
-      {config.folderScope !== "shared" ? (
+      {config.tagManageable ? (
         <DocumentTagsManageDialog
           open={tagsManageOpen}
           onOpenChange={setTagsManageOpen}
@@ -497,23 +443,6 @@ export function DocumentListView({
         }}
         searchPlaceholder="搜索标题或摘要…"
       >
-        {showStatusFilter ? (
-          <Select
-            value={statusFilter}
-            onValueChange={(v) => setStatusFilter(v as DocListStatusFilter)}
-          >
-            <SelectTrigger className="h-9 w-[108px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {STATUS_FILTER_OPTIONS.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        ) : null}
         <Select
           value={String(sortIdx)}
           onValueChange={(v) => {
@@ -544,14 +473,14 @@ export function DocumentListView({
               buildTagHref={buildTagHref}
               onTagChange={(tag) => router.push(buildTagHref(tag))}
               onManageTags={
-                config.folderScope === "shared"
-                  ? undefined
-                  : () => setTagsManageOpen(true)
+                config.tagManageable
+                  ? () => setTagsManageOpen(true)
+                  : undefined
               }
             />
           </CardContent>
         </Card>
-      ) : config.folderScope === "shared" ? null : (
+      ) : !config.tagManageable ? null : (
         <Can anyPerm={["docs.create", "docs.manage"]}>
           <div className="mb-4 flex justify-end">
             <Button
@@ -587,7 +516,7 @@ export function DocumentListView({
                 : "暂无已发布的文档"
           }
           action={
-            config.folderScope === "shared" ? undefined : (
+            config.creatable ? (
               <Can anyPerm={perms(config, "create")}>
                 <Button variant="outline" size="sm" asChild>
                   <Link href={`${config.basePath}/new`}>
@@ -596,7 +525,7 @@ export function DocumentListView({
                   </Link>
                 </Button>
               </Can>
-            )
+            ) : undefined
           }
         />
       ) : (
@@ -615,8 +544,6 @@ export function DocumentListView({
                   config={config}
                   folderId={folderId}
                   activeTag={activeTag}
-                  listStatus={showStatusFilter ? statusFilter : undefined}
-                  onPublish={() => void handleTogglePublish(doc)}
                   onMove={() => setMoveTarget(doc)}
                   onPromoteToOrg={
                     config.promotable
@@ -636,8 +563,6 @@ export function DocumentListView({
                   config={config}
                   folderId={folderId}
                   activeTag={activeTag}
-                  listStatus={showStatusFilter ? statusFilter : undefined}
-                  onPublish={() => void handleTogglePublish(doc)}
                   onMove={() => setMoveTarget(doc)}
                   onPromoteToOrg={
                     config.promotable
@@ -700,15 +625,6 @@ export function DocumentListView({
         />
       ) : null}
 
-      {config.folderScope === "shared" && publishTarget ? (
-        <DocumentPublishDialog
-          documentId={publishTarget.id}
-          documentTitle={publishTarget.title}
-          currentFolderId={publishTarget.folderId ?? publishTarget.folder?.id}
-          open={publishTarget !== null}
-          onOpenChange={(open) => !open && setPublishTarget(null)}
-        />
-      ) : null}
     </TooltipProvider>
   );
 }

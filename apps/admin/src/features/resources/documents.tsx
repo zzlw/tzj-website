@@ -22,6 +22,11 @@ type DocumentsConfigOptions = {
   createPayloadExtra?: Record<string, unknown>;
   publishable?: boolean;
   promotable?: boolean;
+  creatable?: boolean;
+  tagManageable?: boolean;
+  editable?: boolean;
+  movable?: boolean;
+  deletable?: boolean;
   detailPath?: (r: InternalDocumentItem) => string;
 };
 
@@ -29,6 +34,16 @@ export type DocumentsResourceConfig = ResourceConfig<InternalDocumentItem> & {
   folderScope: DocFolderScope;
   /** 个人文档：支持移入公司知识库（Promote） */
   promotable?: boolean;
+  /** 是否允许新增 */
+  creatable?: boolean;
+  /** 是否允许标签管理 */
+  tagManageable?: boolean;
+  /** 是否允许编辑 */
+  editable?: boolean;
+  /** 是否允许移动 */
+  movable?: boolean;
+  /** 是否允许删除 */
+  deletable?: boolean;
 };
 
 function buildDocumentsConfig({
@@ -38,6 +53,11 @@ function buildDocumentsConfig({
   createPayloadExtra,
   publishable = true,
   promotable = false,
+  creatable = true,
+  tagManageable = true,
+  editable = true,
+  movable = true,
+  deletable = true,
   detailPath,
 }: DocumentsConfigOptions): DocumentsResourceConfig {
   return {
@@ -46,6 +66,11 @@ function buildDocumentsConfig({
     folderScope,
     createPayloadExtra,
     promotable,
+    creatable,
+    tagManageable,
+    editable,
+    movable,
+    deletable,
     title,
     singular: "文档",
     searchable: true,
@@ -158,6 +183,12 @@ export const documentsConfig = buildDocumentsConfig({
   title: "内部文档",
   basePath: "/documents",
   folderScope: "shared",
+  publishable: false,
+  creatable: false,
+  tagManageable: false,
+  editable: false,
+  movable: false,
+  deletable: false,
 });
 
 export const myDocumentsConfig = buildDocumentsConfig({
@@ -165,7 +196,7 @@ export const myDocumentsConfig = buildDocumentsConfig({
   basePath: "/documents/mine",
   folderScope: "mine",
   createPayloadExtra: { personal: true },
-  publishable: false,
+  publishable: true,
   promotable: true,
   detailPath: (r) => `/documents/mine/${r.id}`,
 });
