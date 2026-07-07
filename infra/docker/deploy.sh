@@ -177,34 +177,6 @@ if [[ "$SERVICE" == "all" || "$SERVICE" == "api" ]]; then
   run_migrate
 fi
 
-sync_media() {
-  set -a
-  # shellcheck disable=SC1091
-  source "$ENV_FILE"
-  # shellcheck disable=SC1091
-  source "$LOCAL_ENV_FILE"
-  set +a
-
-  local api_tag="${API_TAG:-${IMAGE_TAG:-latest}}"
-  local api_image="${IMAGE_REGISTRY}/tzj-api:${api_tag}"
-  local migrate_env=(--env-file "$ENV_FILE" --env-file "$LOCAL_ENV_FILE")
-
-  echo "==> Sync media assets to S3 (${api_image})"
-  docker run --rm --network "$NETWORK" \
-    -e NPM_CONFIG_REGISTRY=https://registry.npmmirror.com \
-    -e COREPACK_NPM_REGISTRY=https://registry.npmmirror.com \
-    "${migrate_env[@]}" \
-    "$api_image" \
-    sh -c '
-      if [ -x node_modules/.bin/prisma ]; then
-        PB=node_modules/.bin/prisma
-      else
-        PB=node_modules/.pnpm/node_modules/.bin/prisma
-      fi
-      cd /app && node dist/prisma/seed-content.js
-    ' || true  # 媒体同步失败不影响部署
-}
-
 echo "==> Pull images ($SERVICES → $TAG)"
 compose pull $SERVICES
 
@@ -212,13 +184,11 @@ echo "==> Rolling update ($SERVICES)"
 if [[ "$SERVICE" == "all" ]]; then
   compose up -d --no-deps api
   wait_api_healthy
-  sync_media  # API 部署后同步媒体资源到 S3
   compose up -d --no-deps admin web
 else
   compose up -d --no-deps $SERVICES
   if [[ "$SERVICE" == "api" ]]; then
     wait_api_healthy
-    sync_media  # API 部署后同步媒体资源到 S3
   fi
 fi
 
