@@ -51,14 +51,13 @@ import {
   TooltipTrigger,
 } from "@tzj/ui";
 import { Can } from "@/components/Can";
-import { useSession } from "@/components/session";
 import { DocumentMoveDialog } from "@/components/documents/DocumentMoveDialog";
 import { DocumentPromoteDialog } from "@/components/documents/DocumentPromoteDialog";
 import { DocumentPublishDialog } from "@/components/documents/DocumentPublishDialog";
 import { DocumentTagsManageDialog } from "@/components/documents/DocumentTagsManageDialog";
 import { LastOperatorCell } from "@/components/LastOperatorCell";
 import type { DocumentsResourceConfig } from "@/features/resources/documents";
-import { buildDocListHref, canSeeDocDrafts, useDocTags, type DocListStatusFilter } from "@/features/documents";
+import { buildDocListHref, useDocTags, type DocListStatusFilter } from "@/features/documents";
 import { StatusBadge, formatDateTime } from "@/features/constants";
 import { useList, useRemove, useUpdate } from "@/features/hooks";
 import type { InternalDocumentItem } from "@/features/types";
@@ -336,12 +335,9 @@ export function DocumentListView({
 }) {
   const router = useRouter();
   const sp = useSearchParams();
-  const { permissions } = useSession();
-  const showStatusFilter =
-    config.folderScope === "shared" && canSeeDocDrafts(permissions);
-  const statusFilter = showStatusFilter
-    ? parseStatusFilter(sp.get("status"))
-    : "published";
+  // 内部文档取消草稿概念，不再显示状态筛选，默认只查已发布
+  const showStatusFilter = false;
+  const statusFilter: DocListStatusFilter = "published";
 
   function setStatusFilter(next: DocListStatusFilter) {
     const params = new URLSearchParams(sp.toString());
@@ -393,12 +389,12 @@ export function DocumentListView({
       search: search || undefined,
       sortBy: sort.sortBy,
       sortOrder: sort.sortOrder,
-      ...(showStatusFilter && statusFilter !== "all"
-        ? { status: statusFilter }
+      ...(config.folderScope === "shared"
+        ? { status: "published" }
         : {}),
       ...extraListParams,
     }),
-    [page, pageSize, search, sort, showStatusFilter, statusFilter, extraListParams],
+    [page, pageSize, search, sort, config.folderScope, extraListParams],
   );
 
   const { data, isLoading, isError, error } = useList<InternalDocumentItem>(
@@ -586,11 +582,9 @@ export function DocumentListView({
           description={
             search
               ? "没有匹配的文档，试试其他关键词"
-              : statusFilter === "draft"
-                ? "暂无草稿文档"
-                : config.promotable
+              : config.promotable
                 ? "在此撰写个人草稿；完成后可通过「分享到公司知识库」让同事阅读"
-                : "点击右上角新建，或从文件夹开始整理"
+                : "暂无已发布的文档"
           }
           action={
             config.folderScope === "shared" ? undefined : (
