@@ -165,7 +165,7 @@ export const myDocumentsConfig = buildDocumentsConfig({
   basePath: "/documents/mine",
   folderScope: "mine",
   createPayloadExtra: { personal: true },
-  publishable: false,
+  publishable: true,
   promotable: true,
   detailPath: (r) => `/documents/mine/${r.id}`,
 });
