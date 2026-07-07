@@ -17,7 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@tzj/ui";
-import type { DocFolderScope } from "@/features/documents";
 import { useDocFolderOptions } from "@/features/documents";
 import { useUpdate } from "@/features/hooks";
 import type { InternalDocumentItem } from "@/features/types";
@@ -27,7 +26,6 @@ export function DocumentMoveDialog({
   documentId,
   documentTitle,
   currentFolderId,
-  folderScope,
   open,
   onOpenChange,
   onSuccess,
@@ -35,12 +33,11 @@ export function DocumentMoveDialog({
   documentId: string;
   documentTitle: string;
   currentFolderId?: string | null;
-  folderScope: DocFolderScope;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
 }) {
-  const { options, isLoading: foldersLoading } = useDocFolderOptions(folderScope);
+  const { options, isLoading: foldersLoading } = useDocFolderOptions();
   const moveMut = useUpdate<InternalDocumentItem>("documents");
   const [folderId, setFolderId] = useState("");
 

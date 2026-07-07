@@ -66,31 +66,6 @@ export class CreateDocumentDto {
 
 export class UpdateDocumentDto extends PartialType(CreateDocumentDto) {}
 
-export class CreateDocFolderDto {
-  @ApiProperty()
-  @IsString()
-  @MinLength(1)
-  @MaxLength(100)
-  name!: string;
-
-  @ApiProperty()
-  @IsString()
-  @MinLength(1)
-  @MaxLength(100)
-  slug!: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  parentId?: string | null;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  sortOrder?: number;
-}
-
-export class UpdateDocFolderDto extends PartialType(CreateDocFolderDto) {}
-
 /** 我的文档 — 个人文件夹（slug 服务端自动生成） */
 export class CreatePersonalDocFolderDto {
   @ApiProperty({ description: "文件夹名称" })
@@ -103,21 +78,6 @@ export class CreatePersonalDocFolderDto {
   @IsOptional()
   @IsString()
   parentId?: string | null;
-}
-
-/** 个人文档 → 内部文档库 */
-export class PromoteDocumentDto {
-  @ApiPropertyOptional({ description: "目标组织文件夹 ID，留空为未分类" })
-  @IsOptional()
-  @IsString()
-  folderId?: string | null;
-
-  @ApiPropertyOptional({
-    description: "同时发布为全员可见；默认 false，进入内部库草稿待审",
-  })
-  @IsOptional()
-  @IsBoolean()
-  publish?: boolean;
 }
 
 export class CreateDocTagDto {

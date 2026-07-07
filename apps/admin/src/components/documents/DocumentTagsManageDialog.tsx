@@ -21,7 +21,6 @@ import {
   TableRow,
 } from "@tzj/ui";
 import { Can } from "@/components/Can";
-import type { DocFolderScope } from "@/features/documents";
 import {
   useCreateDocTag,
   useDeleteDocTag,
@@ -34,17 +33,15 @@ import { notifyError, notifySuccess } from "@/lib/notify";
 export function DocumentTagsManageDialog({
   open,
   onOpenChange,
-  folderScope,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  folderScope: DocFolderScope;
 }) {
-  const { data: tags, isLoading } = useDocTags(folderScope);
-  const createMut = useCreateDocTag(folderScope);
-  const renameMut = useRenameDocTag(folderScope);
-  const mergeMut = useMergeDocTags(folderScope);
-  const deleteMut = useDeleteDocTag(folderScope);
+  const { data: tags, isLoading } = useDocTags();
+  const createMut = useCreateDocTag();
+  const renameMut = useRenameDocTag();
+  const mergeMut = useMergeDocTags();
+  const deleteMut = useDeleteDocTag();
 
   const [newName, setNewName] = useState("");
   const [renameFrom, setRenameFrom] = useState<string | null>(null);

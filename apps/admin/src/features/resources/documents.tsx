@@ -1,6 +1,5 @@
 import { z } from "zod";
 import type { ResourceConfig } from "@/components/crud/config";
-import type { DocFolderScope } from "@/features/documents";
 import type { InternalDocumentItem } from "@/features/types";
 import { contentAuditColumns } from "@/components/LastOperatorCell";
 import { StatusBadge, formatDate, toDateInput } from "@/features/constants";
@@ -15,67 +14,16 @@ const schema = z.object({
   publishedAt: z.string().optional(),
 });
 
-type DocumentsConfigOptions = {
-  title: string;
-  basePath: string;
-  folderScope: DocFolderScope;
-  createPayloadExtra?: Record<string, unknown>;
-  publishable?: boolean;
-  promotable?: boolean;
-  creatable?: boolean;
-  tagManageable?: boolean;
-  editable?: boolean;
-  movable?: boolean;
-  deletable?: boolean;
-  detailPath?: (r: InternalDocumentItem) => string;
-};
+export type DocumentsResourceConfig = ResourceConfig<InternalDocumentItem>;
 
-export type DocumentsResourceConfig = ResourceConfig<InternalDocumentItem> & {
-  folderScope: DocFolderScope;
-  /** 个人文档：支持移入公司知识库（Promote） */
-  promotable?: boolean;
-  /** 是否允许新增 */
-  creatable?: boolean;
-  /** 是否允许标签管理 */
-  tagManageable?: boolean;
-  /** 是否允许编辑 */
-  editable?: boolean;
-  /** 是否允许移动 */
-  movable?: boolean;
-  /** 是否允许删除 */
-  deletable?: boolean;
-};
-
-function buildDocumentsConfig({
-  title,
-  basePath,
-  folderScope,
-  createPayloadExtra,
-  publishable = true,
-  promotable = false,
-  creatable = true,
-  tagManageable = true,
-  editable = true,
-  movable = true,
-  deletable = true,
-  detailPath,
-}: DocumentsConfigOptions): DocumentsResourceConfig {
+function buildDocumentsConfig(): DocumentsResourceConfig {
   return {
     resource: "documents",
-    basePath,
-    folderScope,
-    createPayloadExtra,
-    promotable,
-    creatable,
-    tagManageable,
-    editable,
-    movable,
-    deletable,
-    title,
+    basePath: "/documents/mine",
+    createPayloadExtra: { personal: true },
+    title: "我的文档",
     singular: "文档",
     searchable: true,
-    publishable,
-    detailPath: detailPath ?? ((r) => `/documents/${r.id}`),
     defaultSort: { column: "updatedAt", order: "desc" },
     permissions: {
       create: ["docs.create"],
@@ -176,27 +124,8 @@ function buildDocumentsConfig({
       isPinned: r.isPinned,
       publishedAt: toDateInput(r.publishedAt),
     }),
+    detailPath: (r) => `/documents/mine/${r.id}`,
   };
 }
 
-export const documentsConfig = buildDocumentsConfig({
-  title: "内部文档",
-  basePath: "/documents",
-  folderScope: "shared",
-  publishable: false,
-  creatable: false,
-  tagManageable: false,
-  editable: false,
-  movable: false,
-  deletable: false,
-});
-
-export const myDocumentsConfig = buildDocumentsConfig({
-  title: "我的文档",
-  basePath: "/documents/mine",
-  folderScope: "mine",
-  createPayloadExtra: { personal: true },
-  publishable: true,
-  promotable: true,
-  detailPath: (r) => `/documents/mine/${r.id}`,
-});
+export const myDocumentsConfig = buildDocumentsConfig();

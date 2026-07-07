@@ -9,7 +9,7 @@ import type { DocumentsResourceConfig } from "@/features/resources/documents";
 export function DocumentsHub({
   config,
   staticListParams,
-  loadingLabel = "加载文档库…",
+  loadingLabel = "加载文档…",
 }: {
   config: DocumentsResourceConfig;
   /** 固定列表参数（如 mine=1） */
@@ -33,15 +33,10 @@ function DocumentsHubContent({
   const sp = useSearchParams();
   const folderId = sp.get("folder") ?? undefined;
   const tag = sp.get("tag") ?? undefined;
-  const isMine = config.folderScope === "mine";
 
   return (
     <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-      <DocFolderSidebar
-        basePath={config.basePath}
-        folderScope={config.folderScope}
-        manageable={isMine}
-      />
+      <DocFolderSidebar basePath={config.basePath} />
       <div className="min-w-0 flex-1">
         <DocumentListView
           config={config}

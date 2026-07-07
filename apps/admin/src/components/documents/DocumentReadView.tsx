@@ -13,12 +13,9 @@ import {
   Pencil,
   Pin,
   RotateCcw,
-  Lock,
-  Send,
   Tag,
 } from "lucide-react";
 import {
-  Alert,
   Badge,
   Button,
   Card,
@@ -63,18 +60,14 @@ export function DocumentReadView({
   doc,
   revisions,
   revisionsLoading,
-  backHref = "/documents",
+  backHref = "/documents/mine",
   restoreTarget,
   restorePending,
   onRestoreRequest,
   onRestoreCancel,
   onRestoreConfirm,
-  tagFilterBase = "/documents",
-  showPromote,
-  onPromoteClick,
+  tagFilterBase = "/documents/mine",
   onMoveClick,
-  onPublishDraft,
-  publishDraftPending = false,
 }: {
   doc: InternalDocumentItem;
   revisions?: DocRevisionItem[];
@@ -85,19 +78,12 @@ export function DocumentReadView({
   onRestoreRequest: (revisionId: string) => void;
   onRestoreCancel: () => void;
   onRestoreConfirm: () => void;
-  /** 标签筛选跳转基路径（如 /documents 或 /documents/mine） */
+  /** 标签筛选跳转基路径 */
   tagFilterBase?: string;
-  /** 个人文档：显示「发布到内部库」入口 */
-  showPromote?: boolean;
-  onPromoteClick?: () => void;
   onMoveClick?: () => void;
-  onPublishDraft?: () => void;
-  publishDraftPending?: boolean;
 }) {
   const hasContent = Boolean(doc.content?.trim());
-  const editHref = doc.ownerId
-    ? `/documents/mine/${doc.id}/edit`
-    : `/documents/${doc.id}/edit`;
+  const editHref = `/documents/mine/${doc.id}/edit`;
 
   return (
     <>
@@ -124,14 +110,6 @@ export function DocumentReadView({
                   </Button>
                 </Can>
               ) : null}
-              {showPromote && onPromoteClick ? (
-                <Can anyPerm={["docs.publish", "docs.manage"]}>
-                  <Button variant="outline" size="sm" onClick={onPromoteClick}>
-                    <Lock className="mr-1.5 h-4 w-4" />
-                    可见范围
-                  </Button>
-                </Can>
-              ) : null}
               <Can anyPerm={["docs.edit"]}>
                 <Button variant="default" size="sm" asChild>
                   <Link href={editHref}>
@@ -147,31 +125,6 @@ export function DocumentReadView({
         <div className="grid w-full px-4 pt-6 sm:px-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-8 lg:px-8 lg:pt-8">
           {/* 正文区 */}
           <article className="min-w-0">
-            {doc.status === "draft" && !doc.ownerId ? (
-              <Alert
-                variant="warning"
-                title="未发布 · 仅编辑者可见"
-                className="mb-6"
-              >
-                <p className="text-muted-foreground">
-                  仅有编辑权限的同事能看到此页。发布后，拥有「查看内部文档」权限的同事即可阅读。
-                </p>
-                {onPublishDraft ? (
-                  <Can anyPerm={["docs.publish", "docs.manage"]}>
-                    <Button
-                      size="sm"
-                      className="mt-3"
-                      disabled={publishDraftPending}
-                      onClick={onPublishDraft}
-                    >
-                      <Send className="mr-1.5 h-3.5 w-3.5" />
-                      {publishDraftPending ? "发布中…" : "立即发布"}
-                    </Button>
-                  </Can>
-                ) : null}
-              </Alert>
-            ) : null}
-
             <div className="mb-4 flex flex-wrap items-center gap-2">
               <StatusBadge status={doc.status} />
               {doc.isPinned ? (

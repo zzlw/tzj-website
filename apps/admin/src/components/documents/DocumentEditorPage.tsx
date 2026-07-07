@@ -12,8 +12,8 @@ export function DocumentEditorPage({
   config: DocumentsResourceConfig;
   id?: string;
 }) {
-  const { options } = useDocFolderOptions(config.folderScope);
-  const { data: tagStats } = useDocTags(config.folderScope);
+  const { options } = useDocFolderOptions();
+  const { data: tagStats } = useDocTags();
   const tagSuggestions = useMemo(
     () => tagStats?.map((t) => t.tag) ?? [],
     [tagStats],

@@ -19,14 +19,11 @@ import { DocumentsService } from "./documents.service";
 import { DocFoldersService } from "./doc-folders.service";
 import { DocTagsService } from "./doc-tags.service";
 import {
-  CreateDocFolderDto,
   CreateDocTagDto,
   CreateDocumentDto,
   CreatePersonalDocFolderDto,
   MergeDocTagsDto,
-  PromoteDocumentDto,
   RenameDocTagDto,
-  UpdateDocFolderDto,
   UpdateDocumentDto,
 } from "./dto/document.dto";
 
@@ -39,31 +36,6 @@ export class DocumentsController {
     private readonly foldersService: DocFoldersService,
     private readonly tagsService: DocTagsService,
   ) {}
-
-  private tagScope(user: AuthUser, mine?: string) {
-    const mineOnly = mine === "1" || mine === "true";
-    return {
-      mine: mineOnly,
-      userId: mineOnly ? user.id : undefined,
-      includeDrafts: this.canSeeDrafts(user),
-    };
-  }
-
-  private canSeeDrafts(user: AuthUser): boolean {
-    const perms = user.permissions;
-    if (perms?.length) {
-      return (
-        perms.includes("docs.edit") ||
-        perms.includes("docs.create") ||
-        perms.includes("docs.manage")
-      );
-    }
-    return (
-      roleHasPermission(user.role, "docs.edit") ||
-      roleHasPermission(user.role, "docs.create") ||
-      roleHasPermission(user.role, "docs.manage")
-    );
-  }
 
   private canManage(user: AuthUser): boolean {
     const perms = user.permissions;
@@ -107,34 +79,13 @@ export class DocumentsController {
     return this.foldersService.removePersonal(user.id, id);
   }
 
-  @RequirePermissions("docs.manage")
-  @Post("folders")
-  @ApiOperation({ summary: "创建文件夹" })
-  createFolder(@Body() dto: CreateDocFolderDto) {
-    return this.foldersService.create(dto);
-  }
-
-  @RequirePermissions("docs.manage")
-  @Put("folders/:id")
-  @ApiOperation({ summary: "更新文件夹" })
-  updateFolder(@Param("id") id: string, @Body() dto: UpdateDocFolderDto) {
-    return this.foldersService.update(id, dto);
-  }
-
-  @RequirePermissions("docs.manage")
-  @Delete("folders/:id")
-  @ApiOperation({ summary: "删除文件夹" })
-  removeFolder(@Param("id") id: string) {
-    return this.foldersService.remove(id);
-  }
-
   @RequirePermissions("docs.view")
   @Get()
-  @ApiOperation({ summary: "内部文档列表" })
+  @ApiOperation({ summary: "文档列表" })
   @ApiQuery({ name: "folderId", required: false })
   @ApiQuery({ name: "tag", required: false })
   @ApiQuery({ name: "search", required: false })
-  @ApiQuery({ name: "status", required: false, enum: ["published", "draft"], description: "编辑者筛选用；默认配合前端仅看已发布" })
+  @ApiQuery({ name: "status", required: false, enum: ["published", "draft"] })
   @ApiQuery({ name: "mine", required: false, description: "仅当前用户的个人文档（ownerId）" })
   findAll(
     @CurrentUser() user: AuthUser,
@@ -253,22 +204,6 @@ export class DocumentsController {
     );
   }
 
-  @RequirePermissions("docs.publish", "docs.manage")
-  @Post(":id/promote")
-  @ApiOperation({ summary: "发布个人文档到内部文档库" })
-  promote(
-    @Param("id") id: string,
-    @Body() dto: PromoteDocumentDto,
-    @CurrentUser() user: AuthUser,
-  ) {
-    return this.documentsService.promote(
-      id,
-      dto,
-      user.id,
-      this.canManage(user),
-    );
-  }
-
   @RequirePermissions("docs.view")
   @Get(":id")
   @ApiOperation({ summary: "文档详情" })
@@ -308,5 +243,30 @@ export class DocumentsController {
   @ApiOperation({ summary: "删除文档" })
   remove(@Param("id") id: string, @CurrentUser() user: AuthUser) {
     return this.documentsService.remove(id, user.id, this.canManage(user));
+  }
+
+  private tagScope(user: AuthUser, mine?: string) {
+    const mineOnly = mine === "1" || mine === "true";
+    return {
+      mine: mineOnly,
+      userId: mineOnly ? user.id : undefined,
+      includeDrafts: this.canSeeDrafts(user),
+    };
+  }
+
+  private canSeeDrafts(user: AuthUser): boolean {
+    const perms = user.permissions;
+    if (perms?.length) {
+      return (
+        perms.includes("docs.edit") ||
+        perms.includes("docs.create") ||
+        perms.includes("docs.manage")
+      );
+    }
+    return (
+      roleHasPermission(user.role, "docs.edit") ||
+      roleHasPermission(user.role, "docs.create") ||
+      roleHasPermission(user.role, "docs.manage")
+    );
   }
 }

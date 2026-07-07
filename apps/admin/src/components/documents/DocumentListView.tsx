@@ -8,7 +8,6 @@ import {
   FileText,
   FolderInput,
   FolderOpen,
-  Lock,
   MoreHorizontal,
   Pencil,
   Pin,
@@ -51,11 +50,10 @@ import {
 import { Can } from "@/components/Can";
 import { DocumentMoveDialog } from "@/components/documents/DocumentMoveDialog";
 import { DocumentTagsManageDialog } from "@/components/documents/DocumentTagsManageDialog";
-import { DocumentVisibilityDialog } from "@/components/documents/DocumentVisibilityDialog";
 import { LastOperatorCell } from "@/components/LastOperatorCell";
 import type { DocumentsResourceConfig } from "@/features/resources/documents";
 import { buildDocListHref, useDocTags } from "@/features/documents";
-import { StatusBadge, formatDateTime } from "@/features/constants";
+import { formatDateTime } from "@/features/constants";
 import { useList, useRemove } from "@/features/hooks";
 import type { InternalDocumentItem } from "@/features/types";
 import { notifyError, notifySuccess } from "@/lib/notify";
@@ -96,23 +94,15 @@ function DocumentRowActions({
   doc,
   config,
   onMove,
-  onPromoteToOrg,
   onDelete,
 }: {
   doc: InternalDocumentItem;
   config: DocumentsResourceConfig;
   onMove: () => void;
-  onPromoteToOrg?: () => void;
   onDelete: () => void;
 }) {
-  const readHref = config.detailPath?.(doc) ?? `/documents/${doc.id}`;
+  const readHref = config.detailPath?.(doc) ?? `/documents/mine/${doc.id}`;
   const editHref = `${config.basePath}/${doc.id}/edit`;
-
-  const hasActions =
-    config.editable ||
-    config.movable ||
-    (config.promotable && onPromoteToOrg) ||
-    config.deletable;
 
   return (
     <>
@@ -127,57 +117,40 @@ function DocumentRowActions({
         <TooltipContent>阅读</TooltipContent>
       </Tooltip>
 
-      {hasActions ? (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <MoreHorizontal className="h-4 w-4" />
-              <span className="sr-only">更多操作</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="min-w-56">
-            {config.editable ? (
-              <Can anyPerm={perms(config, "edit")}>
-                <DropdownMenuItem asChild>
-                  <Link href={editHref}>
-                    <Pencil className="mr-2 h-4 w-4" />
-                    编辑
-                  </Link>
-                </DropdownMenuItem>
-              </Can>
-            ) : null}
-            {config.movable ? (
-              <Can anyPerm={perms(config, "edit")}>
-                <DropdownMenuItem onClick={onMove}>
-                  <FolderInput className="mr-2 h-4 w-4" />
-                  移动到…
-                </DropdownMenuItem>
-              </Can>
-            ) : null}
-            {config.promotable && onPromoteToOrg ? (
-              <Can anyPerm={["docs.publish", "docs.manage"]}>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={onPromoteToOrg}>
-                  <Lock className="mr-2 h-4 w-4" />
-                  可见范围
-                </DropdownMenuItem>
-              </Can>
-            ) : null}
-            {config.deletable ? (
-              <Can perm={deletePerm(config)}>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="text-destructive focus:text-destructive"
-                  onClick={onDelete}
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  删除
-                </DropdownMenuItem>
-              </Can>
-            ) : null}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ) : null}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-8 w-8">
+            <MoreHorizontal className="h-4 w-4" />
+            <span className="sr-only">更多操作</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="min-w-56">
+          <Can anyPerm={perms(config, "edit")}>
+            <DropdownMenuItem asChild>
+              <Link href={editHref}>
+                <Pencil className="mr-2 h-4 w-4" />
+                编辑
+              </Link>
+            </DropdownMenuItem>
+          </Can>
+          <Can anyPerm={perms(config, "edit")}>
+            <DropdownMenuItem onClick={onMove}>
+              <FolderInput className="mr-2 h-4 w-4" />
+              移动到…
+            </DropdownMenuItem>
+          </Can>
+          <Can perm={deletePerm(config)}>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onClick={onDelete}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              删除
+            </DropdownMenuItem>
+          </Can>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </>
   );
 }
@@ -197,7 +170,6 @@ function DocumentListRow({
   folderId,
   activeTag,
   onMove,
-  onPromoteToOrg,
   onDelete,
 }: {
   doc: InternalDocumentItem;
@@ -205,10 +177,9 @@ function DocumentListRow({
   folderId?: string;
   activeTag?: string;
   onMove: () => void;
-  onPromoteToOrg?: () => void;
   onDelete: () => void;
 }) {
-  const readHref = config.detailPath?.(doc) ?? `/documents/${doc.id}`;
+  const readHref = config.detailPath?.(doc) ?? `/documents/mine/${doc.id}`;
   const summary = doc.summary?.trim() || "暂无摘要";
   const pinned = doc.isPinned;
 
@@ -229,9 +200,6 @@ function DocumentListRow({
       badges={
         <>
           {pinned ? <PinnedBadge /> : null}
-          {config.folderScope === "shared" ? (
-            <StatusBadge status={doc.status} />
-          ) : null}
         </>
       }
       tags={
@@ -288,7 +256,6 @@ function DocumentListRow({
           doc={doc}
           config={config}
           onMove={onMove}
-          onPromoteToOrg={onPromoteToOrg}
           onDelete={onDelete}
         />
       }
@@ -319,16 +286,11 @@ export function DocumentListView({
   const [moveTarget, setMoveTarget] = useState<InternalDocumentItem | null>(
     null,
   );
-  const [promoteTarget, setPromoteTarget] = useState<InternalDocumentItem | null>(
-    null,
-  );
   const sort = SORT_OPTIONS[sortIdx] ?? SORT_OPTIONS[0];
   const folderId = extraListParams?.folderId;
   const activeTag = extraListParams?.tag;
 
-  const { data: tagStats, isLoading: tagsLoading } = useDocTags(
-    config.folderScope,
-  );
+  const { data: tagStats, isLoading: tagsLoading } = useDocTags();
 
   const buildTagHref = (tag?: string) =>
     buildDocListHref(config.basePath, {
@@ -343,12 +305,9 @@ export function DocumentListView({
       search: search || undefined,
       sortBy: sort.sortBy,
       sortOrder: sort.sortOrder,
-      ...(config.folderScope === "shared"
-        ? { status: "published" }
-        : {}),
       ...extraListParams,
     }),
-    [page, pageSize, search, sort, config.folderScope, extraListParams],
+    [page, pageSize, search, sort, extraListParams],
   );
 
   const { data, isLoading, isError, error } = useList<InternalDocumentItem>(
@@ -386,49 +345,32 @@ export function DocumentListView({
       <PageHeader
         title={config.title}
         action={
-          config.creatable || config.tagManageable ? (
-            <div className="flex flex-wrap items-center gap-2">
-              {config.tagManageable ? (
-                <Can anyPerm={["docs.create", "docs.manage"]}>
-                  <Button
-                    variant="outline"
-                    onClick={() => setTagsManageOpen(true)}
-                  >
-                    <Tags className="mr-2 h-4 w-4" />
-                    标签管理
-                  </Button>
-                </Can>
-              ) : null}
-              {config.creatable ? (
-                <Can anyPerm={perms(config, "create")}>
-                  <Button asChild>
-                    <Link href={`${config.basePath}/new`}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      新增{config.singular}
-                    </Link>
-                  </Button>
-                </Can>
-              ) : null}
-            </div>
-          ) : undefined
+          <div className="flex flex-wrap items-center gap-2">
+            <Can anyPerm={["docs.create", "docs.manage"]}>
+              <Button
+                variant="outline"
+                onClick={() => setTagsManageOpen(true)}
+              >
+                <Tags className="mr-2 h-4 w-4" />
+                标签管理
+              </Button>
+            </Can>
+            <Can anyPerm={perms(config, "create")}>
+              <Button asChild>
+                <Link href={`${config.basePath}/new`}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  新增{config.singular}
+                </Link>
+              </Button>
+            </Can>
+          </div>
         }
       />
 
-      {config.tagManageable ? (
-        <DocumentTagsManageDialog
-          open={tagsManageOpen}
-          onOpenChange={setTagsManageOpen}
-          folderScope={config.folderScope}
-        />
-      ) : null}
-
-      {config.promotable ? (
-        <Alert icon="info" title="个人工作区，仅自己可见" className="mb-4 border-blue-200/80 bg-blue-50/50 dark:border-blue-900/50 dark:bg-blue-950/20">
-          <p className="text-muted-foreground">
-            整理完成后，在文档菜单中设置「可见范围」为全员可见，即可让同事阅读。
-          </p>
-        </Alert>
-      ) : null}
+      <DocumentTagsManageDialog
+        open={tagsManageOpen}
+        onOpenChange={setTagsManageOpen}
+      />
 
       <ListToolbar
         searchValue={searchInput}
@@ -468,15 +410,11 @@ export function DocumentListView({
               loading={tagsLoading}
               buildTagHref={buildTagHref}
               onTagChange={(tag) => router.push(buildTagHref(tag))}
-              onManageTags={
-                config.tagManageable
-                  ? () => setTagsManageOpen(true)
-                  : undefined
-              }
+              onManageTags={() => setTagsManageOpen(true)}
             />
           </CardContent>
         </Card>
-      ) : !config.tagManageable ? null : (
+      ) : (
         <Can anyPerm={["docs.create", "docs.manage"]}>
           <div className="mb-4 flex justify-end">
             <Button
@@ -507,21 +445,17 @@ export function DocumentListView({
           description={
             search
               ? "没有匹配的文档，试试其他关键词"
-              : config.promotable
-                ? "在此撰写个人文档；完成后可通过「可见范围」设为全员可见让同事阅读"
-                : "暂无已发布的文档"
+              : "点击上方「新增文档」开始创建"
           }
           action={
-            config.creatable ? (
-              <Can anyPerm={perms(config, "create")}>
-                <Button variant="outline" size="sm" asChild>
-                  <Link href={`${config.basePath}/new`}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    新建{config.singular}
-                  </Link>
-                </Button>
-              </Can>
-            ) : undefined
+            <Can anyPerm={perms(config, "create")}>
+              <Button variant="outline" size="sm" asChild>
+                <Link href={`${config.basePath}/new`}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  新建{config.singular}
+                </Link>
+              </Button>
+            </Can>
           }
         />
       ) : (
@@ -541,11 +475,6 @@ export function DocumentListView({
                   folderId={folderId}
                   activeTag={activeTag}
                   onMove={() => setMoveTarget(doc)}
-                  onPromoteToOrg={
-                    config.promotable
-                      ? () => setPromoteTarget(doc)
-                      : undefined
-                  }
                   onDelete={() => setDeleteTarget(doc)}
                 />
               ))}
@@ -560,11 +489,6 @@ export function DocumentListView({
                   folderId={folderId}
                   activeTag={activeTag}
                   onMove={() => setMoveTarget(doc)}
-                  onPromoteToOrg={
-                    config.promotable
-                      ? () => setPromoteTarget(doc)
-                      : undefined
-                  }
                   onDelete={() => setDeleteTarget(doc)}
                 />
               ))
@@ -601,23 +525,8 @@ export function DocumentListView({
           documentId={moveTarget.id}
           documentTitle={moveTarget.title}
           currentFolderId={moveTarget.folderId ?? moveTarget.folder?.id}
-          folderScope={config.folderScope}
           open={moveTarget !== null}
           onOpenChange={(open) => !open && setMoveTarget(null)}
-        />
-      ) : null}
-
-      {promoteTarget ? (
-        <DocumentVisibilityDialog
-          documentId={promoteTarget.id}
-          documentTitle={promoteTarget.title}
-          open={promoteTarget !== null}
-          onOpenChange={(open) => !open && setPromoteTarget(null)}
-          onSuccess={() => {
-            const id = promoteTarget.id;
-            setPromoteTarget(null);
-            router.push(`/documents/${id}`);
-          }}
         />
       ) : null}
 

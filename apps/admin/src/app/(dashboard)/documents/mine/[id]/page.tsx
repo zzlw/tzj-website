@@ -9,5 +9,5 @@ export default function MyDocumentReadPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  return <DocumentReadPageContent id={id} expectedScope="mine" />;
+  return <DocumentReadPageContent id={id} />;
 }

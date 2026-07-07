@@ -4,7 +4,6 @@ import {
   BarChart3,
   BookOpen,
   CalendarDays,
-  FileText,
   FolderOpen,
   Images,
   Inbox,
@@ -32,7 +31,7 @@ import {
   auditResourceLabel,
   auditUserLabel,
 } from "@/features/audit-labels";
-import type { AuditLogItem, ContactItem, InternalDocumentItem } from "@/features/types";
+import type { AuditLogItem, ContactItem } from "@/features/types";
 import { apiFetch, apiFetchFull, hasPermission } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -80,12 +79,11 @@ const CONTENT_STATS = [
   { label: "新闻", key: "news", icon: Newspaper, href: "/news", color: "text-violet-600 bg-violet-500/10" },
   { label: "博客", key: "blogs", icon: BookOpen, href: "/blog", color: "text-emerald-600 bg-emerald-500/10" },
   { label: "展会", key: "trade-shows", icon: CalendarDays, href: "/trade-shows", color: "text-orange-600 bg-orange-500/10" },
-  { label: "内部文档", key: "documents", icon: FileText, href: "/documents", perm: "docs.view", color: "text-sky-600 bg-sky-500/10" },
   { label: "媒体素材", key: "media", icon: Images, href: "/media", color: "text-pink-600 bg-pink-500/10" },
 ] as const;
 
 const QUICK_ACTIONS = [
-  { label: "新建文档", href: "/documents/new", icon: PenLine, perm: "docs.create" },
+  { label: "新建文档", href: "/documents/mine/new", icon: PenLine, perm: "docs.create" },
   { label: "新建案例", href: "/cases/new", icon: Plus, perm: "content.create" },
   { label: "处理询盘", href: "/contacts", icon: MessageSquare },
   { label: "访客分析", href: "/analytics", icon: BarChart3, perm: "analytics.view" },
@@ -119,39 +117,30 @@ export default async function DashboardPage() {
   const displayName = me.nickname?.trim() || me.username || "管理员";
   const canAnalytics = hasPermission(permissions, "analytics.view");
   const canAudit = hasPermission(permissions, "audit.view");
-  const canDocs = hasPermission(permissions, "docs.view");
 
   const [
     cases,
     news,
     blogs,
     tradeShows,
-    documents,
     media,
     contactsTotal,
     pendingTotal,
     unreadTotal,
-    draftDocs,
     contacts,
     auditLogs,
-    recentDocs,
   ] = await Promise.all([
     countOf("cases"),
     countOf("news"),
     countOf("blogs"),
     countOf("trade-shows"),
-    canDocs ? countOf("documents", "&status=published") : Promise.resolve(0),
     countOf("media"),
     countOf("contact"),
     countOf("contact", "&isHandled=false"),
     countOf("contact", "&isRead=false"),
-    canDocs ? countOf("documents", "&status=draft") : Promise.resolve(0),
     fetchList<ContactItem>("contact", "limit=6"),
     canAudit
       ? fetchList<AuditLogItem>("audit-logs", "limit=8&sortBy=createdAt&sortOrder=desc")
-      : Promise.resolve([]),
-    canDocs
-      ? fetchList<InternalDocumentItem>("documents", "limit=5&sortBy=updatedAt&sortOrder=desc")
       : Promise.resolve([]),
   ]);
 
@@ -160,13 +149,10 @@ export default async function DashboardPage() {
     news,
     blogs,
     "trade-shows": tradeShows,
-    documents,
     media,
   };
 
-  const visibleContentStats = CONTENT_STATS.filter(
-    (s) => !("perm" in s && s.perm) || hasPermission(permissions, s.perm),
-  );
+  const visibleContentStats = CONTENT_STATS;
 
   const visibleQuickActions = QUICK_ACTIONS.filter(
     (a) => !("perm" in a && a.perm) || hasPermission(permissions, a.perm),
@@ -187,17 +173,6 @@ export default async function DashboardPage() {
       icon: Mail,
       accent: unreadTotal > 0,
     },
-    ...(canDocs
-      ? [
-          {
-            label: "内部草稿",
-            value: draftDocs,
-            href: "/documents?status=draft",
-            icon: FileText,
-            accent: draftDocs > 0,
-          },
-        ]
-      : []),
   ];
 
   return (
@@ -414,50 +389,6 @@ export default async function DashboardPage() {
               )}
             </CardContent>
           </Card>
-        ) : canDocs ? (
-          <Card className="border-border/80 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-              <div>
-                <CardTitle className="text-base">最近更新文档</CardTitle>
-                <CardDescription>内部知识库最新编辑</CardDescription>
-              </div>
-              <Link
-                href="/documents"
-                className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
-              >
-                全部文档
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </CardHeader>
-            <CardContent className="p-0">
-              {recentDocs.length === 0 ? (
-                <div className="px-6 py-12 text-center text-sm text-muted-foreground">
-                  暂无文档
-                </div>
-              ) : (
-                <div className="divide-y divide-border">
-                  {recentDocs.map((doc) => (
-                    <Link
-                      key={doc.id}
-                      href={`/documents/${doc.id}`}
-                      className="flex items-center justify-between gap-4 px-6 py-3.5 transition-colors hover:bg-muted/30"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-foreground">{doc.title}</p>
-                        <p className="mt-0.5 text-xs text-muted-foreground">
-                          {doc.folder?.name ?? "未分类"}
-                          {doc.status === "draft" ? " · 草稿" : ""}
-                        </p>
-                      </div>
-                      <span className="shrink-0 text-xs text-muted-foreground">
-                        {formatTime(doc.updatedAt)}
-                      </span>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
         ) : (
           <Card className="border-border/80 shadow-sm">
             <CardHeader>
@@ -478,7 +409,7 @@ export default async function DashboardPage() {
         )}
       </div>
 
-      {canAudit || canDocs ? (
+      {canAudit ? (
         <Card className="mt-6 border-border/80 shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">

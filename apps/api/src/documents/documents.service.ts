@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { Prisma } from "@prisma/client/index";
 import { PrismaService } from "../prisma/prisma.service";
 import { ContentStatus } from "../common/enums/content-status.enum";
@@ -13,7 +13,7 @@ import {
   parseListSort,
   type OrderByEntry,
 } from "../common/utils/list-sort";
-import { CreateDocumentDto, PromoteDocumentDto, UpdateDocumentDto } from "./dto/document.dto";
+import { CreateDocumentDto, UpdateDocumentDto } from "./dto/document.dto";
 import {
   ensureUniqueDocumentSlug,
   slugifyTitle,
@@ -495,75 +495,4 @@ export class DocumentsService {
     );
   }
 
-  /** 个人文档 → 内部文档库（Promote，互斥移交） */
-  async promote(
-    id: string,
-    dto: PromoteDocumentDto,
-    actorId: string,
-    canManage: boolean,
-  ) {
-    const item = await this.prisma.internalDocument.findUnique({ where: { id } });
-    if (!item) throw new NotFoundException(`文档 ID "${id}" 未找到`);
-    if (!item.ownerId) {
-      throw new BadRequestException("该文档已在内部文档库中");
-    }
-    if (item.ownerId !== actorId && !canManage) {
-      throw new ForbiddenException("无权发布此文档到内部库");
-    }
-
-    const targetFolderId = dto.folderId ?? null;
-    await this.assertFolderScope(targetFolderId, false, actorId);
-
-    const publishNow = Boolean(dto.publish);
-    const data: Prisma.InternalDocumentUncheckedUpdateInput = {
-      ownerId: null,
-      folderId: targetFolderId,
-    };
-
-    if (publishNow) {
-      data.status = ContentStatus.PUBLISHED;
-      if (!item.publishedAt) {
-        data.publishedAt = new Date();
-      }
-    } else {
-      data.status = ContentStatus.DRAFT;
-      data.publishedAt = null;
-    }
-
-    Object.assign(
-      data,
-      await this.applyDocumentEditorMetadata(
-        actorId,
-        (data.status as string) ?? item.status,
-        item,
-      ),
-    );
-
-    const updated = await this.prisma.internalDocument.update({
-      where: { id },
-      data,
-      include: { ...CONTENT_ADMIN_USER_INCLUDE, folder: true },
-    });
-
-    try {
-      await this.prisma.auditLog.create({
-        data: {
-          userId: actorId,
-          action: "promote",
-          resource: "documents",
-          resourceId: id,
-          detail: {
-            fromOwnerId: item.ownerId,
-            folderId: targetFolderId,
-            publish: publishNow,
-            previousStatus: item.status,
-          },
-        },
-      });
-    } catch {
-      // 审计失败不影响主流程
-    }
-
-    return updated;
-  }
 }

@@ -5,28 +5,15 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/apiClient";
 import type { DocFolderTreeNode, DocRevisionItem, InternalDocumentItem } from "@/features/types";
 
-export type DocFolderScope = "shared" | "mine";
-
-export type DocListStatusFilter = "published" | "draft" | "all";
-
-/** 是否可查看组织文档草稿（与 API canSeeDrafts 一致） */
-export function canSeeDocDrafts(permissions: readonly string[]): boolean {
-  return (
-    permissions.includes("docs.edit") ||
-    permissions.includes("docs.create") ||
-    permissions.includes("docs.manage")
-  );
+function folderTreeKey() {
+  return ["documents", "folders", "tree", "mine"] as const;
 }
 
-function folderTreeKey(scope: DocFolderScope) {
-  return ["documents", "folders", "tree", scope] as const;
-}
-
-export function useDocFolderTree(scope: DocFolderScope = "shared") {
+export function useDocFolderTree() {
   return useQuery<DocFolderTreeNode[]>({
-    queryKey: folderTreeKey(scope),
+    queryKey: folderTreeKey(),
     queryFn: () =>
-      api.query<DocFolderTreeNode[]>("documents/folders/tree", { scope }),
+      api.query<DocFolderTreeNode[]>("documents/folders/tree", { scope: "mine" }),
   });
 }
 
@@ -46,8 +33,8 @@ function flattenFolders(
 }
 
 /** 表单 select 用：首项为「未分类」 */
-export function useDocFolderOptions(scope: DocFolderScope = "shared") {
-  const { data: tree, ...rest } = useDocFolderTree(scope);
+export function useDocFolderOptions() {
+  const { data: tree, ...rest } = useDocFolderTree();
   const options = useMemo(
     () => [{ label: "未分类", value: "" }, ...flattenFolders(tree ?? [])],
     [tree],
@@ -62,28 +49,24 @@ export interface DocTagStat {
   count: number;
 }
 
-function tagsQueryKey(scope: DocFolderScope) {
-  return ["documents", "tags", scope] as const;
-}
-
-function tagsMineParam(scope: DocFolderScope) {
-  return scope === "mine" ? { mine: "1" } : undefined;
+function tagsQueryKey() {
+  return ["documents", "tags", "mine"] as const;
 }
 
 /** 当前文档库范围内的标签统计 */
-export function useDocTags(scope: DocFolderScope = "shared") {
+export function useDocTags() {
   return useQuery<DocTagStat[]>({
-    queryKey: tagsQueryKey(scope),
+    queryKey: tagsQueryKey(),
     queryFn: () =>
-      api.query<DocTagStat[]>("documents/tags", tagsMineParam(scope)),
+      api.query<DocTagStat[]>("documents/tags", { mine: "1" }),
   });
 }
 
-export function useCreateDocTag(scope: DocFolderScope = "shared") {
+export function useCreateDocTag() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (name: string) =>
-      api.post("documents/tags", { name }, tagsMineParam(scope)),
+      api.post("documents/tags", { name }, { mine: "1" }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["documents", "tags"] });
       qc.invalidateQueries({ queryKey: ["documents"] });
@@ -91,11 +74,11 @@ export function useCreateDocTag(scope: DocFolderScope = "shared") {
   });
 }
 
-export function useRenameDocTag(scope: DocFolderScope = "shared") {
+export function useRenameDocTag() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload: { from: string; to: string }) =>
-      api.put("documents/tags/rename", payload, tagsMineParam(scope)),
+      api.put("documents/tags/rename", payload, { mine: "1" }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["documents", "tags"] });
       qc.invalidateQueries({ queryKey: ["documents"] });
@@ -103,11 +86,11 @@ export function useRenameDocTag(scope: DocFolderScope = "shared") {
   });
 }
 
-export function useMergeDocTags(scope: DocFolderScope = "shared") {
+export function useMergeDocTags() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload: { from: string; to: string }) =>
-      api.post("documents/tags/merge", payload, tagsMineParam(scope)),
+      api.post("documents/tags/merge", payload, { mine: "1" }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["documents", "tags"] });
       qc.invalidateQueries({ queryKey: ["documents"] });
@@ -115,14 +98,12 @@ export function useMergeDocTags(scope: DocFolderScope = "shared") {
   });
 }
 
-export function useDeleteDocTag(scope: DocFolderScope = "shared") {
+export function useDeleteDocTag() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (name: string) =>
       api.remove("documents/tags", encodeURIComponent(name), {
-        query: tagsMineParam(scope)
-          ? { mine: "1", name }
-          : { name },
+        query: { mine: "1", name },
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["documents", "tags"] });
@@ -131,17 +112,14 @@ export function useDeleteDocTag(scope: DocFolderScope = "shared") {
   });
 }
 
-/** 文档列表页 URL（文件夹 + 标签 + 状态筛选） */
+/** 文档列表页 URL（文件夹 + 标签筛选） */
 export function buildDocListHref(
   basePath: string,
-  params?: { folder?: string; tag?: string; status?: DocListStatusFilter },
+  params?: { folder?: string; tag?: string },
 ) {
   const sp = new URLSearchParams();
   if (params?.folder) sp.set("folder", params.folder);
   if (params?.tag) sp.set("tag", params.tag);
-  if (params?.status && params.status !== "published") {
-    sp.set("status", params.status);
-  }
   const q = sp.toString();
   return q ? `${basePath}?${q}` : basePath;
 }
@@ -181,17 +159,6 @@ export function useRestoreDocRevision(documentId: string) {
   return useMutation({
     mutationFn: (revisionId: string) =>
       api.post(`documents/${documentId}/revisions/${revisionId}/restore`, {}),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["documents"] });
-    },
-  });
-}
-
-export function usePromoteDocument(documentId: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (payload: { folderId?: string | null; publish?: boolean }) =>
-      api.post<InternalDocumentItem>(`documents/${documentId}/promote`, payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["documents"] });
     },

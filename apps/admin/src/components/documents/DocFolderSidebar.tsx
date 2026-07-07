@@ -37,7 +37,6 @@ import {
   useCreatePersonalFolder,
   useDocFolderTree,
   useRemovePersonalFolder,
-  type DocFolderScope,
 } from "@/features/documents";
 import type { DocFolderTreeNode } from "@/features/types";
 import { notifyError, notifySuccess } from "@/lib/notify";
@@ -275,17 +274,13 @@ function FolderTree({
 
 export function DocFolderSidebar({
   basePath = "/documents",
-  folderScope = "shared",
-  manageable = false,
 }: {
   basePath?: string;
-  folderScope?: DocFolderScope;
-  manageable?: boolean;
 }) {
   const router = useRouter();
   const sp = useSearchParams();
   const folderParam = sp.get("folder");
-  const { data: tree, isLoading } = useDocFolderTree(folderScope);
+  const { data: tree, isLoading } = useDocFolderTree();
   const createMut = useCreatePersonalFolder();
   const removeMut = useRemovePersonalFolder();
 
@@ -362,20 +357,18 @@ export function DocFolderSidebar({
       <Card className="w-60 shrink-0 self-start overflow-hidden border-border/80 py-0 shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between gap-2 border-b border-border/60 px-3 py-3">
           <CardTitle className="text-sm font-medium">文件夹</CardTitle>
-          {manageable ? (
-            <Can anyPerm={["docs.create"]}>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 shrink-0"
-                title="新建文件夹"
-                onClick={() => openCreate(null)}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </Can>
-          ) : null}
+          <Can anyPerm={["docs.create"]}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 shrink-0"
+              title="新建文件夹"
+              onClick={() => openCreate(null)}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </Can>
         </CardHeader>
         <CardContent className="max-h-[min(70vh,560px)] space-y-0.5 overflow-y-auto overflow-x-hidden p-2">
           <FolderNavItem
@@ -391,17 +384,17 @@ export function DocFolderSidebar({
               nodes={tree}
               activeId={activeId}
               basePath={basePath}
-              manageable={manageable}
+              manageable
               expandedIds={expandedIds}
               onToggle={toggleExpanded}
               onAddChild={(parentId) => openCreate(parentId)}
               onDelete={setDeleteTarget}
             />
-          ) : manageable ? (
+          ) : (
             <p className="px-2.5 py-2 text-xs text-muted-foreground">
               暂无个人文件夹，点击 + 创建
             </p>
-          ) : null}
+          )}
           <div className="my-1 border-t border-border/60 pt-1">
             <FolderNavItem
               href={`${basePath}?folder=__none__`}
