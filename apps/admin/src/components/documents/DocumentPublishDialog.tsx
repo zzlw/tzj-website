@@ -43,7 +43,7 @@ export function DocumentPublishDialog({
 
   useEffect(() => {
     if (open) {
-      setFolderId(currentFolderId ?? "");
+      setFolderId(""); // 默认选择"未分类"
     }
   }, [open, currentFolderId]);
 
