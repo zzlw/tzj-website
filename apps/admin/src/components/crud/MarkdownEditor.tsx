@@ -58,9 +58,9 @@ function safeDestroy(vditor: VditorInternal | null | undefined): void {
 
 function vditorCdn(): string {
   // Vditor 官方 CDN（生产环境）
-  // 本地开发可改为空字符串使用 node_modules 中的资源
+  // 注意：不要包含 /dist，Vditor 内部会自动追加 /dist/js/lute/lute.min.js
   if (process.env.NODE_ENV === "production") {
-    return "https://unpkg.com/vditor@3.11.2/dist";
+    return "https://unpkg.com/vditor@3.11.2";
   }
   // 开发环境：从 node_modules 加载（需要 next.config.js 配置）
   return "";

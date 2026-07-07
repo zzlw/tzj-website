@@ -5,8 +5,9 @@ import { cn } from "@tzj/ui";
 
 function vditorCdn(): string {
   // Vditor 官方 CDN（生产环境）
+  // 注意：不要包含 /dist，Vditor 内部会自动追加 /dist/js/lute/lute.min.js
   if (process.env.NODE_ENV === "production") {
-    return "https://unpkg.com/vditor@3.11.2/dist";
+    return "https://unpkg.com/vditor@3.11.2";
   }
   // 开发环境：从 node_modules 加载
   return "";
