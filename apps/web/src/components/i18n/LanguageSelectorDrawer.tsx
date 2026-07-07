@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { usePathname, useRouter } from "@/i18n/navigation";
+import { usePathname, useRouter, Link } from "@/i18n/navigation";
 import {
   LANGUAGE_MARKETS,
   type LanguageMarket,
@@ -46,13 +46,31 @@ export function LanguageSelectorDrawer({
       onOpenChange(false);
       return;
     }
+
     /**
-     * 双重保障：在 router.replace 之前手动设置 cookie，
-     * 避免 cookie path 绑定到当前路径前缀（如 /en），
-     * 导致后续访问无前缀路由时 locale 回退。
+     * 关键修复：先手动设置 NEXT_LOCALE cookie（path=/），然后触发导航。
+     *
+     * 原因：在 localePrefix="as-needed" 模式下，当从 /en 切换到 zh-CN 时，
+     * next-intl 的 router.replace 内部设置的 cookie 可能基于当前请求路径，
+     * 导致 cookie 绑定到 /en 而非 /，后续访问无前缀路由时 cookie 不会被发送。
+     *
+     * 注意：虽然 routing.ts 中配置了 localeCookie: { path: "/" }，
+     * 但在某些情况下（如客户端导航），next-intl 可能不会正确应用此配置。
+     * 因此我们手动设置 cookie 作为双重保障。
      */
-    document.cookie = `NEXT_LOCALE=${nextLocale};path=/;SameSite=Lax`;
-    router.replace(pathname, { locale: nextLocale });
+    // 清除所有可能的旧 cookie
+    document.cookie = "NEXT_LOCALE=;path=/;max-age=0";
+    document.cookie = "NEXT_LOCALE=;path=/en;max-age=0";
+    document.cookie = "NEXT_LOCALE=;path=/zh-TW;max-age=0";
+    // 设置新的 cookie（显式指定 path=/）
+    document.cookie = `NEXT_LOCALE=${nextLocale};path=/;max-age=31536000`;
+
+    // 使用 window.location.href 进行硬导航，确保新 cookie 被发送到服务器
+    // 这样可以避免客户端导航中 cookie 未生效的问题
+    // usePathname() 返回的是不带 locale 前缀的路径（如 /cases）
+    const newPath = nextLocale === "zh-CN" ? pathname : `/${nextLocale}${pathname}`;
+    console.log(`[LanguageSelector] Switching to ${nextLocale}, new path: ${newPath}`);
+    window.location.href = newPath;
     onOpenChange(false);
   }
 
