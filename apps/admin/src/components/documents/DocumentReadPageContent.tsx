@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Alert } from "@tzj/ui";
 import { DocumentMoveDialog } from "@/components/documents/DocumentMoveDialog";
-import { DocumentPromoteDialog } from "@/components/documents/DocumentPromoteDialog";
+import { DocumentVisibilityDialog } from "@/components/documents/DocumentVisibilityDialog";
 import {
   DocumentReadSkeleton,
   DocumentReadView,
@@ -133,7 +133,7 @@ export function DocumentReadPageContent({
         onOpenChange={setMoveOpen}
       />
       {showPromote ? (
-        <DocumentPromoteDialog
+        <DocumentVisibilityDialog
           documentId={doc.id}
           documentTitle={doc.title}
           open={promoteOpen}

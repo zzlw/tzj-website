@@ -13,8 +13,8 @@ import {
   Pencil,
   Pin,
   RotateCcw,
+  Lock,
   Send,
-  Share2,
   Tag,
 } from "lucide-react";
 import {
@@ -127,8 +127,8 @@ export function DocumentReadView({
               {showPromote && onPromoteClick ? (
                 <Can anyPerm={["docs.publish", "docs.manage"]}>
                   <Button variant="outline" size="sm" onClick={onPromoteClick}>
-                    <Share2 className="mr-1.5 h-4 w-4" />
-                    发布到内部文档
+                    <Lock className="mr-1.5 h-4 w-4" />
+                    可见范围
                   </Button>
                 </Can>
               ) : null}

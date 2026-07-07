@@ -8,11 +8,11 @@ import {
   FileText,
   FolderInput,
   FolderOpen,
+  Lock,
   MoreHorizontal,
   Pencil,
   Pin,
   Plus,
-  Share2,
   Tags,
   Trash2,
 } from "lucide-react";
@@ -50,8 +50,8 @@ import {
 } from "@tzj/ui";
 import { Can } from "@/components/Can";
 import { DocumentMoveDialog } from "@/components/documents/DocumentMoveDialog";
-import { DocumentPromoteDialog } from "@/components/documents/DocumentPromoteDialog";
 import { DocumentTagsManageDialog } from "@/components/documents/DocumentTagsManageDialog";
+import { DocumentVisibilityDialog } from "@/components/documents/DocumentVisibilityDialog";
 import { LastOperatorCell } from "@/components/LastOperatorCell";
 import type { DocumentsResourceConfig } from "@/features/resources/documents";
 import { buildDocListHref, useDocTags } from "@/features/documents";
@@ -158,8 +158,8 @@ function DocumentRowActions({
               <Can anyPerm={["docs.publish", "docs.manage"]}>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={onPromoteToOrg}>
-                  <Share2 className="mr-2 h-4 w-4" />
-                  发布到内部文档
+                  <Lock className="mr-2 h-4 w-4" />
+                  可见范围
                 </DropdownMenuItem>
               </Can>
             ) : null}
@@ -211,18 +211,12 @@ function DocumentListRow({
   const readHref = config.detailPath?.(doc) ?? `/documents/${doc.id}`;
   const summary = doc.summary?.trim() || "暂无摘要";
   const pinned = doc.isPinned;
-  const isDraft = doc.status === "draft";
 
   return (
     <ContentListItem
       href={readHref}
       linkLabel={doc.title}
       variant={pinned ? "pinned" : "default"}
-      className={
-        isDraft && !pinned
-          ? "border-l-4 border-l-dashed border-l-muted-foreground/35 bg-muted/15"
-          : undefined
-      }
       icon={
         pinned ? (
           <Pin className="h-5 w-5 fill-current" />
@@ -235,7 +229,9 @@ function DocumentListRow({
       badges={
         <>
           {pinned ? <PinnedBadge /> : null}
-          <StatusBadge status={doc.status} />
+          {config.folderScope === "shared" ? (
+            <StatusBadge status={doc.status} />
+          ) : null}
         </>
       }
       tags={
@@ -429,7 +425,7 @@ export function DocumentListView({
       {config.promotable ? (
         <Alert icon="info" title="个人工作区，仅自己可见" className="mb-4 border-blue-200/80 bg-blue-50/50 dark:border-blue-900/50 dark:bg-blue-950/20">
           <p className="text-muted-foreground">
-            整理完成后，在文档菜单中选择「发布到内部文档」，即可让同事阅读。
+            整理完成后，在文档菜单中设置「可见范围」为全员可见，即可让同事阅读。
           </p>
         </Alert>
       ) : null}
@@ -512,7 +508,7 @@ export function DocumentListView({
             search
               ? "没有匹配的文档，试试其他关键词"
               : config.promotable
-                ? "在此撰写个人草稿；完成后可通过「发布到内部文档」让同事阅读"
+                ? "在此撰写个人文档；完成后可通过「可见范围」设为全员可见让同事阅读"
                 : "暂无已发布的文档"
           }
           action={
@@ -612,7 +608,7 @@ export function DocumentListView({
       ) : null}
 
       {promoteTarget ? (
-        <DocumentPromoteDialog
+        <DocumentVisibilityDialog
           documentId={promoteTarget.id}
           documentTitle={promoteTarget.title}
           open={promoteTarget !== null}
