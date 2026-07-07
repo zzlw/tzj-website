@@ -54,6 +54,7 @@ import { Can } from "@/components/Can";
 import { useSession } from "@/components/session";
 import { DocumentMoveDialog } from "@/components/documents/DocumentMoveDialog";
 import { DocumentPromoteDialog } from "@/components/documents/DocumentPromoteDialog";
+import { DocumentPublishDialog } from "@/components/documents/DocumentPublishDialog";
 import { DocumentTagsManageDialog } from "@/components/documents/DocumentTagsManageDialog";
 import { LastOperatorCell } from "@/components/LastOperatorCell";
 import type { DocumentsResourceConfig } from "@/features/resources/documents";
@@ -366,6 +367,9 @@ export function DocumentListView({
   const [promoteTarget, setPromoteTarget] = useState<InternalDocumentItem | null>(
     null,
   );
+  const [publishTarget, setPublishTarget] = useState<InternalDocumentItem | null>(
+    null,
+  );
 
   const sort = SORT_OPTIONS[sortIdx] ?? SORT_OPTIONS[0];
   const folderId = extraListParams?.folderId;
@@ -418,12 +422,17 @@ export function DocumentListView({
   }, [rows]);
 
   async function handleTogglePublish(doc: InternalDocumentItem) {
-    const next = doc.status === "published" ? "draft" : "published";
-    try {
-      await updateMut.mutateAsync({ id: doc.id, payload: { status: next } });
-      notifySuccess(next === "published" ? "已发布，同事现在可以阅读" : "已转为草稿，仅编辑者可见");
-    } catch (e) {
-      notifyError(e, "操作失败");
+    if (doc.status === "published") {
+      // 下线为草稿，直接执行
+      try {
+        await updateMut.mutateAsync({ id: doc.id, payload: { status: "draft" } });
+        notifySuccess("已转为草稿，仅编辑者可见");
+      } catch (e) {
+        notifyError(e, "操作失败");
+      }
+    } else {
+      // 发布供同事阅读，打开对话框选文件夹
+      setPublishTarget(doc);
     }
   }
 
@@ -684,6 +693,16 @@ export function DocumentListView({
             setPromoteTarget(null);
             router.push(`/documents/${id}`);
           }}
+        />
+      ) : null}
+
+      {publishTarget ? (
+        <DocumentPublishDialog
+          documentId={publishTarget.id}
+          documentTitle={publishTarget.title}
+          currentFolderId={publishTarget.folderId ?? publishTarget.folder?.id}
+          open={publishTarget !== null}
+          onOpenChange={(open) => !open && setPublishTarget(null)}
         />
       ) : null}
     </TooltipProvider>
