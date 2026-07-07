@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import type Vditor from "vditor";
 import { uploadMedia } from "@/features/media";
 import type { MediaAsset } from "@/features/types";
-import { BASE_PATH } from "@/lib/config";
 import { VDITOR_I18N_ZH_CN } from "@/lib/vditor-i18n-zh-cn";
 
 export interface MarkdownEditorProps {
@@ -58,8 +57,13 @@ function safeDestroy(vditor: VditorInternal | null | undefined): void {
 }
 
 function vditorCdn(): string {
-  if (typeof window === "undefined") return "";
-  return `${window.location.origin}${BASE_PATH}/vditor-assets`;
+  // Vditor 官方 CDN（生产环境）
+  // 本地开发可改为空字符串使用 node_modules 中的资源
+  if (process.env.NODE_ENV === "production") {
+    return "https://unpkg.com/vditor@3.11.2/dist";
+  }
+  // 开发环境：从 node_modules 加载（需要 next.config.js 配置）
+  return "";
 }
 
 /** 源码模式按钮图标（Material “code”，fill 风格与 vditor 图标一致） */

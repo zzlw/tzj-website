@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { BASE_PATH } from "@/lib/config";
 import { cn } from "@tzj/ui";
 
 function vditorCdn(): string {
-  if (typeof window === "undefined") return "";
-  return `${window.location.origin}${BASE_PATH}/vditor-assets`;
+  // Vditor 官方 CDN（生产环境）
+  if (process.env.NODE_ENV === "production") {
+    return "https://unpkg.com/vditor@3.11.2/dist";
+  }
+  // 开发环境：从 node_modules 加载
+  return "";
 }
 
 export function MarkdownPreview({
