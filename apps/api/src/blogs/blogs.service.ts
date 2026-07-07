@@ -5,6 +5,7 @@ import { CreateBlogDto, UpdateBlogDto } from "./dto/blog.dto";
 import { ContentStatus } from "../common/enums/content-status.enum";
 import { sanitizeMarkdown } from "../common/utils/markdown";
 import { estimateReadTime } from "../common/utils/read-time";
+import { generateDocumentSummary } from "../common/utils/document-summary";
 import {
   applyPublishedFilter,
   assertPublishedOrStaff,
@@ -117,10 +118,18 @@ export class BlogsService {
   }
 
   async create(dto: CreateBlogDto, editorId?: string) {
-    const { readTime: _ignored, author: _author, ...rest } = dto;
+    const { readTime: _ignored, author: _author, excerpt, ...rest } = dto;
     const data: Prisma.BlogCreateInput = { ...rest };
-    if (dto.content !== undefined) data.content = sanitizeMarkdown(dto.content);
-    data.readTime = estimateReadTime(data.content, dto.excerpt);
+    if (dto.content !== undefined) {
+      data.content = sanitizeMarkdown(dto.content);
+    }
+    // 如果未提供简介，则根据正文自动生成
+    if (excerpt === undefined && dto.content !== undefined) {
+      data.excerpt = generateDocumentSummary(data.content as string | null | undefined);
+    } else if (excerpt !== undefined) {
+      data.excerpt = excerpt;
+    }
+    data.readTime = estimateReadTime(data.content, data.excerpt);
     if (dto.status === ContentStatus.PUBLISHED && !dto.publishedAt) {
       data.publishedAt = new Date();
     }
@@ -138,16 +147,29 @@ export class BlogsService {
     const item = await this.prisma.blog.findUnique({ where: { id } });
     if (!item) throw new NotFoundException(`博客 ID "${id}" 未找到`);
 
-    const { readTime: _ignored, author: _author, ...rest } = dto;
+    const { readTime: _ignored, author: _author, excerpt, ...rest } = dto;
     const data: Prisma.BlogUpdateInput = { ...rest };
-    if (dto.content !== undefined) data.content = sanitizeMarkdown(dto.content);
+    if (dto.content !== undefined) {
+      data.content = sanitizeMarkdown(dto.content);
+    }
+    // 如果提供了新简介，使用它；否则如果正文被更新，重新生成简介
+    if (excerpt !== undefined) {
+      data.excerpt = excerpt;
+    } else if (dto.content !== undefined) {
+      const contentToUse = data.content as string | null | undefined;
+      data.excerpt = generateDocumentSummary(contentToUse);
+    }
+    // 更新阅读时长（基于最新的正文和简介）
     if (dto.content !== undefined || dto.excerpt !== undefined) {
       const content =
         dto.content !== undefined
           ? (data.content as string | null)
           : item.content;
-      const excerpt = dto.excerpt !== undefined ? dto.excerpt : item.excerpt;
-      data.readTime = estimateReadTime(content, excerpt);
+      const finalExcerpt =
+        dto.excerpt !== undefined
+          ? dto.excerpt
+          : (data.excerpt as string | null | undefined) ?? item.excerpt;
+      data.readTime = estimateReadTime(content, finalExcerpt);
     }
     if (
       dto.status === ContentStatus.PUBLISHED &&

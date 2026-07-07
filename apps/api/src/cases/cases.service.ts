@@ -3,6 +3,7 @@ import { PrismaService } from "../prisma/prisma.service";
 import { Prisma } from "@prisma/client/index";
 import { CreateCaseDto, UpdateCaseDto } from "./dto/case.dto";
 import { sanitizeMarkdown } from "../common/utils/markdown";
+import { generateDocumentSummary } from "../common/utils/document-summary";
 import {
   applyPublishedFilter,
   assertPublishedOrStaff,
@@ -116,10 +117,15 @@ export class CasesService {
   }
 
   async create(dto: CreateCaseDto, editorId?: string) {
-    const { description, ...rest } = dto;
+    const { description, summary, ...rest } = dto;
+    const sanitizedDescription = sanitizeMarkdown(description);
+    // 如果未提供摘要，则根据正文自动生成
+    const finalSummary =
+      summary ?? generateDocumentSummary(sanitizedDescription);
     const data: Prisma.CaseCreateInput = {
       ...rest,
-      description: sanitizeMarkdown(description),
+      summary: finalSummary,
+      description: sanitizedDescription,
     };
     if (editorId) {
       data.author = await resolveContentAuthor(this.prisma, editorId);
@@ -134,9 +140,18 @@ export class CasesService {
   async update(id: string, dto: UpdateCaseDto, editorId?: string) {
     const item = await this.prisma.case.findUnique({ where: { id } });
     if (!item) throw new NotFoundException(`案例 ID "${id}" 未找到`);
-    const { description, ...rest } = dto;
+    const { description, summary, ...rest } = dto;
     const data: Prisma.CaseUpdateInput = { ...rest };
-    if (description !== undefined) data.description = sanitizeMarkdown(description);
+    if (description !== undefined) {
+      data.description = sanitizeMarkdown(description);
+    }
+    // 如果提供了新摘要，使用它；否则如果正文被更新，重新生成摘要
+    if (summary !== undefined) {
+      data.summary = summary;
+    } else if (description !== undefined) {
+      const contentToUse = data.description as string | null | undefined;
+      data.summary = generateDocumentSummary(contentToUse);
+    }
     if (editorId) {
       data.author = await resolveContentAuthor(this.prisma, editorId);
     }

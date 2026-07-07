@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client/index";
 import { CreateNewsDto, UpdateNewsDto } from "./dto/news.dto";
 import { ContentStatus } from "../common/enums/content-status.enum";
 import { sanitizeMarkdown } from "../common/utils/markdown";
+import { generateDocumentSummary } from "../common/utils/document-summary";
 import {
   applyPublishedFilter,
   assertPublishedOrStaff,
@@ -116,9 +117,17 @@ export class NewsService {
   }
 
   async create(dto: CreateNewsDto, editorId?: string) {
-    const { author: _author, ...rest } = dto;
+    const { author: _author, summary, ...rest } = dto;
     const data: Prisma.NewsCreateInput = { ...rest };
-    if (dto.content !== undefined) data.content = sanitizeMarkdown(dto.content);
+    if (dto.content !== undefined) {
+      data.content = sanitizeMarkdown(dto.content);
+    }
+    // 如果未提供摘要，则根据正文自动生成
+    if (summary === undefined && dto.content !== undefined) {
+      data.summary = generateDocumentSummary(data.content as string | null | undefined);
+    } else if (summary !== undefined) {
+      data.summary = summary;
+    }
     if (dto.status === ContentStatus.PUBLISHED && !dto.publishedAt) {
       data.publishedAt = new Date();
     }
@@ -136,9 +145,18 @@ export class NewsService {
     const item = await this.prisma.news.findUnique({ where: { id } });
     if (!item) throw new NotFoundException(`新闻 ID "${id}" 未找到`);
 
-    const { author: _author, ...rest } = dto;
+    const { author: _author, summary, ...rest } = dto;
     const data: Prisma.NewsUpdateInput = { ...rest };
-    if (dto.content !== undefined) data.content = sanitizeMarkdown(dto.content);
+    if (dto.content !== undefined) {
+      data.content = sanitizeMarkdown(dto.content);
+    }
+    // 如果提供了新摘要，使用它；否则如果正文被更新，重新生成摘要
+    if (summary !== undefined) {
+      data.summary = summary;
+    } else if (dto.content !== undefined) {
+      const contentToUse = data.content as string | null | undefined;
+      data.summary = generateDocumentSummary(contentToUse);
+    }
     // 首次转为已发布且未设置发布时间时，自动记录发布时间
     if (
       dto.status === ContentStatus.PUBLISHED &&

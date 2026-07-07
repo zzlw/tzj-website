@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client/index";
 import { CreateTradeShowDto, UpdateTradeShowDto } from "./dto/trade-show.dto";
 import { ContentStatus } from "../common/enums/content-status.enum";
 import { sanitizeMarkdown } from "../common/utils/markdown";
+import { generateDocumentSummary } from "../common/utils/document-summary";
 import {
   applyPublishedFilter,
   assertPublishedOrStaff,
@@ -119,8 +120,17 @@ export class TradeShowsService {
   }
 
   async create(dto: CreateTradeShowDto, editorId?: string) {
-    const data: Prisma.TradeShowCreateInput = { ...dto };
-    if (dto.content !== undefined) data.content = sanitizeMarkdown(dto.content);
+    const { summary, ...rest } = dto;
+    const data: Prisma.TradeShowCreateInput = { ...rest };
+    if (dto.content !== undefined) {
+      data.content = sanitizeMarkdown(dto.content);
+    }
+    // 如果未提供摘要，则根据正文自动生成
+    if (summary === undefined && dto.content !== undefined) {
+      data.summary = generateDocumentSummary(data.content as string | null | undefined);
+    } else if (summary !== undefined) {
+      data.summary = summary;
+    }
     if (dto.status === ContentStatus.PUBLISHED && !dto.publishedAt) {
       data.publishedAt = new Date();
     }
@@ -138,8 +148,18 @@ export class TradeShowsService {
     const item = await this.prisma.tradeShow.findUnique({ where: { id } });
     if (!item) throw new NotFoundException(`展会 ID "${id}" 未找到`);
 
-    const data: Prisma.TradeShowUpdateInput = { ...dto };
-    if (dto.content !== undefined) data.content = sanitizeMarkdown(dto.content);
+    const { summary, ...rest } = dto;
+    const data: Prisma.TradeShowUpdateInput = { ...rest };
+    if (dto.content !== undefined) {
+      data.content = sanitizeMarkdown(dto.content);
+    }
+    // 如果提供了新摘要，使用它；否则如果正文被更新，重新生成摘要
+    if (summary !== undefined) {
+      data.summary = summary;
+    } else if (dto.content !== undefined) {
+      const contentToUse = data.content as string | null | undefined;
+      data.summary = generateDocumentSummary(contentToUse);
+    }
     if (
       dto.status === ContentStatus.PUBLISHED &&
       !dto.publishedAt &&
