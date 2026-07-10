@@ -183,13 +183,13 @@ html[data-header-hidden] .product-line-nav {
 
 @media (min-width: 768px) {
   :root {
-    --site-topbar-height: 2.25rem;
     --product-hub-nav-height: 3.25rem;
   }
 }
 
 @media (min-width: 1024px) {
   :root {
+    --site-topbar-height: 2.25rem;
     --site-header-height: calc(var(--site-topbar-height) + 5rem);
   }
 }

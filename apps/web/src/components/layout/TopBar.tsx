@@ -37,7 +37,7 @@ export function TopBar({ phone, email, socialChannels, scanHint }: TopBarProps) 
   const localeShort = LOCALE_SHORT[locale as keyof typeof LOCALE_SHORT];
 
   return (
-    <div className="top-bar hidden h-9 border-b border-neutral-200 bg-white md:block">
+    <div className="top-bar hidden h-9 border-b border-neutral-200 bg-white lg:block">
       <Container className="flex h-full items-center justify-end gap-6 text-xs">
         {/* ── 社媒 + 联系方式 + 语言切换（全部右对齐） ── */}
         <div className="flex items-center gap-4">
