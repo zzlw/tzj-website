@@ -103,6 +103,7 @@
   --sidebar-ring: #d4000e;
 
   /* 固定 Header 与产品中心吸顶导航 — 全站统一偏移量 */
+  --site-topbar-height: 0px;
   --site-header-height: 4rem;
   --site-header-offset: var(--site-header-height);
   --product-hub-nav-height: 5.75rem;
@@ -182,13 +183,14 @@ html[data-header-hidden] .product-line-nav {
 
 @media (min-width: 768px) {
   :root {
+    --site-topbar-height: 2.25rem;
     --product-hub-nav-height: 3.25rem;
   }
 }
 
 @media (min-width: 1024px) {
   :root {
-    --site-header-height: 5rem;
+    --site-header-height: calc(var(--site-topbar-height) + 5rem);
   }
 }
 

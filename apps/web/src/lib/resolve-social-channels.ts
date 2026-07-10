@@ -37,14 +37,14 @@ function toBarItem(channel: SocialChannelSetting, t: (key: string) => string): S
   };
 }
 
-/** CMS 社媒配置 → 页脚/图标栏（按用途筛选） */
+/** CMS 社媒配置 → 页脚/图标栏（按用途筛选；省略 purpose 则返回全部） */
 export function resolveSocialChannels(
   settings: SitePublicSettings,
-  purpose: SocialChannelPurpose,
+  purpose: SocialChannelPurpose | undefined,
   t: (key: string) => string,
 ): SocialChannelItem[] {
   return settings.social.channels
-    .filter((c) => c.enabled && channelPurpose(c) === purpose && (c.qr || c.href))
+    .filter((c) => c.enabled && (!purpose || channelPurpose(c) === purpose) && (c.qr || c.href))
     .sort((a, b) => a.sortOrder - b.sortOrder)
     .map((c) => toBarItem(c, t));
 }

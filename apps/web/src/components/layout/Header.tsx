@@ -12,11 +12,12 @@ import {
 } from "@/lib/navigation";
 import { PRODUCTS_HREF } from "@/lib/navigation-products";
 import { ProductMegaMenu, ProductMobileAccordion } from "@/components/layout/ProductMegaMenu";
-import { LOCALE_SHORT } from "@/lib/locale-config";
 import { useLanguageSelector } from "@/components/i18n/LanguageSelector";
 import { useSearch } from "@/components/search/SearchProvider";
 import { useScrollHeaderHide } from "@/hooks/useScrollHeaderHide";
 import { cn } from "@/lib/utils";
+import { TopBar } from "@/components/layout/TopBar";
+import type { SocialChannelItem } from "@/components/contact/SocialChannelBar";
 
 // SSR 下退化为 useEffect，避免 useLayoutEffect 的服务端告警
 const useIsomorphicLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
@@ -36,7 +37,17 @@ const collectHrefs = (item: NavItemLocal): string[] => [
 
 const isProductsNav = (item: NavItemLocal | null | undefined) => item?.href === PRODUCTS_HREF;
 
-export function Header() {
+export function Header({
+  topBarPhone,
+  topBarEmail,
+  topBarSocialChannels,
+  topBarScanHint,
+}: {
+  topBarPhone: string;
+  topBarEmail: string;
+  topBarSocialChannels: SocialChannelItem[];
+  topBarScanHint: string;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const locale = useLocale();
@@ -236,6 +247,12 @@ export function Header() {
             : "border-b border-neutral-300",
         )}
       >
+        <TopBar
+          phone={topBarPhone}
+          email={topBarEmail}
+          socialChannels={topBarSocialChannels}
+          scanHint={topBarScanHint}
+        />
         <Container>
           <div className="flex h-16 items-center justify-between gap-6 lg:h-20">
             <Link href="/" className="flex shrink-0 items-center gap-2.5">
@@ -308,16 +325,6 @@ export function Header() {
                 aria-label={tHeader("searchAria")}
               >
                 <Search className="h-5 w-5" aria-hidden="true" />
-              </button>
-
-              <button
-                type="button"
-                onClick={openLanguageSelector}
-                className="hidden items-center gap-1 px-2 py-2 text-sm font-bold text-neutral-700 transition-colors hover:text-primary md:flex"
-                aria-label={tHeader("languageSwitch")}
-              >
-                <Globe className="h-4 w-4" aria-hidden="true" />
-                <span>{LOCALE_SHORT[locale as keyof typeof LOCALE_SHORT]}</span>
               </button>
 
               <button

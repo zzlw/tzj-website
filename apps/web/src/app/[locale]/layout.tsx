@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { routing, type AppLocale } from "@/i18n/routing";
 import { LOCALE_HTML_LANG } from "@/lib/locale-config";
 import { getMediaOrigin } from "@/lib/media-origin";
-import { Header } from "@/components/layout/Header";
+import { HeaderShell } from "@/components/layout/HeaderShell";
 import { ProductLineNav } from "@/components/products/ProductLineNav";
 import { Footer } from "@/components/layout/Footer";
 import { DocumentScrollbars } from "@/components/layout/DocumentScrollbars";
@@ -93,7 +93,7 @@ export default async function LocaleLayout({ children, params }: Props) {
               <DeferredVisitorTracker />
             </Suspense>
             <ConsoleBranding />
-            <Header />
+            <HeaderShell />
             <ProductLineNav />
             <ViewTransitions>
             <main className="min-h-screen">{children}</main>
