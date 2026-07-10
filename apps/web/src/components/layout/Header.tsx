@@ -262,7 +262,7 @@ export function Header({
               </span>
             </Link>
 
-            <div ref={navAreaRef} className="relative hidden min-w-0 flex-1 lg:block">
+            <div ref={navAreaRef} className="relative hidden min-w-0 flex-1 md:block">
               <nav className="flex items-center justify-center gap-5 xl:gap-6" aria-label={tHeader("mainNav")}>
                 {NAV_ITEMS.slice(0, visibleCount).map((item) => {
                   const isActive = item.label === activeTopLabel;
