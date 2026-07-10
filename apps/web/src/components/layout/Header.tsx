@@ -242,9 +242,7 @@ export function Header({
       <header
         className={cn(
           "site-header fixed inset-x-0 top-0 z-50 bg-white",
-          scrolled
-            ? "shadow-[0_1px_0_rgba(0,0,0,0.08),0_8px_24px_-12px_rgba(0,0,0,0.18)]"
-            : "border-b border-neutral-300",
+          scrolled && "shadow-[0_1px_0_rgba(0,0,0,0.08),0_8px_24px_-12px_rgba(0,0,0,0.18)]",
         )}
       >
         <TopBar
