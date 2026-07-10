@@ -20,7 +20,7 @@ type TopBarProps = {
 };
 
 const ICON_CLASS =
-  "flex h-7 w-7 items-center justify-center text-neutral-500 transition-colors hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
+  "inline-flex shrink-0 gap-1.5 pt-3 text-secondary-text transition-colors hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
 
 /**
  * 顶部工具栏（Utility Bar）
@@ -37,13 +37,13 @@ export function TopBar({ phone, email, socialChannels, scanHint }: TopBarProps) 
   const localeShort = LOCALE_SHORT[locale as keyof typeof LOCALE_SHORT];
 
   return (
-    <div className="top-bar hidden h-9 border-b border-neutral-200 bg-white lg:block">
-      <Container className="flex h-full items-center justify-end gap-6 text-xs">
+    <div className="top-bar hidden bg-white md:block">
+      <Container className="flex justify-end gap-6 text-xs">
         {/* ── 社媒 + 联系方式 + 语言切换（全部右对齐） ── */}
-        <div className="flex items-center gap-4">
+        <div className="flex gap-4">
           {socialChannels.length > 0 ? (
             <>
-              <ul className="flex items-center gap-1" aria-label={tContact("followUs")}>
+              <ul className="flex gap-1" aria-label={tContact("followUs")}>
                 {socialChannels.map((channel) => {
                   if (channel.href) {
                     return (
@@ -52,7 +52,7 @@ export function TopBar({ phone, email, socialChannels, scanHint }: TopBarProps) 
                           href={channel.href}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className={ICON_CLASS}
+                          className={cn(ICON_CLASS, "px-10")}
                           aria-label={channel.label}
                           title={channel.label}
                         >
@@ -73,7 +73,7 @@ export function TopBar({ phone, email, socialChannels, scanHint }: TopBarProps) 
                         <PopoverTrigger asChild>
                           <button
                             type="button"
-                            className={cn(ICON_CLASS, isOpen && "text-primary")}
+                            className={cn(ICON_CLASS, "px-2", isOpen && "text-primary")}
                             aria-label={channel.label}
                             aria-expanded={isOpen}
                           >
@@ -106,13 +106,12 @@ export function TopBar({ phone, email, socialChannels, scanHint }: TopBarProps) 
                   );
                 })}
               </ul>
-              <span className="h-4 w-px bg-neutral-300" aria-hidden="true" />
             </>
           ) : null}
 
           <a
             href={`tel:${phone.replace(/-/g, "")}`}
-            className="inline-flex items-center gap-1.5 text-secondary-text transition-colors hover:text-primary"
+            className={ICON_CLASS}
           >
             <Phone className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             <span>{phone}</span>
@@ -120,18 +119,16 @@ export function TopBar({ phone, email, socialChannels, scanHint }: TopBarProps) 
 
           <a
             href={`mailto:${email}`}
-            className="inline-flex items-center gap-1.5 text-secondary-text transition-colors hover:text-primary"
+            className={ICON_CLASS}
           >
             <Mail className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             <span>{email}</span>
           </a>
 
-          <span className="h-4 w-px bg-neutral-300" aria-hidden="true" />
-
           <button
             type="button"
             onClick={openLanguageSelector}
-            className="inline-flex items-center gap-1.5 font-medium text-secondary-text transition-colors hover:text-primary"
+            className={ICON_CLASS}
             aria-label={tHeader("languageSwitch")}
           >
             <Globe className="h-3.5 w-3.5" aria-hidden="true" />
