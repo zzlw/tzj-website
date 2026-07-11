@@ -41,9 +41,10 @@ export async function proxy(req: NextRequest) {
   const accessToken = req.cookies.get(COOKIE.access)?.value;
   const refreshToken = req.cookies.get(COOKIE.refresh)?.value;
   const hasSession = !!accessToken || !!refreshToken;
+  const hasValidToken = !!accessToken && !isTokenExpired(accessToken);
 
-  // 已登录访问 /login → 回到首页
-  if (pathname === "/login" && hasSession) {
+  // 已登录（token 有效）访问 /login → 回到首页
+  if (pathname === "/login" && hasValidToken) {
     const url = req.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);
