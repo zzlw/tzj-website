@@ -125,7 +125,7 @@ export function ContentListItem({
       </div>
 
       {actions ? (
-        <div className="relative z-[2] flex shrink-0 items-start gap-0.5 pointer-events-auto opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+        <div className="relative z-[2] flex shrink-0 items-start gap-0.5 pointer-events-auto">
           {actions}
         </div>
       ) : null}

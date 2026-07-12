@@ -108,17 +108,6 @@ function DocumentRowActions({
 
   return (
     <>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-            <Link href={readHref}>
-              <Eye className="h-4 w-4" />
-            </Link>
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>阅读</TooltipContent>
-      </Tooltip>
-
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="h-8 w-8">

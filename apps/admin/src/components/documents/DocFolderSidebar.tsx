@@ -100,7 +100,7 @@ function FolderNavItem({
       <Link
         href={href}
         className={cn(
-          "flex h-8 w-full items-center rounded-md pr-2 text-sm transition-colors",
+          "flex h-8 w-full items-center rounded-md pl-2 pr-2 text-sm transition-colors",
           active
             ? "bg-primary/10 font-medium text-primary"
             : "text-muted-foreground hover:bg-muted hover:text-foreground",
