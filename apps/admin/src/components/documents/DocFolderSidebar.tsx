@@ -9,6 +9,7 @@ import {
   FolderOpen,
   FolderPlus,
   Inbox,
+  Pencil,
   Plus,
   Trash2,
 } from "lucide-react";
@@ -37,6 +38,7 @@ import {
   useCreatePersonalFolder,
   useDocFolderTree,
   useRemovePersonalFolder,
+  useRenamePersonalFolder,
 } from "@/features/documents";
 import type { DocFolderTreeNode } from "@/features/types";
 import { notifyError, notifySuccess } from "@/lib/notify";
@@ -118,6 +120,7 @@ function FolderTreeNode({
   expandedIds,
   onToggle,
   onAddChild,
+  onRename,
   onDelete,
 }: {
   node: DocFolderTreeNode;
@@ -128,6 +131,7 @@ function FolderTreeNode({
   expandedIds: Set<string>;
   onToggle: (id: string) => void;
   onAddChild: (parentId: string) => void;
+  onRename: (folder: DocFolderTreeNode) => void;
   onDelete: (folder: DocFolderTreeNode) => void;
 }) {
   const hasChildren = node.children.length > 0;
@@ -200,6 +204,16 @@ function FolderTreeNode({
                 type="button"
                 variant="ghost"
                 size="icon"
+                className="h-7 w-7 text-muted-foreground"
+                title="重命名文件夹"
+                onClick={() => onRename(node)}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
                 className="h-7 w-7 text-muted-foreground hover:text-destructive"
                 title="删除文件夹"
                 onClick={() => onDelete(node)}
@@ -224,6 +238,7 @@ function FolderTreeNode({
               expandedIds={expandedIds}
               onToggle={onToggle}
               onAddChild={onAddChild}
+              onRename={onRename}
               onDelete={onDelete}
             />
           ))}
@@ -241,6 +256,7 @@ function FolderTree({
   expandedIds,
   onToggle,
   onAddChild,
+  onRename,
   onDelete,
 }: {
   nodes: DocFolderTreeNode[];
@@ -250,6 +266,7 @@ function FolderTree({
   expandedIds: Set<string>;
   onToggle: (id: string) => void;
   onAddChild: (parentId: string) => void;
+  onRename: (folder: DocFolderTreeNode) => void;
   onDelete: (folder: DocFolderTreeNode) => void;
 }) {
   return (
@@ -265,6 +282,7 @@ function FolderTree({
           expandedIds={expandedIds}
           onToggle={onToggle}
           onAddChild={onAddChild}
+          onRename={onRename}
           onDelete={onDelete}
         />
       ))}
@@ -283,11 +301,14 @@ export function DocFolderSidebar({
   const { data: tree, isLoading } = useDocFolderTree();
   const createMut = useCreatePersonalFolder();
   const removeMut = useRemovePersonalFolder();
+  const renameMut = useRenamePersonalFolder();
 
   const [createOpen, setCreateOpen] = useState(false);
   const [createName, setCreateName] = useState("");
   const [createParentId, setCreateParentId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DocFolderTreeNode | null>(null);
+  const [renameTarget, setRenameTarget] = useState<DocFolderTreeNode | null>(null);
+  const [renameName, setRenameName] = useState("");
 
   const activeId =
     folderParam && folderParam !== "__none__" ? folderParam : null;
@@ -352,6 +373,27 @@ export function DocFolderSidebar({
     }
   }
 
+  function openRename(folder: DocFolderTreeNode) {
+    setRenameTarget(folder);
+    setRenameName(folder.name);
+  }
+
+  async function handleRenameConfirm() {
+    if (!renameTarget) return;
+    const name = renameName.trim();
+    if (!name || name === renameTarget.name) {
+      setRenameTarget(null);
+      return;
+    }
+    try {
+      await renameMut.mutateAsync({ id: renameTarget.id, name });
+      setRenameTarget(null);
+      notifySuccess("文件夹已重命名");
+    } catch (e) {
+      notifyError(e, "重命名失败");
+    }
+  }
+
   return (
     <TooltipProvider delayDuration={400}>
       <Card className="w-60 shrink-0 self-start overflow-hidden border-border/80 py-0 shadow-sm">
@@ -388,6 +430,7 @@ export function DocFolderSidebar({
               expandedIds={expandedIds}
               onToggle={toggleExpanded}
               onAddChild={(parentId) => openCreate(parentId)}
+              onRename={openRename}
               onDelete={setDeleteTarget}
             />
           ) : (
@@ -436,6 +479,38 @@ export function DocFolderSidebar({
               disabled={!createName.trim() || createMut.isPending}
             >
               {createMut.isPending ? "创建中…" : "创建"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={renameTarget !== null} onOpenChange={(open) => !open && setRenameTarget(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>重命名文件夹</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <Label htmlFor="rename-folder-name">名称</Label>
+            <Input
+              id="rename-folder-name"
+              value={renameName}
+              onChange={(e) => setRenameName(e.target.value)}
+              placeholder="输入新名称"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Enter") void handleRenameConfirm();
+              }}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setRenameTarget(null)}>
+              取消
+            </Button>
+            <Button
+              onClick={() => void handleRenameConfirm()}
+              disabled={!renameName.trim() || renameName.trim() === renameTarget?.name || renameMut.isPending}
+            >
+              {renameMut.isPending ? "保存中…" : "保存"}
             </Button>
           </DialogFooter>
         </DialogContent>

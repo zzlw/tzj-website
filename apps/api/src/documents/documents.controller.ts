@@ -6,6 +6,7 @@ import {
   Get,
   Param,
   ParseIntPipe,
+  Patch,
   Post,
   Put,
   Query,
@@ -83,6 +84,17 @@ export class DocumentsController {
     @CurrentUser() user: AuthUser,
   ) {
     return this.foldersService.removePersonal(user.id, id);
+  }
+
+  @RequirePermissions("docs.create")
+  @Patch("folders/personal/:id")
+  @ApiOperation({ summary: "重命名个人文件夹（文档中心）" })
+  renamePersonalFolder(
+    @Param("id") id: string,
+    @Body() dto: { name: string },
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.foldersService.renamePersonal(user.id, id, dto.name);
   }
 
   @RequirePermissions("docs.view")

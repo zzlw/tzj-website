@@ -145,6 +145,17 @@ export function useRemovePersonalFolder() {
   });
 }
 
+export function useRenamePersonalFolder() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, name }: { id: string; name: string }) =>
+      api.patch(`documents/folders/personal/${id}`, { name }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["documents", "folders", "tree"] });
+    },
+  });
+}
+
 export function useDocRevisions(documentId: string | undefined) {
   return useQuery<DocRevisionItem[]>({
     queryKey: ["documents", documentId, "revisions"],

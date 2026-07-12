@@ -100,7 +100,7 @@ export const api = {
       { method: "DELETE" },
     ).then(() => true),
   patch: <T>(path: string, payload: unknown) =>
-    request<T>(path, {
+    request<T>(`${path.startsWith("/") ? path : `/${path}`}`, {
       method: "PATCH",
       body: JSON.stringify(payload),
     }).then((r) => r.data),

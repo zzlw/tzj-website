@@ -61,6 +61,29 @@ export class DocFoldersService {
     });
   }
 
+  async renamePersonal(userId: string, id: string, name: string) {
+    const trimmed = name.trim();
+    if (!trimmed) throw new BadRequestException("文件夹名称不能为空");
+
+    const existing = await this.prisma.docFolder.findFirst({
+      where: { id, ownerId: userId },
+    });
+    if (!existing) throw new NotFoundException("文件夹不存在");
+
+    const baseSlug = slugifyTitle(trimmed);
+    const slug = await ensureUniqueFolderSlug(
+      this.prisma,
+      userId,
+      existing.parentId,
+      baseSlug,
+    );
+
+    return this.prisma.docFolder.update({
+      where: { id },
+      data: { name: trimmed, slug },
+    });
+  }
+
   async removePersonal(userId: string, id: string) {
     const existing = await this.prisma.docFolder.findFirst({
       where: { id, ownerId: userId },
