@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   Eye,
   FileText,
+  Folder,
   FolderInput,
   FolderOpen,
   MoreHorizontal,
@@ -56,7 +57,7 @@ import type { DocumentsResourceConfig } from "@/features/resources/documents";
 import { buildDocListHref, useDocTags } from "@/features/documents";
 import { formatDateTime } from "@/features/constants";
 import { useList, useRemove } from "@/features/hooks";
-import type { InternalDocumentItem } from "@/features/types";
+import type { InternalDocumentItem, DocFolderTreeNode } from "@/features/types";
 import { notifyError, notifySuccess } from "@/lib/notify";
 
 const SORT_OPTIONS = [
@@ -315,10 +316,12 @@ export function DocumentListView({
   config,
   extraListParams,
   defaultPageSize = 20,
+  subFolders = [],
 }: {
   config: DocumentsResourceConfig;
   extraListParams?: Record<string, string | undefined>;
   defaultPageSize?: number;
+  subFolders?: DocFolderTreeNode[];
 }) {
   const router = useRouter();
 
@@ -486,28 +489,31 @@ export function DocumentListView({
 
       {isLoading ? (
         <ContentListSkeleton count={6} />
-      ) : rows.length === 0 ? (
-        <EmptyState
-          icon={<FileText className="h-6 w-6" />}
-          title="暂无文档"
-          description={
-            search
-              ? "没有匹配的文档，试试其他关键词"
-              : "点击上方「新增文档」开始创建"
-          }
-          action={
-            <Can anyPerm={perms(config, "create")}>
-              <Button variant="outline" size="sm" asChild>
-                <Link href={`${config.basePath}/new`}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  新建{config.singular}
-                </Link>
-              </Button>
-            </Can>
-          }
-        />
-      ) : (
+      ) : subFolders.length > 0 || rows.length > 0 ? (
         <ContentList>
+          {subFolders.length > 0 ? (
+            <>
+              <ContentListSectionHeader
+                title="子文件夹"
+                icon={<Folder className="h-3.5 w-3.5 text-muted-foreground" />}
+              />
+              {subFolders.map((folder) => (
+                <Link
+                  key={folder.id}
+                  href={`${config.basePath}?folder=${folder.id}`}
+                  className="flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-muted"
+                >
+                  <FolderOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <span className="font-medium">{folder.name}</span>
+                  {folder.children.length > 0 && (
+                    <span className="text-xs text-muted-foreground">
+                      {folder.children.length} 个子文件夹
+                    </span>
+                  )}
+                </Link>
+              ))}
+            </>
+          ) : null}
           {pinnedRows.length > 0 ? (
             <>
               <ContentListSectionHeader
@@ -542,6 +548,26 @@ export function DocumentListView({
               ))
             : null}
         </ContentList>
+      ) : (
+        <EmptyState
+          icon={<FileText className="h-6 w-6" />}
+          title="暂无文档"
+          description={
+            search
+              ? "没有匹配的文档，试试其他关键词"
+              : "点击上方「新增文档」开始创建"
+          }
+          action={
+            <Can anyPerm={perms(config, "create")}>
+              <Button variant="outline" size="sm" asChild>
+                <Link href={`${config.basePath}/new`}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  新建{config.singular}
+                </Link>
+              </Button>
+            </Can>
+          }
+        />
       )}
 
       {pagination && pagination.total > 0 ? (
