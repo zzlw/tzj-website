@@ -144,6 +144,10 @@ function FolderTreeNode({
   const active = activeId === node.id;
   const Icon = active ? FolderOpen : Folder;
 
+  const [createOpen, setCreateOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const anyPopoverOpen = createOpen || moreOpen;
+
   return (
     <li>
       <div
@@ -194,9 +198,12 @@ function FolderTreeNode({
 
         {manageable ? (
           <Can anyPerm={["docs.create"]}>
-            <div className="absolute right-0.5 top-1/2 flex -translate-y-1/2 items-center gap-0.5 rounded-md bg-muted/95 opacity-0 shadow-sm transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+            <div className={cn(
+              "absolute right-0.5 top-1/2 flex -translate-y-1/2 items-center gap-0.5 rounded-md bg-muted/95 shadow-sm transition-opacity",
+              anyPopoverOpen ? "opacity-100" : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100",
+            )}>
               {/* "+" 创建菜单 */}
-              <Popover>
+              <Popover open={createOpen} onOpenChange={setCreateOpen}>
                 <PopoverTrigger asChild>
                   <button
                     type="button"
@@ -226,7 +233,7 @@ function FolderTreeNode({
               </Popover>
 
               {/* "..." 管理菜单 */}
-              <Popover>
+              <Popover open={moreOpen} onOpenChange={setMoreOpen}>
                 <PopoverTrigger asChild>
                   <button
                     type="button"
