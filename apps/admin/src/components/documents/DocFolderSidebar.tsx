@@ -207,7 +207,7 @@ function FolderTreeNode({
                 <PopoverTrigger asChild>
                   <button
                     type="button"
-                    className="flex h-7 w-7 items-center justify-center rounded-sm text-muted-foreground transition-all duration-200 hover:scale-110 hover:bg-background/80 hover:text-foreground active:scale-95"
+                    className="flex h-7 w-7 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-background/80 hover:text-foreground"
                     title="创建"
                   >
                     <Plus className="h-3.5 w-3.5" />
@@ -237,7 +237,7 @@ function FolderTreeNode({
                 <PopoverTrigger asChild>
                   <button
                     type="button"
-                    className="flex h-7 w-7 items-center justify-center rounded-sm text-muted-foreground transition-all duration-200 hover:scale-110 hover:bg-background/80 hover:text-foreground active:scale-95"
+                    className="flex h-7 w-7 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-background/80 hover:text-foreground"
                     title="更多操作"
                   >
                     <MoreHorizontal className="h-3.5 w-3.5" />
