@@ -159,7 +159,10 @@ function FolderTreeNode({
             "flex h-8 items-center rounded-md pr-1",
             active
               ? "bg-primary/10 text-primary"
-              : "text-muted-foreground hover:bg-muted hover:text-foreground",
+              : cn(
+                  "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  anyPopoverOpen && "bg-muted text-foreground",
+                ),
           )}
         >
           <button
