@@ -150,10 +150,11 @@ function FolderTreeNode({
   const [moreOpen, setMoreOpen] = useState(false);
   const anyPopoverOpen = createOpen || moreOpen;
 
-  const { data: docsData } = useFolderDocuments(expanded ? node.id : null);
+  const { data: docsData } = useFolderDocuments(node.id);
   const folderDocs = docsData?.data ?? [];
   const hasDocs = folderDocs.length > 0;
-  const showChildren = expanded && (hasChildren || hasDocs);
+  const expandable = hasChildren || hasDocs;
+  const showChildren = expanded && expandable;
 
   return (
     <li>
@@ -178,8 +179,11 @@ function FolderTreeNode({
           <button
             type="button"
             aria-label={expanded ? "收起" : "展开"}
-            className="flex h-6 w-5 shrink-0 items-center justify-center rounded-sm hover:bg-background/60"
-            onClick={() => onToggle(node.id)}
+            className={cn(
+              "flex h-6 w-5 shrink-0 items-center justify-center rounded-sm hover:bg-background/60",
+              !expandable && "invisible",
+            )}
+            onClick={() => expandable && onToggle(node.id)}
           >
             <ChevronRight
               className={cn(
@@ -301,6 +305,7 @@ function FolderTreeNode({
                 className="flex h-7 items-center rounded-md text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 style={{ paddingLeft: 8 + visualDepth(depth + 1) * INDENT_PX }}
               >
+                <span className="w-5 shrink-0" aria-hidden />
                 <FileText className="mr-1.5 h-3.5 w-3.5 shrink-0 opacity-70" />
                 <span className="truncate">{doc.title}</span>
               </Link>
