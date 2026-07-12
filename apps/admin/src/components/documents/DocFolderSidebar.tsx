@@ -301,7 +301,7 @@ function FolderTreeNode({
           {folderDocs.map((doc: InternalDocumentItem) => (
             <li key={doc.id}>
               <Link
-                href={`${basePath}/mine/${doc.id}`}
+                href={`${basePath}/${doc.id}`}
                 className="flex h-7 items-center rounded-md text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 style={{ paddingLeft: 8 + visualDepth(depth + 1) * INDENT_PX }}
               >
