@@ -1,7 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -117,61 +116,6 @@ function FolderNavItem({
   );
 }
 
-/**
- * Hover 触发的气泡弹层包装组件。
- * 鼠标悬停在 trigger 或弹层内容上时显示，移出后延迟关闭（防止鼠标从 trigger 移到弹层时意外关闭）。
- */
-function HoverPopover({
-  trigger,
-  children,
-  contentClassName,
-  closeDelay = 180,
-}: {
-  trigger: ReactNode;
-  children: ReactNode;
-  contentClassName?: string;
-  closeDelay?: number;
-}) {
-  const [open, setOpen] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout>>(null);
-
-  const handleEnter = useCallback(() => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
-    setOpen(true);
-  }, []);
-
-  const handleLeave = useCallback(() => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => setOpen(false), closeDelay);
-  }, [closeDelay]);
-
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, []);
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <div onMouseEnter={handleEnter} onMouseLeave={handleLeave}>
-        <PopoverTrigger asChild>{trigger}</PopoverTrigger>
-        <PopoverContent
-          side="bottom"
-          align="end"
-          className={contentClassName}
-          onMouseEnter={handleEnter}
-          onMouseLeave={handleLeave}
-        >
-          {children}
-        </PopoverContent>
-      </div>
-    </Popover>
-  );
-}
-
 function FolderTreeNode({
   node,
   depth,
@@ -251,9 +195,9 @@ function FolderTreeNode({
         {manageable ? (
           <Can anyPerm={["docs.create"]}>
             <div className="absolute right-0.5 top-1/2 flex -translate-y-1/2 items-center gap-0.5 rounded-md bg-muted/95 opacity-0 shadow-sm transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-              {/* "+" 创建菜单 — hover 触发 */}
-              <HoverPopover
-                trigger={
+              {/* "+" 创建菜单 */}
+              <Popover>
+                <PopoverTrigger asChild>
                   <button
                     type="button"
                     className="flex h-7 w-7 items-center justify-center rounded-sm text-muted-foreground transition-all duration-200 hover:scale-110 hover:bg-background/80 hover:text-foreground active:scale-95"
@@ -261,29 +205,29 @@ function FolderTreeNode({
                   >
                     <Plus className="h-3.5 w-3.5" />
                   </button>
-                }
-                contentClassName="w-36 p-1"
-              >
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-foreground hover:bg-muted"
-                  onClick={() => onAddChild(node.id)}
-                >
-                  <FolderPlus className="h-3.5 w-3.5" />
-                  <span>创建文件夹</span>
-                </button>
-                <Link
-                  href={`${basePath}/new?folder=${node.id}`}
-                  className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-foreground hover:bg-muted"
-                >
-                  <FilePlus className="h-3.5 w-3.5" />
-                  <span>创建文章</span>
-                </Link>
-              </HoverPopover>
+                </PopoverTrigger>
+                <PopoverContent side="top" align="end" className="w-36 p-1">
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-foreground hover:bg-muted"
+                    onClick={() => onAddChild(node.id)}
+                  >
+                    <FolderPlus className="h-3.5 w-3.5" />
+                    <span>创建文件夹</span>
+                  </button>
+                  <Link
+                    href={`${basePath}/new?folder=${node.id}`}
+                    className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-foreground hover:bg-muted"
+                  >
+                    <FilePlus className="h-3.5 w-3.5" />
+                    <span>创建文章</span>
+                  </Link>
+                </PopoverContent>
+              </Popover>
 
-              {/* "..." 管理菜单 — hover 触发 */}
-              <HoverPopover
-                trigger={
+              {/* "..." 管理菜单 */}
+              <Popover>
+                <PopoverTrigger asChild>
                   <button
                     type="button"
                     className="flex h-7 w-7 items-center justify-center rounded-sm text-muted-foreground transition-all duration-200 hover:scale-110 hover:bg-background/80 hover:text-foreground active:scale-95"
@@ -291,26 +235,26 @@ function FolderTreeNode({
                   >
                     <MoreHorizontal className="h-3.5 w-3.5" />
                   </button>
-                }
-                contentClassName="w-32 p-1"
-              >
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-foreground hover:bg-muted"
-                  onClick={() => onRename(node)}
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                  <span>重命名</span>
-                </button>
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-destructive hover:bg-destructive/10"
-                  onClick={() => onDelete(node)}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  <span>删除</span>
-                </button>
-              </HoverPopover>
+                </PopoverTrigger>
+                <PopoverContent side="bottom" align="end" className="w-32 p-1">
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-foreground hover:bg-muted"
+                    onClick={() => onRename(node)}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    <span>重命名</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-destructive hover:bg-destructive/10"
+                    onClick={() => onDelete(node)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span>删除</span>
+                  </button>
+                </PopoverContent>
+              </Popover>
             </div>
           </Can>
         ) : null}
