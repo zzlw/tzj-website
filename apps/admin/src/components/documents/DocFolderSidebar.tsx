@@ -151,18 +151,21 @@ function FolderTreeNode({
   return (
     <li>
       <div
-        className="group relative"
+        className={cn(
+          "group relative rounded-md",
+          !active && cn(
+            "hover:bg-muted group-focus-within:bg-muted",
+            anyPopoverOpen && "bg-muted",
+          ),
+        )}
         style={{ paddingLeft: 8 + visualDepth(depth) * INDENT_PX }}
       >
         <div
           className={cn(
-            "flex h-8 items-center rounded-md pr-1",
+            "flex h-8 items-center pr-1",
             active
               ? "bg-primary/10 text-primary"
-              : cn(
-                  "text-muted-foreground hover:bg-muted hover:text-foreground",
-                  anyPopoverOpen && "bg-muted text-foreground",
-                ),
+              : "text-muted-foreground group-hover:text-foreground",
           )}
         >
           <button
@@ -191,7 +194,7 @@ function FolderTreeNode({
                   active && "font-medium",
                 )}
               >
-                <Icon className={cn("h-4 w-4 shrink-0", anyPopoverOpen ? "opacity-100" : "opacity-70 group-hover:opacity-100")} />
+                <Icon className={cn("h-4 w-4 shrink-0", (active || anyPopoverOpen) ? "opacity-100" : "opacity-70 group-hover:opacity-100")} />
                 <span className="truncate">{node.name}</span>
               </Link>
             </TooltipTrigger>
