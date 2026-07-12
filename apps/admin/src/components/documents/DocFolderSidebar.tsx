@@ -466,28 +466,28 @@ export function DocFolderSidebar({
   return (
     <TooltipProvider delayDuration={400}>
       <Card className="w-60 shrink-0 self-start overflow-hidden border-border/80 py-0 shadow-sm">
-        <CardHeader className="flex flex-row items-center justify-between gap-2 border-b border-border/60 px-3 py-3">
+        <CardHeader className="border-b border-border/60 px-3 py-3">
           <CardTitle className="text-sm font-medium">文件夹</CardTitle>
-          <Can anyPerm={["docs.create"]}>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 shrink-0"
-              title="新建文件夹"
-              onClick={() => openCreate(null)}
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          </Can>
         </CardHeader>
         <CardContent className="max-h-[min(70vh,560px)] space-y-0.5 overflow-y-auto overflow-x-hidden p-2">
-          <FolderNavItem
-            href={basePath}
-            label="全部文档"
-            active={isAll}
-            icon={FolderOpen}
-          />
+          <div className="group/all-docs relative flex items-center">
+            <FolderNavItem
+              href={basePath}
+              label="全部文档"
+              active={isAll}
+              icon={FolderOpen}
+            />
+            <Can anyPerm={["docs.create"]}>
+              <button
+                type="button"
+                className="absolute right-1 flex h-6 w-6 items-center justify-center rounded-sm text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground group-hover/all-docs:opacity-100"
+                title="新建文件夹"
+                onClick={() => openCreate(null)}
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </button>
+            </Can>
+          </div>
           {isLoading ? (
             <p className="px-2.5 py-2 text-xs text-muted-foreground">加载中…</p>
           ) : tree?.length ? (
