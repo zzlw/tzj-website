@@ -191,7 +191,7 @@ function FolderTreeNode({
                   active && "font-medium",
                 )}
               >
-                <Icon className="h-4 w-4 shrink-0 opacity-70" />
+                <Icon className={cn("h-4 w-4 shrink-0", anyPopoverOpen ? "opacity-100" : "opacity-70 group-hover:opacity-100")} />
                 <span className="truncate">{node.name}</span>
               </Link>
             </TooltipTrigger>
