@@ -169,12 +169,13 @@ export function useDocRevisions(documentId: string | undefined) {
 /** 获取指定文件夹下的文档列表 */
 export function useFolderDocuments(folderId: string | null) {
   return useQuery<ListResult<InternalDocumentItem>>({
-    queryKey: ["documents", "list", { folderId: folderId ?? "" }],
+    queryKey: ["documents", "folderDocs", { folderId: folderId ?? "" }],
     queryFn: () =>
-      api.query<ListResult<InternalDocumentItem>>("documents", {
+      api.list<InternalDocumentItem>("documents", {
         folderId: folderId!,
-        pageSize: 50,
-        sort: "updatedAt",
+        mine: "1",
+        limit: 50,
+        sortBy: "updatedAt",
         sortOrder: "desc",
       }),
     enabled: Boolean(folderId),
