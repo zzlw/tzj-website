@@ -24,6 +24,7 @@ export function ResourceEditor<T extends { id: string }>({
   id,
   dynamicOptions,
   tagSuggestions,
+  defaultOverrides,
 }: {
   config: ResourceConfig<T>;
   /** 传入则为编辑模式；不传为新建。 */
@@ -31,6 +32,8 @@ export function ResourceEditor<T extends { id: string }>({
   dynamicOptions?: Record<string, { label: string; value: string }[]>;
   /** tags 字段：已有标签建议列表 */
   tagSuggestions?: string[];
+  /** 新建时覆盖 config.defaults 中的字段值 */
+  defaultOverrides?: Record<string, unknown>;
 }) {
   const router = useRouter();
   const isEdit = Boolean(id);
@@ -44,10 +47,13 @@ export function ResourceEditor<T extends { id: string }>({
   const isSaving = createMut.isPending || updateMut.isPending;
 
   const defaults = useMemo(() => {
-    if (!isEdit) return config.defaults;
+    if (!isEdit)
+      return defaultOverrides
+        ? { ...config.defaults, ...defaultOverrides }
+        : config.defaults;
     if (!item) return null;
     return config.toForm ? config.toForm(item) : { ...config.defaults, ...item };
-  }, [isEdit, item, config]);
+  }, [isEdit, item, config, defaultOverrides]);
 
   async function handleSubmit(values: Record<string, unknown>) {
     const payload = normalizeValues(config.fields, values);
