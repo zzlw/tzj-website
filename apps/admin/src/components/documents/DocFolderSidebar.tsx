@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   ChevronRight,
   FilePlus,
+  FileText,
   Folder,
   FolderOpen,
   FolderPlus,
@@ -149,6 +150,11 @@ function FolderTreeNode({
   const [moreOpen, setMoreOpen] = useState(false);
   const anyPopoverOpen = createOpen || moreOpen;
 
+  const { data: docsData } = useFolderDocuments(expanded ? node.id : null);
+  const folderDocs = docsData?.data ?? [];
+  const hasDocs = folderDocs.length > 0;
+  const showChildren = expanded && (hasChildren || hasDocs);
+
   return (
     <li>
       <div
@@ -172,11 +178,8 @@ function FolderTreeNode({
           <button
             type="button"
             aria-label={expanded ? "收起" : "展开"}
-            className={cn(
-              "flex h-6 w-5 shrink-0 items-center justify-center rounded-sm hover:bg-background/60",
-              !hasChildren && "invisible",
-            )}
-            onClick={() => hasChildren && onToggle(node.id)}
+            className="flex h-6 w-5 shrink-0 items-center justify-center rounded-sm hover:bg-background/60"
+            onClick={() => onToggle(node.id)}
           >
             <ChevronRight
               className={cn(
@@ -274,7 +277,7 @@ function FolderTreeNode({
         ) : null}
       </div>
 
-      {hasChildren && expanded ? (
+      {showChildren ? (
         <ul className="space-y-0.5">
           {node.children.map((child) => (
             <FolderTreeNode
@@ -290,6 +293,18 @@ function FolderTreeNode({
               onRename={onRename}
               onDelete={onDelete}
             />
+          ))}
+          {folderDocs.map((doc: InternalDocumentItem) => (
+            <li key={doc.id}>
+              <Link
+                href={`${basePath}/mine/${doc.id}`}
+                className="flex h-7 items-center rounded-md text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                style={{ paddingLeft: 8 + visualDepth(depth + 1) * INDENT_PX }}
+              >
+                <FileText className="mr-1.5 h-3.5 w-3.5 shrink-0 opacity-70" />
+                <span className="truncate">{doc.title}</span>
+              </Link>
+            </li>
           ))}
         </ul>
       ) : null}
@@ -363,9 +378,6 @@ export function DocFolderSidebar({
     folderParam && folderParam !== "__none__" ? folderParam : null;
   const isAll = !folderParam;
   const isUncategorized = folderParam === "__none__";
-
-  const { data: folderDocsData } = useFolderDocuments(activeId);
-  const folderDocs = folderDocsData?.data ?? [];
 
   const ancestorIds = useMemo(
     () => (activeId && tree ? collectAncestorIds(tree, activeId) : new Set<string>()),
@@ -499,28 +511,6 @@ export function DocFolderSidebar({
               alignWithTree
             />
           </div>
-
-          {activeId && folderDocs.length > 0 && (
-            <div className="border-t border-border/60 pt-2">
-              <p className="mb-1 px-2 text-xs font-medium text-muted-foreground">
-                当前文件夹文档
-              </p>
-              <ul className="space-y-0.5">
-                {folderDocs.map((doc: InternalDocumentItem) => (
-                  <li key={doc.id}>
-                    <Link
-                      href={`${basePath}/mine/${doc.id}`}
-                      className="flex h-7 items-center rounded-md px-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                      style={{ paddingLeft: 8 + INDENT_PX }}
-                    >
-                      <FilePlus className="mr-1.5 h-3.5 w-3.5 shrink-0 opacity-70" />
-                      <span className="truncate">{doc.title}</span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
         </CardContent>
       </Card>
 
