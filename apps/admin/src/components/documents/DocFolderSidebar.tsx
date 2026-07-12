@@ -42,10 +42,11 @@ import { Can } from "@/components/Can";
 import {
   useCreatePersonalFolder,
   useDocFolderTree,
+  useFolderDocuments,
   useRemovePersonalFolder,
   useRenamePersonalFolder,
 } from "@/features/documents";
-import type { DocFolderTreeNode } from "@/features/types";
+import type { DocFolderTreeNode, InternalDocumentItem } from "@/features/types";
 import { notifyError, notifySuccess } from "@/lib/notify";
 
 /** 每层缩进 px；超过 MAX_VISUAL_DEPTH 后不再增加（防止深层树挤爆侧栏） */
@@ -363,6 +364,9 @@ export function DocFolderSidebar({
   const isAll = !folderParam;
   const isUncategorized = folderParam === "__none__";
 
+  const { data: folderDocsData } = useFolderDocuments(activeId);
+  const folderDocs = folderDocsData?.data ?? [];
+
   const ancestorIds = useMemo(
     () => (activeId && tree ? collectAncestorIds(tree, activeId) : new Set<string>()),
     [activeId, tree],
@@ -495,6 +499,28 @@ export function DocFolderSidebar({
               alignWithTree
             />
           </div>
+
+          {activeId && folderDocs.length > 0 && (
+            <div className="border-t border-border/60 pt-2">
+              <p className="mb-1 px-2 text-xs font-medium text-muted-foreground">
+                当前文件夹文档
+              </p>
+              <ul className="space-y-0.5">
+                {folderDocs.map((doc: InternalDocumentItem) => (
+                  <li key={doc.id}>
+                    <Link
+                      href={`${basePath}/mine/${doc.id}`}
+                      className="flex h-7 items-center rounded-md px-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                      style={{ paddingLeft: 8 + INDENT_PX }}
+                    >
+                      <FilePlus className="mr-1.5 h-3.5 w-3.5 shrink-0 opacity-70" />
+                      <span className="truncate">{doc.title}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </CardContent>
       </Card>
 

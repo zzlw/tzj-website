@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/apiClient";
 import type { DocFolderTreeNode, DocRevisionItem, InternalDocumentItem } from "@/features/types";
+import type { ListResult } from "@/lib/apiClient";
 
 function folderTreeKey() {
   return ["documents", "folders", "tree", "mine"] as const;
@@ -162,6 +163,21 @@ export function useDocRevisions(documentId: string | undefined) {
     queryFn: () =>
       api.query<DocRevisionItem[]>(`documents/${documentId}/revisions`),
     enabled: Boolean(documentId),
+  });
+}
+
+/** 获取指定文件夹下的文档列表 */
+export function useFolderDocuments(folderId: string | null) {
+  return useQuery<ListResult<InternalDocumentItem>>({
+    queryKey: ["documents", "list", { folderId: folderId ?? "" }],
+    queryFn: () =>
+      api.query<ListResult<InternalDocumentItem>>("documents", {
+        folderId: folderId!,
+        pageSize: 50,
+        sort: "updatedAt",
+        sortOrder: "desc",
+      }),
+    enabled: Boolean(folderId),
   });
 }
 
