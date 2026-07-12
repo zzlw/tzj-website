@@ -96,11 +96,11 @@ function FolderNavItem({
   alignWithTree?: boolean;
 }) {
   return (
-    <div style={{ paddingLeft: 8 + visualDepth(depth) * INDENT_PX }}>
+    <div className="flex-1 min-w-0" style={{ paddingLeft: 8 + visualDepth(depth) * INDENT_PX }}>
       <Link
         href={href}
         className={cn(
-          "flex h-8 items-center rounded-md pr-2 text-sm transition-colors",
+          "flex h-8 w-full items-center rounded-md pr-2 text-sm transition-colors",
           active
             ? "bg-primary/10 font-medium text-primary"
             : "text-muted-foreground hover:bg-muted hover:text-foreground",
