@@ -6,7 +6,6 @@ import type { ChatRoom } from '../types';
 import { ChatHeader } from './ChatHeader';
 import { ChatMessageBubble } from './ChatMessageBubble';
 import { ChatMessageComposer } from './ChatMessageComposer';
-import { VisitorInfoCard } from './VisitorInfoCard';
 
 interface Props {
   room: ChatRoom;
@@ -68,9 +67,7 @@ export function ChatArea({
         className="pointer-events-none absolute inset-0 -z-10 rounded-[inherit] bg-background/80 backdrop-blur"
         aria-hidden
       />
-      <ChatHeader room={room} onClose={onClose} />
-
-      <VisitorInfoCard room={room} onConverted={onConverted} />
+      <ChatHeader room={room} onClose={onClose} onConverted={onConverted} />
 
       <ImagePreviewProvider>
         <ScrollArea type="always" className="min-h-0 flex-1">
