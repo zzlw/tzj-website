@@ -1,5 +1,5 @@
-import { siteConfig } from "@/lib/site";
-import { resolveMediaUrl } from "@/lib/media-url";
+import { resolveMediaUrl } from '@/lib/media-url';
+import { siteConfig } from '@/lib/site';
 
 export function organizationJsonLd({
   legalName,
@@ -21,26 +21,26 @@ export function organizationJsonLd({
   addressRegion: string;
 }) {
   return {
-    "@context": "https://schema.org",
-    "@type": "Organization",
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
     name: legalName,
     alternateName: brandName,
     url: siteConfig.url,
     logo: resolveMediaUrl(siteConfig.social.logo),
     description,
     contactPoint: {
-      "@type": "ContactPoint",
+      '@type': 'ContactPoint',
       telephone: phone,
       email,
-      contactType: "sales",
-      areaServed: "CN",
-      availableLanguage: ["Chinese", "English"],
+      contactType: 'sales',
+      areaServed: 'CN',
+      availableLanguage: ['Chinese', 'English'],
     },
     address: {
-      "@type": "PostalAddress",
+      '@type': 'PostalAddress',
       addressLocality,
       addressRegion,
-      addressCountry: "CN",
+      addressCountry: 'CN',
       streetAddress,
     },
   };
@@ -58,16 +58,16 @@ export function productJsonLd({
   image?: string;
 }) {
   return {
-    "@context": "https://schema.org",
-    "@type": "Product",
+    '@context': 'https://schema.org',
+    '@type': 'Product',
     name,
     description,
     brand: {
-      "@type": "Brand",
+      '@type': 'Brand',
       name: siteConfig.name,
     },
     manufacturer: {
-      "@type": "Organization",
+      '@type': 'Organization',
       name: siteConfig.legalName,
     },
     url: `${siteConfig.url}${path}`,
@@ -77,10 +77,10 @@ export function productJsonLd({
 
 export function breadcrumbJsonLd(items: { name: string; path: string }[]) {
   return {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
     itemListElement: items.map((item, index) => ({
-      "@type": "ListItem",
+      '@type': 'ListItem',
       position: index + 1,
       name: item.name,
       item: `${siteConfig.url}${item.path}`,
@@ -102,22 +102,22 @@ export function articleJsonLd({
   datePublished?: string;
 }) {
   return {
-    "@context": "https://schema.org",
-    "@type": "Article",
+    '@context': 'https://schema.org',
+    '@type': 'Article',
     headline: title,
     description,
     url: `${siteConfig.url}${path}`,
     image: image ? resolveMediaUrl(image) : undefined,
     datePublished,
     author: {
-      "@type": "Organization",
+      '@type': 'Organization',
       name: siteConfig.legalName,
     },
     publisher: {
-      "@type": "Organization",
+      '@type': 'Organization',
       name: siteConfig.legalName,
       logo: {
-        "@type": "ImageObject",
+        '@type': 'ImageObject',
         url: resolveMediaUrl(siteConfig.social.logo),
       },
     },
@@ -142,8 +142,8 @@ export function eventJsonLd({
   location?: string;
 }) {
   return {
-    "@context": "https://schema.org",
-    "@type": "Event",
+    '@context': 'https://schema.org',
+    '@type': 'Event',
     name: title,
     description,
     url: `${siteConfig.url}${path}`,
@@ -152,16 +152,16 @@ export function eventJsonLd({
     endDate,
     location: location
       ? {
-          "@type": "Place",
+          '@type': 'Place',
           name: location,
           address: {
-            "@type": "PostalAddress",
-            addressCountry: "CN",
+            '@type': 'PostalAddress',
+            addressCountry: 'CN',
           },
         }
       : undefined,
     organizer: {
-      "@type": "Organization",
+      '@type': 'Organization',
       name: siteConfig.legalName,
     },
   };

@@ -1,21 +1,5 @@
-"use client";
+'use client';
 
-import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import {
-  ChevronRight,
-  FilePlus,
-  FileText,
-  Folder,
-  FolderOpen,
-  FolderPlus,
-  Inbox,
-  MoreHorizontal,
-  Pencil,
-  Plus,
-  Trash2,
-} from "lucide-react";
 import {
   Button,
   Card,
@@ -23,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
   ConfirmDialog,
+  cn,
   Dialog,
   DialogContent,
   DialogFooter,
@@ -37,18 +22,33 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-  cn,
-} from "@tzj/ui";
-import { Can } from "@/components/Can";
+} from '@tzj/ui';
+import {
+  ChevronRight,
+  FilePlus,
+  FileText,
+  Folder,
+  FolderOpen,
+  FolderPlus,
+  Inbox,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Trash2,
+} from 'lucide-react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
+import { Can } from '@/components/Can';
 import {
   useCreatePersonalFolder,
   useDocFolderTree,
   useFolderDocuments,
   useRemovePersonalFolder,
   useRenamePersonalFolder,
-} from "@/features/documents";
-import type { DocFolderTreeNode, InternalDocumentItem } from "@/features/types";
-import { notifyError, notifySuccess } from "@/lib/notify";
+} from '@/features/documents';
+import type { DocFolderTreeNode, InternalDocumentItem } from '@/features/types';
+import { notifyError, notifySuccess } from '@/lib/notify';
 
 /** 每层缩进 px；超过 MAX_VISUAL_DEPTH 后不再增加（防止深层树挤爆侧栏） */
 const INDENT_PX = 14;
@@ -58,10 +58,7 @@ function visualDepth(depth: number) {
   return Math.min(depth, MAX_VISUAL_DEPTH);
 }
 
-function collectAncestorIds(
-  nodes: DocFolderTreeNode[],
-  targetId: string,
-): Set<string> {
+function collectAncestorIds(nodes: DocFolderTreeNode[], targetId: string): Set<string> {
   const result = new Set<string>();
   function walk(list: DocFolderTreeNode[], ancestors: string[]): boolean {
     for (const node of list) {
@@ -100,15 +97,13 @@ function FolderNavItem({
       <Link
         href={href}
         className={cn(
-          "flex h-8 w-full items-center rounded-md pl-2 pr-2 text-sm transition-colors",
+          'flex h-8 w-full items-center rounded-md pl-2 pr-2 text-sm transition-colors',
           active
-            ? "bg-primary/10 font-medium text-primary"
-            : "text-muted-foreground hover:bg-muted hover:text-foreground",
+            ? 'bg-primary/10 font-medium text-primary'
+            : 'text-muted-foreground hover:bg-muted hover:text-foreground',
         )}
       >
-        {alignWithTree ? (
-          <span className="w-5 shrink-0" aria-hidden />
-        ) : null}
+        {alignWithTree ? <span className="w-5 shrink-0" aria-hidden /> : null}
         <Icon className="h-4 w-4 shrink-0 opacity-70" />
         <span className="min-w-0 truncate pl-1.5" title={label}>
           {label}
@@ -160,36 +155,30 @@ function FolderTreeNode({
     <li>
       <div
         className={cn(
-          "group relative rounded-md",
-          !active && cn(
-            "hover:bg-muted group-focus-within:bg-muted",
-            anyPopoverOpen && "bg-muted",
-          ),
+          'group relative rounded-md',
+          !active && cn('hover:bg-muted group-focus-within:bg-muted', anyPopoverOpen && 'bg-muted'),
         )}
         style={{ paddingLeft: 8 + visualDepth(depth) * INDENT_PX }}
       >
         <div
           className={cn(
-            "flex h-8 items-center pr-1",
+            'flex h-8 items-center pr-1',
             active
-              ? "bg-primary/10 text-primary"
-              : "text-muted-foreground group-hover:text-foreground",
+              ? 'bg-primary/10 text-primary'
+              : 'text-muted-foreground group-hover:text-foreground',
           )}
         >
           <button
             type="button"
-            aria-label={expanded ? "收起" : "展开"}
+            aria-label={expanded ? '收起' : '展开'}
             className={cn(
-              "flex h-6 w-5 shrink-0 items-center justify-center rounded-sm hover:bg-background/60",
-              !expandable && "invisible",
+              'flex h-6 w-5 shrink-0 items-center justify-center rounded-sm hover:bg-background/60',
+              !expandable && 'invisible',
             )}
             onClick={() => expandable && onToggle(node.id)}
           >
             <ChevronRight
-              className={cn(
-                "h-3.5 w-3.5 transition-transform",
-                expanded && "rotate-90",
-              )}
+              className={cn('h-3.5 w-3.5 transition-transform', expanded && 'rotate-90')}
             />
           </button>
 
@@ -198,11 +187,16 @@ function FolderTreeNode({
               <Link
                 href={`${basePath}?folder=${node.id}`}
                 className={cn(
-                  "flex min-w-0 flex-1 items-center gap-1.5 pr-12 text-sm",
-                  active && "font-medium",
+                  'flex min-w-0 flex-1 items-center gap-1.5 pr-12 text-sm',
+                  active && 'font-medium',
                 )}
               >
-                <Icon className={cn("h-4 w-4 shrink-0", (active || anyPopoverOpen) ? "opacity-100" : "opacity-70 group-hover:opacity-100")} />
+                <Icon
+                  className={cn(
+                    'h-4 w-4 shrink-0',
+                    active || anyPopoverOpen ? 'opacity-100' : 'opacity-70 group-hover:opacity-100',
+                  )}
+                />
                 <span className="truncate">{node.name}</span>
               </Link>
             </TooltipTrigger>
@@ -211,11 +205,15 @@ function FolderTreeNode({
         </div>
 
         {manageable ? (
-          <Can anyPerm={["docs.create"]}>
-            <div className={cn(
-              "absolute right-0.5 top-1/2 flex -translate-y-1/2 items-center gap-0.5 rounded-md bg-muted/95 shadow-sm transition-opacity",
-              anyPopoverOpen ? "opacity-100" : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100",
-            )}>
+          <Can anyPerm={['docs.create']}>
+            <div
+              className={cn(
+                'absolute right-0.5 top-1/2 flex -translate-y-1/2 items-center gap-0.5 rounded-md bg-muted/95 shadow-sm transition-opacity',
+                anyPopoverOpen
+                  ? 'opacity-100'
+                  : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100',
+              )}
+            >
               {/* "+" 创建菜单 */}
               <Popover open={createOpen} onOpenChange={setCreateOpen}>
                 <PopoverTrigger asChild>
@@ -359,30 +357,25 @@ function FolderTree({
   );
 }
 
-export function DocFolderSidebar({
-  basePath = "/documents",
-}: {
-  basePath?: string;
-}) {
+export function DocFolderSidebar({ basePath = '/documents' }: { basePath?: string }) {
   const router = useRouter();
   const sp = useSearchParams();
-  const folderParam = sp.get("folder");
+  const folderParam = sp.get('folder');
   const { data: tree, isLoading } = useDocFolderTree();
   const createMut = useCreatePersonalFolder();
   const removeMut = useRemovePersonalFolder();
   const renameMut = useRenamePersonalFolder();
 
   const [createOpen, setCreateOpen] = useState(false);
-  const [createName, setCreateName] = useState("");
+  const [createName, setCreateName] = useState('');
   const [createParentId, setCreateParentId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DocFolderTreeNode | null>(null);
   const [renameTarget, setRenameTarget] = useState<DocFolderTreeNode | null>(null);
-  const [renameName, setRenameName] = useState("");
+  const [renameName, setRenameName] = useState('');
 
-  const activeId =
-    folderParam && folderParam !== "__none__" ? folderParam : null;
+  const activeId = folderParam && folderParam !== '__none__' ? folderParam : null;
   const isAll = !folderParam;
-  const isUncategorized = folderParam === "__none__";
+  const isUncategorized = folderParam === '__none__';
 
   const ancestorIds = useMemo(
     () => (activeId && tree ? collectAncestorIds(tree, activeId) : new Set<string>()),
@@ -408,7 +401,7 @@ export function DocFolderSidebar({
 
   function openCreate(parentId: string | null = null) {
     setCreateParentId(parentId);
-    setCreateName("");
+    setCreateName('');
     setCreateOpen(true);
   }
 
@@ -421,10 +414,10 @@ export function DocFolderSidebar({
         setExpandedIds((prev) => new Set([...prev, createParentId]));
       }
       setCreateOpen(false);
-      setCreateName("");
-      notifySuccess("文件夹已创建");
+      setCreateName('');
+      notifySuccess('文件夹已创建');
     } catch (e) {
-      notifyError(e, "创建失败");
+      notifyError(e, '创建失败');
     }
   }
 
@@ -436,9 +429,9 @@ export function DocFolderSidebar({
         router.replace(basePath);
       }
       setDeleteTarget(null);
-      notifySuccess("文件夹已删除");
+      notifySuccess('文件夹已删除');
     } catch (e) {
-      notifyError(e, "删除失败");
+      notifyError(e, '删除失败');
     }
   }
 
@@ -457,9 +450,9 @@ export function DocFolderSidebar({
     try {
       await renameMut.mutateAsync({ id: renameTarget.id, name });
       setRenameTarget(null);
-      notifySuccess("文件夹已重命名");
+      notifySuccess('文件夹已重命名');
     } catch (e) {
-      notifyError(e, "重命名失败");
+      notifyError(e, '重命名失败');
     }
   }
 
@@ -471,13 +464,8 @@ export function DocFolderSidebar({
         </CardHeader>
         <CardContent className="max-h-[min(70vh,560px)] space-y-0.5 overflow-y-auto overflow-x-hidden p-2">
           <div className="group/all-docs relative flex items-center">
-            <FolderNavItem
-              href={basePath}
-              label="全部文档"
-              active={isAll}
-              icon={FolderOpen}
-            />
-            <Can anyPerm={["docs.create"]}>
+            <FolderNavItem href={basePath} label="全部文档" active={isAll} icon={FolderOpen} />
+            <Can anyPerm={['docs.create']}>
               <button
                 type="button"
                 className="absolute right-1 flex h-6 w-6 items-center justify-center rounded-sm text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground group-hover/all-docs:opacity-100"
@@ -503,9 +491,7 @@ export function DocFolderSidebar({
               onDelete={setDeleteTarget}
             />
           ) : (
-            <p className="px-2.5 py-2 text-xs text-muted-foreground">
-              暂无个人文件夹，点击 + 创建
-            </p>
+            <p className="px-2.5 py-2 text-xs text-muted-foreground">暂无个人文件夹，点击 + 创建</p>
           )}
           <div className="my-1 border-t border-border/60 pt-1">
             <FolderNavItem
@@ -522,9 +508,7 @@ export function DocFolderSidebar({
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>
-              {createParentId ? "新建子文件夹" : "新建文件夹"}
-            </DialogTitle>
+            <DialogTitle>{createParentId ? '新建子文件夹' : '新建文件夹'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-2 py-2">
             <Label htmlFor="folder-name">名称</Label>
@@ -535,7 +519,7 @@ export function DocFolderSidebar({
               placeholder="输入文件夹名称"
               autoFocus
               onKeyDown={(e) => {
-                if (e.key === "Enter") void handleCreateConfirm();
+                if (e.key === 'Enter') void handleCreateConfirm();
               }}
             />
           </div>
@@ -547,7 +531,7 @@ export function DocFolderSidebar({
               onClick={() => void handleCreateConfirm()}
               disabled={!createName.trim() || createMut.isPending}
             >
-              {createMut.isPending ? "创建中…" : "创建"}
+              {createMut.isPending ? '创建中…' : '创建'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -567,7 +551,7 @@ export function DocFolderSidebar({
               placeholder="输入新名称"
               autoFocus
               onKeyDown={(e) => {
-                if (e.key === "Enter") void handleRenameConfirm();
+                if (e.key === 'Enter') void handleRenameConfirm();
               }}
             />
           </div>
@@ -577,9 +561,13 @@ export function DocFolderSidebar({
             </Button>
             <Button
               onClick={() => void handleRenameConfirm()}
-              disabled={!renameName.trim() || renameName.trim() === renameTarget?.name || renameMut.isPending}
+              disabled={
+                !renameName.trim() ||
+                renameName.trim() === renameTarget?.name ||
+                renameMut.isPending
+              }
             >
-              {renameMut.isPending ? "保存中…" : "保存"}
+              {renameMut.isPending ? '保存中…' : '保存'}
             </Button>
           </DialogFooter>
         </DialogContent>

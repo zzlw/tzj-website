@@ -1,42 +1,39 @@
-"use client";
+'use client';
 
-import { useMemo } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
-import { Alert, Button, Card, CardContent } from "@tzj/ui";
-import { useOne, useCreate, useUpdate } from "@/features/hooks";
-import { notifyError, notifySuccess } from "@/lib/notify";
-import type { UserItem } from "@/features/types";
+import { Alert, Button, Card, CardContent } from '@tzj/ui';
+import { ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useMemo } from 'react';
+import { ResourceForm } from '@/components/crud/ResourceForm';
+import { useRoleOptions } from '@/features/access';
+import { useCreate, useOne, useUpdate } from '@/features/hooks';
+import type { UserItem } from '@/features/types';
 import {
+  buildUserCreateFields,
+  buildUserEditFields,
   createUserSchema,
+  FALLBACK_ROLE_OPTIONS,
   updateUserSchema,
   userCreateDefaults,
   userEditDefaults,
-  buildUserCreateFields,
-  buildUserEditFields,
-  FALLBACK_ROLE_OPTIONS,
-} from "@/features/users";
-import { useRoleOptions } from "@/features/access";
-import { ResourceForm } from "@/components/crud/ResourceForm";
+} from '@/features/users';
+import { notifyError, notifySuccess } from '@/lib/notify';
 
-const FORM_ID = "user-editor-form";
+const FORM_ID = 'user-editor-form';
 
 export function UserEditor({ id }: { id?: string }) {
   const router = useRouter();
   const isEdit = Boolean(id);
 
-  const { data: item, isLoading, isError, error } = useOne<UserItem>("users", id);
-  const createMut = useCreate<UserItem>("users");
-  const updateMut = useUpdate<UserItem>("users");
+  const { data: item, isLoading, isError, error } = useOne<UserItem>('users', id);
+  const createMut = useCreate<UserItem>('users');
+  const updateMut = useUpdate<UserItem>('users');
   const { data: roleOptions = FALLBACK_ROLE_OPTIONS } = useRoleOptions();
   const isSaving = createMut.isPending || updateMut.isPending;
 
   const fields = useMemo(
-    () =>
-      isEdit
-        ? buildUserEditFields(roleOptions)
-        : buildUserCreateFields(roleOptions),
+    () => (isEdit ? buildUserEditFields(roleOptions) : buildUserCreateFields(roleOptions)),
     [isEdit, roleOptions],
   );
 
@@ -45,12 +42,12 @@ export function UserEditor({ id }: { id?: string }) {
     if (!item) return null;
     return {
       username: item.username,
-      nickname: item.nickname ?? "",
-      email: item.email ?? "",
-      phone: item.phone ?? "",
+      nickname: item.nickname ?? '',
+      email: item.email ?? '',
+      phone: item.phone ?? '',
       role: item.role,
       isActive: item.isActive,
-      password: "",
+      password: '',
     };
   }, [isEdit, item]);
 
@@ -64,19 +61,19 @@ export function UserEditor({ id }: { id?: string }) {
     try {
       if (isEdit && item) {
         await updateMut.mutateAsync({ id: item.id, payload });
-        notifySuccess("账号已更新");
+        notifySuccess('账号已更新');
       } else {
         await createMut.mutateAsync(payload);
-        notifySuccess("账号已创建");
+        notifySuccess('账号已创建');
       }
-      router.push("/users");
+      router.push('/users');
       router.refresh();
     } catch (e) {
-      notifyError(e, "保存失败");
+      notifyError(e, '保存失败');
     }
   }
 
-  const title = isEdit ? "编辑账号" : "新建账号";
+  const title = isEdit ? '编辑账号' : '新建账号';
 
   return (
     <div>
@@ -87,27 +84,21 @@ export function UserEditor({ id }: { id?: string }) {
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            {title}
-          </h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">{title}</h1>
         </div>
         <div className="flex shrink-0 items-center gap-2 sm:ml-auto">
           <Button variant="ghost" asChild>
             <Link href="/users">取消</Link>
           </Button>
-          <Button
-            form={FORM_ID}
-            type="submit"
-            disabled={isSaving || (isEdit && !item)}
-          >
-            {isSaving ? "保存中…" : "保存"}
+          <Button form={FORM_ID} type="submit" disabled={isSaving || (isEdit && !item)}>
+            {isSaving ? '保存中…' : '保存'}
           </Button>
         </div>
       </div>
 
       {isEdit && isError && (
         <Alert variant="destructive" icon="error" className="mb-4">
-          加载失败：{error instanceof Error ? error.message : "未知错误"}
+          加载失败：{error instanceof Error ? error.message : '未知错误'}
         </Alert>
       )}
 

@@ -1,19 +1,19 @@
 /** 水印布局：角标 / 平铺斜纹 / 居中样片 */
-export type WatermarkLayout = "corner" | "tile" | "center";
+export type WatermarkLayout = 'corner' | 'tile' | 'center';
 
 /** 水印位置（layout=corner 时生效） */
 export type WatermarkPosition =
-  | "top-left"
-  | "top-right"
-  | "bottom-left"
-  | "bottom-right"
-  | "center";
+  | 'top-left'
+  | 'top-right'
+  | 'bottom-left'
+  | 'bottom-right'
+  | 'center';
 
 /** 水印类型：文字或 Logo 图片 */
-export type WatermarkMode = "text" | "image";
+export type WatermarkMode = 'text' | 'image';
 
 /** 可加水印的媒体库目录（不含 content 站点静态资源） */
-export type WatermarkFolder = "uploads" | "cms";
+export type WatermarkFolder = 'uploads' | 'cms';
 
 /** 后台媒体处理设置（不暴露给 C 端） */
 export interface SiteMediaSettings {
@@ -48,15 +48,15 @@ export interface SiteMediaSettings {
 }
 
 export const WATERMARK_LAYOUT_LABELS: Record<WatermarkLayout, string> = {
-  corner: "角标（品牌标识）",
-  tile: "平铺斜纹（防盗图）",
-  center: "居中样片",
+  corner: '角标（品牌标识）',
+  tile: '平铺斜纹（防盗图）',
+  center: '居中样片',
 };
 
 export const WATERMARK_POSITION_LABELS: Record<WatermarkPosition, string> = {
-  "top-left": "左上",
-  "top-right": "右上",
-  "bottom-left": "左下",
-  "bottom-right": "右下",
-  center: "居中",
+  'top-left': '左上',
+  'top-right': '右上',
+  'bottom-left': '左下',
+  'bottom-right': '右下',
+  center: '居中',
 };

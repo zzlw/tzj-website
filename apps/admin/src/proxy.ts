@@ -1,20 +1,20 @@
-import { NextRequest, NextResponse } from "next/server";
-import { COOKIE } from "@/lib/config";
+import { type NextRequest, NextResponse } from 'next/server';
+import { COOKIE } from '@/lib/config';
 
-const PUBLIC_PATHS = ["/login", "/api/auth"];
+const PUBLIC_PATHS = ['/login', '/api/auth'];
 
 const API_BASE =
   process.env.ADMIN_API_URL ||
   process.env.NEXT_PUBLIC_ADMIN_API_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
-  "http://localhost:4000/api/v1";
+  'http://localhost:4000/api/v1';
 
 /** 解码 JWT payload（不校验签名，Edge 兼容） */
 function decodeJwt(token: string): Record<string, unknown> | null {
   try {
-    const part = token.split(".")[1];
+    const part = token.split('.')[1];
     if (!part) return null;
-    return JSON.parse(atob(part.replace(/-/g, "+").replace(/_/g, "/")));
+    return JSON.parse(atob(part.replace(/-/g, '+').replace(/_/g, '/')));
   } catch {
     return null;
   }
@@ -23,18 +23,16 @@ function decodeJwt(token: string): Record<string, unknown> | null {
 /** access token 是否已过期（留 30s 缓冲） */
 function isTokenExpired(token: string): boolean {
   const payload = decodeJwt(token);
-  if (!payload || typeof payload.exp !== "number") return true;
+  if (!payload || typeof payload.exp !== 'number') return true;
   return payload.exp * 1000 < Date.now() + 30_000;
 }
 
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  const isPublic = PUBLIC_PATHS.some(
-    (p) => pathname === p || pathname.startsWith(`${p}/`),
-  );
+  const isPublic = PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
   // API routes pass through (BFF handles auth internally)
-  if (pathname.startsWith("/api/")) {
+  if (pathname.startsWith('/api/')) {
     return NextResponse.next();
   }
 
@@ -44,17 +42,17 @@ export async function proxy(req: NextRequest) {
   const hasValidToken = !!accessToken && !isTokenExpired(accessToken);
 
   // 已登录（token 有效）访问 /login → 回到首页
-  if (pathname === "/login" && hasValidToken) {
+  if (pathname === '/login' && hasValidToken) {
     const url = req.nextUrl.clone();
-    url.pathname = "/";
+    url.pathname = '/';
     return NextResponse.redirect(url);
   }
 
   // 未登录访问受保护页面 → 去登录
   if (!isPublic && !hasSession) {
     const url = req.nextUrl.clone();
-    url.pathname = "/login";
-    url.searchParams.set("from", pathname);
+    url.pathname = '/login';
+    url.searchParams.set('from', pathname);
     return NextResponse.redirect(url);
   }
 
@@ -62,8 +60,8 @@ export async function proxy(req: NextRequest) {
   if (!isPublic && accessToken && isTokenExpired(accessToken) && refreshToken) {
     try {
       const res = await fetch(`${API_BASE}/auth/refresh`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refreshToken }),
       });
 
@@ -72,19 +70,19 @@ export async function proxy(req: NextRequest) {
         const data = body?.data ?? body;
         if (data?.accessToken && data?.refreshToken) {
           const response = NextResponse.next();
-          const secure = process.env.NODE_ENV === "production";
+          const secure = process.env.NODE_ENV === 'production';
           response.cookies.set(COOKIE.access, data.accessToken, {
             httpOnly: true,
             secure,
-            sameSite: "lax",
-            path: "/",
+            sameSite: 'lax',
+            path: '/',
             maxAge: 60 * 60,
           });
           response.cookies.set(COOKIE.refresh, data.refreshToken, {
             httpOnly: true,
             secure,
-            sameSite: "lax",
-            path: "/",
+            sameSite: 'lax',
+            path: '/',
             maxAge: 60 * 60 * 24 * 7,
           });
           return response;
@@ -93,9 +91,9 @@ export async function proxy(req: NextRequest) {
 
       // 刷新失败 → 清 cookie 跳转登录
       const url = req.nextUrl.clone();
-      url.pathname = "/login";
-      url.searchParams.set("from", pathname);
-      url.searchParams.set("reason", "session_expired");
+      url.pathname = '/login';
+      url.searchParams.set('from', pathname);
+      url.searchParams.set('reason', 'session_expired');
       const response = NextResponse.redirect(url);
       response.cookies.delete(COOKIE.access);
       response.cookies.delete(COOKIE.refresh);
@@ -112,6 +110,6 @@ export async function proxy(req: NextRequest) {
 export const config = {
   // 跳过静态资源与 Next 内部路径
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|js|css|woff2?)$).*)",
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|js|css|woff2?)$).*)',
   ],
 };

@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import type { FC, ReactNode } from "react";
-import { createContext, useContext, useEffect, useState } from "react";
+import type { FC, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 
-type Theme = "dark" | "light";
+type Theme = 'dark' | 'light';
 
 interface ThemeContextValue {
   theme: Theme;
@@ -21,11 +21,11 @@ interface ThemeProviderProps {
 
 export const ThemeProvider: FC<ThemeProviderProps> = ({
   children,
-  defaultTheme = "dark",
-  storageKey = "tzj-theme",
+  defaultTheme = 'dark',
+  storageKey = 'tzj-theme',
 }) => {
   const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== 'undefined') {
       return (localStorage.getItem(storageKey) as Theme) ?? defaultTheme;
     }
     return defaultTheme;
@@ -33,13 +33,13 @@ export const ThemeProvider: FC<ThemeProviderProps> = ({
 
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.remove("light", "dark");
+    root.classList.remove('light', 'dark');
     root.classList.add(theme);
     localStorage.setItem(storageKey, theme);
   }, [theme, storageKey]);
 
   const toggleTheme = () => {
-    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
   };
 
   return (
@@ -52,7 +52,7 @@ export const ThemeProvider: FC<ThemeProviderProps> = ({
 export function useTheme(): ThemeContextValue {
   const context = useContext(ThemeContext);
   if (context === undefined) {
-    throw new Error("useTheme must be used within a ThemeProvider");
+    throw new Error('useTheme must be used within a ThemeProvider');
   }
   return context;
 }

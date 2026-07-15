@@ -1,16 +1,13 @@
-import { cookies } from "next/headers";
-import { API_BASE, COOKIE, type Role, type SessionUser } from "./config";
-import { retryFetch } from "./fetch-retry";
+import { cookies } from 'next/headers';
+import { API_BASE, COOKIE, type Role, type SessionUser } from './config';
+import { retryFetch } from './fetch-retry';
 
 /** 解析 JWT payload（不校验签名，仅用于读取 UI 展示信息，真正校验在 API）。 */
 function decodeJwt(token: string): Record<string, unknown> | null {
   try {
-    const part = token.split(".")[1];
+    const part = token.split('.')[1];
     if (!part) return null;
-    const json = Buffer.from(
-      part.replace(/-/g, "+").replace(/_/g, "/"),
-      "base64",
-    ).toString("utf8");
+    const json = Buffer.from(part.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8');
     return JSON.parse(json);
   } catch {
     return null;
@@ -23,21 +20,19 @@ export async function getSession(): Promise<SessionUser | null> {
   const token = store.get(COOKIE.access)?.value;
   if (!token) return null;
   const payload = decodeJwt(token);
-  if (!payload || typeof payload.sub !== "string") return null;
+  if (!payload || typeof payload.sub !== 'string') return null;
   return {
     id: payload.sub,
-    username: String(payload.username ?? ""),
-    role: String(payload.role ?? "admin"),
-    exp: typeof payload.exp === "number" ? payload.exp : undefined,
+    username: String(payload.username ?? ''),
+    role: String(payload.role ?? 'admin'),
+    exp: typeof payload.exp === 'number' ? payload.exp : undefined,
   };
 }
 
-async function refreshTokens(): Promise<
-  { accessToken: string; refreshToken: string } | null
-> {
+async function refreshTokens(): Promise<{ accessToken: string; refreshToken: string } | null> {
   const store = await cookies();
   const refreshToken = store.get(COOKIE.refresh)?.value;
-  const { refreshAccessToken } = await import("./tokenRefresh");
+  const { refreshAccessToken } = await import('./tokenRefresh');
   return refreshAccessToken(refreshToken);
 }
 
@@ -60,11 +55,11 @@ async function rawRequest(
     retryFetch(`${API_BASE}${path}`, {
       ...init,
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
         ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
         ...(init.headers ?? {}),
       },
-      cache: "no-store",
+      cache: 'no-store',
     });
 
   let res = await doFetch(token);
@@ -81,9 +76,8 @@ async function rawRequest(
 
   if (!res.ok) {
     const errBody = await res.json().catch(() => ({}));
-    const message =
-      errBody?.error?.message || errBody?.message || `API ${res.status}`;
-    throw new Error(Array.isArray(message) ? message.join(", ") : message);
+    const message = errBody?.error?.message || errBody?.message || `API ${res.status}`;
+    throw new Error(Array.isArray(message) ? message.join(', ') : message);
   }
 
   const body = await res.json();
@@ -94,10 +88,7 @@ async function rawRequest(
  * 服务端携带 Bearer 调用 API 的封装（BFF）。
  * access token 过期时自动用 refresh token 轮换一次并重试。
  */
-export async function apiFetch<T = unknown>(
-  path: string,
-  init: RequestInit = {},
-): Promise<T> {
+export async function apiFetch<T = unknown>(path: string, init: RequestInit = {}): Promise<T> {
   const { data } = await rawRequest(path, init);
   return data as T;
 }
@@ -115,9 +106,6 @@ export function can(role: string | undefined, allowed: string[]): boolean {
   return !!role && allowed.includes(role);
 }
 
-export function hasPermission(
-  permissions: string[] | undefined,
-  perm: string,
-): boolean {
+export function hasPermission(permissions: string[] | undefined, perm: string): boolean {
   return permissions?.includes(perm) ?? false;
 }

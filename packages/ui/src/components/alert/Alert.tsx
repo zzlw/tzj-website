@@ -1,28 +1,28 @@
-import type { HTMLAttributes, ReactNode } from "react";
-import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "../../lib/utils";
-import { AlertCircle, CheckCircle2, Info, XCircle } from "lucide-react";
+import { cva, type VariantProps } from 'class-variance-authority';
+import { AlertCircle, CheckCircle2, Info, XCircle } from 'lucide-react';
+import type { HTMLAttributes, ReactNode } from 'react';
+import { cn } from '../../lib/utils';
 
 const alertVariants = cva(
-  "relative w-full rounded-lg border px-4 py-3 text-sm [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground [&>svg~*]:pl-7",
+  'relative w-full rounded-lg border px-4 py-3 text-sm [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground [&>svg~*]:pl-7',
   {
     variants: {
       variant: {
-        default: "bg-surface text-foreground",
-        success: "border-green-500/50 text-green-400 [&>svg]:text-green-400",
-        warning: "border-yellow-500/50 text-yellow-400 [&>svg]:text-yellow-400",
-        destructive: "border-red-500/50 text-red-400 [&>svg]:text-red-400",
+        default: 'bg-surface text-foreground',
+        success: 'border-green-500/50 text-green-400 [&>svg]:text-green-400',
+        warning: 'border-yellow-500/50 text-yellow-400 [&>svg]:text-yellow-400',
+        destructive: 'border-red-500/50 text-red-400 [&>svg]:text-red-400',
       },
     },
     defaultVariants: {
-      variant: "default",
+      variant: 'default',
     },
-  }
+  },
 );
 
 interface AlertProps extends HTMLAttributes<HTMLDivElement>, VariantProps<typeof alertVariants> {
   title?: string;
-  icon?: "info" | "success" | "warning" | "error";
+  icon?: 'info' | 'success' | 'warning' | 'error';
 }
 
 const iconMap = {
@@ -32,7 +32,7 @@ const iconMap = {
   error: XCircle,
 } as const;
 
-function Alert({ className, variant, title, icon = "info", children, ...props }: AlertProps) {
+function Alert({ className, variant, title, icon = 'info', children, ...props }: AlertProps) {
   const IconComponent = iconMap[icon];
   return (
     <div role="alert" className={cn(alertVariants({ variant }), className)} {...props}>
@@ -43,4 +43,4 @@ function Alert({ className, variant, title, icon = "info", children, ...props }:
   );
 }
 
-export { Alert, alertVariants, type AlertProps };
+export { Alert, type AlertProps, alertVariants };

@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
-import { cn } from "../../lib/utils";
+import type { ReactNode } from 'react';
+import { cn } from '../../lib/utils';
 
 export interface EmptyStateProps {
   icon?: ReactNode;
@@ -10,17 +10,11 @@ export interface EmptyStateProps {
 }
 
 /** 列表/面板空状态（shadcn 风格）。 */
-export function EmptyState({
-  icon,
-  title,
-  description,
-  action,
-  className,
-}: EmptyStateProps) {
+export function EmptyState({ icon, title, description, action, className }: EmptyStateProps) {
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center rounded-xl border border-dashed border-border/80 bg-muted/20 px-6 py-16 text-center",
+        'flex flex-col items-center justify-center rounded-xl border border-dashed border-border/80 bg-muted/20 px-6 py-16 text-center',
         className,
       )}
     >

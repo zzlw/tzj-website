@@ -1,23 +1,23 @@
-import { MediaImage as Image } from "@/components/MediaImage";
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-import { getTranslations } from "next-intl/server";
-import { breadcrumbJsonLd } from "@/lib/jsonld";
-import { JsonLd } from "@/components/JsonLd";
-import { createPageMetadata } from "@/lib/i18n/metadata";
-import { getLocalizedSolutions } from "@/lib/i18n/solutions";
-import { Container, PageHero } from "@/components/ui";
-import { CtaBand } from "@/components/sections/blocks";
-import { StatBandI18n, ProcessBandI18n } from "@/components/sections/blocks-i18n";
+import { ArrowRight } from 'lucide-react';
+import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
+import { JsonLd } from '@/components/JsonLd';
+import { MediaImage as Image } from '@/components/MediaImage';
+import { CtaBand } from '@/components/sections/blocks';
+import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
+import { Container, PageHero } from '@/components/ui';
+import { createPageMetadata } from '@/lib/i18n/metadata';
+import { getLocalizedSolutions } from '@/lib/i18n/solutions';
+import { breadcrumbJsonLd } from '@/lib/jsonld';
 
 export async function generateMetadata() {
-  return createPageMetadata({ namespace: "pages.solutions", path: "/solutions" });
+  return createPageMetadata({ namespace: 'pages.solutions', path: '/solutions' });
 }
 
 export default async function SolutionsPage() {
-  const t = await getTranslations("pages.solutions");
-  const tCta = await getTranslations("cta");
-  const tBread = await getTranslations("breadcrumbs");
+  const t = await getTranslations('pages.solutions');
+  const tCta = await getTranslations('cta');
+  const tBread = await getTranslations('breadcrumbs');
   const solutions = await getLocalizedSolutions();
 
   return (
@@ -25,17 +25,17 @@ export default async function SolutionsPage() {
       <JsonLd
         data={[
           breadcrumbJsonLd([
-            { name: tBread("home"), path: "/" },
-            { name: t("breadcrumb.current"), path: "/solutions" },
+            { name: tBread('home'), path: '/' },
+            { name: t('breadcrumb.current'), path: '/solutions' },
           ]),
         ]}
       />
 
       <div className="pb-20">
         <PageHero
-          eyebrow={t("hero.eyebrow")}
-          title={t("hero.title")}
-          description={t("hero.description")}
+          eyebrow={t('hero.eyebrow')}
+          title={t('hero.title')}
+          description={t('hero.description')}
         />
 
         <section>
@@ -66,9 +66,11 @@ export default async function SolutionsPage() {
                       </h2>
                     </div>
                     <div className="flex flex-1 flex-col p-6">
-                      <p className="flex-1 text-sm leading-relaxed text-secondary-text">{s.tagline}</p>
+                      <p className="flex-1 text-sm leading-relaxed text-secondary-text">
+                        {s.tagline}
+                      </p>
                       <span className="mt-5 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-primary">
-                        {t("viewSolution")}
+                        {t('viewSolution')}
                         <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1.5" />
                       </span>
                     </div>
@@ -84,9 +86,9 @@ export default async function SolutionsPage() {
         <ProcessBandI18n />
 
         <CtaBand
-          title={t("cta.title")}
-          description={t("cta.description")}
-          primaryLabel={tCta("bookConsult")}
+          title={t('cta.title')}
+          description={t('cta.description')}
+          primaryLabel={tCta('bookConsult')}
         />
       </div>
     </>

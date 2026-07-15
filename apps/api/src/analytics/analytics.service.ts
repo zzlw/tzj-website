@@ -1,29 +1,18 @@
-import { Injectable } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
-import type { Request } from "express";
-import { Prisma } from "@prisma/client/index";
-import { PrismaService } from "../prisma/prisma.service";
-import { SettingsService } from "../settings/settings.service";
-import { IntegrationsService } from "../integrations/integrations.service";
-import { IpBanService } from "../security/ip-ban.service";
-import { CollectPageViewDto } from "./dto/collect-pageview.dto";
-import {
-  extractClientIp,
-  hashIp,
-  maskIp,
-  parseReferrerHost,
-} from "./utils/client-ip";
-import { formatGeoLabel, formatGeoSource } from "./utils/geo-label";
-import { lookupGeo } from "./utils/geo-ip";
-import { lookupGeoFromCoordinates } from "./utils/geo-reverse";
-import {
-  type AnalyticsListParams,
-  pageOrderClause,
-  paginateMeta,
-  referrerOrderClause,
-  regionOrderClause,
-} from "./utils/analytics-list";
-import { parseUserAgent } from "./utils/ua-parser";
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { Prisma } from '@prisma/client/index';
+import type { Request } from 'express';
+import { IntegrationsService } from '../integrations/integrations.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { IpBanService } from '../security/ip-ban.service';
+import { SettingsService } from '../settings/settings.service';
+import { CollectPageViewDto } from './dto/collect-pageview.dto';
+import { AnalyticsListParams, pageOrderClause, paginateMeta, referrerOrderClause, regionOrderClause } from './utils/analytics-list';
+import { extractClientIp, hashIp, maskIp, parseReferrerHost } from './utils/client-ip';
+import { lookupGeo } from './utils/geo-ip';
+import { formatGeoLabel, formatGeoSource } from './utils/geo-label';
+import { lookupGeoFromCoordinates } from './utils/geo-reverse';
+import { parseUserAgent } from './utils/ua-parser';
 
 interface DateRange {
   from: Date;
@@ -70,48 +59,41 @@ export class AnalyticsService {
   ) {}
 
   async collect(dto: CollectPageViewDto, req: Request) {
-    const ua = req.headers["user-agent"];
-    const parsed = parseUserAgent(typeof ua === "string" ? ua : undefined);
+    const ua = req.headers['user-agent'];
+    const parsed = parseUserAgent(typeof ua === 'string' ? ua : undefined);
     const ip = extractClientIp(req);
 
     if (ip && (await this.ipBanService.isBlocked(ip))) {
       return { ok: true };
     }
 
-    const salt =
-      this.config.get<string>("ANALYTICS_IP_SALT") ?? "tzj-analytics-default";
+    const salt = this.config.get<string>('ANALYTICS_IP_SALT') ?? 'tzj-analytics-default';
 
     const siteSettings = await this.settingsService.getSitePublicSettings();
-    const geoMode = siteSettings.analytics?.geoMode ?? "ip";
+    const geoMode = siteSettings.analytics?.geoMode ?? 'ip';
 
     let geo = lookupGeo(ip);
-    let geoSource: "ip" | "gps" = "ip";
+    let geoSource: 'ip' | 'gps' = 'ip';
 
-    if (
-      geoMode === "gps" &&
-      dto.latitude != null &&
-      dto.longitude != null
-    ) {
-      const amapKey = await this.integrationsService.resolveSecret("amap", "webKey");
-      const gpsGeo = await lookupGeoFromCoordinates(
-        dto.latitude,
-        dto.longitude,
-        amapKey,
-      );
+    if (geoMode === 'gps' && dto.latitude != null && dto.longitude != null) {
+      const amapKey = await this.integrationsService.resolveSecret('amap', 'webKey');
+      const gpsGeo = await lookupGeoFromCoordinates(dto.latitude, dto.longitude, amapKey);
       if (gpsGeo.country || gpsGeo.region || gpsGeo.city) {
         geo = gpsGeo;
-        geoSource = "gps";
+        geoSource = 'gps';
       }
     }
 
     await this.prisma.pageView.create({
       data: {
         sessionId: dto.sessionId,
+        visitorId: dto.visitorId ?? null,
+        userId: dto.userId ?? null,
         path: dto.path,
         title: dto.title?.trim() || null,
         referrer: dto.referrer?.trim() || null,
         referrerHost: parseReferrerHost(dto.referrer),
-        userAgent: typeof ua === "string" ? ua.slice(0, 512) : null,
+        userAgent: typeof ua === 'string' ? ua.slice(0, 512) : null,
         ipHash: ip ? hashIp(ip, salt) : null,
         ip: ip ?? null,
         ipMasked: ip ? maskIp(ip) : null,
@@ -137,9 +119,9 @@ export class AnalyticsService {
 
     const [
       pageViews,
-      uniqueRows,
+      uniqueRaw,
       pageViewsToday,
-      uniqueTodayRows,
+      uniqueTodayRaw,
       dailyRaw,
       topPagesRaw,
       topReferrersRaw,
@@ -148,27 +130,28 @@ export class AnalyticsService {
       browsersRaw,
     ] = await Promise.all([
       this.prisma.pageView.count({ where }),
-      this.prisma.pageView.groupBy({
-        by: ["sessionId"],
-        where,
-      }),
+      this.prisma.$queryRaw<Array<{ c: bigint }>>`
+        SELECT COUNT(DISTINCT COALESCE("visitorId", "sessionId"))::bigint AS c
+        FROM "page_views"
+        WHERE "isBot" = false
+          AND "createdAt" >= ${range.from}
+          AND "createdAt" <= ${range.to}
+      `,
       this.prisma.pageView.count({
         where: { ...where, createdAt: { gte: todayStart, lte: todayEnd } },
       }),
-      this.prisma.pageView.groupBy({
-        by: ["sessionId"],
-        where: {
-          isBot: false,
-          createdAt: { gte: todayStart, lte: todayEnd },
-        },
-      }),
-      this.prisma.$queryRaw<
-        Array<{ day: Date; pageViews: bigint; uniqueVisitors: bigint }>
-      >`
+      this.prisma.$queryRaw<Array<{ c: bigint }>>`
+        SELECT COUNT(DISTINCT COALESCE("visitorId", "sessionId"))::bigint AS c
+        FROM "page_views"
+        WHERE "isBot" = false
+          AND "createdAt" >= ${todayStart}
+          AND "createdAt" <= ${todayEnd}
+      `,
+      this.prisma.$queryRaw<Array<{ day: Date; pageViews: bigint; uniqueVisitors: bigint }>>`
         SELECT
           DATE("createdAt") AS day,
           COUNT(*)::bigint AS "pageViews",
-          COUNT(DISTINCT "sessionId")::bigint AS "uniqueVisitors"
+          COUNT(DISTINCT COALESCE("visitorId", "sessionId"))::bigint AS "uniqueVisitors"
         FROM "page_views"
         WHERE "isBot" = false
           AND "createdAt" >= ${range.from}
@@ -177,10 +160,10 @@ export class AnalyticsService {
         ORDER BY day ASC
       `,
       this.prisma.pageView.groupBy({
-        by: ["path"],
+        by: ['path'],
         where,
         _count: { _all: true },
-        orderBy: { _count: { path: "desc" } },
+        orderBy: { _count: { path: 'desc' } },
         take: 10,
       }),
       this.prisma.$queryRaw<
@@ -225,7 +208,7 @@ export class AnalyticsService {
           city,
           "geoSource",
           COUNT(*)::bigint AS "pageViews",
-          COUNT(DISTINCT "sessionId")::bigint AS "uniqueVisitors"
+          COUNT(DISTINCT COALESCE("visitorId", "sessionId"))::bigint AS "uniqueVisitors"
         FROM "page_views"
         WHERE "isBot" = false
           AND "createdAt" >= ${range.from}
@@ -235,16 +218,16 @@ export class AnalyticsService {
         LIMIT 12
       `,
       this.prisma.pageView.groupBy({
-        by: ["deviceType"],
+        by: ['deviceType'],
         where,
         _count: { _all: true },
-        orderBy: { _count: { deviceType: "desc" } },
+        orderBy: { _count: { deviceType: 'desc' } },
       }),
       this.prisma.pageView.groupBy({
-        by: ["browser"],
+        by: ['browser'],
         where,
         _count: { _all: true },
-        orderBy: { _count: { browser: "desc" } },
+        orderBy: { _count: { browser: 'desc' } },
         take: 8,
       }),
     ]);
@@ -254,23 +237,27 @@ export class AnalyticsService {
       ? await this.prisma.pageView.findMany({
           where: { path: { in: topPaths }, title: { not: null } },
           select: { path: true, title: true },
-          orderBy: { createdAt: "desc" },
-          distinct: ["path"],
+          orderBy: { createdAt: 'desc' },
+          distinct: ['path'],
         })
       : [];
     const titleMap = new Map(titles.map((t) => [t.path, t.title]));
 
     const topPagesUv = await Promise.all(
       topPagesRaw.map(async (row) => {
-        const uv = await this.prisma.pageView.groupBy({
-          by: ["sessionId"],
-          where: { ...where, path: row.path },
-        });
+        const uv = await this.prisma.$queryRaw<Array<{ c: bigint }>>`
+          SELECT COUNT(DISTINCT COALESCE("visitorId", "sessionId"))::bigint AS c
+          FROM "page_views"
+          WHERE "isBot" = false
+            AND "createdAt" >= ${range.from}
+            AND "createdAt" <= ${range.to}
+            AND "path" = ${row.path}
+        `;
         return {
           path: row.path,
           title: titleMap.get(row.path) ?? null,
           pageViews: row._count._all,
-          uniqueVisitors: uv.length,
+          uniqueVisitors: Number(uv[0]?.c ?? 0),
         };
       }),
     );
@@ -278,9 +265,9 @@ export class AnalyticsService {
     return {
       summary: {
         pageViews,
-        uniqueVisitors: uniqueRows.length,
+        uniqueVisitors: Number(uniqueRaw[0]?.c ?? 0),
         pageViewsToday,
-        uniqueVisitorsToday: uniqueTodayRows.length,
+        uniqueVisitorsToday: Number(uniqueTodayRaw[0]?.c ?? 0),
         from: range.from.toISOString(),
         to: range.to.toISOString(),
       },
@@ -291,7 +278,7 @@ export class AnalyticsService {
       })),
       topPages: topPagesUv,
       topReferrers: topReferrersRaw.map((row) => ({
-        referrerHost: row.referrerHost ?? "—",
+        referrerHost: row.referrerHost ?? '—',
         region: formatGeoLabel({
           country: row.country,
           region: row.region,
@@ -311,11 +298,11 @@ export class AnalyticsService {
         uniqueVisitors: Number(row.uniqueVisitors),
       })),
       devices: devicesRaw.map((row) => ({
-        deviceType: row.deviceType ?? "unknown",
+        deviceType: row.deviceType ?? 'unknown',
         count: row._count._all,
       })),
       browsers: browsersRaw.map((row) => ({
-        browser: row.browser ?? "Other",
+        browser: row.browser ?? 'Other',
         count: row._count._all,
       })),
     };
@@ -429,7 +416,7 @@ export class AnalyticsService {
 
     return {
       data: rows.map((row, i) => ({
-        id: `${row.country ?? ""}-${row.region ?? ""}-${row.city ?? ""}-${row.geoSource ?? ""}-${i}`,
+        id: `${row.country ?? ''}-${row.region ?? ''}-${row.city ?? ''}-${row.geoSource ?? ''}-${i}`,
         region: formatGeoLabel({
           country: row.country,
           region: row.region,
@@ -496,8 +483,8 @@ export class AnalyticsService {
 
     return {
       data: rows.map((row, i) => ({
-        id: `${row.referrerHost ?? ""}-${row.country ?? ""}-${row.region ?? ""}-${row.geoSource ?? ""}-${i}`,
-        referrerHost: row.referrerHost ?? "—",
+        id: `${row.referrerHost ?? ''}-${row.country ?? ''}-${row.region ?? ''}-${row.geoSource ?? ''}-${i}`,
+        referrerHost: row.referrerHost ?? '—',
         region: formatGeoLabel({
           country: row.country,
           region: row.region,
@@ -505,6 +492,165 @@ export class AnalyticsService {
         }),
         geoSource: formatGeoSource(row.geoSource),
         pageViews: Number(row.pageViews),
+      })),
+      pagination: paginateMeta(page, limit, total),
+    };
+  }
+
+  /**
+   * identify 升级：将匿名访客关联到已知身份。
+   * - upsert 到 visitors 表（按 anonymousId）
+   * - 回写该 visitorId 历史页面浏览的 userId，便于 B 端按身份归并
+   */
+  async identify(dto: {
+    visitorId: string;
+    userId?: string;
+    email?: string;
+    name?: string;
+    phone?: string;
+    company?: string;
+    traits?: Record<string, unknown>;
+  }) {
+    const identified = Boolean(dto.userId || dto.email || dto.name || dto.phone);
+    const updateData: Prisma.VisitorUpdateInput = {};
+    if (dto.userId) updateData.userId = dto.userId;
+    if (dto.email) updateData.email = dto.email;
+    if (dto.name) updateData.name = dto.name;
+    if (dto.phone) updateData.phone = dto.phone;
+    if (dto.company) updateData.company = dto.company;
+    if (dto.traits) updateData.traits = dto.traits as Prisma.InputJsonValue;
+    if (identified) updateData.identifiedAt = new Date();
+
+    await this.prisma.visitor.upsert({
+      where: { anonymousId: dto.visitorId },
+      create: {
+        anonymousId: dto.visitorId,
+        userId: dto.userId ?? null,
+        email: dto.email ?? null,
+        name: dto.name ?? null,
+        phone: dto.phone ?? null,
+        company: dto.company ?? null,
+        traits: (dto.traits ?? Prisma.JsonNull) as Prisma.InputJsonValue,
+        identifiedAt: identified ? new Date() : null,
+      },
+      update: updateData,
+    });
+
+    if (dto.userId) {
+      await this.prisma.pageView.updateMany({
+        where: { visitorId: dto.visitorId, userId: null },
+        data: { userId: dto.userId },
+      });
+    }
+
+    return { ok: true };
+  }
+
+  /**
+   * B 端「访客会话」归并列表：
+   * 同一 visitorId（或已识别 userId）的多次会话合并为一行，
+   * 并关联 visitors 表的身份资料（姓名/邮箱/电话/公司）。
+   */
+  async listVisitors(params: AnalyticsListParams & { q?: string }) {
+    const { page, limit, from, to, q } = params;
+    const range = parseRange(from, to);
+    const skip = (page - 1) * limit;
+
+    const countRow = await this.prisma.$queryRaw<Array<{ count: bigint }>>`
+      SELECT COUNT(DISTINCT COALESCE(pv."userId", pv."visitorId"))::bigint AS count
+      FROM "page_views" pv
+      LEFT JOIN "visitors" v ON v."anonymousId" = pv."visitorId"
+      WHERE pv."isBot" = false
+        AND pv."visitorId" IS NOT NULL
+        AND pv."createdAt" >= ${range.from}
+        AND pv."createdAt" <= ${range.to}
+        ${q ? Prisma.sql`AND (v."email" ILIKE ${`%${q}%`} OR v."name" ILIKE ${`%${q}%`} OR v."phone" ILIKE ${`%${q}%`} OR v."company" ILIKE ${`%${q}%`})` : Prisma.sql``}
+    `;
+
+    const rows = await this.prisma.$queryRaw<
+      Array<{
+        mergeKey: string;
+        visitorId: string | null;
+        pageViews: bigint;
+        sessions: bigint;
+        firstSeenAt: Date;
+        lastSeenAt: Date;
+        landingPath: string | null;
+        deviceType: string | null;
+        country: string | null;
+        userId: string | null;
+        email: string | null;
+        name: string | null;
+        phone: string | null;
+        company: string | null;
+        identifiedAt: Date | null;
+      }>
+    >`
+      WITH base AS (
+        SELECT
+          COALESCE(pv."userId", pv."visitorId") AS "mergeKey",
+          pv."visitorId",
+          pv."sessionId",
+          pv."createdAt",
+          pv."path",
+          pv."deviceType",
+          pv."country",
+          pv."userId",
+          v."email",
+          v."name",
+          v."phone",
+          v."company",
+          v."identifiedAt"
+        FROM "page_views" pv
+        LEFT JOIN "visitors" v ON v."anonymousId" = pv."visitorId"
+        WHERE pv."isBot" = false
+          AND pv."visitorId" IS NOT NULL
+          AND pv."createdAt" >= ${range.from}
+          AND pv."createdAt" <= ${range.to}
+          ${q ? Prisma.sql`AND (v."email" ILIKE ${`%${q}%`} OR v."name" ILIKE ${`%${q}%`} OR v."phone" ILIKE ${`%${q}%`} OR v."company" ILIKE ${`%${q}%`})` : Prisma.sql``}
+      )
+      SELECT
+        "mergeKey",
+        (ARRAY_AGG("visitorId" ORDER BY "createdAt" DESC) FILTER (WHERE "visitorId" IS NOT NULL))[1] AS "visitorId",
+        COUNT(*)::bigint AS "pageViews",
+        COUNT(DISTINCT "sessionId")::bigint AS "sessions",
+        MIN("createdAt") AS "firstSeenAt",
+        MAX("createdAt") AS "lastSeenAt",
+        (ARRAY_AGG("path" ORDER BY "createdAt" ASC) FILTER (WHERE "path" IS NOT NULL))[1] AS "landingPath",
+        (ARRAY_AGG("deviceType" ORDER BY "createdAt" DESC) FILTER (WHERE "deviceType" IS NOT NULL))[1] AS "deviceType",
+        (ARRAY_AGG("country" ORDER BY "createdAt" DESC) FILTER (WHERE "country" IS NOT NULL))[1] AS "country",
+        (ARRAY_AGG("userId" ORDER BY "createdAt" DESC) FILTER (WHERE "userId" IS NOT NULL))[1] AS "userId",
+        (ARRAY_AGG("email" ORDER BY "createdAt" DESC) FILTER (WHERE "email" IS NOT NULL))[1] AS "email",
+        (ARRAY_AGG("name" ORDER BY "createdAt" DESC) FILTER (WHERE "name" IS NOT NULL))[1] AS "name",
+        (ARRAY_AGG("phone" ORDER BY "createdAt" DESC) FILTER (WHERE "phone" IS NOT NULL))[1] AS "phone",
+        (ARRAY_AGG("company" ORDER BY "createdAt" DESC) FILTER (WHERE "company" IS NOT NULL))[1] AS "company",
+        (ARRAY_AGG("identifiedAt" ORDER BY "createdAt" DESC) FILTER (WHERE "identifiedAt" IS NOT NULL))[1] AS "identifiedAt"
+      FROM base
+      GROUP BY "mergeKey"
+      ORDER BY "lastSeenAt" DESC
+      LIMIT ${limit} OFFSET ${skip}
+    `;
+
+    const total = Number(countRow[0]?.count ?? 0);
+
+    return {
+      data: rows.map((row) => ({
+        id: row.mergeKey,
+        visitorId: row.visitorId ?? row.mergeKey,
+        userId: row.userId ?? null,
+        name: row.name ?? null,
+        email: row.email ?? null,
+        phone: row.phone ?? null,
+        company: row.company ?? null,
+        identified: Boolean(row.identifiedAt),
+        identifiedAt: row.identifiedAt?.toISOString() ?? null,
+        pageViews: Number(row.pageViews),
+        sessions: Number(row.sessions),
+        firstSeenAt: row.firstSeenAt.toISOString(),
+        lastSeenAt: row.lastSeenAt.toISOString(),
+        landingPath: row.landingPath ?? '—',
+        deviceType: row.deviceType ?? 'unknown',
+        country: row.country ?? '—',
       })),
       pagination: paginateMeta(page, limit, total),
     };

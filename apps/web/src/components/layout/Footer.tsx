@@ -1,27 +1,26 @@
-import { getTranslations } from "next-intl/server";
-import { Link } from "@/i18n/navigation";
-import { getLocale } from "next-intl/server";
-import { MediaImage as Image } from "@/components/MediaImage";
-import { Phone, Mail, MapPin } from "lucide-react";
-import { Container, Eyebrow, RbButton, RbLink } from "@/components/ui";
-import { FOOTER_BLOCKS } from "@/lib/navigation";
-import { FooterLanguageTrigger } from "@/components/i18n/FooterLanguageTrigger";
-import { SocialChannelBar } from "@/components/contact/SocialChannelBar";
-import { getSitePublicSettings, localizedAddress } from "@/lib/site-settings";
-import { resolveSocialChannels } from "@/lib/resolve-social-channels";
+import { Mail, MapPin, Phone } from 'lucide-react';
+import { getLocale, getTranslations } from 'next-intl/server';
+import { SocialChannelBar } from '@/components/contact/SocialChannelBar';
+import { FooterLanguageTrigger } from '@/components/i18n/FooterLanguageTrigger';
+import { MediaImage as Image } from '@/components/MediaImage';
+import { Container, Eyebrow, RbButton, RbLink } from '@/components/ui';
+import { Link } from '@/i18n/navigation';
+import { FOOTER_BLOCKS } from '@/lib/navigation';
+import { resolveSocialChannels } from '@/lib/resolve-social-channels';
+import { getSitePublicSettings, localizedAddress } from '@/lib/site-settings';
 
 export async function Footer() {
-  const tNav = await getTranslations("nav");
-  const tFooter = await getTranslations("footer");
-  const tContact = await getTranslations("contact");
-  const tCommon = await getTranslations("common");
+  const tNav = await getTranslations('nav');
+  const tFooter = await getTranslations('footer');
+  const tContact = await getTranslations('contact');
+  const tCommon = await getTranslations('common');
   const locale = await getLocale();
   const settings = await getSitePublicSettings();
-  const address = localizedAddress(settings, locale, tContact("address"));
-  const contactChannels = resolveSocialChannels(settings, "contact", (key) =>
+  const address = localizedAddress(settings, locale, tContact('address'));
+  const contactChannels = resolveSocialChannels(settings, 'contact', (key) =>
     tContact(key as Parameters<typeof tContact>[0]),
   );
-  const followChannels = resolveSocialChannels(settings, "follow", (key) =>
+  const followChannels = resolveSocialChannels(settings, 'follow', (key) =>
     tContact(key as Parameters<typeof tContact>[0]),
   );
 
@@ -39,17 +38,15 @@ export async function Footer() {
           />
           <div className="absolute inset-0 rb-media-shade-strong" aria-hidden="true" />
           <div className="rb-on-media relative z-10 max-w-md">
-            <Eyebrow inverted>{tFooter("ctaEyebrow")}</Eyebrow>
-            <h2 className="rb-h2 mt-4 text-white">{tFooter("ctaTitle")}</h2>
-            <p className="mt-4 text-base leading-relaxed text-white/85">
-              {tFooter("ctaDesc")}
-            </p>
+            <Eyebrow inverted>{tFooter('ctaEyebrow')}</Eyebrow>
+            <h2 className="rb-h2 mt-4 text-white">{tFooter('ctaTitle')}</h2>
+            <p className="mt-4 text-base leading-relaxed text-white/85">{tFooter('ctaDesc')}</p>
             <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-4">
               <RbButton href="/contact" variant="light">
-                {tFooter("ctaButton")}
+                {tFooter('ctaButton')}
               </RbButton>
               <RbLink href="/cases" inverted>
-                {tFooter("ctaLink")}
+                {tFooter('ctaLink')}
               </RbLink>
             </div>
           </div>
@@ -86,7 +83,7 @@ export async function Footer() {
             <div className="flex flex-col gap-4">
               <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-secondary-text">
                 <a
-                  href={`tel:${settings.contact.phone.replace(/-/g, "")}`}
+                  href={`tel:${settings.contact.phone.replace(/-/g, '')}`}
                   className="inline-flex items-center gap-2 transition-colors hover:text-primary"
                 >
                   <Phone className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
@@ -107,8 +104,8 @@ export async function Footer() {
 
               {contactChannels.length > 0 ? (
                 <SocialChannelBar
-                  sectionLabel={tContact("instantContact")}
-                  scanHint={tContact("scanToAdd")}
+                  sectionLabel={tContact('instantContact')}
+                  scanHint={tContact('scanToAdd')}
                   channels={contactChannels}
                 />
               ) : null}
@@ -116,8 +113,8 @@ export async function Footer() {
 
             {followChannels.length > 0 ? (
               <SocialChannelBar
-                sectionLabel={tContact("followUs")}
-                scanHint={tContact("scanToFollow")}
+                sectionLabel={tContact('followUs')}
+                scanHint={tContact('scanToFollow')}
                 channels={followChannels}
               />
             ) : null}
@@ -125,10 +122,10 @@ export async function Footer() {
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-secondary-text lg:justify-end">
               <FooterLanguageTrigger />
               <Link href="/privacy" className="transition-colors hover:text-primary">
-                {tFooter("privacy")}
+                {tFooter('privacy')}
               </Link>
               <Link href="/terms" className="transition-colors hover:text-primary">
-                {tFooter("terms")}
+                {tFooter('terms')}
               </Link>
             </div>
           </div>
@@ -143,8 +140,7 @@ export async function Footer() {
                 TZ
               </span>
               <span>
-                &copy; {new Date().getFullYear()} {tCommon("legalName")}{" "}
-                {tFooter("copyright")}
+                &copy; {new Date().getFullYear()} {tCommon('legalName')} {tFooter('copyright')}
               </span>
             </div>
             <a

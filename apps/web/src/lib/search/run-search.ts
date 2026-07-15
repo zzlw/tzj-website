@@ -1,9 +1,9 @@
-import type { AppLocale } from "@/i18n/routing";
-import { loadMessages } from "@/lib/i18n/load-messages";
-import { getBlogs, getCases, getNewsList, getTradeShows } from "@/lib/api";
-import { SOLUTION_META } from "@/lib/solutions";
-import { buildStaticSearchEntries, searchStaticEntries } from "./static-index";
-import type { SearchOptions, SearchResponse, SearchResult } from "./types";
+import type { AppLocale } from '@/i18n/routing';
+import { getBlogs, getCases, getNewsList, getTradeShows } from '@/lib/api';
+import { loadMessages } from '@/lib/i18n/load-messages';
+import { SOLUTION_META } from '@/lib/solutions';
+import { buildStaticSearchEntries, searchStaticEntries } from './static-index';
+import type { SearchOptions, SearchResponse, SearchResult } from './types';
 
 const CMS_FETCH_LIMIT = 100;
 const SUGGEST_LIMIT = 6;
@@ -11,20 +11,20 @@ const SUGGEST_CMS_LIMIT = 4;
 const DEFAULT_PAGE_SIZE = 12;
 const MAX_PAGE_SIZE = 48;
 
-const GROUP_ORDER: SearchResult["group"][] = [
-  "page",
-  "solution",
-  "case",
-  "news",
-  "blog",
-  "tradeShow",
+const GROUP_ORDER: SearchResult['group'][] = [
+  'page',
+  'solution',
+  'case',
+  'news',
+  'blog',
+  'tradeShow',
 ];
 
 function pickSummary(...candidates: Array<string | null | undefined>): string {
   for (const c of candidates) {
     if (c?.trim()) return c.trim();
   }
-  return "";
+  return '';
 }
 
 function navLabel(messages: Record<string, unknown>, key: string): string {
@@ -38,7 +38,7 @@ function solutionName(messages: Record<string, unknown>, slug: string): string {
 }
 
 async function loadSearchMessages(locale: AppLocale): Promise<Record<string, unknown>> {
-  const core = await loadMessages(locale, "/search");
+  const core = await loadMessages(locale, '/search');
   let solutionsBlock: Record<string, unknown> = {};
   try {
     const mod = await import(`@/messages/${locale}/solutions.json`);
@@ -50,13 +50,19 @@ async function loadSearchMessages(locale: AppLocale): Promise<Record<string, unk
 }
 
 function cmsCaseResults(
-  data: Array<{ id: string; slug: string; title: string; summary?: string | null; description?: string | null }>,
+  data: Array<{
+    id: string;
+    slug: string;
+    title: string;
+    summary?: string | null;
+    description?: string | null;
+  }>,
 ): SearchResult[] {
   return data.map((item) => ({
     id: `case:${item.id}`,
     title: item.title,
     href: `/cases/${item.slug}`,
-    group: "case" as const,
+    group: 'case' as const,
     excerpt: pickSummary(item.summary, item.description),
   }));
 }
@@ -68,31 +74,43 @@ function cmsNewsResults(
     id: `news:${item.id}`,
     title: item.title,
     href: `/resources/news/${item.slug}`,
-    group: "news" as const,
+    group: 'news' as const,
     excerpt: pickSummary(item.summary),
   }));
 }
 
 function cmsBlogResults(
-  data: Array<{ id: string; slug: string; title: string; excerpt?: string | null; summary?: string | null }>,
+  data: Array<{
+    id: string;
+    slug: string;
+    title: string;
+    excerpt?: string | null;
+    summary?: string | null;
+  }>,
 ): SearchResult[] {
   return data.map((item) => ({
     id: `blog:${item.id}`,
     title: item.title,
     href: `/resources/blog/${item.slug}`,
-    group: "blog" as const,
+    group: 'blog' as const,
     excerpt: pickSummary(item.excerpt, item.summary),
   }));
 }
 
 function cmsTradeShowResults(
-  data: Array<{ id: string; slug: string; title: string; summary?: string | null; location?: string | null }>,
+  data: Array<{
+    id: string;
+    slug: string;
+    title: string;
+    summary?: string | null;
+    location?: string | null;
+  }>,
 ): SearchResult[] {
   return data.map((item) => ({
     id: `tradeShow:${item.id}`,
     title: item.title,
     href: `/resources/trade-shows/${item.slug}`,
-    group: "tradeShow" as const,
+    group: 'tradeShow' as const,
     excerpt: pickSummary(item.summary, item.location),
   }));
 }
@@ -135,10 +153,7 @@ export async function runSiteSearch(
 ): Promise<SearchResponse> {
   const q = query.trim();
   const page = Math.max(1, options.page ?? 1);
-  const pageSize = Math.min(
-    MAX_PAGE_SIZE,
-    Math.max(1, options.limit ?? DEFAULT_PAGE_SIZE),
-  );
+  const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, options.limit ?? DEFAULT_PAGE_SIZE));
 
   if (q.length < 2) {
     return {

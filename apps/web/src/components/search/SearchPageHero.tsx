@@ -1,4 +1,4 @@
-import { SearchBar } from "./SearchBar";
+import { SearchBar } from './SearchBar';
 
 /** 搜索页顶区：白底居中标题 + 内嵌搜索条（Rosenbauer 结果页风格） */
 export function SearchPageHero({ query, title }: { query: string; title: string }) {

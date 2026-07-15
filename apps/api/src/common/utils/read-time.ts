@@ -1,15 +1,15 @@
 /** 剥离 Markdown 语法，保留可读文本用于字数统计。 */
 export function stripMarkdown(markdown: string): string {
   return markdown
-    .replace(/```[\s\S]*?```/g, " ")
-    .replace(/`[^`]+`/g, " ")
-    .replace(/!\[[^\]]*]\([^)]*\)/g, " ")
-    .replace(/\[([^\]]*)]\([^)]*\)/g, "$1")
-    .replace(/^#{1,6}\s+/gm, "")
-    .replace(/^\s*[-*+]\s+/gm, "")
-    .replace(/^\s*\d+\.\s+/gm, "")
-    .replace(/[#>*_~|]/g, " ")
-    .replace(/\s+/g, " ")
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/`[^`]+`/g, ' ')
+    .replace(/!\[[^\]]*]\([^)]*\)/g, ' ')
+    .replace(/\[([^\]]*)]\([^)]*\)/g, '$1')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/^\s*[-*+]\s+/gm, '')
+    .replace(/^\s*\d+\.\s+/gm, '')
+    .replace(/[#>*_~|]/g, ' ')
+    .replace(/\s+/g, ' ')
     .trim();
 }
 
@@ -21,15 +21,12 @@ export function estimateReadTime(
   content: string | null | undefined,
   excerpt?: string | null,
 ): string {
-  const raw = stripMarkdown(
-    [excerpt, content].filter((s) => s && String(s).trim()).join("\n"),
-  );
-  if (!raw) return "1 分钟";
+  const raw = stripMarkdown([excerpt, content].filter((s) => s && String(s).trim()).join('\n'));
+  if (!raw) return '1 分钟';
 
-  const cjk = (raw.match(/[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]/g) ?? [])
-    .length;
+  const cjk = (raw.match(/[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]/g) ?? []).length;
   const latinWords = raw
-    .replace(/[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]/g, " ")
+    .replace(/[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]/g, ' ')
     .split(/\s+/)
     .filter((w) => /[a-zA-Z0-9]/.test(w)).length;
 

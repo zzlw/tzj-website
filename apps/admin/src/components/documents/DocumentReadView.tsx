@@ -1,20 +1,5 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import {
-  ArrowLeft,
-  Calendar,
-  Clock,
-  Eye,
-  FileText,
-  FolderOpen,
-  History,
-  FolderInput,
-  Pencil,
-  Pin,
-  RotateCcw,
-  Tag,
-} from "lucide-react";
 import {
   Badge,
   Button,
@@ -24,17 +9,32 @@ import {
   CardHeader,
   CardTitle,
   ConfirmDialog,
+  cn,
   Separator,
   Skeleton,
   TagChip,
-  cn,
-} from "@tzj/ui";
-import { Can } from "@/components/Can";
-import { LastOperatorCell } from "@/components/LastOperatorCell";
-import { MarkdownPreview } from "@/components/documents/MarkdownPreview";
-import { buildDocListHref } from "@/features/documents";
-import type { DocRevisionItem, InternalDocumentItem } from "@/features/types";
-import { StatusBadge, formatDateTime } from "@/features/constants";
+} from '@tzj/ui';
+import {
+  ArrowLeft,
+  Calendar,
+  Clock,
+  Eye,
+  FileText,
+  FolderInput,
+  FolderOpen,
+  History,
+  Pencil,
+  Pin,
+  RotateCcw,
+  Tag,
+} from 'lucide-react';
+import Link from 'next/link';
+import { Can } from '@/components/Can';
+import { MarkdownPreview } from '@/components/documents/MarkdownPreview';
+import { LastOperatorCell } from '@/components/LastOperatorCell';
+import { formatDateTime, StatusBadge } from '@/features/constants';
+import { buildDocListHref } from '@/features/documents';
+import type { DocRevisionItem, InternalDocumentItem } from '@/features/types';
 
 export function DocumentReadSkeleton() {
   return (
@@ -60,13 +60,13 @@ export function DocumentReadView({
   doc,
   revisions,
   revisionsLoading,
-  backHref = "/documents/mine",
+  backHref = '/documents/mine',
   restoreTarget,
   restorePending,
   onRestoreRequest,
   onRestoreCancel,
   onRestoreConfirm,
-  tagFilterBase = "/documents/mine",
+  tagFilterBase = '/documents/mine',
   onMoveClick,
 }: {
   doc: InternalDocumentItem;
@@ -103,14 +103,14 @@ export function DocumentReadView({
             </span>
             <div className="ml-auto flex shrink-0 items-center gap-2">
               {onMoveClick ? (
-                <Can anyPerm={["docs.edit"]}>
+                <Can anyPerm={['docs.edit']}>
                   <Button variant="outline" size="sm" onClick={onMoveClick}>
                     <FolderInput className="mr-1.5 h-4 w-4" />
                     移动到…
                   </Button>
                 </Can>
               ) : null}
-              <Can anyPerm={["docs.edit"]}>
+              <Can anyPerm={['docs.edit']}>
                 <Button variant="default" size="sm" asChild>
                   <Link href={editHref}>
                     <Pencil className="mr-1.5 h-4 w-4" />
@@ -143,25 +143,17 @@ export function DocumentReadView({
               ) : null}
             </div>
 
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">
-              {doc.title}
-            </h1>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">{doc.title}</h1>
 
             {doc.summary ? (
-              <p className="mt-3 text-lg leading-relaxed text-muted-foreground">
-                {doc.summary}
-              </p>
+              <p className="mt-3 text-lg leading-relaxed text-muted-foreground">{doc.summary}</p>
             ) : null}
 
             {doc.tags?.length ? (
               <div className="mt-4 flex flex-wrap items-center gap-1.5">
                 <Tag className="mr-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                 {doc.tags.map((tag) => (
-                  <TagChip
-                    key={tag}
-                    label={tag}
-                    href={buildDocListHref(tagFilterBase, { tag })}
-                  />
+                  <TagChip key={tag} label={tag} href={buildDocListHref(tagFilterBase, { tag })} />
                 ))}
               </div>
             ) : null}
@@ -169,12 +161,12 @@ export function DocumentReadView({
             <Separator className="my-8" />
 
             {hasContent ? (
-              <MarkdownPreview markdown={doc.content ?? ""} variant="article" />
+              <MarkdownPreview markdown={doc.content ?? ''} variant="article" />
             ) : (
               <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border/80 bg-muted/20 px-6 py-16 text-center">
                 <FileText className="mb-3 h-10 w-10 text-muted-foreground/40" />
                 <p className="text-sm text-muted-foreground">暂无正文内容</p>
-                <Can anyPerm={["docs.edit"]}>
+                <Can anyPerm={['docs.edit']}>
                   <Button variant="link" size="sm" asChild className="mt-2">
                     <Link href={editHref}>去编辑</Link>
                   </Button>
@@ -188,33 +180,16 @@ export function DocumentReadView({
             <Card className="border-border/80 shadow-sm">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium">文档信息</CardTitle>
-                <CardDescription className="text-xs">
-                  阅读与发布统计
-                </CardDescription>
+                <CardDescription className="text-xs">阅读与发布统计</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3.5 text-sm">
-                <InfoRow
-                  icon={Eye}
-                  label="阅读次数"
-                  value={String(doc.viewCount)}
-                />
-                <InfoRow
-                  icon={Calendar}
-                  label="创建时间"
-                  value={formatDateTime(doc.createdAt)}
-                />
-                <InfoRow
-                  icon={Clock}
-                  label="更新时间"
-                  value={formatDateTime(doc.updatedAt)}
-                />
+                <InfoRow icon={Eye} label="阅读次数" value={String(doc.viewCount)} />
+                <InfoRow icon={Calendar} label="创建时间" value={formatDateTime(doc.createdAt)} />
+                <InfoRow icon={Clock} label="更新时间" value={formatDateTime(doc.updatedAt)} />
                 <Separator />
                 <div className="space-y-1.5">
                   <span className="text-xs text-muted-foreground">最后操作</span>
-                  <LastOperatorCell
-                    user={doc.lastOperatorUser}
-                    fallback={doc.lastOperator}
-                  />
+                  <LastOperatorCell user={doc.lastOperatorUser} fallback={doc.lastOperator} />
                 </div>
               </CardContent>
             </Card>
@@ -225,9 +200,7 @@ export function DocumentReadView({
                   <History className="h-4 w-4 text-muted-foreground" />
                   版本历史
                 </CardTitle>
-                <CardDescription className="text-xs">
-                  保存前的内容快照
-                </CardDescription>
+                <CardDescription className="text-xs">保存前的内容快照</CardDescription>
               </CardHeader>
               <CardContent className="p-0 pb-1">
                 {revisionsLoading ? (
@@ -236,9 +209,7 @@ export function DocumentReadView({
                     <Skeleton className="h-12 w-full" />
                   </div>
                 ) : !revisions?.length ? (
-                  <p className="px-4 pb-4 text-sm text-muted-foreground">
-                    暂无历史版本
-                  </p>
+                  <p className="px-4 pb-4 text-sm text-muted-foreground">暂无历史版本</p>
                 ) : (
                   <div className="max-h-72 overflow-y-auto overscroll-y-contain px-2 pb-3">
                     <ul>
@@ -252,8 +223,8 @@ export function DocumentReadView({
                           ) : null}
                           <span
                             className={cn(
-                              "absolute left-1 top-2.5 h-2 w-2 rounded-full border-2 border-background",
-                              index === 0 ? "bg-primary" : "bg-muted-foreground/40",
+                              'absolute left-1 top-2.5 h-2 w-2 rounded-full border-2 border-background',
+                              index === 0 ? 'bg-primary' : 'bg-muted-foreground/40',
                             )}
                             aria-hidden
                           />
@@ -265,9 +236,9 @@ export function DocumentReadView({
                               {formatDateTime(rev.createdAt)}
                               {rev.editor
                                 ? ` · ${rev.editor.nickname?.trim() || rev.editor.username}`
-                                : ""}
+                                : ''}
                             </p>
-                            <Can anyPerm={["docs.edit"]}>
+                            <Can anyPerm={['docs.edit']}>
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -303,15 +274,7 @@ export function DocumentReadView({
   );
 }
 
-function InfoRow({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: typeof Eye;
-  label: string;
-  value: string;
-}) {
+function InfoRow({ icon: Icon, label, value }: { icon: typeof Eye; label: string; value: string }) {
   return (
     <div className="flex items-center gap-3">
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted/60">

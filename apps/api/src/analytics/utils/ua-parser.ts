@@ -12,9 +12,9 @@ const BOT_RE =
 export function parseUserAgent(ua?: string | null): ParsedUserAgent {
   if (!ua?.trim()) {
     return {
-      deviceType: "unknown",
-      browser: "unknown",
-      os: "unknown",
+      deviceType: 'unknown',
+      browser: 'unknown',
+      os: 'unknown',
       isBot: false,
     };
   }
@@ -22,25 +22,25 @@ export function parseUserAgent(ua?: string | null): ParsedUserAgent {
   const lower = ua.toLowerCase();
   const isBot = BOT_RE.test(ua);
 
-  let deviceType = "desktop";
+  let deviceType = 'desktop';
   if (/mobile|android.*mobile|iphone|ipod|windows phone/i.test(ua)) {
-    deviceType = "mobile";
+    deviceType = 'mobile';
   } else if (/ipad|tablet|android(?!.*mobile)/i.test(ua)) {
-    deviceType = "tablet";
+    deviceType = 'tablet';
   }
 
-  let browser = "Other";
-  if (lower.includes("edg/")) browser = "Edge";
-  else if (lower.includes("chrome/") && !lower.includes("edg/")) browser = "Chrome";
-  else if (lower.includes("firefox/")) browser = "Firefox";
-  else if (lower.includes("safari/") && !lower.includes("chrome/")) browser = "Safari";
+  let browser = 'Other';
+  if (lower.includes('edg/')) browser = 'Edge';
+  else if (lower.includes('chrome/') && !lower.includes('edg/')) browser = 'Chrome';
+  else if (lower.includes('firefox/')) browser = 'Firefox';
+  else if (lower.includes('safari/') && !lower.includes('chrome/')) browser = 'Safari';
 
-  let os = "Other";
-  if (lower.includes("windows")) os = "Windows";
-  else if (lower.includes("mac os") || lower.includes("macintosh")) os = "macOS";
-  else if (lower.includes("linux") && !lower.includes("android")) os = "Linux";
-  else if (/iphone|ipad|ipod/.test(lower)) os = "iOS";
-  else if (lower.includes("android")) os = "Android";
+  let os = 'Other';
+  if (lower.includes('windows')) os = 'Windows';
+  else if (lower.includes('mac os') || lower.includes('macintosh')) os = 'macOS';
+  else if (lower.includes('linux') && !lower.includes('android')) os = 'Linux';
+  else if (/iphone|ipad|ipod/.test(lower)) os = 'iOS';
+  else if (lower.includes('android')) os = 'Android';
 
   return { deviceType, browser, os, isBot };
 }

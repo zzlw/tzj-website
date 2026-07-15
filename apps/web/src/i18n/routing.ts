@@ -1,11 +1,11 @@
-import { defineRouting } from "next-intl/routing";
+import { defineRouting } from 'next-intl/routing';
 
-export const locales = ["zh-CN", "zh-TW", "en"] as const;
+export const locales = ['zh-CN', 'zh-TW', 'en'] as const;
 export type AppLocale = (typeof locales)[number];
 
 export const routing = defineRouting({
   locales,
-  defaultLocale: "zh-CN",
+  defaultLocale: 'zh-CN',
   /**
    * 所有语言都使用 URL 前缀（如 /zh-CN/cases、/en/cases）
    *
@@ -15,5 +15,5 @@ export const routing = defineRouting({
    * 3. 实现简单可靠：不需要处理 cookie 作用域问题
    * 4. 符合主流实践：大型国际化站点（Shopify、Stripe、Vercel）都采用此策略
    */
-  localePrefix: "always",
+  localePrefix: 'always',
 });

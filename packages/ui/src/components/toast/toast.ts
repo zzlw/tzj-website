@@ -1,4 +1,4 @@
-import { toast as sonner, type ExternalToast } from "sonner";
+import { type ExternalToast, toast as sonner } from 'sonner';
 
 export type ToastOptions = ExternalToast;
 

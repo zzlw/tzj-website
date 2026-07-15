@@ -4,11 +4,9 @@
  */
 const MAX_LENGTH = 500_000;
 
-export function sanitizeMarkdown(
-  markdown: string | null | undefined,
-): string | null {
+export function sanitizeMarkdown(markdown: string | null | undefined): string | null {
   if (markdown == null) return null;
-  const trimmed = String(markdown).replace(/\0/g, "").trim();
+  const trimmed = String(markdown).replace(/\0/g, '').trim();
   if (!trimmed) return null;
   return trimmed.length > MAX_LENGTH ? trimmed.slice(0, MAX_LENGTH) : trimmed;
 }

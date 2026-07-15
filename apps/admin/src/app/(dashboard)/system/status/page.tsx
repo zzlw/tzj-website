@@ -1,6 +1,5 @@
-"use client";
+'use client';
 
-import { Loader2, RefreshCw, Server } from "lucide-react";
 import {
   Badge,
   Button,
@@ -10,23 +9,24 @@ import {
   CardHeader,
   CardTitle,
   PageHeader,
-} from "@tzj/ui";
+} from '@tzj/ui';
+import { Loader2, RefreshCw, Server } from 'lucide-react';
+import { formatDateTime } from '@/features/constants';
 import {
   DEPENDENCY_LABELS,
   dependencyStatusClass,
   dependencyStatusLabel,
   formatUptime,
   useSystemStatus,
-} from "@/features/system-status";
-import { formatDateTime } from "@/features/constants";
+} from '@/features/system-status';
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; className: string }> = {
-    healthy: { label: "健康", className: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-    degraded: { label: "降级", className: "bg-amber-50 text-amber-700 border-amber-200" },
-    down: { label: "故障", className: "bg-red-50 text-red-700 border-red-200" },
+    healthy: { label: '健康', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+    degraded: { label: '降级', className: 'bg-amber-50 text-amber-700 border-amber-200' },
+    down: { label: '故障', className: 'bg-red-50 text-red-700 border-red-200' },
   };
-  const item = map[status] ?? { label: status, className: "" };
+  const item = map[status] ?? { label: status, className: '' };
   return (
     <Badge variant="outline" className={item.className}>
       {item.label}
@@ -59,7 +59,7 @@ export default function SystemStatusPage() {
   if (isError) {
     return (
       <p className="text-sm text-destructive">
-        {error instanceof Error ? error.message : "加载失败"}
+        {error instanceof Error ? error.message : '加载失败'}
       </p>
     );
   }
@@ -100,9 +100,7 @@ export default function SystemStatusPage() {
             <p className="text-xs text-muted-foreground">
               运行 {formatUptime(data.uptime)} · Node {data.process.nodeVersion}
             </p>
-            <p className="text-xs text-muted-foreground">
-              更新于 {formatDateTime(data.timestamp)}
-            </p>
+            <p className="text-xs text-muted-foreground">更新于 {formatDateTime(data.timestamp)}</p>
           </CardContent>
         </Card>
 
@@ -115,7 +113,7 @@ export default function SystemStatusPage() {
             <p className="text-2xl font-semibold">
               {data.process.memory.heapUsedMb}
               <span className="text-sm font-normal text-muted-foreground">
-                {" "}
+                {' '}
                 / {data.process.memory.heapTotalMb} MB
               </span>
             </p>

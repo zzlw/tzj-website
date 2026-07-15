@@ -1,14 +1,11 @@
-"use client";
+'use client';
 
-import { ArrowRight } from "lucide-react";
-import { useTranslations } from "next-intl";
-import { Link } from "@/i18n/navigation";
-import {
-  PRODUCT_LINE_COUNT,
-  PRODUCT_NAV_GROUPS,
-  PRODUCTS_HREF,
-} from "@/lib/navigation-products";
-import type { ProductLine } from "@/lib/product-catalog";
+import { ScrollArea } from '@tzj/ui';
+import { ArrowRight } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { Link } from '@/i18n/navigation';
+import { PRODUCT_LINE_COUNT, PRODUCT_NAV_GROUPS, PRODUCTS_HREF } from '@/lib/navigation-products';
+import type { ProductLine } from '@/lib/product-catalog';
 
 type NavLabel = (key: string) => string;
 
@@ -28,7 +25,7 @@ function ProductLineLink({
       className="group flex items-start gap-2 py-2 transition-colors hover:text-primary"
     >
       <span className="mt-0.5 shrink-0 font-display text-xs font-extrabold text-primary">
-        {String(line.index).padStart(2, "0")}
+        {String(line.index).padStart(2, '0')}
       </span>
       <span className="font-display text-[15px] font-bold leading-snug text-neutral-900 group-hover:text-primary">
         {label(line.navKey)}
@@ -48,15 +45,15 @@ export function ProductMegaMenu({
   label: NavLabel;
   onNavigate: () => void;
 }) {
-  const tHeader = useTranslations("header");
+  const tHeader = useTranslations('header');
 
   return (
-    <div className="rb-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain px-8 pb-10 pt-6 lg:px-10 lg:pt-24">
+    <ScrollArea className="min-h-0 flex-1 overscroll-contain px-8 pb-10 pt-6 lg:px-10 lg:pt-24">
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h2 className="font-display text-2xl font-extrabold text-neutral-900">{title}</h2>
           <p className="mt-1 text-sm text-secondary-text">
-            {tHeader("productMegaStructure", { count: PRODUCT_LINE_COUNT })}
+            {tHeader('productMegaStructure', { count: PRODUCT_LINE_COUNT })}
           </p>
         </div>
         <Link
@@ -79,13 +76,13 @@ export function ProductMegaMenu({
               className="group block border-l-4 border-primary pl-3 transition-colors hover:border-neutral-900"
             >
               <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-primary">
-                {tHeader("productFamilyIndex", { index: groupIndex + 1, total: 4 })}
+                {tHeader('productFamilyIndex', { index: groupIndex + 1, total: 4 })}
               </p>
               <h3 className="mt-1 font-display text-base font-extrabold text-neutral-900 group-hover:text-primary">
                 {label(family.navKey)}
               </h3>
               <p className="mt-0.5 text-xs font-bold text-secondary-text">
-                {tHeader("productLineCount", { count: lines.length })}
+                {tHeader('productLineCount', { count: lines.length })}
               </p>
             </Link>
             <ul className="mt-4 flex flex-col">
@@ -113,7 +110,7 @@ export function ProductMegaMenu({
           </section>
         ))}
       </div>
-    </div>
+    </ScrollArea>
   );
 }
 
@@ -128,7 +125,7 @@ export function ProductMobileAccordion({
   label: NavLabel;
   onNavigate: () => void;
 }) {
-  const tHeader = useTranslations("header");
+  const tHeader = useTranslations('header');
 
   return (
     <nav className="px-6 py-4" aria-label={title}>
@@ -149,7 +146,7 @@ export function ProductMobileAccordion({
             <summary className="flex cursor-pointer list-none items-center justify-between py-4 marker:content-none group hover:text-primary">
               <div className="min-w-0 pr-4">
                 <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-primary">
-                  {tHeader("productFamilyIndexShort", {
+                  {tHeader('productFamilyIndexShort', {
                     index: groupIndex + 1,
                     total: 4,
                     count: lines.length,
@@ -167,7 +164,7 @@ export function ProductMobileAccordion({
                 onClick={onNavigate}
                 className="mb-3 inline-block text-xs font-bold text-primary"
               >
-                {tHeader("productViewFamily")}
+                {tHeader('productViewFamily')}
               </Link>
               <ul className="flex flex-col">
                 {lines.map((line) => (

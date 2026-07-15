@@ -1,10 +1,10 @@
-import { ArrowRight } from "lucide-react";
-import { getTranslations } from "next-intl/server";
-import { Link } from "@/i18n/navigation";
-import type { SearchResult } from "@/lib/search/types";
+import { ArrowRight } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
+import { Link } from '@/i18n/navigation';
+import type { SearchResult } from '@/lib/search/types';
 
 export async function SearchResultsList({ results }: { results: SearchResult[] }) {
-  const t = await getTranslations("search");
+  const t = await getTranslations('search');
 
   return (
     <ul className="divide-y divide-neutral-200">
@@ -44,7 +44,9 @@ export async function SearchResultsList({ results }: { results: SearchResult[] }
                   />
                 </span>
               </span>
-              <span className="hidden text-sm font-bold text-neutral-900 sm:inline group-hover:text-primary">{t("moreDetails")}</span>
+              <span className="hidden text-sm font-bold text-neutral-900 sm:inline group-hover:text-primary">
+                {t('moreDetails')}
+              </span>
             </span>
           </Link>
         </li>

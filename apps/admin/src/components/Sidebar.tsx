@@ -1,34 +1,9 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { Fragment, useState } from "react";
-import type { LucideIcon } from "lucide-react";
-import {
-  LayoutDashboard,
-  FolderOpen,
-  Newspaper,
-  BookOpen,
-  CalendarDays,
-  MessageSquare,
-  Images,
-  BarChart3,
-  LogOut,
-  ChevronsUpDown,
-  User,
-  Users,
-  Shield,
-  ScrollText,
-  Globe,
-  KeyRound,
-  ShieldBan,
-  Activity,
-  FileText,
-  FileUser,
-} from "lucide-react";
 import {
   Avatar,
   AvatarFallback,
+  cn,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -47,10 +22,38 @@ import {
   SidebarRail,
   SidebarSeparator,
   useSidebar,
-  cn,
-} from "@tzj/ui";
-import { BASE_PATH } from "@/lib/config";
-import { useSession } from "./session";
+} from '@tzj/ui';
+import type { LucideIcon } from 'lucide-react';
+import {
+  Activity,
+  BarChart3,
+  BookOpen,
+  CalendarDays,
+  ChevronsUpDown,
+  FileText,
+  FileUser,
+  Fingerprint,
+  FolderOpen,
+  Globe,
+  Headphones,
+  Images,
+  KeyRound,
+  LayoutDashboard,
+  LogOut,
+  MessageSquare,
+  MessagesSquare,
+  Newspaper,
+  ScrollText,
+  Shield,
+  ShieldBan,
+  User,
+  Users,
+} from 'lucide-react';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { Fragment, useState } from 'react';
+import { BASE_PATH } from '@/lib/config';
+import { useSession } from './session';
 
 type NavItemDef = {
   label: string;
@@ -67,60 +70,75 @@ const NAV_GROUPS: Array<{
   items: NavItemDef[];
 }> = [
   {
-    label: "概览",
-    items: [{ label: "仪表盘", href: "/", icon: LayoutDashboard }],
+    label: '概览',
+    items: [{ label: '仪表盘', href: '/', icon: LayoutDashboard }],
   },
   {
-    label: "内容",
+    label: '内容',
     items: [
-      { label: "案例管理", href: "/cases", icon: FolderOpen },
-      { label: "新闻管理", href: "/news", icon: Newspaper },
-      { label: "博客管理", href: "/blog", icon: BookOpen },
-      { label: "展会管理", href: "/trade-shows", icon: CalendarDays },
+      { label: '案例管理', href: '/cases', icon: FolderOpen },
+      { label: '新闻管理', href: '/news', icon: Newspaper },
+      { label: '博客管理', href: '/blog', icon: BookOpen },
+      { label: '展会管理', href: '/trade-shows', icon: CalendarDays },
     ],
   },
   {
-    label: "知识库",
+    label: '知识库',
     items: [
       {
-        label: "文档中心",
-        href: "/documents/mine",
+        label: '文档中心',
+        href: '/documents/mine',
         icon: FileUser,
-        perm: "docs.view",
+        perm: 'docs.view',
       },
     ],
   },
   {
-    label: "运营",
+    label: '运营',
     items: [
-      { label: "媒体库", href: "/media", icon: Images },
-      { label: "询盘管理", href: "/contacts", icon: MessageSquare },
-      { label: "访客分析", href: "/analytics", icon: BarChart3, perm: "analytics.view" },
+      { label: '媒体库', href: '/media', icon: Images },
+      { label: '询盘管理', href: '/contacts', icon: MessageSquare },
+      { label: '在线客服', href: '/chat', icon: MessagesSquare },
+      { label: '访客分析', href: '/analytics', icon: BarChart3, perm: 'analytics.view' },
+      { label: '访客会话', href: '/visitors', icon: Fingerprint, perm: 'analytics.view' },
+    ],
+  },
+  {
+    label: '客户管理',
+    items: [
+      { label: '我的客户', href: '/customers/mine', icon: Users, perm: 'customers.view' },
+      { label: '公海客户', href: '/customers/public', icon: Globe, perm: 'customers.view' },
     ],
   },
 ];
 
 const SECURITY_NAV = {
-  label: "网站安全",
+  label: '网站安全',
   items: [
     {
-      label: "IP 封禁",
-      href: "/security/ip-block",
+      label: 'IP 封禁',
+      href: '/security/ip-block',
       icon: ShieldBan,
-      anyPerm: ["security.view", "security.manage"],
+      anyPerm: ['security.view', 'security.manage'],
     },
   ],
 } as const;
 
 const SYSTEM_NAV = {
-  label: "系统",
+  label: '系统',
   items: [
-    { label: "账号管理", href: "/users", icon: Users, perm: "users.manage" },
-    { label: "角色与权限", href: "/access", icon: Shield, perm: "access.view" },
-    { label: "操作日志", href: "/audit-logs", icon: ScrollText, perm: "audit.view" },
-    { label: "系统状态", href: "/system/status", icon: Activity, perm: "system.view" },
-    { label: "站点设置", href: "/settings/site", icon: Globe, perm: "settings.manage" },
-    { label: "集成与凭证", href: "/settings/integrations", icon: KeyRound, perm: "integrations.view" },
+    { label: '账号管理', href: '/users', icon: Users, perm: 'users.manage' },
+    { label: '角色与权限', href: '/access', icon: Shield, perm: 'access.view' },
+    { label: '操作日志', href: '/audit-logs', icon: ScrollText, perm: 'audit.view' },
+    { label: '系统状态', href: '/system/status', icon: Activity, perm: 'system.view' },
+    { label: '站点设置', href: '/settings/site', icon: Globe, perm: 'settings.manage' },
+    { label: '客服设置', href: '/settings/chat', icon: Headphones, perm: 'settings.manage' },
+    {
+      label: '集成与凭证',
+      href: '/settings/integrations',
+      icon: KeyRound,
+      perm: 'integrations.view',
+    },
   ],
 } as const;
 
@@ -128,32 +146,21 @@ function isActive(pathname: string, item: NavItemDef) {
   const { href, activeExcludePrefix } = item;
   if (
     activeExcludePrefix &&
-    (pathname === activeExcludePrefix ||
-      pathname.startsWith(`${activeExcludePrefix}/`))
+    (pathname === activeExcludePrefix || pathname.startsWith(`${activeExcludePrefix}/`))
   ) {
     return false;
   }
-  if (href === "/") return pathname === "/";
+  if (href === '/') return pathname === '/';
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 const sidebarCollapseText =
-  "min-w-0 transition-opacity duration-300 ease-in-out motion-reduce:transition-none group-data-[collapsible=icon]:hidden";
+  'min-w-0 transition-opacity duration-300 ease-in-out motion-reduce:transition-none group-data-[collapsible=icon]:hidden';
 
-function NavItem({
-  item,
-  pathname,
-}: {
-  item: NavItemDef;
-  pathname: string;
-}) {
+function NavItem({ item, pathname }: { item: NavItemDef; pathname: string }) {
   return (
     <SidebarMenuItem>
-      <SidebarMenuButton
-        asChild
-        isActive={isActive(pathname, item)}
-        tooltip={item.label}
-      >
+      <SidebarMenuButton asChild isActive={isActive(pathname, item)} tooltip={item.label}>
         <Link href={item.href}>
           <item.icon />
           <span>{item.label}</span>
@@ -172,16 +179,9 @@ function SidebarBrand() {
             <div className="flex aspect-square size-8 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary text-xs font-bold text-sidebar-primary-foreground">
               TZJ
             </div>
-            <div
-              className={cn(
-                "grid flex-1 text-left text-sm leading-tight",
-                sidebarCollapseText,
-              )}
-            >
+            <div className={cn('grid flex-1 text-left text-sm leading-tight', sidebarCollapseText)}>
               <span className="truncate font-semibold">拓之迹</span>
-              <span className="truncate text-xs text-muted-foreground">
-                内容管理后台
-              </span>
+              <span className="truncate text-xs text-muted-foreground">内容管理后台</span>
             </div>
           </Link>
         </SidebarMenuButton>
@@ -190,24 +190,18 @@ function SidebarBrand() {
   );
 }
 
-function SidebarNavUser({
-  username,
-  roleLabel,
-}: {
-  username: string;
-  roleLabel: string;
-}) {
+function SidebarNavUser({ username, roleLabel }: { username: string; roleLabel: string }) {
   const router = useRouter();
   const { isMobile } = useSidebar();
   const [loading, setLoading] = useState(false);
-  const initials = username.slice(0, 1).toUpperCase() || "A";
+  const initials = username.slice(0, 1).toUpperCase() || 'A';
 
   async function logout() {
     setLoading(true);
     try {
-      await fetch(`${BASE_PATH}/api/auth/logout`, { method: "POST" });
+      await fetch(`${BASE_PATH}/api/auth/logout`, { method: 'POST' });
     } finally {
-      router.replace("/login");
+      router.replace('/login');
       router.refresh();
     }
   }
@@ -227,24 +221,17 @@ function SidebarNavUser({
                 </AvatarFallback>
               </Avatar>
               <div
-                className={cn(
-                  "grid flex-1 text-left text-sm leading-tight",
-                  sidebarCollapseText,
-                )}
+                className={cn('grid flex-1 text-left text-sm leading-tight', sidebarCollapseText)}
               >
                 <span className="truncate font-medium">{username}</span>
-                <span className="truncate text-xs text-muted-foreground">
-                  {roleLabel}
-                </span>
+                <span className="truncate text-xs text-muted-foreground">{roleLabel}</span>
               </div>
-              <ChevronsUpDown
-                className={cn("ml-auto size-4 shrink-0", sidebarCollapseText)}
-              />
+              <ChevronsUpDown className={cn('ml-auto size-4 shrink-0', sidebarCollapseText)} />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
             className="w-[var(--radix-dropdown-menu-trigger-width)] min-w-56 rounded-lg"
-            side={isMobile ? "bottom" : "right"}
+            side={isMobile ? 'bottom' : 'right'}
             align="end"
             sideOffset={4}
           >
@@ -257,9 +244,7 @@ function SidebarNavUser({
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{username}</span>
-                  <span className="truncate text-xs text-muted-foreground">
-                    {roleLabel}
-                  </span>
+                  <span className="truncate text-xs text-muted-foreground">{roleLabel}</span>
                 </div>
               </div>
             </DropdownMenuLabel>
@@ -277,7 +262,7 @@ function SidebarNavUser({
               onClick={logout}
             >
               <LogOut className="h-4 w-4" />
-              {loading ? "退出中…" : "退出登录"}
+              {loading ? '退出中…' : '退出登录'}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -296,7 +281,7 @@ function SidebarNav({ pathname }: { pathname: string }) {
     items.filter((item) => {
       // 如果有通配符权限，显示所有菜单
       if (hasAllPermissions) return true;
-      
+
       if (item.anyPerm?.some((p) => permissions.includes(p))) return true;
       if (item.perm && permissions.includes(item.perm)) return true;
       return !item.perm && !item.anyPerm;
@@ -338,13 +323,7 @@ function SidebarNav({ pathname }: { pathname: string }) {
   );
 }
 
-export function AppSidebar({
-  username,
-  roleLabel,
-}: {
-  username: string;
-  roleLabel: string;
-}) {
+export function AppSidebar({ username, roleLabel }: { username: string; roleLabel: string }) {
   const pathname = usePathname();
 
   return (

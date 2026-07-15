@@ -1,10 +1,7 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { Prisma } from "@prisma/client/index";
-import { PrismaService } from "../prisma/prisma.service";
-import {
-  parseListSort,
-  type ListSortParams,
-} from "../common/utils/list-sort";
+import { Injectable, NotFoundException } from '@nestjs/common';
+import type { Prisma } from '@prisma/client/index';
+import { ListSortParams, parseListSort } from '../common/utils/list-sort';
+import { PrismaService } from '../prisma/prisma.service';
 
 export interface FindAuditLogsParams {
   page: number;
@@ -19,18 +16,9 @@ export interface FindAuditLogsParams {
   sortOrder?: string;
 }
 
-const AUDIT_SORT_FIELDS = [
-  "createdAt",
-  "user",
-  "action",
-  "resource",
-  "resourceId",
-  "ip",
-] as const;
+const AUDIT_SORT_FIELDS = ['createdAt', 'user', 'action', 'resource', 'resourceId', 'ip'] as const;
 
-const DEFAULT_AUDIT_ORDER: Prisma.AuditLogOrderByWithRelationInput[] = [
-  { createdAt: "desc" },
-];
+const DEFAULT_AUDIT_ORDER: Prisma.AuditLogOrderByWithRelationInput[] = [{ createdAt: 'desc' }];
 
 const USER_SELECT = {
   id: true,
@@ -43,18 +31,7 @@ export class AuditService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll(params: FindAuditLogsParams) {
-    const {
-      page,
-      limit,
-      userId,
-      resource,
-      action,
-      from,
-      to,
-      search,
-      sortBy,
-      sortOrder,
-    } = params;
+    const { page, limit, userId, resource, action, from, to, search, sortBy, sortOrder } = params;
     const skip = (page - 1) * limit;
     const where = this.buildWhere({ userId, resource, action, from, to, search });
     const sort = parseListSort(sortBy, sortOrder, AUDIT_SORT_FIELDS);
@@ -91,7 +68,7 @@ export class AuditService {
     return row;
   }
 
-  private buildWhere(filters: Omit<FindAuditLogsParams, "page" | "limit">) {
+  private buildWhere(filters: Omit<FindAuditLogsParams, 'page' | 'limit'>) {
     const where: Prisma.AuditLogWhereInput = {};
     if (filters.userId) where.userId = filters.userId;
     if (filters.resource) where.resource = filters.resource;
@@ -112,11 +89,11 @@ export class AuditService {
     const q = filters.search?.trim();
     if (q) {
       where.OR = [
-        { resourceId: { contains: q, mode: "insensitive" } },
+        { resourceId: { contains: q, mode: 'insensitive' } },
         { ip: { contains: q } },
-        { traceId: { contains: q, mode: "insensitive" } },
-        { user: { username: { contains: q, mode: "insensitive" } } },
-        { user: { nickname: { contains: q, mode: "insensitive" } } },
+        { traceId: { contains: q, mode: 'insensitive' } },
+        { user: { username: { contains: q, mode: 'insensitive' } } },
+        { user: { nickname: { contains: q, mode: 'insensitive' } } },
       ];
     }
 
@@ -124,15 +101,13 @@ export class AuditService {
   }
 }
 
-function buildAuditOrderBy(
-  sort: ListSortParams,
-): Prisma.AuditLogOrderByWithRelationInput[] {
+function buildAuditOrderBy(sort: ListSortParams): Prisma.AuditLogOrderByWithRelationInput[] {
   if (!sort.sortBy || !sort.sortOrder) return DEFAULT_AUDIT_ORDER;
 
   const order = sort.sortOrder;
-  if (sort.sortBy === "user") {
-    return [{ user: { username: order } }, { createdAt: "desc" }];
+  if (sort.sortBy === 'user') {
+    return [{ user: { username: order } }, { createdAt: 'desc' }];
   }
 
-  return [{ [sort.sortBy]: order }, { createdAt: "desc" }];
+  return [{ [sort.sortBy]: order }, { createdAt: 'desc' }];
 }

@@ -1,20 +1,20 @@
-import { getTranslations } from "next-intl/server";
-import { Container, Eyebrow, RbLink } from "@/components/ui";
-import { LazyMediaVideo } from "@/components/LazyMediaVideo";
-import { AnimatedStat } from "@/components/sections/AnimatedStat";
-import { PRODUCT_LINE_COUNT } from "@/lib/product-catalog";
+import { getTranslations } from 'next-intl/server';
+import { LazyMediaVideo } from '@/components/LazyMediaVideo';
+import { AnimatedStat } from '@/components/sections/AnimatedStat';
+import { Container, Eyebrow, RbLink } from '@/components/ui';
+import { PRODUCT_LINE_COUNT } from '@/lib/product-catalog';
 
-const MISSION_VIDEO = "/media/mission.mp4";
-const MISSION_POSTER = "/media/modular-construction.jpg";
+const MISSION_VIDEO = '/media/mission.mp4';
+const MISSION_POSTER = '/media/modular-construction.jpg';
 
 export async function MissionSection() {
-  const t = await getTranslations("home.mission");
+  const t = await getTranslations('home.mission');
 
   const stats = [
-    { value: "16+", label: t("statYears") },
-    { value: "1000+", label: t("statProjects") },
-    { value: String(PRODUCT_LINE_COUNT), label: t("statLines") },
-    { value: "6", label: t("statDomains") },
+    { value: '16+', label: t('statYears') },
+    { value: '1000+', label: t('statProjects') },
+    { value: String(PRODUCT_LINE_COUNT), label: t('statLines') },
+    { value: '6', label: t('statDomains') },
   ];
 
   return (
@@ -37,13 +37,13 @@ export async function MissionSection() {
       <div className="absolute inset-0 rb-media-shade-strong" aria-hidden="true" />
 
       <Container className="rb-on-media relative z-10 flex flex-col items-center text-center">
-        <Eyebrow inverted>{t("eyebrow")}</Eyebrow>
+        <Eyebrow inverted>{t('eyebrow')}</Eyebrow>
 
         <h2 className="rb-h2 mt-6 max-w-3xl text-white">
-          {t("titleLine1")}
+          {t('titleLine1')}
           <br />
-          {t("titleLine2")}
-          <span className="text-primary">{t("titleHighlight")}</span>
+          {t('titleLine2')}
+          <span className="text-primary">{t('titleHighlight')}</span>
         </h2>
 
         <span className="mt-6 h-1 w-20 bg-primary" aria-hidden="true" />
@@ -56,7 +56,7 @@ export async function MissionSection() {
 
         <div className="mt-10">
           <RbLink href="/why-us" inverted>
-            {t("learnMore")}
+            {t('learnMore')}
           </RbLink>
         </div>
       </Container>

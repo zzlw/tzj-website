@@ -1,11 +1,11 @@
-import { connection } from "next/server";
-import { ProductMatrixSection } from "@/components/sections/ProductMatrixSection";
-import { SolutionsSection } from "@/components/sections/SolutionsSection";
-import { MissionSection } from "@/components/sections/MissionSection";
-import { DeliveriesSection } from "@/components/sections/DeliveriesSection";
-import { ProcessBandI18n } from "@/components/sections/blocks-i18n";
-import { CertificationWall } from "@/components/sections/CertificationWall";
-import { ContactSectionLazy } from "@/components/sections/ContactSectionLazy";
+import { connection } from 'next/server';
+import { ProcessBandI18n } from '@/components/sections/blocks-i18n';
+import { CertificationWall } from '@/components/sections/CertificationWall';
+import { ContactSectionLazy } from '@/components/sections/ContactSectionLazy';
+import { DeliveriesSection } from '@/components/sections/DeliveriesSection';
+import { MissionSection } from '@/components/sections/MissionSection';
+import { ProductMatrixSection } from '@/components/sections/ProductMatrixSection';
+import { SolutionsSection } from '@/components/sections/SolutionsSection';
 
 /**
  * 首页首屏以下内容：RSC Streaming 边界（connection），

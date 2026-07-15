@@ -7,21 +7,23 @@
 // 关键: 通过环境变量切换 Endpoint, 代码逻辑零差异
 // ============================================================
 
+import { randomUUID } from 'node:crypto';
+import type { PutObjectCommandInput } from '@aws-sdk/client-s3';
 import {
-  S3Client,
-  PutObjectCommand,
+  CopyObjectCommand,
+  CreateBucketCommand,
   DeleteObjectCommand,
   GetObjectCommand,
-  HeadObjectCommand,
   HeadBucketCommand,
-  CreateBucketCommand,
+  HeadObjectCommand,
   ListObjectsV2Command,
-  CopyObjectCommand,
-} from "@aws-sdk/client-s3";
-import type { PutObjectCommandInput } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
+  PutBucketPolicyCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 export interface UploadResult {
   key: string;
@@ -38,27 +40,25 @@ export class S3Service implements OnModuleInit {
   private readonly publicDomain: string;
 
   constructor(private readonly config: ConfigService) {
-    this.bucket = this.config.get<string>("S3_BUCKET", "tzj-uploads-dev");
+    this.bucket = this.config.get<string>('S3_BUCKET', 'tzj-uploads-dev');
     this.publicDomain = this.config.get<string>(
-      "S3_PUBLIC_DOMAIN",
+      'S3_PUBLIC_DOMAIN',
       `http://localhost:9000/${this.bucket}`,
     );
 
     this.client = new S3Client({
-      region: this.config.get<string>("S3_REGION", "us-east-1"),
-      endpoint: this.config.get<string>("S3_ENDPOINT", "http://localhost:9000"),
+      region: this.config.get<string>('S3_REGION', 'us-east-1'),
+      endpoint: this.config.get<string>('S3_ENDPOINT', 'http://localhost:9000'),
       credentials: {
-        accessKeyId: this.config.get<string>("S3_ACCESS_KEY_ID", "minioadmin"),
-        secretAccessKey: this.config.get<string>(
-          "S3_ACCESS_KEY_SECRET",
-          "minioadmin",
-        ),
+        accessKeyId: this.config.get<string>('S3_ACCESS_KEY_ID', 'minioadmin'),
+        secretAccessKey: this.config.get<string>('S3_ACCESS_KEY_SECRET', 'minioadmin'),
       },
       // MinIO 使用 Path Style, 阿里云 OSS 使用 Virtual Hosted Style
       // Path:   http://domain/bucket/key (MinIO)
       // Virtual: http://bucket.domain/key (OSS)
-      forcePathStyle: this.config.get<string>("S3_ENDPOINT", "").includes("localhost") || 
-                      this.config.get<string>("S3_ENDPOINT", "").includes("minio"),
+      forcePathStyle:
+        this.config.get<string>('S3_ENDPOINT', '').includes('localhost') ||
+        this.config.get<string>('S3_ENDPOINT', '').includes('minio'),
     });
   }
 
@@ -67,13 +67,11 @@ export class S3Service implements OnModuleInit {
     // 如果 S3/MinIO/OSS 未就绪，后续请求会自动重试或返回错误
     this.ensureBucket().catch((err) => {
       this.logger.warn(
-        `S3 bucket initialization failed (will retry on next request): ${
-          (err as Error).message
-        }`,
+        `S3 bucket initialization failed (will retry on next request): ${(err as Error).message}`,
       );
     });
     this.logger.log(
-      `S3 Storage module loaded — bucket: ${this.bucket}, endpoint: ${this.config.get("S3_ENDPOINT")}`,
+      `S3 Storage module loaded — bucket: ${this.bucket}, endpoint: ${this.config.get('S3_ENDPOINT')}`,
     );
   }
 
@@ -96,11 +94,39 @@ export class S3Service implements OnModuleInit {
         await this.client.send(new CreateBucketCommand({ Bucket: this.bucket }));
         this.logger.log(`已创建存储桶: ${this.bucket}`);
       } catch (err) {
-        this.logger.warn(
-          `无法创建存储桶 ${this.bucket}: ${(err as Error).message}`,
-        );
+        this.logger.warn(`无法创建存储桶 ${this.bucket}: ${(err as Error).message}`);
       }
     }
+
+    // 仅非生产环境自动放开公开读，方便前端用公开 URL 直接访问媒体（MinIO 本地 / 预发）。
+    // 生产（OSS）的公开读由云控制台 / 部署脚本的 bucket policy 管理，不在应用内处理。
+    if (this.config.get<string>('NODE_ENV', 'development') !== 'production') {
+      await this.ensurePublicRead().catch((err) =>
+        this.logger.warn(`设置公开读策略失败（可忽略）: ${(err as Error).message}`),
+      );
+    }
+  }
+
+  /** 设置 bucket 公开读（仅 dev / 非生产）：允许匿名 GET 对象。 */
+  private async ensurePublicRead(): Promise<void> {
+    const policy = {
+      Version: '2012-10-17',
+      Statement: [
+        {
+          Effect: 'Allow',
+          Principal: '*',
+          Action: ['s3:GetObject'],
+          Resource: [`arn:aws:s3:::${this.bucket}/*`],
+        },
+      ],
+    };
+    await this.client.send(
+      new PutBucketPolicyCommand({
+        Bucket: this.bucket,
+        Policy: JSON.stringify(policy),
+      }),
+    );
+    this.logger.log(`已为存储桶 ${this.bucket} 设置公开读策略（dev）`);
   }
 
   /**
@@ -109,11 +135,7 @@ export class S3Service implements OnModuleInit {
    * @param key    存储路径 (如 "products/2024/abc.jpg")
    * @param contentType MIME 类型
    */
-  async upload(
-    buffer: Buffer,
-    key: string,
-    contentType: string,
-  ): Promise<UploadResult> {
+  async upload(buffer: Buffer, key: string, contentType: string): Promise<UploadResult> {
     await this.client.send(
       new PutObjectCommand({
         Bucket: this.bucket,
@@ -162,6 +184,19 @@ export class S3Service implements OnModuleInit {
   }
 
   /**
+   * 构造聊天附件的不可猜测对象 key。
+   * 结构：chat/{YYYYMM}/{roomId}/{uuid}-{sanitized-name}
+   * - 用 uuid 前缀避免原文件名暴露 / 路径穿越
+   * - 按月份 + 房间分目录，便于生命周期与批量清理
+   */
+  buildChatKey(roomId: string, fileName: string): string {
+    const ym = new Date().toISOString().slice(0, 7).replace('-', '');
+    const sanitized = fileName.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 80);
+    const uuid = randomUUID();
+    return `chat/${ym}/${roomId}/${uuid}-${sanitized}`;
+  }
+
+  /**
    * 生成预签名 URL (临时访问私有文件)
    * @param key 文件路径
    * @param expiresIn 过期秒数 (默认 1 小时)
@@ -178,11 +213,7 @@ export class S3Service implements OnModuleInit {
    * 生成预签名上传 URL（浏览器直传 PUT）。
    * 需要存储桶已配置允许来自后台域名的 CORS PUT。
    */
-  async getPresignedPutUrl(
-    key: string,
-    contentType: string,
-    expiresIn = 900,
-  ): Promise<string> {
+  async getPresignedPutUrl(key: string, contentType: string, expiresIn = 900): Promise<string> {
     const input: PutObjectCommandInput = {
       Bucket: this.bucket,
       Key: key,

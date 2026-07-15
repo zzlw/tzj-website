@@ -1,27 +1,16 @@
-import type { ReactNode } from "react";
-import { Link } from "@/i18n/navigation";
-import { ArrowRight, type LucideIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { MediaImage } from "@/components/MediaImage";
-import { MediaVideo } from "@/components/MediaVideo";
+import { ArrowRight, type LucideIcon } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { MediaImage } from '@/components/MediaImage';
+import { MediaVideo } from '@/components/MediaVideo';
+import { Link } from '@/i18n/navigation';
+import { cn } from '@/lib/utils';
 
 /* ──────────────────────────────────────────────────────────
  * Container — 统一内容宽度与水平内边距
  * ────────────────────────────────────────────────────────── */
-export function Container({
-  className,
-  children,
-}: {
-  className?: string;
-  children: ReactNode;
-}) {
+export function Container({ className, children }: { className?: string; children: ReactNode }) {
   return (
-    <div
-      className={cn(
-        "mx-auto w-full max-w-[1680px] px-5 sm:px-8 lg:px-12 xl:px-16",
-        className,
-      )}
-    >
+    <div className={cn('mx-auto w-full max-w-[1680px] px-5 sm:px-8 lg:px-12 xl:px-16', className)}>
       {children}
     </div>
   );
@@ -42,12 +31,12 @@ export function Eyebrow({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em]",
-        inverted ? "text-white" : "text-primary-accessible",
+        'inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em]',
+        inverted ? 'text-white' : 'text-primary-accessible',
         className,
       )}
     >
-      <span className={cn("h-px w-7", inverted ? "bg-white" : "bg-primary")} />
+      <span className={cn('h-px w-7', inverted ? 'bg-white' : 'bg-primary')} />
       {children}
     </span>
   );
@@ -60,34 +49,34 @@ export function SectionHeading({
   eyebrow,
   title,
   description,
-  align = "left",
+  align = 'left',
   inverted = false,
   className,
 }: {
   eyebrow?: ReactNode;
   title: ReactNode;
   description?: ReactNode;
-  align?: "left" | "center";
+  align?: 'left' | 'center';
   inverted?: boolean;
   className?: string;
 }) {
   return (
     <div
       className={cn(
-        "flex flex-col gap-4",
-        align === "center" && "items-center text-center",
+        'flex flex-col gap-4',
+        align === 'center' && 'items-center text-center',
         className,
       )}
     >
       {eyebrow ? <Eyebrow inverted={inverted}>{eyebrow}</Eyebrow> : null}
-      <h2 className={cn("rb-h2 max-w-3xl", inverted ? "text-white" : "text-neutral-900")}>
+      <h2 className={cn('rb-h2 max-w-3xl', inverted ? 'text-white' : 'text-neutral-900')}>
         {title}
       </h2>
       {description ? (
         <p
           className={cn(
-            "max-w-2xl text-base leading-relaxed md:text-lg",
-            inverted ? "text-white/75" : "text-secondary-text",
+            'max-w-2xl text-base leading-relaxed md:text-lg',
+            inverted ? 'text-white/75' : 'text-secondary-text',
           )}
         >
           {description}
@@ -150,7 +139,7 @@ export function VideoHero({
   return (
     <section
       className={cn(
-        "relative flex min-h-[620px] items-center justify-center overflow-hidden bg-neutral-900 pt-16 lg:min-h-[720px]",
+        'relative flex min-h-[620px] items-center justify-center overflow-hidden bg-neutral-900 pt-16 lg:min-h-[720px]',
         className,
       )}
     >
@@ -200,30 +189,30 @@ export function VideoHero({
  * RbButton — Rosenbauer 标志性动画图标按钮
  * 右侧方形图标芯片内的箭头在悬停时滑动穿过。
  * ────────────────────────────────────────────────────────── */
-type RbButtonVariant = "primary" | "secondary" | "light";
+type RbButtonVariant = 'primary' | 'secondary' | 'light';
 
 const variantStyles: Record<RbButtonVariant, { root: string; chip: string; icon: string }> = {
   primary: {
-    root: "bg-primary text-white hover:bg-primary-hover",
-    chip: "bg-white",
-    icon: "text-primary",
+    root: 'bg-primary text-white hover:bg-primary-hover',
+    chip: 'bg-white',
+    icon: 'text-primary',
   },
   secondary: {
-    root: "bg-transparent text-neutral-900 outline outline-2 outline-neutral-900 hover:bg-neutral-900 hover:text-white",
-    chip: "bg-neutral-900 group-hover:bg-white",
-    icon: "text-white group-hover:text-neutral-900",
+    root: 'bg-transparent text-neutral-900 outline outline-2 outline-neutral-900 hover:bg-neutral-900 hover:text-white',
+    chip: 'bg-neutral-900 group-hover:bg-white',
+    icon: 'text-white group-hover:text-neutral-900',
   },
   light: {
-    root: "bg-white text-neutral-900 hover:bg-neutral-100",
-    chip: "bg-primary",
-    icon: "text-white",
+    root: 'bg-white text-neutral-900 hover:bg-neutral-100',
+    chip: 'bg-primary',
+    icon: 'text-white',
   },
 };
 
 interface RbButtonProps {
   href?: string;
   onClick?: () => void;
-  type?: "button" | "submit";
+  type?: 'button' | 'submit';
   variant?: RbButtonVariant;
   icon?: LucideIcon;
   children: ReactNode;
@@ -234,8 +223,8 @@ interface RbButtonProps {
 export function RbButton({
   href,
   onClick,
-  type = "button",
-  variant = "primary",
+  type = 'button',
+  variant = 'primary',
   icon: Icon = ArrowRight,
   children,
   className,
@@ -247,19 +236,19 @@ export function RbButton({
       <span className="pl-1">{children}</span>
       <span
         className={cn(
-          "relative grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-[2px] transition-colors",
+          'relative grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-[2px] transition-colors',
           styles.chip,
         )}
       >
         <Icon
           className={cn(
-            "absolute h-4 w-4 transition-transform duration-300 ease-[cubic-bezier(.75,0,.35,1)] group-hover:translate-x-[180%]",
+            'absolute h-4 w-4 transition-transform duration-300 ease-[cubic-bezier(.75,0,.35,1)] group-hover:translate-x-[180%]',
             styles.icon,
           )}
         />
         <Icon
           className={cn(
-            "absolute h-4 w-4 -translate-x-[180%] transition-transform duration-300 ease-[cubic-bezier(.75,0,.35,1)] group-hover:translate-x-0",
+            'absolute h-4 w-4 -translate-x-[180%] transition-transform duration-300 ease-[cubic-bezier(.75,0,.35,1)] group-hover:translate-x-0',
             styles.icon,
           )}
         />
@@ -268,9 +257,9 @@ export function RbButton({
   );
 
   const rootClass = cn(
-    "group inline-flex min-h-12 items-center gap-3 rounded-[2px] py-2 pl-5 pr-2 font-display text-base font-bold transition-colors duration-300",
+    'group inline-flex min-h-12 items-center gap-3 rounded-[2px] py-2 pl-5 pr-2 font-display text-base font-bold transition-colors duration-300',
     styles.root,
-    disabled && "pointer-events-none opacity-50",
+    disabled && 'pointer-events-none opacity-50',
     className,
   );
 
@@ -306,8 +295,8 @@ export function RbLink({
     <Link
       href={href}
       className={cn(
-        "group inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wide transition-colors",
-        inverted ? "text-white hover:text-white/80" : "text-primary hover:text-primary-hover",
+        'group inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wide transition-colors',
+        inverted ? 'text-white hover:text-white/80' : 'text-primary hover:text-primary-hover',
         className,
       )}
     >

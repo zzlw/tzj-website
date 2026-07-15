@@ -1,7 +1,7 @@
-import type { SiteNotificationSettings } from "@tzj/types";
-import { DEFAULT_SITE_PUBLIC_SETTINGS } from "./settings.defaults";
+import type { SiteNotificationSettings } from '@tzj/types';
+import { DEFAULT_SITE_PUBLIC_SETTINGS } from './settings.defaults';
 
-export const SITE_NOTIFICATIONS_SETTING_KEY = "site.notifications";
+export const SITE_NOTIFICATIONS_SETTING_KEY = 'site.notifications';
 
 export const DEFAULT_SITE_NOTIFICATION_SETTINGS: SiteNotificationSettings = {
   enabled: true,
@@ -20,10 +20,9 @@ export function mergeSiteNotificationSettings(
     contact: {
       ...DEFAULT_SITE_NOTIFICATION_SETTINGS.contact,
       ...partial.contact,
-      notifyEmails:
-        partial.contact?.notifyEmails?.length
-          ? partial.contact.notifyEmails.map((e) => e.trim()).filter(Boolean)
-          : DEFAULT_SITE_NOTIFICATION_SETTINGS.contact.notifyEmails,
+      notifyEmails: partial.contact?.notifyEmails?.length
+        ? partial.contact.notifyEmails.map((e) => e.trim()).filter(Boolean)
+        : DEFAULT_SITE_NOTIFICATION_SETTINGS.contact.notifyEmails,
     },
   };
 }

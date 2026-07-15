@@ -1,7 +1,11 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { ImagePlus, Loader2, Stamp, X } from "lucide-react";
+import type {
+  SiteMediaSettings,
+  WatermarkFolder,
+  WatermarkLayout,
+  WatermarkPosition,
+} from '@tzj/types';
 import {
   Button,
   Card,
@@ -19,14 +23,10 @@ import {
   SelectValue,
   Slider,
   Switch,
-} from "@tzj/ui";
-import type {
-  SiteMediaSettings,
-  WatermarkFolder,
-  WatermarkLayout,
-  WatermarkPosition,
-} from "@tzj/types";
-import { MediaPicker } from "@/components/crud/MediaPicker";
+} from '@tzj/ui';
+import { ImagePlus, Loader2, Stamp, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { MediaPicker } from '@/components/crud/MediaPicker';
 import {
   useSiteMediaSettings,
   useUpdateSiteMediaSettings,
@@ -34,31 +34,31 @@ import {
   WATERMARK_POSITION_LABELS,
   watermarkImageKeyFromUrl,
   watermarkImageUrlFromKey,
-} from "@/features/site-media";
-import { ApiError } from "@/lib/apiClient";
-import { notifyError, notifySuccess } from "@/lib/notify";
+} from '@/features/site-media';
+import { ApiError } from '@/lib/apiClient';
+import { notifyError, notifySuccess } from '@/lib/notify';
 
 type WatermarkPreset = {
   label: string;
-  patch: Partial<SiteMediaSettings["watermark"]>;
+  patch: Partial<SiteMediaSettings['watermark']>;
 };
 
 const WATERMARK_PRESETS: WatermarkPreset[] = [
   {
-    label: "品牌角标",
+    label: '品牌角标',
     patch: {
-      layout: "corner",
-      mode: "text",
-      position: "bottom-right",
+      layout: 'corner',
+      mode: 'text',
+      position: 'bottom-right',
       opacity: 0.32,
       scale: 0.18,
     },
   },
   {
-    label: "平铺防盗",
+    label: '平铺防盗',
     patch: {
-      layout: "tile",
-      mode: "text",
+      layout: 'tile',
+      mode: 'text',
       opacity: 0.14,
       scale: 0.22,
       tileSpacing: 1.5,
@@ -66,24 +66,18 @@ const WATERMARK_PRESETS: WatermarkPreset[] = [
     },
   },
   {
-    label: "居中样片",
+    label: '居中样片',
     patch: {
-      layout: "center",
-      mode: "text",
-      text: "样片",
+      layout: 'center',
+      mode: 'text',
+      text: '样片',
       opacity: 0.22,
       scale: 0.28,
     },
   },
 ];
 
-function ModuleSaveButton({
-  pending,
-  onClick,
-}: {
-  pending: boolean;
-  onClick: () => void;
-}) {
+function ModuleSaveButton({ pending, onClick }: { pending: boolean; onClick: () => void }) {
   return (
     <Button type="button" onClick={onClick} disabled={pending}>
       {pending ? (
@@ -92,7 +86,7 @@ function ModuleSaveButton({
           保存中…
         </>
       ) : (
-        "保存设置"
+        '保存设置'
       )}
     </Button>
   );
@@ -138,7 +132,13 @@ function WatermarkLogoPicker({
         </button>
       )}
       {previewUrl ? (
-        <Button type="button" variant="link" size="sm" className="h-auto px-0" onClick={() => setOpen(true)}>
+        <Button
+          type="button"
+          variant="link"
+          size="sm"
+          className="h-auto px-0"
+          onClick={() => setOpen(true)}
+        >
           更换图片
         </Button>
       ) : null}
@@ -158,9 +158,7 @@ function WatermarkLogoPicker({
 }
 
 function toggleFolder(folders: WatermarkFolder[], folder: WatermarkFolder): WatermarkFolder[] {
-  return folders.includes(folder)
-    ? folders.filter((f) => f !== folder)
-    : [...folders, folder];
+  return folders.includes(folder) ? folders.filter((f) => f !== folder) : [...folders, folder];
 }
 
 export function WatermarkSettingsCard() {
@@ -176,16 +174,14 @@ export function WatermarkSettingsCard() {
     if (!form) return;
     try {
       await updateMedia.mutateAsync(form);
-      notifySuccess("媒体水印设置已保存");
+      notifySuccess('媒体水印设置已保存');
     } catch (e) {
-      notifyError(e instanceof ApiError ? e.message : e, "保存失败");
+      notifyError(e instanceof ApiError ? e.message : e, '保存失败');
     }
   }
 
-  function applyPreset(patch: Partial<SiteMediaSettings["watermark"]>) {
-    setForm((prev) =>
-      prev ? { ...prev, watermark: { ...prev.watermark, ...patch } } : prev,
-    );
+  function applyPreset(patch: Partial<SiteMediaSettings['watermark']>) {
+    setForm((prev) => (prev ? { ...prev, watermark: { ...prev.watermark, ...patch } } : prev));
   }
 
   if (isLoading || !form) {
@@ -232,7 +228,7 @@ export function WatermarkSettingsCard() {
           />
         </div>
       </CardHeader>
-      <CardContent className={`space-y-5 ${wm.enabled ? "" : "pointer-events-none opacity-50"}`}>
+      <CardContent className={`space-y-5 ${wm.enabled ? '' : 'pointer-events-none opacity-50'}`}>
         <div className="flex flex-wrap gap-2">
           <span className="w-full text-xs text-muted-foreground">快速预设</span>
           {WATERMARK_PRESETS.map((preset) => (
@@ -273,16 +269,16 @@ export function WatermarkSettingsCard() {
               </SelectContent>
             </Select>
             <p className="mt-1 text-xs text-muted-foreground">
-              {wm.layout === "corner" && "右下角低干扰品牌标识，不透明度建议 25%–35%"}
-              {wm.layout === "tile" && "斜纹平铺防盗图，不透明度建议 10%–18%，角度 -20°～-30°"}
-              {wm.layout === "center" && "居中大字样片标记，适合预览稿、未交付素材"}
+              {wm.layout === 'corner' && '右下角低干扰品牌标识，不透明度建议 25%–35%'}
+              {wm.layout === 'tile' && '斜纹平铺防盗图，不透明度建议 10%–18%，角度 -20°～-30°'}
+              {wm.layout === 'center' && '居中大字样片标记，适合预览稿、未交付素材'}
             </p>
           </div>
           <div>
             <Label>水印类型</Label>
             <Select
               value={wm.mode}
-              onValueChange={(mode: "text" | "image") =>
+              onValueChange={(mode: 'text' | 'image') =>
                 setForm((prev) =>
                   prev ? { ...prev, watermark: { ...prev.watermark, mode } } : prev,
                 )
@@ -299,7 +295,7 @@ export function WatermarkSettingsCard() {
           </div>
         </div>
 
-        {wm.layout === "corner" ? (
+        {wm.layout === 'corner' ? (
           <div className="max-w-xs">
             <Label>角标位置</Label>
             <Select
@@ -326,7 +322,7 @@ export function WatermarkSettingsCard() {
           </div>
         ) : null}
 
-        {wm.mode === "text" ? (
+        {wm.mode === 'text' ? (
           <div>
             <Label htmlFor="wm-text">水印文字</Label>
             <Input
@@ -335,9 +331,7 @@ export function WatermarkSettingsCard() {
               maxLength={64}
               onChange={(e) =>
                 setForm((prev) =>
-                  prev
-                    ? { ...prev, watermark: { ...prev.watermark, text: e.target.value } }
-                    : prev,
+                  prev ? { ...prev, watermark: { ...prev.watermark, text: e.target.value } } : prev,
                 )
               }
               placeholder="河南拓之迹"
@@ -388,7 +382,7 @@ export function WatermarkSettingsCard() {
           </div>
           <div>
             <div className="flex items-center justify-between">
-              <Label>{wm.layout === "tile" ? "文字/Logo 相对大小" : "相对宽度"}</Label>
+              <Label>{wm.layout === 'tile' ? '文字/Logo 相对大小' : '相对宽度'}</Label>
               <span className="text-xs tabular-nums text-muted-foreground">
                 {Math.round(wm.scale * 100)}%
               </span>
@@ -410,7 +404,7 @@ export function WatermarkSettingsCard() {
           </div>
         </div>
 
-        {wm.layout === "tile" ? (
+        {wm.layout === 'tile' ? (
           <div className="grid gap-5 sm:grid-cols-2">
             <div>
               <div className="flex items-center justify-between">
@@ -539,14 +533,14 @@ export function WatermarkSettingsCard() {
             </label>
           </div>
           <div className="flex flex-wrap gap-2">
-            {(["uploads", "cms"] as const).map((folder) => {
+            {(['uploads', 'cms'] as const).map((folder) => {
               const active = wm.applyToFolders.includes(folder);
               return (
                 <Button
                   key={folder}
                   type="button"
                   size="sm"
-                  variant={active ? "default" : "outline"}
+                  variant={active ? 'default' : 'outline'}
                   onClick={() =>
                     setForm((prev) => {
                       if (!prev) return prev;
@@ -559,7 +553,7 @@ export function WatermarkSettingsCard() {
                     })
                   }
                 >
-                  {folder === "uploads" ? "媒体库 uploads" : "正文 cms"}
+                  {folder === 'uploads' ? '媒体库 uploads' : '正文 cms'}
                 </Button>
               );
             })}

@@ -1,22 +1,21 @@
-import type { ReactNode } from "react";
-import type { ZodType } from "zod";
-
-import type { DataTableColumn, DataTableSort } from "@tzj/ui";
+import type { DataTableColumn, DataTableSort } from '@tzj/ui';
+import type { ReactNode } from 'react';
+import type { ZodType } from 'zod';
 
 export type FieldType =
-  | "text"
-  | "textarea"
-  | "markdown"
-  | "number"
-  | "switch"
-  | "select"
-  | "tags"
-  | "image"
-  | "gallery"
-  | "datetime"
-  | "date"
-  | "key-value-list"
-  | "string-list";
+  | 'text'
+  | 'textarea'
+  | 'markdown'
+  | 'number'
+  | 'switch'
+  | 'select'
+  | 'tags'
+  | 'image'
+  | 'gallery'
+  | 'datetime'
+  | 'date'
+  | 'key-value-list'
+  | 'string-list';
 
 export interface Option {
   label: string;
@@ -66,6 +65,8 @@ export interface ResourceConfig<T> {
   toForm?: (row: T) => Record<string, unknown>;
   /** 是否支持一键发布/下线（依据 status 字段）。 */
   publishable?: boolean;
+  /** 表单是否自动根据标题生成 slug 隐藏字段（无 slug 字段的实体设为 false）。 */
+  autoSlug?: boolean;
   /** 返回前台预览的相对路径（如 `/products/foo`）。 */
   previewPath?: (row: T) => string;
   /** 列表默认排序（通常为发布日期倒序）。 */

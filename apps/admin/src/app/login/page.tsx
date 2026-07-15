@@ -1,7 +1,5 @@
-"use client";
+'use client';
 
-import { Suspense, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 import {
   Button,
   Card,
@@ -11,15 +9,17 @@ import {
   CardTitle,
   Input,
   Label,
-} from "@tzj/ui";
-import { BASE_PATH } from "@/lib/config";
-import { notifyError } from "@/lib/notify";
+} from '@tzj/ui';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useState } from 'react';
+import { BASE_PATH } from '@/lib/config';
+import { notifyError } from '@/lib/notify';
 
 function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
@@ -27,20 +27,20 @@ function LoginForm() {
     setLoading(true);
     try {
       const res = await fetch(`${BASE_PATH}/api/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok || !body.success) {
-        notifyError(body.message || "登录失败，请检查用户名或密码");
+        notifyError(body.message || '登录失败，请检查用户名或密码');
         return;
       }
-      const from = params.get("from");
-      router.replace(from && from.startsWith("/") ? from : "/");
+      const from = params.get('from');
+      router.replace(from && from.startsWith('/') ? from : '/');
       router.refresh();
     } catch {
-      notifyError("网络错误，请稍后重试");
+      notifyError('网络错误，请稍后重试');
     } finally {
       setLoading(false);
     }
@@ -88,7 +88,7 @@ function LoginForm() {
             </div>
 
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "登录中…" : "登录"}
+              {loading ? '登录中…' : '登录'}
             </Button>
           </form>
 

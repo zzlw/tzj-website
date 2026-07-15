@@ -1,11 +1,11 @@
-import { Injectable } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
-import { statfs } from "node:fs/promises";
-import os from "node:os";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-import type { SystemStatusResponse } from "@tzj/types";
-import { HealthService } from "../health/health.service";
+import { readFileSync } from 'node:fs';
+import { statfs } from 'node:fs/promises';
+import os from 'node:os';
+import { join } from 'node:path';
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import type { SystemStatusResponse } from '@tzj/types';
+import { HealthService } from '../health/health.service';
 
 @Injectable()
 export class SystemService {
@@ -21,11 +21,11 @@ export class SystemService {
     const disk = await this.readDiskUsage(process.cwd());
 
     const depValues = Object.values(ready.checks);
-    const status = depValues.every((v) => v === "up" || v === "skipped")
-      ? "healthy"
-      : depValues.some((v) => v === "up" || v === "skipped")
-        ? "degraded"
-        : "down";
+    const status = depValues.every((v) => v === 'up' || v === 'skipped')
+      ? 'healthy'
+      : depValues.some((v) => v === 'up' || v === 'skipped')
+        ? 'degraded'
+        : 'down';
 
     return {
       status,
@@ -48,28 +48,28 @@ export class SystemService {
       },
       disk,
       dependencies: {
-        database: ready.checks.database as SystemStatusResponse["dependencies"]["database"],
-        storage: ready.checks.storage as SystemStatusResponse["dependencies"]["storage"],
-        redis: ready.checks.redis as SystemStatusResponse["dependencies"]["redis"],
-        email: ready.checks.email as SystemStatusResponse["dependencies"]["email"],
+        database: ready.checks.database as SystemStatusResponse['dependencies']['database'],
+        storage: ready.checks.storage as SystemStatusResponse['dependencies']['storage'],
+        redis: ready.checks.redis as SystemStatusResponse['dependencies']['redis'],
+        email: ready.checks.email as SystemStatusResponse['dependencies']['email'],
       },
     };
   }
 
   private readVersion(): string {
-    const fromEnv = this.config.get<string>("APP_VERSION")?.trim();
+    const fromEnv = this.config.get<string>('APP_VERSION')?.trim();
     if (fromEnv) return fromEnv;
     try {
-      const pkg = JSON.parse(
-        readFileSync(join(process.cwd(), "package.json"), "utf8"),
-      ) as { version?: string };
-      return pkg.version ?? "0.0.0";
+      const pkg = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf8')) as {
+        version?: string;
+      };
+      return pkg.version ?? '0.0.0';
     } catch {
-      return "0.0.0";
+      return '0.0.0';
     }
   }
 
-  private async readDiskUsage(path: string): Promise<SystemStatusResponse["disk"]> {
+  private async readDiskUsage(path: string): Promise<SystemStatusResponse['disk']> {
     try {
       const stats = await statfs(path);
       const total = Number(stats.blocks) * Number(stats.bsize);

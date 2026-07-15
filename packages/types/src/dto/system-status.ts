@@ -1,7 +1,7 @@
-export type DependencyStatus = "up" | "down" | "degraded" | "skipped";
+export type DependencyStatus = 'up' | 'down' | 'degraded' | 'skipped';
 
 export interface SystemStatusResponse {
-  status: "healthy" | "degraded" | "down";
+  status: 'healthy' | 'degraded' | 'down';
   version: string;
   timestamp: string;
   uptime: number;

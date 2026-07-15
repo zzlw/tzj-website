@@ -1,5 +1,5 @@
-import { Prisma } from "@prisma/client/index";
-import type { SortOrder } from "../../common/utils/list-sort";
+import { Prisma } from '@prisma/client/index';
+import type { SortOrder } from '../../common/utils/list-sort';
 
 export interface AnalyticsListParams {
   page: number;
@@ -22,81 +22,58 @@ export function paginateMeta(page: number, limit: number, total: number) {
 }
 
 function parseSortOrder(v?: string): SortOrder {
-  return v === "asc" ? "asc" : "desc";
+  return v === 'asc' ? 'asc' : 'desc';
 }
 
-export function pageOrderClause(
-  sortBy?: string,
-  sortOrder?: string,
-): Prisma.Sql {
+export function pageOrderClause(sortBy?: string, sortOrder?: string): Prisma.Sql {
   const dir = parseSortOrder(sortOrder);
   switch (sortBy) {
-    case "path":
-      return dir === "asc" ? Prisma.sql`path ASC` : Prisma.sql`path DESC`;
-    case "title":
-      return dir === "asc"
-        ? Prisma.sql`title ASC NULLS LAST`
-        : Prisma.sql`title DESC NULLS LAST`;
-    case "uniqueVisitors":
-      return dir === "asc"
-        ? Prisma.sql`"uniqueVisitors" ASC`
-        : Prisma.sql`"uniqueVisitors" DESC`;
-    case "pageViews":
+    case 'path':
+      return dir === 'asc' ? Prisma.sql`path ASC` : Prisma.sql`path DESC`;
+    case 'title':
+      return dir === 'asc' ? Prisma.sql`title ASC NULLS LAST` : Prisma.sql`title DESC NULLS LAST`;
+    case 'uniqueVisitors':
+      return dir === 'asc' ? Prisma.sql`"uniqueVisitors" ASC` : Prisma.sql`"uniqueVisitors" DESC`;
+    case 'pageViews':
     default:
-      return dir === "asc"
-        ? Prisma.sql`"pageViews" ASC`
-        : Prisma.sql`"pageViews" DESC`;
+      return dir === 'asc' ? Prisma.sql`"pageViews" ASC` : Prisma.sql`"pageViews" DESC`;
   }
 }
 
-export function regionOrderClause(
-  sortBy?: string,
-  sortOrder?: string,
-): Prisma.Sql {
+export function regionOrderClause(sortBy?: string, sortOrder?: string): Prisma.Sql {
   const dir = parseSortOrder(sortOrder);
   switch (sortBy) {
-    case "region":
-      return dir === "asc"
+    case 'region':
+      return dir === 'asc'
         ? Prisma.sql`country ASC NULLS LAST, region ASC NULLS LAST, city ASC NULLS LAST`
         : Prisma.sql`country DESC NULLS LAST, region DESC NULLS LAST, city DESC NULLS LAST`;
-    case "geoSource":
-      return dir === "asc"
+    case 'geoSource':
+      return dir === 'asc'
         ? Prisma.sql`"geoSource" ASC NULLS LAST`
         : Prisma.sql`"geoSource" DESC NULLS LAST`;
-    case "uniqueVisitors":
-      return dir === "asc"
-        ? Prisma.sql`"uniqueVisitors" ASC`
-        : Prisma.sql`"uniqueVisitors" DESC`;
-    case "pageViews":
+    case 'uniqueVisitors':
+      return dir === 'asc' ? Prisma.sql`"uniqueVisitors" ASC` : Prisma.sql`"uniqueVisitors" DESC`;
+    case 'pageViews':
     default:
-      return dir === "asc"
-        ? Prisma.sql`"pageViews" ASC`
-        : Prisma.sql`"pageViews" DESC`;
+      return dir === 'asc' ? Prisma.sql`"pageViews" ASC` : Prisma.sql`"pageViews" DESC`;
   }
 }
 
-export function referrerOrderClause(
-  sortBy?: string,
-  sortOrder?: string,
-): Prisma.Sql {
+export function referrerOrderClause(sortBy?: string, sortOrder?: string): Prisma.Sql {
   const dir = parseSortOrder(sortOrder);
   switch (sortBy) {
-    case "referrerHost":
-      return dir === "asc"
-        ? Prisma.sql`"referrerHost" ASC`
-        : Prisma.sql`"referrerHost" DESC`;
-    case "region":
-      return dir === "asc"
+    case 'referrerHost':
+      return dir === 'asc' ? Prisma.sql`"referrerHost" ASC` : Prisma.sql`"referrerHost" DESC`;
+    case 'region':
+      return dir === 'asc'
         ? Prisma.sql`country ASC NULLS LAST, region ASC NULLS LAST, city ASC NULLS LAST`
         : Prisma.sql`country DESC NULLS LAST, region DESC NULLS LAST, city DESC NULLS LAST`;
-    case "geoSource":
-      return dir === "asc"
+    case 'geoSource':
+      return dir === 'asc'
         ? Prisma.sql`"geoSource" ASC NULLS LAST`
         : Prisma.sql`"geoSource" DESC NULLS LAST`;
-    case "pageViews":
+    case 'pageViews':
     default:
-      return dir === "asc"
-        ? Prisma.sql`"pageViews" ASC`
-        : Prisma.sql`"pageViews" DESC`;
+      return dir === 'asc' ? Prisma.sql`"pageViews" ASC` : Prisma.sql`"pageViews" DESC`;
   }
 }

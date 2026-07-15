@@ -18,12 +18,36 @@
     "traditional": "Traditional liner"
   },
   "rows": [
-    { "feature": "Installation", "interlock": "Interlocking assembly; fast on-site construction", "traditional": "Masonry or cast-in-place; long schedule" },
-    { "feature": "Repair & replacement", "interlock": "Individual panel replacement; localized repair", "traditional": "Large-area removal required; high repair cost" },
-    { "feature": "Insulation performance", "interlock": "Calcium-silicate material; excellent back-face temperature control", "traditional": "Cracking and insulation degradation over time" },
-    { "feature": "Structure protection", "interlock": "Effectively protects primary steel structure", "traditional": "Heat transfers to structure after cracking" },
-    { "feature": "Service life", "interlock": "Withstands repeated high temperatures; long-term stability", "traditional": "Degrades after repeated high-temperature cycles" },
-    { "feature": "Retrofit compatibility", "interlock": "Upgrade path for existing burn rooms", "traditional": "Difficult to retrofit" }
+    {
+      "feature": "Installation",
+      "interlock": "Interlocking assembly; fast on-site construction",
+      "traditional": "Masonry or cast-in-place; long schedule"
+    },
+    {
+      "feature": "Repair & replacement",
+      "interlock": "Individual panel replacement; localized repair",
+      "traditional": "Large-area removal required; high repair cost"
+    },
+    {
+      "feature": "Insulation performance",
+      "interlock": "Calcium-silicate material; excellent back-face temperature control",
+      "traditional": "Cracking and insulation degradation over time"
+    },
+    {
+      "feature": "Structure protection",
+      "interlock": "Effectively protects primary steel structure",
+      "traditional": "Heat transfers to structure after cracking"
+    },
+    {
+      "feature": "Service life",
+      "interlock": "Withstands repeated high temperatures; long-term stability",
+      "traditional": "Degrades after repeated high-temperature cycles"
+    },
+    {
+      "feature": "Retrofit compatibility",
+      "interlock": "Upgrade path for existing burn rooms",
+      "traditional": "Difficult to retrofit"
+    }
   ],
   "retrofitSection": {
     "eyebrow": "Retrofit upgrade",
@@ -31,11 +55,31 @@
     "description": "Whatever the current condition, interlocking thermal liners can transform aging burn rooms into modern training facilities—replaceable panels and easier maintenance."
   },
   "steps": [
-    { "step": "01", "title": "Site assessment", "desc": "Survey existing burn room structure and liner wear; evaluate retrofit feasibility." },
-    { "step": "02", "title": "Design", "desc": "Custom interlocking liner layout and connection details sized to the burn room." },
-    { "step": "03", "title": "Demolition & prep", "desc": "Remove aged liner; prepare steel substrate for installation." },
-    { "step": "04", "title": "Interlocking installation", "desc": "Assemble new liner panels quickly to minimize training downtime." },
-    { "step": "05", "title": "Acceptance & handover", "desc": "Inspection and functional verification; deliver a burn room ready for live-fire training." }
+    {
+      "step": "01",
+      "title": "Site assessment",
+      "desc": "Survey existing burn room structure and liner wear; evaluate retrofit feasibility."
+    },
+    {
+      "step": "02",
+      "title": "Design",
+      "desc": "Custom interlocking liner layout and connection details sized to the burn room."
+    },
+    {
+      "step": "03",
+      "title": "Demolition & prep",
+      "desc": "Remove aged liner; prepare steel substrate for installation."
+    },
+    {
+      "step": "04",
+      "title": "Interlocking installation",
+      "desc": "Assemble new liner panels quickly to minimize training downtime."
+    },
+    {
+      "step": "05",
+      "title": "Acceptance & handover",
+      "desc": "Inspection and functional verification; deliver a burn room ready for live-fire training."
+    }
   ],
   "relatedLinks": [
     { "label": "Interlocking thermal liners", "desc": "Technical specifications and performance." },

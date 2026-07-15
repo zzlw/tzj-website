@@ -1,18 +1,18 @@
-import type { Metadata } from "next";
-import { MediaImage as Image } from "@/components/MediaImage";
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import { ArrowRight } from "lucide-react";
-import { generateSeo } from "@/lib/seo";
-import { getNewsItem, getNewsList } from "@/lib/api";
-import { fetchBySlug } from "@/lib/content-detail";
-import { formatContentDate, newsCategoryLabelI18n } from "@/lib/content-labels";
-import { pickCoverImage, pickSummary } from "@/lib/content-list";
-import { breadcrumbJsonLd, articleJsonLd } from "@/lib/jsonld";
-import { JsonLd } from "@/components/JsonLd";
-import { MarkdownBody } from "@/components/content/MarkdownBody";
-import { Container, Eyebrow, RbButton, RbLink } from "@/components/ui";
-import { getLocale, getTranslations } from "next-intl/server";
+import { ArrowRight } from 'lucide-react';
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import { getLocale, getTranslations } from 'next-intl/server';
+import { MarkdownBody } from '@/components/content/MarkdownBody';
+import { JsonLd } from '@/components/JsonLd';
+import { MediaImage as Image } from '@/components/MediaImage';
+import { Container, Eyebrow, RbButton, RbLink } from '@/components/ui';
+import { getNewsItem, getNewsList } from '@/lib/api';
+import { fetchBySlug } from '@/lib/content-detail';
+import { formatContentDate, newsCategoryLabelI18n } from '@/lib/content-labels';
+import { pickCoverImage, pickSummary } from '@/lib/content-list';
+import { articleJsonLd, breadcrumbJsonLd } from '@/lib/jsonld';
+import { generateSeo } from '@/lib/seo';
 
 interface NewsPageProps {
   params: Promise<{ slug: string }>;
@@ -30,16 +30,16 @@ export async function generateMetadata({ params }: NewsPageProps): Promise<Metad
     description: (item as { seoDesc?: string }).seoDesc || summary,
     path: `/resources/news/${slug}`,
     image: pickCoverImage(item.coverImage),
-    type: "article",
+    type: 'article',
   });
 }
 
 export default async function NewsDetailPage({ params }: NewsPageProps) {
   const { slug } = await params;
-  const t = await getTranslations("content.detail");
-  const tBread = await getTranslations("breadcrumbs");
-  const tCta = await getTranslations("cta");
-  const tNews = await getTranslations("content.categories.news");
+  const t = await getTranslations('content.detail');
+  const tBread = await getTranslations('breadcrumbs');
+  const tCta = await getTranslations('cta');
+  const tNews = await getTranslations('content.categories.news');
   const locale = await getLocale();
 
   const item = await fetchBySlug(getNewsItem, slug);
@@ -49,9 +49,9 @@ export default async function NewsDetailPage({ params }: NewsPageProps) {
   const coverImage = pickCoverImage(item.coverImage);
   const dateLabel = formatContentDate(item.publishedAt, locale);
 
-  let related: Awaited<ReturnType<typeof getNewsList>>["data"] = [];
+  let related: Awaited<ReturnType<typeof getNewsList>>['data'] = [];
   try {
-    const res = await getNewsList({ limit: 4, page: 1, sortBy: "publishedAt", sortOrder: "desc" });
+    const res = await getNewsList({ limit: 4, page: 1, sortBy: 'publishedAt', sortOrder: 'desc' });
     related = (res.data ?? []).filter((n) => n.slug !== item.slug).slice(0, 3);
   } catch {
     /* 忽略相关推荐失败 */
@@ -62,8 +62,8 @@ export default async function NewsDetailPage({ params }: NewsPageProps) {
       <JsonLd
         data={[
           breadcrumbJsonLd([
-            { name: tBread("home"), path: "/" },
-            { name: t("breadcrumbs.news"), path: "/resources/news" },
+            { name: tBread('home'), path: '/' },
+            { name: t('breadcrumbs.news'), path: '/resources/news' },
             { name: item.title, path: `/resources/news/${slug}` },
           ]),
           articleJsonLd({
@@ -78,7 +78,16 @@ export default async function NewsDetailPage({ params }: NewsPageProps) {
 
       <div className="pb-20">
         <section className="relative h-[360px] overflow-hidden bg-neutral-900 lg:h-[460px]">
-          <Image src={coverImage} alt={item.title} fill preload loading="eager" quality={90} sizes="100vw" className="object-cover" />
+          <Image
+            src={coverImage}
+            alt={item.title}
+            fill
+            preload
+            loading="eager"
+            quality={90}
+            sizes="100vw"
+            className="object-cover"
+          />
           <div className="absolute inset-0 rb-media-shade-strong" />
           <Container className="rb-on-media relative z-10 flex h-full flex-col justify-end pb-12 pt-24">
             <Eyebrow inverted>{newsCategoryLabelI18n(item.category, tNews)}</Eyebrow>
@@ -98,12 +107,12 @@ export default async function NewsDetailPage({ params }: NewsPageProps) {
             <MarkdownBody content={item.content} />
 
             <div className="mt-12 border border-neutral-300 bg-neutral-100 p-8 text-center">
-              <h3 className="rb-h4 text-neutral-900">{t("ctaTitleNews")}</h3>
+              <h3 className="rb-h4 text-neutral-900">{t('ctaTitleNews')}</h3>
               <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-secondary-text">
-                {t("ctaDescriptionNews")}
+                {t('ctaDescriptionNews')}
               </p>
               <div className="mt-6 flex justify-center">
-                <RbButton href="/contact">{tCta("bookConsult")}</RbButton>
+                <RbButton href="/contact">{tCta('bookConsult')}</RbButton>
               </div>
             </div>
           </article>
@@ -112,7 +121,7 @@ export default async function NewsDetailPage({ params }: NewsPageProps) {
         {related.length > 0 ? (
           <section className="bg-neutral-100">
             <Container className="py-16 lg:py-24">
-              <h2 className="rb-h3 mb-10 text-neutral-900">{t("relatedNews")}</h2>
+              <h2 className="rb-h3 mb-10 text-neutral-900">{t('relatedNews')}</h2>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {related.map((n) => (
                   <Link
@@ -130,7 +139,7 @@ export default async function NewsDetailPage({ params }: NewsPageProps) {
                       {pickSummary(n.summary, n.content)}
                     </p>
                     <span className="mt-5 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-primary">
-                      {t("viewDetail")}
+                      {t('viewDetail')}
                       <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1.5" />
                     </span>
                   </Link>
@@ -142,12 +151,12 @@ export default async function NewsDetailPage({ params }: NewsPageProps) {
 
         <Container>
           <div className="flex items-center justify-between border-t border-neutral-300 pt-8">
-            <RbLink href="/resources/news">{t("backToNews")}</RbLink>
+            <RbLink href="/resources/news">{t('backToNews')}</RbLink>
             <Link
               href="/contact"
               className="text-sm font-bold text-primary transition-colors hover:text-primary-hover"
             >
-              {t("bookConsultArrow")}
+              {t('bookConsultArrow')}
             </Link>
           </div>
         </Container>

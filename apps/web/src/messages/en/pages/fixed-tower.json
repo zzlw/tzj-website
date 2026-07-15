@@ -73,8 +73,14 @@
     }
   },
   "relatedLinks": [
-    { "label": "Standard Tower Series", "desc": "Browse preset models for fast selection and deployment." },
-    { "label": "Custom Training Tower", "desc": "From concept to completion, built to your exact specs." },
+    {
+      "label": "Standard Tower Series",
+      "desc": "Browse preset models for fast selection and deployment."
+    },
+    {
+      "label": "Custom Training Tower",
+      "desc": "From concept to completion, built to your exact specs."
+    },
     { "label": "Burn Rooms & Liners", "desc": "Safe, realistic live-fire training environments." }
   ],
   "cta": {

@@ -1,36 +1,33 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { PrismaService } from "../prisma/prisma.service";
-import { Prisma } from "@prisma/client/index";
-import { CreateBlogDto, UpdateBlogDto } from "./dto/blog.dto";
-import { ContentStatus } from "../common/enums/content-status.enum";
-import { sanitizeMarkdown } from "../common/utils/markdown";
-import { estimateReadTime } from "../common/utils/read-time";
-import { generateDocumentSummary } from "../common/utils/document-summary";
-import {
-  applyPublishedFilter,
-  assertPublishedOrStaff,
-} from "../common/utils/content-query";
-import { resolveContentAuthor } from "../common/utils/content-author";
-import { applyContentEditorMetadata } from "../common/utils/content-metadata";
+import { Injectable, NotFoundException } from '@nestjs/common';
+import type { Prisma } from '@prisma/client/index';
+import { ContentStatus } from '../common/enums/content-status.enum';
+import { resolveContentAuthor } from '../common/utils/content-author';
 import {
   CONTENT_ADMIN_USER_INCLUDE,
   stripInternalContentFields,
-} from "../common/utils/content-list";
+} from '../common/utils/content-list';
+import { applyContentEditorMetadata } from '../common/utils/content-metadata';
+import { applyPublishedFilter, assertPublishedOrStaff } from '../common/utils/content-query';
+import { generateDocumentSummary } from '../common/utils/document-summary';
 import {
   buildListOrderBy,
   DEFAULT_CONTENT_LIST_ORDER,
   parseListSort,
-} from "../common/utils/list-sort";
+} from '../common/utils/list-sort';
+import { sanitizeMarkdown } from '../common/utils/markdown';
+import { estimateReadTime } from '../common/utils/read-time';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateBlogDto, UpdateBlogDto } from './dto/blog.dto';
 
 const LIST_SORT_FIELDS = [
-  "title",
-  "category",
-  "status",
-  "publishedAt",
-  "createdAt",
-  "updatedAt",
-  "createdById",
-  "lastOperatorId",
+  'title',
+  'category',
+  'status',
+  'publishedAt',
+  'createdAt',
+  'updatedAt',
+  'createdById',
+  'lastOperatorId',
 ] as const;
 
 interface FindAllParams {
@@ -48,15 +45,7 @@ export class BlogsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll(params: FindAllParams) {
-    const {
-      page,
-      limit,
-      category,
-      search,
-      includeUnpublished = false,
-      sortBy,
-      sortOrder,
-    } = params;
+    const { page, limit, category, search, includeUnpublished = false, sortBy, sortOrder } = params;
     const skip = (page - 1) * limit;
 
     const where: Prisma.BlogWhereInput = {
@@ -65,8 +54,8 @@ export class BlogsService {
     if (category) where.category = category;
     if (search) {
       where.OR = [
-        { title: { contains: search, mode: "insensitive" } },
-        { excerpt: { contains: search, mode: "insensitive" } },
+        { title: { contains: search, mode: 'insensitive' } },
+        { excerpt: { contains: search, mode: 'insensitive' } },
       ];
     }
 
@@ -92,9 +81,7 @@ export class BlogsService {
     ]);
 
     return {
-      data: rawData.map((item) =>
-        stripInternalContentFields(item, includeUnpublished),
-      ),
+      data: rawData.map((item) => stripInternalContentFields(item, includeUnpublished)),
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     };
   }
@@ -136,10 +123,7 @@ export class BlogsService {
     if (editorId) {
       data.author = await resolveContentAuthor(this.prisma, editorId);
     }
-    Object.assign(
-      data,
-      await applyContentEditorMetadata(this.prisma, editorId, dto.status),
-    );
+    Object.assign(data, await applyContentEditorMetadata(this.prisma, editorId, dto.status));
     return this.prisma.blog.create({ data });
   }
 
@@ -161,21 +145,14 @@ export class BlogsService {
     }
     // 更新阅读时长（基于最新的正文和简介）
     if (dto.content !== undefined || dto.excerpt !== undefined) {
-      const content =
-        dto.content !== undefined
-          ? (data.content as string | null)
-          : item.content;
+      const content = dto.content !== undefined ? (data.content as string | null) : item.content;
       const finalExcerpt =
         dto.excerpt !== undefined
           ? dto.excerpt
-          : (data.excerpt as string | null | undefined) ?? item.excerpt;
+          : ((data.excerpt as string | null | undefined) ?? item.excerpt);
       data.readTime = estimateReadTime(content, finalExcerpt);
     }
-    if (
-      dto.status === ContentStatus.PUBLISHED &&
-      !dto.publishedAt &&
-      !item.publishedAt
-    ) {
+    if (dto.status === ContentStatus.PUBLISHED && !dto.publishedAt && !item.publishedAt) {
       data.publishedAt = new Date();
     }
     if (editorId) {
@@ -183,12 +160,7 @@ export class BlogsService {
     }
     Object.assign(
       data,
-      await applyContentEditorMetadata(
-        this.prisma,
-        editorId,
-        dto.status ?? item.status,
-        item,
-      ),
+      await applyContentEditorMetadata(this.prisma, editorId, dto.status ?? item.status, item),
     );
     return this.prisma.blog.update({ where: { id }, data });
   }

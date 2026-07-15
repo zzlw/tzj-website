@@ -1,10 +1,10 @@
-import type { PaginatedResponse } from "@tzj/types";
+import type { PaginatedResponse } from '@tzj/types';
 
 export interface ContentListState {
   page: number;
   limit: number;
   sortBy?: string;
-  sortOrder?: "asc" | "desc";
+  sortOrder?: 'asc' | 'desc';
   filter?: string;
 }
 
@@ -19,36 +19,36 @@ export type SortPreset = {
   key: string;
   label: string;
   sortBy: string;
-  sortOrder: "asc" | "desc";
+  sortOrder: 'asc' | 'desc';
 };
 
 export const CASE_SORT_PRESETS = [
-  { key: "completionDesc", sortBy: "completionDate", sortOrder: "desc" },
-  { key: "completionAsc", sortBy: "completionDate", sortOrder: "asc" },
-  { key: "titleAsc", sortBy: "title", sortOrder: "asc" },
-  { key: "titleDesc", sortBy: "title", sortOrder: "desc" },
-  { key: "locationAsc", sortBy: "location", sortOrder: "asc" },
+  { key: 'completionDesc', sortBy: 'completionDate', sortOrder: 'desc' },
+  { key: 'completionAsc', sortBy: 'completionDate', sortOrder: 'asc' },
+  { key: 'titleAsc', sortBy: 'title', sortOrder: 'asc' },
+  { key: 'titleDesc', sortBy: 'title', sortOrder: 'desc' },
+  { key: 'locationAsc', sortBy: 'location', sortOrder: 'asc' },
 ] as const;
 
 export const NEWS_SORT_PRESETS = [
-  { key: "publishedDesc", sortBy: "publishedAt", sortOrder: "desc" },
-  { key: "publishedAsc", sortBy: "publishedAt", sortOrder: "asc" },
-  { key: "titleAsc", sortBy: "title", sortOrder: "asc" },
-  { key: "titleDesc", sortBy: "title", sortOrder: "desc" },
+  { key: 'publishedDesc', sortBy: 'publishedAt', sortOrder: 'desc' },
+  { key: 'publishedAsc', sortBy: 'publishedAt', sortOrder: 'asc' },
+  { key: 'titleAsc', sortBy: 'title', sortOrder: 'asc' },
+  { key: 'titleDesc', sortBy: 'title', sortOrder: 'desc' },
 ] as const;
 
 export const BLOG_SORT_PRESETS = [
-  { key: "publishedDesc", sortBy: "publishedAt", sortOrder: "desc" },
-  { key: "publishedAsc", sortBy: "publishedAt", sortOrder: "asc" },
-  { key: "titleAsc", sortBy: "title", sortOrder: "asc" },
-  { key: "titleDesc", sortBy: "title", sortOrder: "desc" },
+  { key: 'publishedDesc', sortBy: 'publishedAt', sortOrder: 'desc' },
+  { key: 'publishedAsc', sortBy: 'publishedAt', sortOrder: 'asc' },
+  { key: 'titleAsc', sortBy: 'title', sortOrder: 'asc' },
+  { key: 'titleDesc', sortBy: 'title', sortOrder: 'desc' },
 ] as const;
 
 export const TRADE_SHOW_SORT_PRESETS = [
-  { key: "startDesc", sortBy: "startDate", sortOrder: "desc" },
-  { key: "startAsc", sortBy: "startDate", sortOrder: "asc" },
-  { key: "titleAsc", sortBy: "title", sortOrder: "asc" },
-  { key: "titleDesc", sortBy: "title", sortOrder: "desc" },
+  { key: 'startDesc', sortBy: 'startDate', sortOrder: 'desc' },
+  { key: 'startAsc', sortBy: 'startDate', sortOrder: 'asc' },
+  { key: 'titleAsc', sortBy: 'title', sortOrder: 'asc' },
+  { key: 'titleDesc', sortBy: 'title', sortOrder: 'desc' },
 ] as const;
 
 /** @deprecated 请使用 getCaseSortOptions + i18n */
@@ -85,17 +85,17 @@ export function parseContentListState(
   defaults: {
     limit?: number;
     sortBy: string;
-    sortOrder: "asc" | "desc";
+    sortOrder: 'asc' | 'desc';
     filterKey?: string;
   },
 ): ContentListState {
   const page = Math.max(1, Number(spString(raw.page)) || 1);
   const limit = Math.min(48, Math.max(1, Number(spString(raw.limit)) || defaults.limit || 9));
   const sortBy = spString(raw.sortBy) || defaults.sortBy;
-  const sortOrder = spString(raw.sortOrder) === "asc" ? "asc" : "desc";
+  const sortOrder = spString(raw.sortOrder) === 'asc' ? 'asc' : 'desc';
   const filterKey = defaults.filterKey;
   const filter =
-    filterKey && spString(raw[filterKey]) && spString(raw[filterKey]) !== "all"
+    filterKey && spString(raw[filterKey]) && spString(raw[filterKey]) !== 'all'
       ? spString(raw[filterKey])
       : undefined;
 
@@ -107,13 +107,13 @@ export function sortPresetValue(p: SortPreset): string {
 }
 
 export function parseSortPreset(value: string, fallback: SortPreset): SortPreset {
-  const [sortBy, sortOrder] = value.split(":");
+  const [sortBy, sortOrder] = value.split(':');
   if (!sortBy) return fallback;
   return {
     key: fallback.key,
     label: fallback.label,
     sortBy,
-    sortOrder: sortOrder === "asc" ? "asc" : "desc",
+    sortOrder: sortOrder === 'asc' ? 'asc' : 'desc',
   };
 }
 
@@ -128,7 +128,7 @@ export function buildListQuery(state: ContentListState, filterKey?: string) {
 }
 
 export function normalizePagination(
-  pagination?: PaginatedResponse<unknown>["pagination"] & { limit?: number },
+  pagination?: PaginatedResponse<unknown>['pagination'] & { limit?: number },
   fallbackPage = 1,
   fallbackLimit = 9,
 ): NormalizedPagination {
@@ -144,9 +144,9 @@ export function normalizePagination(
   };
 }
 
-import { resolveMediaUrl } from "./media-url";
+import { resolveMediaUrl } from './media-url';
 
-export function pickCoverImage(src?: string | null, fallback = "/media/tower-wylie.jpg") {
+export function pickCoverImage(src?: string | null, fallback = '/media/tower-wylie.jpg') {
   return resolveMediaUrl(src?.trim() ? src : fallback);
 }
 
@@ -154,5 +154,5 @@ export function pickSummary(...candidates: Array<string | null | undefined>) {
   for (const c of candidates) {
     if (c?.trim()) return c.trim();
   }
-  return "";
+  return '';
 }

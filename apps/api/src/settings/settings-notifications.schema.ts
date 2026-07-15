@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 export const siteNotificationSettingsSchema = z
   .object({
@@ -14,9 +14,9 @@ export const siteNotificationSettingsSchema = z
     const emails = value.contact.notifyEmails.map((e) => e.trim()).filter(Boolean);
     if (emails.length === 0) {
       ctx.addIssue({
-        code: "custom",
-        message: "启用邮件通知时至少配置一个收件邮箱",
-        path: ["contact", "notifyEmails"],
+        code: 'custom',
+        message: '启用邮件通知时至少配置一个收件邮箱',
+        path: ['contact', 'notifyEmails'],
       });
     }
   });

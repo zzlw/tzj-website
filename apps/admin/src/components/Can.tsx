@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import type { ReactNode } from "react";
-import { useSession } from "./session";
+import type { ReactNode } from 'react';
+import { useSession } from './session';
 
 /**
  * 客户端 UI 门禁：按权限或角色 slug 控制渲染。

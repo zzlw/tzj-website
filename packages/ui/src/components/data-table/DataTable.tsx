@@ -1,26 +1,19 @@
-"use client";
+'use client';
 
 import {
   flexRender,
   getCoreRowModel,
-  useReactTable,
   type ColumnDef as TanstackColumnDef,
-} from "@tanstack/react-table";
-import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
-import { useMemo } from "react";
-import { cn } from "../../lib/utils";
-import { Card } from "../card";
-import { Skeleton } from "../skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "../table";
+  useReactTable,
+} from '@tanstack/react-table';
+import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
+import { useMemo } from 'react';
+import { cn } from '../../lib/utils';
+import { Card } from '../card';
+import { Skeleton } from '../skeleton';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../table';
 
-export type SortOrder = "asc" | "desc";
+export type SortOrder = 'asc' | 'desc';
 
 export interface DataTableSort {
   column: string;
@@ -71,39 +64,29 @@ function SortableHeader({
   onSortChange?: (sort: DataTableSort | null) => void;
 }) {
   const active = sort?.column === sortKey;
-  const Icon = active
-    ? sort.order === "asc"
-      ? ArrowUp
-      : ArrowDown
-    : ArrowUpDown;
+  const Icon = active ? (sort.order === 'asc' ? ArrowUp : ArrowDown) : ArrowUpDown;
 
   return (
     <button
       type="button"
       className={cn(
-        "-ml-2 inline-flex items-center gap-1 rounded-md px-2 py-1 text-left font-medium transition-colors",
-        "hover:bg-muted/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        active ? "text-foreground" : "text-muted-foreground",
+        '-ml-2 inline-flex items-center gap-1 rounded-md px-2 py-1 text-left font-medium transition-colors',
+        'hover:bg-muted/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        active ? 'text-foreground' : 'text-muted-foreground',
       )}
       onClick={() => {
         if (!onSortChange) return;
         if (!active) {
-          onSortChange({ column: sortKey, order: "asc" });
+          onSortChange({ column: sortKey, order: 'asc' });
           return;
         }
-        if (sort!.order === "asc") {
-          onSortChange({ column: sortKey, order: "desc" });
+        if (sort!.order === 'asc') {
+          onSortChange({ column: sortKey, order: 'desc' });
           return;
         }
         onSortChange(defaultSort ?? null);
       }}
-      aria-sort={
-        active
-          ? sort!.order === "asc"
-            ? "ascending"
-            : "descending"
-          : "none"
-      }
+      aria-sort={active ? (sort!.order === 'asc' ? 'ascending' : 'descending') : 'none'}
     >
       {label}
       <Icon className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden />
@@ -117,7 +100,7 @@ export function DataTable<T extends { id: string }>({
   rows,
   loading,
   renderActions,
-  emptyText = "暂无数据",
+  emptyText = '暂无数据',
   skeletonRows = 5,
   getRowClassName,
   sort,
@@ -142,13 +125,13 @@ export function DataTable<T extends { id: string }>({
       cell: ({ row }) =>
         c.cell
           ? c.cell(row.original)
-          : String((row.original as Record<string, unknown>)[c.key] ?? "—"),
+          : String((row.original as Record<string, unknown>)[c.key] ?? '—'),
       meta: { className: c.className },
     }));
     if (renderActions) {
       cols.push({
-        id: "__actions",
-        header: () => "操作",
+        id: '__actions',
+        header: () => '操作',
         cell: ({ row }) => renderActions(row.original),
       });
     }
@@ -172,14 +155,9 @@ export function DataTable<T extends { id: string }>({
               {hg.headers.map((header) => (
                 <TableHead
                   key={header.id}
-                  className={
-                    header.column.id === "__actions" ? "text-right" : ""
-                  }
+                  className={header.column.id === '__actions' ? 'text-right' : ''}
                 >
-                  {flexRender(
-                    header.column.columnDef.header,
-                    header.getContext(),
-                  )}
+                  {flexRender(header.column.columnDef.header, header.getContext())}
                 </TableHead>
               ))}
             </TableRow>
@@ -198,27 +176,20 @@ export function DataTable<T extends { id: string }>({
             ))
           ) : rows.length === 0 ? (
             <TableRow>
-              <TableCell
-                colSpan={colCount}
-                className="h-32 text-center text-muted-foreground"
-              >
+              <TableCell colSpan={colCount} className="h-32 text-center text-muted-foreground">
                 {emptyText}
               </TableCell>
             </TableRow>
           ) : (
             table.getRowModel().rows.map((row) => (
-              <TableRow
-                key={row.id}
-                className={getRowClassName?.(row.original)}
-              >
+              <TableRow key={row.id} className={getRowClassName?.(row.original)}>
                 {row.getVisibleCells().map((cell) => (
                   <TableCell
                     key={cell.id}
                     className={
-                      cell.column.id === "__actions"
-                        ? "text-right"
-                        : (cell.column.columnDef.meta as { className?: string })
-                            ?.className
+                      cell.column.id === '__actions'
+                        ? 'text-right'
+                        : (cell.column.columnDef.meta as { className?: string })?.className
                     }
                   >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}

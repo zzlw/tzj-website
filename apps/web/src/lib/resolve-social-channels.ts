@@ -3,26 +3,26 @@ import type {
   SocialChannelPurpose,
   SocialChannelSetting,
   SocialPlatformId,
-} from "@tzj/types";
-import type { SocialChannelId } from "@/lib/social-channels";
-import type { SocialChannelItem } from "@/components/contact/SocialChannelBar";
+} from '@tzj/types';
+import type { SocialChannelItem } from '@/components/contact/SocialChannelBar';
+import type { SocialChannelId } from '@/lib/social-channels';
 
 const PLATFORM_LABEL_KEYS: Record<SocialPlatformId, string> = {
-  wechat: "wechatLabel",
-  douyin: "douyinLabel",
-  weibo: "weiboLabel",
-  xiaohongshu: "xiaohongshuLabel",
+  wechat: 'wechatLabel',
+  douyin: 'douyinLabel',
+  weibo: 'weiboLabel',
+  xiaohongshu: 'xiaohongshuLabel',
 };
 
 function channelPurpose(channel: SocialChannelSetting): SocialChannelPurpose {
-  return channel.purpose ?? (channel.platform === "wechat" ? "contact" : "follow");
+  return channel.purpose ?? (channel.platform === 'wechat' ? 'contact' : 'follow');
 }
 
 function channelLabel(channel: SocialChannelSetting, t: (key: string) => string): string {
-  if (channel.platform === "wechat") {
-    return channelPurpose(channel) === "contact"
-      ? t("wechatServiceLabel")
-      : t("wechatOfficialLabel");
+  if (channel.platform === 'wechat') {
+    return channelPurpose(channel) === 'contact'
+      ? t('wechatServiceLabel')
+      : t('wechatOfficialLabel');
   }
   return t(PLATFORM_LABEL_KEYS[channel.platform]);
 }
@@ -79,7 +79,6 @@ export function resolveAllSocialQrChannels(
       label: channelLabel(c, t),
       qr: c.qr!,
       platform: c.platform,
-      scanHint:
-        channelPurpose(c) === "contact" ? t("scanToAdd") : t("scanToFollow"),
+      scanHint: channelPurpose(c) === 'contact' ? t('scanToAdd') : t('scanToFollow'),
     }));
 }

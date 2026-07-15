@@ -1,6 +1,5 @@
-"use client";
+'use client';
 
-import { useRef, useState } from "react";
 import {
   Avatar,
   AvatarFallback,
@@ -10,10 +9,11 @@ import {
   HoverCardContent,
   HoverCardTrigger,
   Separator,
-} from "@tzj/ui";
-import type { ContentOperatorUser } from "@/features/types";
-import { formatDate, formatDateTime } from "@/features/constants";
-import { roleLabel } from "@/features/users";
+} from '@tzj/ui';
+import { useRef, useState } from 'react';
+import { formatDate, formatDateTime } from '@/features/constants';
+import type { ContentOperatorUser } from '@/features/types';
+import { roleLabel } from '@/features/users';
 
 function displayNickname(user: ContentOperatorUser): string {
   return user.nickname?.trim() || user.username;
@@ -21,7 +21,7 @@ function displayNickname(user: ContentOperatorUser): string {
 
 function initials(name: string): string {
   const t = name.trim();
-  if (!t) return "?";
+  if (!t) return '?';
   return t.slice(0, 2).toUpperCase();
 }
 
@@ -49,7 +49,10 @@ function OperatorProfileCard({ user }: { user: ContentOperatorUser }) {
           <p className="truncate text-xs text-muted-foreground">@{user.username}</p>
         </div>
         {user.isActive ? (
-          <Badge variant="outline" className="shrink-0 border-emerald-200 bg-emerald-50 text-emerald-700">
+          <Badge
+            variant="outline"
+            className="shrink-0 border-emerald-200 bg-emerald-50 text-emerald-700"
+          >
             启用
           </Badge>
         ) : (
@@ -61,13 +64,13 @@ function OperatorProfileCard({ user }: { user: ContentOperatorUser }) {
       <Separator />
       <div className="space-y-2">
         <ProfileRow label="用户名" value={user.username} />
-        <ProfileRow label="昵称" value={user.nickname?.trim() || "—"} />
-        <ProfileRow label="邮箱" value={user.email?.trim() || "—"} />
-        <ProfileRow label="手机" value={user.phone?.trim() || "—"} />
+        <ProfileRow label="昵称" value={user.nickname?.trim() || '—'} />
+        <ProfileRow label="邮箱" value={user.email?.trim() || '—'} />
+        <ProfileRow label="手机" value={user.phone?.trim() || '—'} />
         <ProfileRow label="角色" value={roleLabel(user.role)} />
         <ProfileRow
           label="最近登录"
-          value={user.lastLoginAt ? formatDateTime(user.lastLoginAt) : "—"}
+          value={user.lastLoginAt ? formatDateTime(user.lastLoginAt) : '—'}
         />
         <ProfileRow label="注册时间" value={formatDate(user.createdAt)} />
       </div>
@@ -133,7 +136,7 @@ export function LastOperatorCell({
             allowOpenRef.current = false;
           }}
           onFocus={(event) => {
-            if (event.target instanceof HTMLElement && event.target.matches(":focus-visible")) {
+            if (event.target instanceof HTMLElement && event.target.matches(':focus-visible')) {
               allowOpenRef.current = true;
             }
           }}
@@ -159,13 +162,11 @@ export function lastOperatorColumn<
   T extends { lastOperator?: string | null; lastOperatorUser?: ContentOperatorUser | null },
 >() {
   return {
-    key: "lastOperator",
-    header: "最后操作人",
+    key: 'lastOperator',
+    header: '最后操作人',
     sortable: true,
-    sortKey: "lastOperatorId",
-    cell: (r: T) => (
-      <LastOperatorCell user={r.lastOperatorUser} fallback={r.lastOperator} />
-    ),
+    sortKey: 'lastOperatorId',
+    cell: (r: T) => <LastOperatorCell user={r.lastOperatorUser} fallback={r.lastOperator} />,
   } as const;
 }
 
@@ -173,13 +174,11 @@ export function creatorColumn<
   T extends { createdBy?: string | null; createdByUser?: ContentOperatorUser | null },
 >() {
   return {
-    key: "createdBy",
-    header: "创建人",
+    key: 'createdBy',
+    header: '创建人',
     sortable: true,
-    sortKey: "createdById",
-    cell: (r: T) => (
-      <LastOperatorCell user={r.createdByUser} fallback={r.createdBy} />
-    ),
+    sortKey: 'createdById',
+    cell: (r: T) => <LastOperatorCell user={r.createdByUser} fallback={r.createdBy} />,
   } as const;
 }
 
@@ -192,17 +191,17 @@ export function contentAuditColumns<
 >() {
   return [
     {
-      key: "createdAt",
-      header: "创建时间",
+      key: 'createdAt',
+      header: '创建时间',
       sortable: true,
-      className: "whitespace-nowrap text-muted-foreground",
+      className: 'whitespace-nowrap text-muted-foreground',
       cell: (r: T) => formatDateTime(r.createdAt),
     },
     {
-      key: "updatedAt",
-      header: "更新时间",
+      key: 'updatedAt',
+      header: '更新时间',
       sortable: true,
-      className: "whitespace-nowrap text-muted-foreground",
+      className: 'whitespace-nowrap text-muted-foreground',
       cell: (r: T) => formatDateTime(r.updatedAt),
     },
     creatorColumn<T>(),

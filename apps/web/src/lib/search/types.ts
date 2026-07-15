@@ -1,10 +1,4 @@
-export type SearchResultGroup =
-  | "page"
-  | "solution"
-  | "case"
-  | "news"
-  | "blog"
-  | "tradeShow";
+export type SearchResultGroup = 'page' | 'solution' | 'case' | 'news' | 'blog' | 'tradeShow';
 
 export interface SearchResult {
   id: string;

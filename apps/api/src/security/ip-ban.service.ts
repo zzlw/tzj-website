@@ -1,27 +1,22 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-  NotFoundException,
-  OnModuleInit,
-} from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
-import type { BlockIpDuration, BlockedIpItem, CreateBlockedIpDto } from "@tzj/types";
-import { paginateMeta } from "../analytics/utils/analytics-list";
-import { PrismaService } from "../prisma/prisma.service";
-import { hashIp, isValidIp, maskIp, normalizeIp } from "../common/utils/client-ip";
+import { BadRequestException, ConflictException, Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { CreateBlockedIpDto } from '@tzj/types';
+import type { BlockedIpItem, BlockIpDuration } from '@tzj/types';
+import { paginateMeta } from '../analytics/utils/analytics-list';
+import { hashIp, isValidIp, maskIp, normalizeIp } from '../common/utils/client-ip';
+import { PrismaService } from '../prisma/prisma.service';
 
 const CACHE_TTL_MS = 60_000;
 
-const DURATION_MS: Record<Exclude<BlockIpDuration, "permanent">, number> = {
-  "1h": 60 * 60 * 1000,
-  "24h": 24 * 60 * 60 * 1000,
-  "7d": 7 * 24 * 60 * 60 * 1000,
-  "30d": 30 * 24 * 60 * 60 * 1000,
+const DURATION_MS: Record<Exclude<BlockIpDuration, 'permanent'>, number> = {
+  '1h': 60 * 60 * 1000,
+  '24h': 24 * 60 * 60 * 1000,
+  '7d': 7 * 24 * 60 * 60 * 1000,
+  '30d': 30 * 24 * 60 * 60 * 1000,
 };
 
 function resolveExpiresAt(duration: BlockIpDuration): Date | null {
-  if (duration === "permanent") return null;
+  if (duration === 'permanent') return null;
   return new Date(Date.now() + DURATION_MS[duration]);
 }
 
@@ -40,7 +35,7 @@ export class IpBanService implements OnModuleInit {
   }
 
   private getSalt(): string {
-    return this.config.get<string>("ANALYTICS_IP_SALT") ?? "tzj-analytics-default";
+    return this.config.get<string>('ANALYTICS_IP_SALT') ?? 'tzj-analytics-default';
   }
 
   hashIp(ip: string): string {
@@ -73,7 +68,7 @@ export class IpBanService implements OnModuleInit {
       this.prisma.blockedIp.findMany({
         skip,
         take: limit,
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: 'desc' },
         include: {
           createdBy: { select: { id: true, username: true, nickname: true } },
         },
@@ -88,16 +83,16 @@ export class IpBanService implements OnModuleInit {
   async blockIp(dto: CreateBlockedIpDto, createdById?: string): Promise<BlockedIpItem> {
     const ip = normalizeIp(dto.ip);
     if (!isValidIp(ip)) {
-      throw new BadRequestException("请输入有效的 IPv4 或 IPv6 地址");
+      throw new BadRequestException('请输入有效的 IPv4 或 IPv6 地址');
     }
 
     const ipHash = this.hashIp(ip);
     const existing = await this.prisma.blockedIp.findUnique({ where: { ipHash } });
     if (existing) {
-      throw new ConflictException("该 IP 已在封禁列表中");
+      throw new ConflictException('该 IP 已在封禁列表中');
     }
 
-    const duration = dto.duration ?? "permanent";
+    const duration = dto.duration ?? 'permanent';
     const row = await this.prisma.blockedIp.create({
       data: {
         ipHash,
@@ -117,7 +112,7 @@ export class IpBanService implements OnModuleInit {
 
   async unblock(id: string): Promise<void> {
     const row = await this.prisma.blockedIp.findUnique({ where: { id } });
-    if (!row) throw new NotFoundException("封禁记录不存在");
+    if (!row) throw new NotFoundException('封禁记录不存在');
 
     await this.prisma.blockedIp.delete({ where: { id } });
     this.cache.delete(row.ipHash);

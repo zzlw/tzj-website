@@ -1,17 +1,12 @@
-import type { SocialPlatformId } from "@tzj/types";
+import type { SocialPlatformId } from '@tzj/types';
 
 type Platform = SocialPlatformId;
 
 /** 内联 SVG 占位 — 不依赖网络，图片加载失败时兜底 */
 export function SocialQrPlaceholder({ platform }: { platform: Platform }) {
-  if (platform === "wechat") {
+  if (platform === 'wechat') {
     return (
-      <svg
-        viewBox="0 0 200 200"
-        className="h-full w-full"
-        role="img"
-        aria-label="微信二维码"
-      >
+      <svg viewBox="0 0 200 200" className="h-full w-full" role="img" aria-label="微信二维码">
         <rect width="200" height="200" fill="#fff" />
         <rect x="16" y="16" width="168" height="168" fill="none" stroke="#e5e7eb" strokeWidth="2" />
         <rect x="28" y="28" width="36" height="36" fill="#111827" />
@@ -25,8 +20,18 @@ export function SocialQrPlaceholder({ platform }: { platform: Platform }) {
         <rect x="40" y="148" width="12" height="12" fill="#111827" />
         <g fill="#6b7280">
           {[
-            [72, 40], [88, 40], [104, 56], [72, 72], [96, 72], [120, 88],
-            [72, 104], [88, 120], [104, 136], [120, 152], [88, 152], [104, 168],
+            [72, 40],
+            [88, 40],
+            [104, 56],
+            [72, 72],
+            [96, 72],
+            [120, 88],
+            [72, 104],
+            [88, 120],
+            [104, 136],
+            [120, 152],
+            [88, 152],
+            [104, 168],
           ].map(([x, y]) => (
             <rect key={`${x}-${y}`} x={x} y={y} width="8" height="8" />
           ))}
@@ -40,14 +45,9 @@ export function SocialQrPlaceholder({ platform }: { platform: Platform }) {
     );
   }
 
-  if (platform === "douyin") {
+  if (platform === 'douyin') {
     return (
-      <svg
-        viewBox="0 0 200 200"
-        className="h-full w-full"
-        role="img"
-        aria-label="抖音二维码"
-      >
+      <svg viewBox="0 0 200 200" className="h-full w-full" role="img" aria-label="抖音二维码">
         <rect width="200" height="200" fill="#fff" />
         <rect x="16" y="16" width="168" height="168" fill="none" stroke="#e5e7eb" strokeWidth="2" />
         <rect x="28" y="28" width="36" height="36" fill="#111827" />
@@ -61,8 +61,18 @@ export function SocialQrPlaceholder({ platform }: { platform: Platform }) {
         <rect x="40" y="148" width="12" height="12" fill="#111827" />
         <g fill="#6b7280">
           {[
-            [76, 44], [92, 44], [108, 60], [76, 76], [100, 76], [124, 92],
-            [76, 108], [92, 124], [108, 140], [124, 156], [92, 156], [108, 172],
+            [76, 44],
+            [92, 44],
+            [108, 60],
+            [76, 76],
+            [100, 76],
+            [124, 92],
+            [76, 108],
+            [92, 124],
+            [108, 140],
+            [124, 156],
+            [92, 156],
+            [108, 172],
           ].map(([x, y]) => (
             <rect key={`${x}-${y}`} x={x} y={y} width="8" height="8" />
           ))}

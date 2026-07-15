@@ -1,12 +1,12 @@
-import { Injectable } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
-import { PrismaService } from "../prisma/prisma.service";
-import { S3Service } from "../storage/s3.service";
-import { IntegrationsService } from "../integrations/integrations.service";
-import type { DependencyStatus } from "@tzj/types";
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import type { DependencyStatus } from '@tzj/types';
+import { IntegrationsService } from '../integrations/integrations.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { S3Service } from '../storage/s3.service';
 
 export interface HealthProbeResult {
-  status: "healthy" | "degraded" | "down";
+  status: 'healthy' | 'degraded' | 'down';
   checks: Record<string, DependencyStatus | Record<string, unknown>>;
 }
 
@@ -19,8 +19,8 @@ export class HealthService {
     private readonly integrations: IntegrationsService,
   ) {}
 
-  live(): { status: "ok"; timestamp: string } {
-    return { status: "ok", timestamp: new Date().toISOString() };
+  live(): { status: 'ok'; timestamp: string } {
+    return { status: 'ok', timestamp: new Date().toISOString() };
   }
 
   async ready(): Promise<HealthProbeResult> {
@@ -33,11 +33,11 @@ export class HealthService {
 
     const checks = { database, storage, redis, email };
     const values = Object.values(checks);
-    const status = values.every((v) => v === "up" || v === "skipped")
-      ? "healthy"
-      : values.some((v) => v === "up" || v === "skipped")
-        ? "degraded"
-        : "down";
+    const status = values.every((v) => v === 'up' || v === 'skipped')
+      ? 'healthy'
+      : values.some((v) => v === 'up' || v === 'skipped')
+        ? 'degraded'
+        : 'down';
 
     return { status, checks };
   }
@@ -58,34 +58,34 @@ export class HealthService {
   private async checkDatabase(): Promise<DependencyStatus> {
     try {
       await this.prisma.$queryRaw`SELECT 1`;
-      return "up";
+      return 'up';
     } catch {
-      return "down";
+      return 'down';
     }
   }
 
   private async checkStorage(): Promise<DependencyStatus> {
     try {
       const ok = await this.s3.ping();
-      return ok ? "up" : "down";
+      return ok ? 'up' : 'down';
     } catch {
-      return "down";
+      return 'down';
     }
   }
 
   private async checkRedis(): Promise<DependencyStatus> {
-    const url = this.config.get<string>("REDIS_URL")?.trim();
-    if (!url) return "skipped";
+    const url = this.config.get<string>('REDIS_URL')?.trim();
+    if (!url) return 'skipped';
     // Redis 已在 compose 中预留，业务层尚未接入；标记为 skipped 避免误报
-    return "skipped";
+    return 'skipped';
   }
 
   private async checkEmail(): Promise<DependencyStatus> {
     try {
-      const active = await this.integrations.isActive("aliyun-directmail");
-      return active ? "up" : "skipped";
+      const active = await this.integrations.isActive('aliyun-directmail');
+      return active ? 'up' : 'skipped';
     } catch {
-      return "degraded";
+      return 'degraded';
     }
   }
 }

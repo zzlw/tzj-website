@@ -1,10 +1,10 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { PrismaService } from "../prisma/prisma.service";
-import { Prisma } from "@prisma/client/index";
-import { CreateContactDto, UpdateContactDto } from "./dto/contact.dto";
-import { resolveContentAuthor } from "../common/utils/content-author";
-import { LAST_OPERATOR_USER_SELECT } from "../common/utils/content-list";
-import { NotificationService } from "../notifications/notification.service";
+import { Injectable, NotFoundException } from '@nestjs/common';
+import type { Prisma } from '@prisma/client/index';
+import { resolveContentAuthor } from '../common/utils/content-author';
+import { LAST_OPERATOR_USER_SELECT } from '../common/utils/content-list';
+import { NotificationService } from '../notifications/notification.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateContactDto, UpdateContactDto } from './dto/contact.dto';
 
 interface FindAllParams {
   page: number;
@@ -37,7 +37,7 @@ export class ContactService {
         where,
         skip,
         take: limit,
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: 'desc' },
         include: CONTACT_OPERATOR_INCLUDE,
       }),
       this.prisma.contact.count({ where }),
@@ -60,7 +60,7 @@ export class ContactService {
 
   async create(dto: CreateContactDto) {
     const contact = await this.prisma.contact.create({
-      data: { ...dto, source: dto.source ?? "website" },
+      data: { ...dto, source: dto.source ?? 'website' },
     });
     this.notifications.dispatchContactCreated(contact);
     return contact;

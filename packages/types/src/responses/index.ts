@@ -39,11 +39,11 @@ export interface ErrorResponse {
  * 健康检查响应
  */
 export interface HealthCheckResponse {
-  status: "ok" | "degraded" | "down";
+  status: 'ok' | 'degraded' | 'down';
   version: string;
   uptime: number;
   timestamp: string;
-  services: Record<string, "up" | "down" | "degraded">;
+  services: Record<string, 'up' | 'down' | 'degraded'>;
 }
 
 /**

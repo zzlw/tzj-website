@@ -57,13 +57,13 @@ export function mapOperatorUser(user: OperatorUserRow | null | undefined) {
 }
 
 const INTERNAL_KEYS = [
-  "systemPublishedAt",
-  "createdBy",
-  "createdById",
-  "createdByUser",
-  "lastOperator",
-  "lastOperatorId",
-  "lastOperatorUser",
+  'systemPublishedAt',
+  'createdBy',
+  'createdById',
+  'createdByUser',
+  'lastOperator',
+  'lastOperatorId',
+  'lastOperatorUser',
 ] as const;
 
 /** 前台公开列表不暴露内部审计字段 */

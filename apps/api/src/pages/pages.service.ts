@@ -1,8 +1,8 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { PrismaService } from "../prisma/prisma.service";
-import { Prisma } from "@prisma/client/index";
-import { CreatePageDto, UpdatePageDto } from "./dto/page.dto";
-import { sanitizeRichText } from "../common/utils/sanitize";
+import { Injectable, NotFoundException } from '@nestjs/common';
+import type { Prisma } from '@prisma/client/index';
+import { sanitizeRichText } from '../common/utils/sanitize';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreatePageDto, UpdatePageDto } from './dto/page.dto';
 
 @Injectable()
 export class PagesService {
@@ -10,7 +10,7 @@ export class PagesService {
 
   async findAll() {
     return this.prisma.page.findMany({
-      orderBy: { sortOrder: "asc" },
+      orderBy: { sortOrder: 'asc' },
     });
   }
 

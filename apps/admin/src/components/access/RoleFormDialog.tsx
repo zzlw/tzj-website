@@ -1,9 +1,8 @@
-"use client";
+'use client';
 
-import { useEffect, useMemo, useState } from "react";
-import { Loader2 } from "lucide-react";
 import {
   Button,
+  cn,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -13,10 +12,11 @@ import {
   Input,
   Label,
   Textarea,
-  cn,
-} from "@tzj/ui";
-import type { PermissionGroup } from "@/features/types";
-import { notifyError } from "@/lib/notify";
+} from '@tzj/ui';
+import { Loader2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import type { PermissionGroup } from '@/features/types';
+import { notifyError } from '@/lib/notify';
 
 export interface RoleFormValues {
   name: string;
@@ -37,9 +37,9 @@ interface RoleFormDialogProps {
 }
 
 const EMPTY: RoleFormValues = {
-  name: "",
-  slug: "",
-  description: "",
+  name: '',
+  slug: '',
+  description: '',
   permissions: [],
 };
 
@@ -53,11 +53,7 @@ export function PermissionMatrix({
   onChange: (next: string[]) => void;
 }) {
   function toggle(id: string) {
-    onChange(
-      selected.includes(id)
-        ? selected.filter((p) => p !== id)
-        : [...selected, id],
-    );
+    onChange(selected.includes(id) ? selected.filter((p) => p !== id) : [...selected, id]);
   }
 
   function toggleGroup(group: PermissionGroup) {
@@ -85,15 +81,15 @@ export function PermissionMatrix({
             >
               <span
                 className={cn(
-                  "flex h-4 w-4 items-center justify-center rounded border text-[10px]",
+                  'flex h-4 w-4 items-center justify-center rounded border text-[10px]',
                   allOn
-                    ? "border-primary bg-primary text-primary-foreground"
+                    ? 'border-primary bg-primary text-primary-foreground'
                     : someOn
-                      ? "border-primary bg-primary/20"
-                      : "border-border",
+                      ? 'border-primary bg-primary/20'
+                      : 'border-border',
                 )}
               >
-                {allOn ? "✓" : someOn ? "−" : ""}
+                {allOn ? '✓' : someOn ? '−' : ''}
               </span>
               {group.label}
             </button>
@@ -136,7 +132,7 @@ export function RoleFormDialog({
   groups,
   title,
   description,
-  submitLabel = "创建",
+  submitLabel = '创建',
   initialValues,
   onSubmit,
 }: RoleFormDialogProps) {
@@ -164,7 +160,7 @@ export function RoleFormDialog({
       await onSubmit(values);
       onOpenChange(false);
     } catch (err) {
-      notifyError(err, "保存失败");
+      notifyError(err, '保存失败');
     } finally {
       setSaving(false);
     }
@@ -176,9 +172,7 @@ export function RoleFormDialog({
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
-            {description ? (
-              <DialogDescription>{description}</DialogDescription>
-            ) : null}
+            {description ? <DialogDescription>{description}</DialogDescription> : null}
           </DialogHeader>
 
           <div className="mt-4 space-y-4">
@@ -187,9 +181,7 @@ export function RoleFormDialog({
               <Input
                 id="role-name"
                 value={values.name}
-                onChange={(e) =>
-                  setValues((v) => ({ ...v, name: e.target.value }))
-                }
+                onChange={(e) => setValues((v) => ({ ...v, name: e.target.value }))}
                 placeholder="例如：内容审核员"
                 maxLength={64}
                 required
@@ -202,9 +194,7 @@ export function RoleFormDialog({
                 <Input
                   id="role-slug"
                   value={values.slug}
-                  onChange={(e) =>
-                    setValues((v) => ({ ...v, slug: e.target.value }))
-                  }
+                  onChange={(e) => setValues((v) => ({ ...v, slug: e.target.value }))}
                   placeholder="留空则根据名称自动生成"
                   maxLength={64}
                 />
@@ -216,9 +206,7 @@ export function RoleFormDialog({
               <div className="space-y-2">
                 <Label htmlFor="role-slug-readonly">标识</Label>
                 <Input id="role-slug-readonly" value={values.slug} disabled />
-                <p className="text-xs text-muted-foreground">
-                  角色标识创建后不可修改。
-                </p>
+                <p className="text-xs text-muted-foreground">角色标识创建后不可修改。</p>
               </div>
             )}
 
@@ -227,9 +215,7 @@ export function RoleFormDialog({
               <Textarea
                 id="role-desc"
                 value={values.description}
-                onChange={(e) =>
-                  setValues((v) => ({ ...v, description: e.target.value }))
-                }
+                onChange={(e) => setValues((v) => ({ ...v, description: e.target.value }))}
                 rows={2}
                 maxLength={200}
               />

@@ -15,16 +15,46 @@
     "description": "From breach points to balconies, attics to elevator shafts — TZJ's design options, fixtures, infrastructure, and props are virtually limitless."
   },
   "features": [
-    { "title": "Hazmat", "desc": "Grant-eligible props or hazmat instructor trailer series: chlorine cylinders, leaking/reaction drums, bulk tank leaks, falling cylinders, control panels, and more." },
-    { "title": "Heat & Smoke", "desc": "Class A/B burn props, Class A burn stands, smoke distribution, LED digital fire for extinguisher training, temperature monitoring, and audible/visual alarm systems." },
-    { "title": "Egress", "desc": "Straight and L-shaped stairs with landings; ship's ladders, cage ladders, ship ladders, gooseneck ladders; floor hatches, windows, roof scuttles — fully welded hot-dip galvanized." },
-    { "title": "Search & Rescue", "desc": "Maze panel systems (no tracks, freely reconfigurable); five balcony designs; Nance and Denver rescue drills." },
-    { "title": "Confined Space", "desc": "Manholes, corrugated culverts, elevator shafts, and other confined-space training structures." },
-    { "title": "Forcible Entry & Shoring", "desc": "Training for floors, ceilings, windows (including VES), doors (including roll-up doors), roofs, walls, and safety covers." },
-    { "title": "Ventilation & Smoke Exhaust", "desc": "Roof and sidewall exhaust fans; custom systems; sloped and flat roof configurations (high-rise, parapet concrete, metal, tile, and more)." },
-    { "title": "Rope & High-Angle Rescue", "desc": "Code-compliant swivel rope descent devices; platforms, anchor points, guardrails, helicopter skid props, and climbing walls." },
-    { "title": "Building Facades", "desc": "Mortar-free and panel brick facades; steel facades; multiple colors and styles available." },
-    { "title": "Standpipes / Sprinklers", "desc": "Dry standpipes with FDC connections; dual-head sprinkler systems." }
+    {
+      "title": "Hazmat",
+      "desc": "Grant-eligible props or hazmat instructor trailer series: chlorine cylinders, leaking/reaction drums, bulk tank leaks, falling cylinders, control panels, and more."
+    },
+    {
+      "title": "Heat & Smoke",
+      "desc": "Class A/B burn props, Class A burn stands, smoke distribution, LED digital fire for extinguisher training, temperature monitoring, and audible/visual alarm systems."
+    },
+    {
+      "title": "Egress",
+      "desc": "Straight and L-shaped stairs with landings; ship's ladders, cage ladders, ship ladders, gooseneck ladders; floor hatches, windows, roof scuttles — fully welded hot-dip galvanized."
+    },
+    {
+      "title": "Search & Rescue",
+      "desc": "Maze panel systems (no tracks, freely reconfigurable); five balcony designs; Nance and Denver rescue drills."
+    },
+    {
+      "title": "Confined Space",
+      "desc": "Manholes, corrugated culverts, elevator shafts, and other confined-space training structures."
+    },
+    {
+      "title": "Forcible Entry & Shoring",
+      "desc": "Training for floors, ceilings, windows (including VES), doors (including roll-up doors), roofs, walls, and safety covers."
+    },
+    {
+      "title": "Ventilation & Smoke Exhaust",
+      "desc": "Roof and sidewall exhaust fans; custom systems; sloped and flat roof configurations (high-rise, parapet concrete, metal, tile, and more)."
+    },
+    {
+      "title": "Rope & High-Angle Rescue",
+      "desc": "Code-compliant swivel rope descent devices; platforms, anchor points, guardrails, helicopter skid props, and climbing walls."
+    },
+    {
+      "title": "Building Facades",
+      "desc": "Mortar-free and panel brick facades; steel facades; multiple colors and styles available."
+    },
+    {
+      "title": "Standpipes / Sprinklers",
+      "desc": "Dry standpipes with FDC connections; dual-head sprinkler systems."
+    }
   ],
   "maritime": {
     "eyebrow": "Maritime Training",
@@ -47,8 +77,18 @@
     "description": "Tactical response requires a highly specialized skill set. Modular systems with all-galvanized steel frames and no interior load-bearing walls allow walls, doors, and windows to be moved and reconfigured — ideal for diverse tactical scenarios.",
     "linkText": "Explore tactical training",
     "scenarios": [
-      "Situational awareness", "Cover and concealment", "Close-quarters combat", "Tactical movement", "Team coordination", "Defensive tactics",
-      "Hostage rescue", "Room clearing", "Communication protocols", "Decision-making under pressure", "Survival skills", "Evacuation procedures"
+      "Situational awareness",
+      "Cover and concealment",
+      "Close-quarters combat",
+      "Tactical movement",
+      "Team coordination",
+      "Defensive tactics",
+      "Hostage rescue",
+      "Room clearing",
+      "Communication protocols",
+      "Decision-making under pressure",
+      "Survival skills",
+      "Evacuation procedures"
     ]
   },
   "hazmat": {
@@ -57,18 +97,42 @@
     "description": "TZJ also excels in hazardous materials and waste training. We use props and simulators that replicate community hazard scenarios to prepare all types of emergency response — products may qualify for grants and support cross-regional coordination.",
     "linkText": "Explore hazmat training",
     "products": [
-      { "name": "Chlorine cylinder", "desc": "Full-size chlorine cylinder; controllable valve, pipe, and manifold leaks." },
-      { "name": "Leaking drum", "desc": "Standard oil drum; simulates forklift puncture, bung, or seam leaks." },
-      { "name": "Bulk tank leak", "desc": "Control flammable liquid leaks; valve, manifold, and tank rupture scenarios." },
-      { "name": "Reaction drum", "desc": "Bubbling/gurgling sounds and drum vibration; bulging drum top signals rising pressure." },
-      { "name": "Falling cylinder", "desc": "Rack failure; uncontrolled release from failed cylinders and manifolds." },
-      { "name": "Control panel", "desc": "Handheld tablet to manage all props; emergency stop, pause, and reset." }
+      {
+        "name": "Chlorine cylinder",
+        "desc": "Full-size chlorine cylinder; controllable valve, pipe, and manifold leaks."
+      },
+      {
+        "name": "Leaking drum",
+        "desc": "Standard oil drum; simulates forklift puncture, bung, or seam leaks."
+      },
+      {
+        "name": "Bulk tank leak",
+        "desc": "Control flammable liquid leaks; valve, manifold, and tank rupture scenarios."
+      },
+      {
+        "name": "Reaction drum",
+        "desc": "Bubbling/gurgling sounds and drum vibration; bulging drum top signals rising pressure."
+      },
+      {
+        "name": "Falling cylinder",
+        "desc": "Rack failure; uncontrolled release from failed cylinders and manifolds."
+      },
+      {
+        "name": "Control panel",
+        "desc": "Handheld tablet to manage all props; emergency stop, pause, and reset."
+      }
     ]
   },
   "relatedLinks": [
     { "label": "Maritime Training", "desc": "Ship fire scenarios and specialized props." },
-    { "label": "Tactical Training", "desc": "Reconfigurable tactical training scenarios for law enforcement and military." },
-    { "label": "Hazmat Training", "desc": "Hazard props, mobile trailers, and integrated training complexes." }
+    {
+      "label": "Tactical Training",
+      "desc": "Reconfigurable tactical training scenarios for law enforcement and military."
+    },
+    {
+      "label": "Hazmat Training",
+      "desc": "Hazard props, mobile trailers, and integrated training complexes."
+    }
   ],
   "cta": {
     "title": "Can't find the training prop you need?",

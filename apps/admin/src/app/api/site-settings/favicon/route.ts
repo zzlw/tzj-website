@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { API_BASE, COOKIE } from "@/lib/config";
-import { applyTokenCookies, refreshAccessToken } from "@/lib/tokenRefresh";
+import { cookies } from 'next/headers';
+import { type NextRequest, NextResponse } from 'next/server';
+import { API_BASE, COOKIE } from '@/lib/config';
+import { applyTokenCookies, refreshAccessToken } from '@/lib/tokenRefresh';
 
 /**
  * Favicon 上传专用 BFF：接收 multipart/form-data，携带 httpOnly cookie 转发到 Nest API。
@@ -13,27 +13,27 @@ export async function POST(req: NextRequest) {
   const refreshToken = store.get(COOKIE.refresh)?.value;
 
   const incoming = await req.formData();
-  const file = incoming.get("file");
+  const file = incoming.get('file');
 
   if (!(file instanceof File)) {
     return NextResponse.json(
-      { success: false, error: { message: "未接收到文件" } },
+      { success: false, error: { message: '未接收到文件' } },
       { status: 400 },
     );
   }
 
   const buildForm = () => {
     const fd = new FormData();
-    fd.append("file", file, file.name);
+    fd.append('file', file, file.name);
     return fd;
   };
 
   const forward = (bearer?: string) =>
     fetch(`${API_BASE}/site-settings/favicon`, {
-      method: "POST",
+      method: 'POST',
       headers: bearer ? { Authorization: `Bearer ${bearer}` } : undefined,
       body: buildForm(),
-      cache: "no-store",
+      cache: 'no-store',
     });
 
   let apiRes = await forward(accessToken);
@@ -51,8 +51,7 @@ export async function POST(req: NextRequest) {
   const res = new NextResponse(text, {
     status: apiRes.status,
     headers: {
-      "content-type":
-        apiRes.headers.get("content-type") || "application/json",
+      'content-type': apiRes.headers.get('content-type') || 'application/json',
     },
   });
 
@@ -73,9 +72,9 @@ export async function DELETE() {
 
   const forward = (bearer?: string) =>
     fetch(`${API_BASE}/site-settings/favicon`, {
-      method: "DELETE",
+      method: 'DELETE',
       headers: bearer ? { Authorization: `Bearer ${bearer}` } : undefined,
-      cache: "no-store",
+      cache: 'no-store',
     });
 
   let apiRes = await forward(accessToken);

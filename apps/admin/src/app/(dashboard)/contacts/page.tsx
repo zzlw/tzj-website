@@ -1,12 +1,11 @@
-"use client";
+'use client';
 
-import { useMemo, useState } from "react";
-import { Eye, Trash2 } from "lucide-react";
 import {
   Alert,
   Badge,
   Button,
   ConfirmDialog,
+  cn,
   DataTable,
   type DataTableColumn,
   Label,
@@ -16,6 +15,7 @@ import {
   SelectItem,
   SelectTrigger,
   SimpleDialog,
+  TablePagination,
   Tabs,
   TabsList,
   TabsTrigger,
@@ -24,46 +24,46 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-  TablePagination,
-  cn,
-} from "@tzj/ui";
-import { Can } from "@/components/Can";
-import { useList, useUpdate, useRemove } from "@/features/hooks";
-import { ApiError } from "@/lib/apiClient";
-import { notifyError, notifySuccess } from "@/lib/notify";
-import type { ContactItem } from "@/features/types";
-import { formatDateTime } from "@/features/constants";
-import { LastOperatorCell } from "@/components/LastOperatorCell";
+} from '@tzj/ui';
+import { Eye, Trash2 } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Can } from '@/components/Can';
+import { LastOperatorCell } from '@/components/LastOperatorCell';
+import { formatDateTime } from '@/features/constants';
+import { useList, useRemove, useUpdate } from '@/features/hooks';
+import type { ContactItem } from '@/features/types';
+import { ApiError } from '@/lib/apiClient';
+import { notifyError, notifySuccess } from '@/lib/notify';
 
 const FILTERS = [
-  { key: "unread", label: "未读", params: { isRead: false } },
-  { key: "unhandled", label: "待处理", params: { isHandled: false } },
+  { key: 'unread', label: '未读', params: { isRead: false } },
+  { key: 'unhandled', label: '待处理', params: { isHandled: false } },
 ] as const;
 
 const CONTACT_STATUS = {
   pending: {
-    label: "待处理",
-    dot: "bg-amber-500",
+    label: '待处理',
+    dot: 'bg-amber-500',
     trigger:
-      "border-amber-300/80 bg-amber-50 text-amber-800 hover:bg-amber-50 focus:ring-amber-200/60",
-    badge: "border-amber-200 bg-amber-50 text-amber-700",
+      'border-amber-300/80 bg-amber-50 text-amber-800 hover:bg-amber-50 focus:ring-amber-200/60',
+    badge: 'border-amber-200 bg-amber-50 text-amber-700',
   },
   handled: {
-    label: "已处理",
-    dot: "bg-emerald-500",
+    label: '已处理',
+    dot: 'bg-emerald-500',
     trigger:
-      "border-emerald-300/80 bg-emerald-50 text-emerald-800 hover:bg-emerald-50 focus:ring-emerald-200/60",
-    badge: "border-emerald-200 bg-emerald-50 text-emerald-700",
+      'border-emerald-300/80 bg-emerald-50 text-emerald-800 hover:bg-emerald-50 focus:ring-emerald-200/60',
+    badge: 'border-emerald-200 bg-emerald-50 text-emerald-700',
   },
 } as const;
 
 type ContactStatusKey = keyof typeof CONTACT_STATUS;
 
 function ContactHandleBadge({ handled }: { handled: boolean }) {
-  const status = CONTACT_STATUS[handled ? "handled" : "pending"];
+  const status = CONTACT_STATUS[handled ? 'handled' : 'pending'];
   return (
-    <Badge variant="outline" className={cn("gap-1.5 pl-2", status.badge)}>
-      <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", status.dot)} />
+    <Badge variant="outline" className={cn('gap-1.5 pl-2', status.badge)}>
+      <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', status.dot)} />
       {status.label}
     </Badge>
   );
@@ -76,33 +76,31 @@ function ContactHandleStatusSelect({
   handled: boolean;
   onChange: (handled: boolean) => void;
 }) {
-  const value: ContactStatusKey = handled ? "handled" : "pending";
+  const value: ContactStatusKey = handled ? 'handled' : 'pending';
   const current = CONTACT_STATUS[value];
 
   return (
-    <Select
-      value={value}
-      onValueChange={(v) => onChange(v === "handled")}
-    >
-      <SelectTrigger
-        className={cn("h-9 w-[148px] font-medium shadow-none", current.trigger)}
-      >
+    <Select value={value} onValueChange={(v) => onChange(v === 'handled')}>
+      <SelectTrigger className={cn('h-9 w-[148px] font-medium shadow-none', current.trigger)}>
         <span className="flex items-center gap-2">
-          <span className={cn("h-2 w-2 shrink-0 rounded-full", current.dot)} />
+          <span className={cn('h-2 w-2 shrink-0 rounded-full', current.dot)} />
           {current.label}
         </span>
       </SelectTrigger>
       <SelectContent>
-        {(Object.entries(CONTACT_STATUS) as [ContactStatusKey, (typeof CONTACT_STATUS)[ContactStatusKey]][]).map(
-          ([key, status]) => (
-            <SelectItem key={key} value={key}>
-              <span className="flex items-center gap-2">
-                <span className={cn("h-2 w-2 shrink-0 rounded-full", status.dot)} />
-                {status.label}
-              </span>
-            </SelectItem>
-          ),
-        )}
+        {(
+          Object.entries(CONTACT_STATUS) as [
+            ContactStatusKey,
+            (typeof CONTACT_STATUS)[ContactStatusKey],
+          ][]
+        ).map(([key, status]) => (
+          <SelectItem key={key} value={key}>
+            <span className="flex items-center gap-2">
+              <span className={cn('h-2 w-2 shrink-0 rounded-full', status.dot)} />
+              {status.label}
+            </span>
+          </SelectItem>
+        ))}
       </SelectContent>
     </Select>
   );
@@ -110,9 +108,9 @@ function ContactHandleStatusSelect({
 
 const CONTACT_COLUMNS: DataTableColumn<ContactItem>[] = [
   {
-    key: "name",
-    header: "联系人",
-    className: "font-medium",
+    key: 'name',
+    header: '联系人',
+    className: 'font-medium',
     cell: (r) => (
       <>
         {!r.isRead && (
@@ -123,43 +121,43 @@ const CONTACT_COLUMNS: DataTableColumn<ContactItem>[] = [
     ),
   },
   {
-    key: "company",
-    header: "单位",
-    className: "text-muted-foreground",
-    cell: (r) => r.company ?? "—",
+    key: 'company',
+    header: '单位',
+    className: 'text-muted-foreground',
+    cell: (r) => r.company ?? '—',
   },
   {
-    key: "contact",
-    header: "联系方式",
-    className: "text-muted-foreground",
-    cell: (r) => r.phone || r.email || "—",
+    key: 'contact',
+    header: '联系方式',
+    className: 'text-muted-foreground',
+    cell: (r) => r.phone || r.email || '—',
   },
   {
-    key: "message",
-    header: "留言摘要",
-    className: "max-w-[260px] truncate text-muted-foreground",
+    key: 'message',
+    header: '留言摘要',
+    className: 'max-w-[260px] truncate text-muted-foreground',
     cell: (r) => r.message,
   },
   {
-    key: "status",
-    header: "状态",
+    key: 'status',
+    header: '状态',
     cell: (r) => <ContactHandleBadge handled={r.isHandled} />,
   },
   {
-    key: "createdAt",
-    header: "创建时间",
-    className: "whitespace-nowrap text-muted-foreground",
+    key: 'createdAt',
+    header: '创建时间',
+    className: 'whitespace-nowrap text-muted-foreground',
     cell: (r) => formatDateTime(r.createdAt),
   },
   {
-    key: "updatedAt",
-    header: "更新时间",
-    className: "whitespace-nowrap text-muted-foreground",
+    key: 'updatedAt',
+    header: '更新时间',
+    className: 'whitespace-nowrap text-muted-foreground',
     cell: (r) => formatDateTime(r.updatedAt),
   },
   {
-    key: "lastOperator",
-    header: "最后操作人",
+    key: 'lastOperator',
+    header: '最后操作人',
     cell: (r) => <LastOperatorCell user={r.lastOperatorUser} fallback={r.lastOperator} />,
   },
 ];
@@ -167,9 +165,9 @@ const CONTACT_COLUMNS: DataTableColumn<ContactItem>[] = [
 export default function ContactsPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [tab, setTab] = useState<"all" | "unread" | "unhandled">("all");
+  const [tab, setTab] = useState<'all' | 'unread' | 'unhandled'>('all');
   const [detail, setDetail] = useState<ContactItem | null>(null);
-  const [remark, setRemark] = useState("");
+  const [remark, setRemark] = useState('');
   const [handledDraft, setHandledDraft] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ContactItem | null>(null);
 
@@ -179,16 +177,16 @@ export default function ContactsPage() {
     return f ? { ...base, ...f.params } : base;
   }, [page, pageSize, tab]);
 
-  const { data, isLoading, isError, error } = useList<ContactItem>("contact", params);
-  const updateMut = useUpdate<ContactItem>("contact");
-  const removeMut = useRemove("contact");
+  const { data, isLoading, isError, error } = useList<ContactItem>('contact', params);
+  const updateMut = useUpdate<ContactItem>('contact');
+  const removeMut = useRemove('contact');
 
   const rows = data?.data ?? [];
   const pagination = data?.pagination;
 
   function openDetail(row: ContactItem) {
     setDetail(row);
-    setRemark(row.remark ?? "");
+    setRemark(row.remark ?? '');
     setHandledDraft(row.isHandled);
     if (!row.isRead) {
       updateMut.mutate({ id: row.id, payload: { isRead: true } });
@@ -203,24 +201,23 @@ export default function ContactsPage() {
         payload: { remark, isHandled: handledDraft },
       });
       setDetail(null);
-      notifySuccess("询盘已保存");
+      notifySuccess('询盘已保存');
     } catch (e) {
-      notifyError(e, "保存失败");
+      notifyError(e, '保存失败');
     }
   }
 
   const detailDirty =
-    detail !== null &&
-    (remark !== (detail.remark ?? "") || handledDraft !== detail.isHandled);
+    detail !== null && (remark !== (detail.remark ?? '') || handledDraft !== detail.isHandled);
 
   async function handleDeleteConfirm() {
     if (!deleteTarget) return;
     try {
       await removeMut.mutateAsync(deleteTarget.id);
       setDeleteTarget(null);
-      notifySuccess("询盘已删除");
+      notifySuccess('询盘已删除');
     } catch (e) {
-      notifyError(e, "删除失败");
+      notifyError(e, '删除失败');
     }
   }
 
@@ -229,12 +226,7 @@ export default function ContactsPage() {
       <div className="flex items-center justify-end gap-1">
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => openDetail(r)}
-            >
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openDetail(r)}>
               <Eye className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
@@ -261,10 +253,7 @@ export default function ContactsPage() {
 
   return (
     <TooltipProvider>
-      <PageHeader
-        title="询盘管理"
-        description="查看并处理来自官网的客户咨询"
-      />
+      <PageHeader title="询盘管理" description="查看并处理来自官网的客户咨询" />
 
       <Tabs
         value={tab}
@@ -283,11 +272,11 @@ export default function ContactsPage() {
 
       {isError && (
         <Alert variant="destructive" icon="error" className="mb-4">
-          加载失败：{error instanceof Error ? error.message : "未知错误"}
+          加载失败：{error instanceof Error ? error.message : '未知错误'}
           {error instanceof ApiError && error.status === 401
-            ? "（会话已过期，请重新登录）"
+            ? '（会话已过期，请重新登录）'
             : error instanceof ApiError && error.status === 403
-              ? "（无询盘查看权限，请联系管理员）"
+              ? '（无询盘查看权限，请联系管理员）'
               : null}
         </Alert>
       )}
@@ -297,7 +286,7 @@ export default function ContactsPage() {
         rows={rows}
         loading={isLoading}
         emptyText="暂无询盘"
-        getRowClassName={(r) => (!r.isRead ? "bg-primary/[0.03]" : undefined)}
+        getRowClassName={(r) => (!r.isRead ? 'bg-primary/[0.03]' : undefined)}
         renderActions={renderActions}
       />
 
@@ -332,10 +321,7 @@ export default function ContactsPage() {
                 >
                   取消
                 </Button>
-                <Button
-                  onClick={saveDetail}
-                  disabled={updateMut.isPending || !detailDirty}
-                >
+                <Button onClick={saveDetail} disabled={updateMut.isPending || !detailDirty}>
                   保存
                 </Button>
               </div>
@@ -346,11 +332,11 @@ export default function ContactsPage() {
         {detail && (
           <div className="space-y-4 text-sm">
             <DetailRow label="联系人" value={detail.name} />
-            <DetailRow label="单位" value={detail.company ?? "—"} />
-            <DetailRow label="电话" value={detail.phone ?? "—"} />
-            <DetailRow label="邮箱" value={detail.email ?? "—"} />
-            <DetailRow label="主题" value={detail.subject ?? "—"} />
-            <DetailRow label="来源" value={detail.source ?? "—"} />
+            <DetailRow label="单位" value={detail.company ?? '—'} />
+            <DetailRow label="电话" value={detail.phone ?? '—'} />
+            <DetailRow label="邮箱" value={detail.email ?? '—'} />
+            <DetailRow label="主题" value={detail.subject ?? '—'} />
+            <DetailRow label="来源" value={detail.source ?? '—'} />
             <DetailRow label="创建时间" value={formatDateTime(detail.createdAt)} />
             <DetailRow label="更新时间" value={formatDateTime(detail.updatedAt)} />
             <div className="flex gap-3">
@@ -363,14 +349,8 @@ export default function ContactsPage() {
             </div>
             <div className="flex items-center gap-3">
               <span className="w-16 shrink-0 text-muted-foreground">状态</span>
-              <Can
-                perm="contacts.manage"
-                fallback={<ContactHandleBadge handled={handledDraft} />}
-              >
-                <ContactHandleStatusSelect
-                  handled={handledDraft}
-                  onChange={setHandledDraft}
-                />
+              <Can perm="contacts.manage" fallback={<ContactHandleBadge handled={handledDraft} />}>
+                <ContactHandleStatusSelect handled={handledDraft} onChange={setHandledDraft} />
               </Can>
             </div>
             <div>

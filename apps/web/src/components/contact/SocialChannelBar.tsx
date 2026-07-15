@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Popover, PopoverContent, PopoverTrigger } from "@tzj/ui";
-import { resolveSocialQrUrl } from "@/lib/media-url";
-import { SocialIcon } from "@/components/contact/SocialIcon";
-import type { SocialChannelId } from "@/lib/social-channels";
-import { cn } from "@/lib/utils";
+import { Popover, PopoverContent, PopoverTrigger } from '@tzj/ui';
+import { useState } from 'react';
+import { SocialIcon } from '@/components/contact/SocialIcon';
+import { resolveSocialQrUrl } from '@/lib/media-url';
+import type { SocialChannelId } from '@/lib/social-channels';
+import { cn } from '@/lib/utils';
 
 export type SocialChannelItem = {
   /** CMS 渠道唯一 ID */
@@ -26,7 +26,7 @@ type SocialChannelBarProps = {
 };
 
 const BTN_CLASS =
-  "flex h-9 w-9 items-center justify-center border border-neutral-300 bg-white text-neutral-700 transition-colors hover:border-primary hover:bg-primary/5 hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
+  'flex h-9 w-9 items-center justify-center border border-neutral-300 bg-white text-neutral-700 transition-colors hover:border-primary hover:bg-primary/5 hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary';
 
 /** 社媒/联系图标栏 — 扫码 Popover，外链新窗口打开 */
 export function SocialChannelBar({
@@ -41,7 +41,7 @@ export function SocialChannelBar({
   if (channels.length === 0) return null;
 
   return (
-    <div className={cn("flex items-center gap-3", className)}>
+    <div className={cn('flex items-center gap-3', className)}>
       <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
         {sectionLabel}
       </span>
@@ -96,7 +96,7 @@ export function SocialChannelBar({
                 <PopoverTrigger asChild>
                   <button
                     type="button"
-                    className={cn(BTN_CLASS, isOpen && "border-primary bg-primary/5 text-primary")}
+                    className={cn(BTN_CLASS, isOpen && 'border-primary bg-primary/5 text-primary')}
                     aria-label={channel.label}
                     aria-expanded={isOpen}
                   >

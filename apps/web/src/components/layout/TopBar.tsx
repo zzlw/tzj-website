@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useTranslations, useLocale } from "next-intl";
-import { Phone, Mail, Globe } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@tzj/ui";
-import { Container } from "@/components/ui";
-import { SocialIcon } from "@/components/contact/SocialIcon";
-import type { SocialChannelItem } from "@/components/contact/SocialChannelBar";
-import { resolveSocialQrUrl } from "@/lib/media-url";
-import { LOCALE_SHORT } from "@/lib/locale-config";
-import { useLanguageSelector } from "@/components/i18n/LanguageSelector";
-import { cn } from "@/lib/utils";
+import { Popover, PopoverContent, PopoverTrigger } from '@tzj/ui';
+import { Globe, Mail, Phone } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
+import { useState } from 'react';
+import type { SocialChannelItem } from '@/components/contact/SocialChannelBar';
+import { SocialIcon } from '@/components/contact/SocialIcon';
+import { useLanguageSelector } from '@/components/i18n/LanguageSelector';
+import { Container } from '@/components/ui';
+import { LOCALE_SHORT } from '@/lib/locale-config';
+import { resolveSocialQrUrl } from '@/lib/media-url';
+import { cn } from '@/lib/utils';
 
 type TopBarProps = {
   phone: string;
@@ -20,7 +20,7 @@ type TopBarProps = {
 };
 
 const ICON_CLASS =
-  "inline-flex shrink-0 gap-1.5 pt-3 text-secondary-text transition-colors hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
+  'inline-flex shrink-0 gap-1.5 pt-3 text-secondary-text transition-colors hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary';
 
 /**
  * 顶部工具栏（Utility Bar）
@@ -29,8 +29,8 @@ const ICON_CLASS =
  */
 export function TopBar({ phone, email, socialChannels, scanHint }: TopBarProps) {
   const locale = useLocale();
-  const tHeader = useTranslations("header");
-  const tContact = useTranslations("contact");
+  const tHeader = useTranslations('header');
+  const tContact = useTranslations('contact');
   const { open: openLanguageSelector } = useLanguageSelector();
   const [openQrKey, setOpenQrKey] = useState<string | null>(null);
 
@@ -43,7 +43,7 @@ export function TopBar({ phone, email, socialChannels, scanHint }: TopBarProps) 
         <div className="flex gap-4">
           {socialChannels.length > 0 ? (
             <>
-              <ul className="flex gap-1" aria-label={tContact("followUs")}>
+              <ul className="flex gap-1" aria-label={tContact('followUs')}>
                 {socialChannels.map((channel) => {
                   if (channel.href) {
                     return (
@@ -52,7 +52,7 @@ export function TopBar({ phone, email, socialChannels, scanHint }: TopBarProps) 
                           href={channel.href}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className={cn(ICON_CLASS, "px-10")}
+                          className={cn(ICON_CLASS, 'px-10')}
                           aria-label={channel.label}
                           title={channel.label}
                         >
@@ -73,7 +73,7 @@ export function TopBar({ phone, email, socialChannels, scanHint }: TopBarProps) 
                         <PopoverTrigger asChild>
                           <button
                             type="button"
-                            className={cn(ICON_CLASS, "px-2", isOpen && "text-primary")}
+                            className={cn(ICON_CLASS, 'px-2', isOpen && 'text-primary')}
                             aria-label={channel.label}
                             aria-expanded={isOpen}
                           >
@@ -109,18 +109,12 @@ export function TopBar({ phone, email, socialChannels, scanHint }: TopBarProps) 
             </>
           ) : null}
 
-          <a
-            href={`tel:${phone.replace(/-/g, "")}`}
-            className={ICON_CLASS}
-          >
+          <a href={`tel:${phone.replace(/-/g, '')}`} className={ICON_CLASS}>
             <Phone className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             <span>{phone}</span>
           </a>
 
-          <a
-            href={`mailto:${email}`}
-            className={ICON_CLASS}
-          >
+          <a href={`mailto:${email}`} className={ICON_CLASS}>
             <Mail className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             <span>{email}</span>
           </a>
@@ -129,7 +123,7 @@ export function TopBar({ phone, email, socialChannels, scanHint }: TopBarProps) 
             type="button"
             onClick={openLanguageSelector}
             className={ICON_CLASS}
-            aria-label={tHeader("languageSwitch")}
+            aria-label={tHeader('languageSwitch')}
           >
             <Globe className="h-3.5 w-3.5" aria-hidden="true" />
             <span>{localeShort}</span>

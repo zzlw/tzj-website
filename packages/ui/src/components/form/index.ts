@@ -1,2 +1,2 @@
-export { Label } from "./Label";
-export { FieldDescription } from "./FieldDescription";
+export { FieldDescription } from './FieldDescription';
+export { Label } from './Label';

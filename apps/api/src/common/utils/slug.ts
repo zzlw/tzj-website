@@ -1,16 +1,16 @@
-import type { PrismaService } from "../../prisma/prisma.service";
+import { PrismaService } from '../../prisma/prisma.service';
 
 /** 从标题生成 URL slug；纯中文等无拉丁字符时使用稳定短 hash。 */
 export function slugifyTitle(title: string): string {
   const latin = title
     .toLowerCase()
     .trim()
-    .replace(/[^\w\s-]/g, "")
-    .replace(/[\s_]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_]+/g, '-')
+    .replace(/^-+|-+$/g, '');
   if (latin) return latin;
   const trimmed = title.trim();
-  if (!trimmed) return "";
+  if (!trimmed) return '';
   let hash = 0;
   for (let i = 0; i < trimmed.length; i++) {
     hash = (hash * 31 + trimmed.charCodeAt(i)) >>> 0;

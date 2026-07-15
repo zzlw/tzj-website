@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { VisitorTracker } from "@/components/analytics/VisitorTracker";
-import { prefetchClientCoordinates } from "@/lib/analytics";
+import { useEffect, useState } from 'react';
+import { VisitorTracker } from '@/components/analytics/VisitorTracker';
+import { prefetchClientCoordinates } from '@/lib/analytics';
 
 /**
  * 分析上报延后到浏览器空闲时段，避免与 LCP/INP 争抢主线程。
@@ -17,7 +17,7 @@ export function DeferredVisitorTracker() {
       setReady(true);
     };
 
-    if (typeof window.requestIdleCallback === "function") {
+    if (typeof window.requestIdleCallback === 'function') {
       const id = window.requestIdleCallback(activate, { timeout: 4000 });
       return () => window.cancelIdleCallback(id);
     }

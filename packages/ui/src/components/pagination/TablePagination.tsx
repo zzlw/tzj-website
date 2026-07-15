@@ -1,17 +1,11 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { ChevronsLeft, ChevronsRight } from "lucide-react";
-import { cn } from "../../lib/utils";
-import { Input } from "../input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../select";
-import { buildPageItems } from "./buildPageItems";
+import { ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { cn } from '../../lib/utils';
+import { Input } from '../input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../select';
+import { buildPageItems } from './buildPageItems';
 import {
   Pagination,
   PaginationContent,
@@ -20,7 +14,7 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from "./Pagination";
+} from './Pagination';
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
@@ -49,7 +43,7 @@ export function TablePagination({
   pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS,
   onPageChange,
   onPageSizeChange,
-  unit = "条",
+  unit = '条',
   className,
 }: TablePaginationProps) {
   const [jumpValue, setJumpValue] = useState(String(page));
@@ -64,7 +58,7 @@ export function TablePagination({
   const pageItems = buildPageItems(page, safeTotalPages);
   const rangeStart = (page - 1) * pageSize + 1;
   const rangeEnd = Math.min(page * pageSize, total);
-  const disabledCls = "pointer-events-none opacity-50";
+  const disabledCls = 'pointer-events-none opacity-50';
 
   function goToPage(raw: string) {
     const n = Number.parseInt(raw, 10);
@@ -75,8 +69,8 @@ export function TablePagination({
   return (
     <div
       className={cn(
-        "flex flex-col gap-4 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between",
-        "mt-6",
+        'flex flex-col gap-4 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between',
+        'mt-6',
         className,
       )}
     >
@@ -86,10 +80,7 @@ export function TablePagination({
         </span>
         <div className="flex items-center gap-2">
           <span className="shrink-0">每页</span>
-          <Select
-            value={String(pageSize)}
-            onValueChange={(v) => onPageSizeChange(Number(v))}
-          >
+          <Select value={String(pageSize)} onValueChange={(v) => onPageSizeChange(Number(v))}>
             <SelectTrigger className="h-8 w-[72px]">
               <SelectValue />
             </SelectTrigger>
@@ -126,16 +117,13 @@ export function TablePagination({
           </PaginationItem>
 
           {pageItems.map((item, index) =>
-            item === "ellipsis" ? (
+            item === 'ellipsis' ? (
               <PaginationItem key={`ellipsis-${index}`}>
                 <PaginationEllipsis />
               </PaginationItem>
             ) : (
               <PaginationItem key={item}>
-                <PaginationLink
-                  isActive={item === page}
-                  onClick={() => onPageChange(item)}
-                >
+                <PaginationLink isActive={item === page} onClick={() => onPageChange(item)}>
                   {item}
                 </PaginationLink>
               </PaginationItem>

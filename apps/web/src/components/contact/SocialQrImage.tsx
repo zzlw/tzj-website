@@ -1,12 +1,9 @@
-"use client";
+'use client';
 
-import { useMemo, useState } from "react";
-import type { SocialPlatformId } from "@tzj/types";
-import { SocialQrPlaceholder } from "@/components/contact/SocialQrPlaceholder";
-import {
-  defaultSocialQrPath,
-  resolveMediaUrl,
-} from "@/lib/media-url";
+import type { SocialPlatformId } from '@tzj/types';
+import { useMemo, useState } from 'react';
+import { SocialQrPlaceholder } from '@/components/contact/SocialQrPlaceholder';
+import { defaultSocialQrPath, resolveMediaUrl } from '@/lib/media-url';
 
 type SocialQrImageProps = {
   qr?: string;
@@ -21,7 +18,7 @@ export function SocialQrImage({ qr, platform, label, className }: SocialQrImageP
     const list: string[] = [];
     const primary = resolveMediaUrl(qr);
     const fallbackPath = defaultSocialQrPath(platform);
-    const fallback = fallbackPath ? resolveMediaUrl(fallbackPath) : "";
+    const fallback = fallbackPath ? resolveMediaUrl(fallbackPath) : '';
     if (primary) list.push(primary);
     if (fallback && fallback !== primary) list.push(fallback);
     return list;

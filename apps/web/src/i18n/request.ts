@@ -1,7 +1,7 @@
-import { headers } from "next/headers";
-import { getRequestConfig } from "next-intl/server";
-import { loadMessages } from "@/lib/i18n/load-messages";
-import { routing, type AppLocale } from "./routing";
+import { headers } from 'next/headers';
+import { getRequestConfig } from 'next-intl/server';
+import { loadMessages } from '@/lib/i18n/load-messages';
+import { type AppLocale, routing } from './routing';
 
 export default getRequestConfig(async ({ requestLocale }) => {
   let locale = await requestLocale;
@@ -11,7 +11,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
   }
 
   const headerStore = await headers();
-  const pathname = headerStore.get("x-pathname") ?? "/";
+  const pathname = headerStore.get('x-pathname') ?? '/';
 
   return {
     locale,

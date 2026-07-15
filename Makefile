@@ -9,7 +9,7 @@ PROD := docker compose -f $(DEPLOY_DIR)/docker-compose.prod.yml \
 	--env-file $(DEPLOY_DIR)/.env.prod \
 	--env-file $(DEPLOY_DIR)/.env.prod.local
 
-.PHONY: dev dev-down prod-deploy prod-status prod-logs prod-gateway-reload \
+.PHONY: dev dev-down db-push db-migrate prod-deploy prod-status prod-logs prod-gateway-reload \
         cert-selfsigned cert-issue cert-deploy-cdn cert-renew deploy-ssh-help
 
 dev:
@@ -17,6 +17,17 @@ dev:
 
 dev-down:
 	docker compose -f $(INFRA)/docker-compose.dev.yml down --remove-orphans
+
+# 本地开发：把 schema 直接同步到数据库（不含迁移历史，适合快速迭代）
+# 注意：生产环境请用 db-migrate（走 Prisma migration，幂等且可回滚）
+db-push:
+	@echo "==> Prisma db push (本地开发，同步 schema → 数据库)"
+	pnpm --filter @tzj/api prisma:push
+
+# 生产 / 预发：应用 migrations 目录下的迁移（deploy.sh 也会自动调用）
+db-migrate:
+	@echo "==> Prisma migrate deploy (应用 migrations/ 下的迁移)"
+	pnpm --filter @tzj/api prisma:migrate:deploy
 
 prod-deploy:
 	cd $(DEPLOY_DIR) && ./deploy.sh $(SERVICE) $(TAG)

@@ -1,7 +1,13 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { ChevronDown, ChevronUp, ImagePlus, Loader2, Mail, Plus, Trash2, X } from "lucide-react";
+import type {
+  AnalyticsGeoMode,
+  SiteNotificationSettings,
+  SitePublicSettings,
+  SocialChannelPurpose,
+  SocialChannelSetting,
+  SocialPlatformId,
+} from '@tzj/types';
 import {
   Button,
   Card,
@@ -10,6 +16,9 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
+  cn,
+  ImagePreview,
+  ImagePreviewProvider,
   Input,
   Label,
   PageHeader,
@@ -19,49 +28,48 @@ import {
   SelectTrigger,
   SelectValue,
   Switch,
-} from "@tzj/ui";
-import type { SitePublicSettings, SiteNotificationSettings, SocialChannelSetting, SocialPlatformId, SocialChannelPurpose, AnalyticsGeoMode } from "@tzj/types";
-import { PhotoView } from "react-photo-view";
-import { MediaPicker } from "@/components/crud/MediaPicker";
-import { ImagePreviewProvider } from "@/components/media/ImagePreviewProvider";
-import { useSitePublicSettings, useUpdateSitePublicSettings } from "@/features/site-settings";
+} from '@tzj/ui';
+import { ChevronDown, ChevronUp, ImagePlus, Loader2, Mail, Plus, Trash2, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { MediaPicker } from '@/components/crud/MediaPicker';
+import { RichHint } from '@/components/RichHint';
+import { FaviconSettingsCard } from '@/components/settings/FaviconSettingsCard';
+import { WatermarkSettingsCard } from '@/components/settings/WatermarkSettingsCard';
 import {
   useSiteNotificationSettings,
   useUpdateSiteNotificationSettings,
-} from "@/features/site-notifications";
-import { ApiError } from "@/lib/apiClient";
-import { notifyError, notifySuccess } from "@/lib/notify";
-import { normalizeSocialQrForSave, resolveMediaUrl } from "@/lib/media-url";
-import { RichHint } from "@/components/RichHint";
-import { GPS_GEO_MODE_HINT } from "@/lib/analytics-geo-hints";
-import { WatermarkSettingsCard } from "@/components/settings/WatermarkSettingsCard";
-import { FaviconSettingsCard } from "@/components/settings/FaviconSettingsCard";
+} from '@/features/site-notifications';
+import { useSitePublicSettings, useUpdateSitePublicSettings } from '@/features/site-settings';
+import { GPS_GEO_MODE_HINT } from '@/lib/analytics-geo-hints';
+import { ApiError } from '@/lib/apiClient';
+import { normalizeSocialQrForSave, resolveMediaUrl } from '@/lib/media-url';
+import { notifyError, notifySuccess } from '@/lib/notify';
 
 const PLATFORMS: { id: SocialPlatformId; label: string }[] = [
-  { id: "wechat", label: "微信" },
-  { id: "douyin", label: "抖音" },
-  { id: "weibo", label: "微博" },
-  { id: "xiaohongshu", label: "小红书" },
+  { id: 'wechat', label: '微信' },
+  { id: 'douyin', label: '抖音' },
+  { id: 'weibo', label: '微博' },
+  { id: 'xiaohongshu', label: '小红书' },
 ];
 
 const PURPOSES: { id: SocialChannelPurpose; label: string; hint: string }[] = [
-  { id: "contact", label: "联系/客服", hint: "C 端展示于「即时沟通」，文案「扫码添加」" },
-  { id: "follow", label: "社媒关注", hint: "C 端展示于「关注我们」，文案「扫码关注」" },
+  { id: 'contact', label: '联系/客服', hint: 'C 端展示于「即时沟通」，文案「扫码添加」' },
+  { id: 'follow', label: '社媒关注', hint: 'C 端展示于「关注我们」，文案「扫码关注」' },
 ];
 
 function defaultPurpose(platform: SocialPlatformId): SocialChannelPurpose {
-  return platform === "wechat" ? "contact" : "follow";
+  return platform === 'wechat' ? 'contact' : 'follow';
 }
 
 const GEO_MODES: { id: AnalyticsGeoMode; label: string; hint: string }[] = [
   {
-    id: "ip",
-    label: "IP 定位（推荐）",
-    hint: "服务端 geoip-lite 离线解析，无需用户授权，隐私友好，业内默认方案",
+    id: 'ip',
+    label: 'IP 定位（推荐）',
+    hint: '服务端 geoip-lite 离线解析，无需用户授权，隐私友好，业内默认方案',
   },
   {
-    id: "gps",
-    label: "GPS 定位",
+    id: 'gps',
+    label: 'GPS 定位',
     hint: GPS_GEO_MODE_HINT,
   },
 ];
@@ -76,21 +84,15 @@ function newChannel(platform: SocialPlatformId, sortOrder: number): SocialChanne
   };
 }
 
-function QrImageField({
-  value,
-  onChange,
-}: {
-  value?: string;
-  onChange: (v: string) => void;
-}) {
+function QrImageField({ value, onChange }: { value?: string; onChange: (v: string) => void }) {
   const [open, setOpen] = useState(false);
-  const displayUrl = value ? resolveMediaUrl(value) : "";
+  const displayUrl = value ? resolveMediaUrl(value) : '';
 
   return (
     <div className="flex items-center gap-3">
       {value ? (
         <div className="relative h-20 w-20 overflow-hidden rounded-sm border border-border">
-          <PhotoView src={displayUrl}>
+          <ImagePreview src={displayUrl}>
             <button
               type="button"
               className="block h-full w-full cursor-pointer overflow-hidden"
@@ -104,12 +106,12 @@ function QrImageField({
                 draggable={false}
               />
             </button>
-          </PhotoView>
+          </ImagePreview>
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              onChange("");
+              onChange('');
             }}
             className="absolute right-1 top-1 z-10 rounded-full bg-black/60 p-0.5 text-white hover:bg-red-500"
             aria-label="移除二维码"
@@ -150,13 +152,7 @@ function QrImageField({
   );
 }
 
-function ModuleSaveButton({
-  pending,
-  onClick,
-}: {
-  pending: boolean;
-  onClick: () => void;
-}) {
+function ModuleSaveButton({ pending, onClick }: { pending: boolean; onClick: () => void }) {
   return (
     <Button type="button" onClick={onClick} disabled={pending}>
       {pending ? (
@@ -165,7 +161,7 @@ function ModuleSaveButton({
           保存中…
         </>
       ) : (
-        "保存设置"
+        '保存设置'
       )}
     </Button>
   );
@@ -195,19 +191,17 @@ export default function SiteSettingsPage() {
     if (!form) return;
     try {
       await updateSettings.mutateAsync(form);
-      notifySuccess(successMessage, "官网约 5 分钟内生效");
+      notifySuccess(successMessage, '官网约 5 分钟内生效');
     } catch (e) {
-      notifyError(e, "保存失败");
+      notifyError(e, '保存失败');
     }
   }
 
   async function onSaveNotifications() {
     if (!notifyForm) return;
-    const notifyEmails = notifyForm.contact.notifyEmails
-      .map((item) => item.trim())
-      .filter(Boolean);
+    const notifyEmails = notifyForm.contact.notifyEmails.map((item) => item.trim()).filter(Boolean);
     if (notifyForm.enabled && notifyEmails.length === 0) {
-      notifyError("启用邮件通知时请至少配置一个收件邮箱");
+      notifyError('启用邮件通知时请至少配置一个收件邮箱');
       return;
     }
     try {
@@ -215,9 +209,9 @@ export default function SiteSettingsPage() {
         ...notifyForm,
         contact: { ...notifyForm.contact, notifyEmails },
       });
-      notifySuccess("邮件通知设置已保存");
+      notifySuccess('邮件通知设置已保存');
     } catch (e) {
-      notifyError(e, "保存失败");
+      notifyError(e, '保存失败');
     }
   }
 
@@ -232,7 +226,7 @@ export default function SiteSettingsPage() {
   if (isError) {
     return (
       <p className="text-sm text-destructive">
-        {error instanceof ApiError ? error.message : "加载失败"}
+        {error instanceof ApiError ? error.message : '加载失败'}
       </p>
     );
   }
@@ -281,13 +275,13 @@ export default function SiteSettingsPage() {
               <Label htmlFor="addr-cn">公司地址（简体中文）</Label>
               <Input
                 id="addr-cn"
-                value={form.contact.address["zh-CN"] ?? ""}
+                value={form.contact.address['zh-CN'] ?? ''}
                 onChange={(e) =>
                   patch((p) => ({
                     ...p,
                     contact: {
                       ...p.contact,
-                      address: { ...p.contact.address, "zh-CN": e.target.value },
+                      address: { ...p.contact.address, 'zh-CN': e.target.value },
                     },
                   }))
                 }
@@ -298,13 +292,13 @@ export default function SiteSettingsPage() {
               <Label htmlFor="addr-tw">公司地址（繁体中文）</Label>
               <Input
                 id="addr-tw"
-                value={form.contact.address["zh-TW"] ?? ""}
+                value={form.contact.address['zh-TW'] ?? ''}
                 onChange={(e) =>
                   patch((p) => ({
                     ...p,
                     contact: {
                       ...p.contact,
-                      address: { ...p.contact.address, "zh-TW": e.target.value },
+                      address: { ...p.contact.address, 'zh-TW': e.target.value },
                     },
                   }))
                 }
@@ -315,7 +309,7 @@ export default function SiteSettingsPage() {
               <Label htmlFor="addr-en">公司地址（English）</Label>
               <Input
                 id="addr-en"
-                value={form.contact.address.en ?? ""}
+                value={form.contact.address.en ?? ''}
                 onChange={(e) =>
                   patch((p) => ({
                     ...p,
@@ -332,7 +326,7 @@ export default function SiteSettingsPage() {
           <CardFooter className="items-center justify-end border-t bg-muted/20 px-6 py-4">
             <ModuleSaveButton
               pending={updateSettings.isPending}
-              onClick={() => savePublicSettings("联系方式已保存")}
+              onClick={() => savePublicSettings('联系方式已保存')}
             />
           </CardFooter>
         </Card>
@@ -366,7 +360,7 @@ export default function SiteSettingsPage() {
             </div>
           </CardHeader>
           <CardContent
-            className={`space-y-4 ${notifyForm.enabled ? "" : "pointer-events-none opacity-50"}`}
+            className={`space-y-4 ${notifyForm.enabled ? '' : 'pointer-events-none opacity-50'}`}
           >
             <div>
               <Label>询盘通知收件人</Label>
@@ -437,7 +431,7 @@ export default function SiteSettingsPage() {
                             ...prev,
                             contact: {
                               ...prev.contact,
-                              notifyEmails: [...prev.contact.notifyEmails, ""],
+                              notifyEmails: [...prev.contact.notifyEmails, ''],
                             },
                           }
                         : prev,
@@ -472,7 +466,7 @@ export default function SiteSettingsPage() {
                 <Label htmlFor="autoReplySubject">自动回复主题（可选）</Label>
                 <Input
                   id="autoReplySubject"
-                  value={notifyForm.contact.autoReplySubject ?? ""}
+                  value={notifyForm.contact.autoReplySubject ?? ''}
                   onChange={(e) =>
                     setNotifyForm((prev) =>
                       prev
@@ -537,7 +531,7 @@ export default function SiteSettingsPage() {
           <CardFooter className="items-center justify-end border-t bg-muted/20 px-6 py-4">
             <ModuleSaveButton
               pending={updateSettings.isPending}
-              onClick={() => savePublicSettings("备案信息已保存")}
+              onClick={() => savePublicSettings('备案信息已保存')}
             />
           </CardFooter>
         </Card>
@@ -570,14 +564,14 @@ export default function SiteSettingsPage() {
               </SelectContent>
             </Select>
             <RichHint
-              text={GEO_MODES.find((m) => m.id === form.analytics.geoMode)?.hint ?? ""}
+              text={GEO_MODES.find((m) => m.id === form.analytics.geoMode)?.hint ?? ''}
               className="mt-2 text-xs text-muted-foreground"
             />
           </CardContent>
           <CardFooter className="items-center justify-end border-t bg-muted/20 px-6 py-4">
             <ModuleSaveButton
               pending={updateSettings.isPending}
-              onClick={() => savePublicSettings("访客分析设置已保存")}
+              onClick={() => savePublicSettings('访客分析设置已保存')}
             />
           </CardFooter>
         </Card>
@@ -598,7 +592,10 @@ export default function SiteSettingsPage() {
                 patch((p) => ({
                   ...p,
                   social: {
-                    channels: [...p.social.channels, newChannel("wechat", p.social.channels.length)],
+                    channels: [
+                      ...p.social.channels,
+                      newChannel('wechat', p.social.channels.length),
+                    ],
                   },
                 }))
               }
@@ -609,218 +606,216 @@ export default function SiteSettingsPage() {
           </CardHeader>
           <ImagePreviewProvider>
             <CardContent className="space-y-4">
-            {channels.length === 0 ? (
-              <p className="text-sm text-muted-foreground">暂无社媒渠道，点击「添加渠道」</p>
-            ) : null}
-            {channels.map((channel, index) => (
-              <div
-                key={channel.id}
-                className="rounded-md border border-border p-4"
-              >
-                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <Switch
-                      checked={channel.enabled}
-                      onCheckedChange={(enabled) =>
-                        patch((p) => ({
-                          ...p,
-                          social: {
-                            channels: p.social.channels.map((c) =>
-                              c.id === channel.id ? { ...c, enabled } : c,
-                            ),
-                          },
-                        }))
-                      }
-                    />
-                    <span className="text-sm font-medium">
-                      {PLATFORMS.find((p) => p.id === channel.platform)?.label ?? channel.platform}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      disabled={index === 0}
-                      onClick={() => {
-                        patch((p) => {
-                          const list = [...p.social.channels].sort(
-                            (a, b) => a.sortOrder - b.sortOrder,
-                          );
-                          const i = list.findIndex((c) => c.id === channel.id);
-                          if (i <= 0) return p;
-                          [list[i - 1]!, list[i]!] = [list[i]!, list[i - 1]!];
-                          return {
-                            ...p,
-                            social: {
-                              channels: list.map((c, idx) => ({ ...c, sortOrder: idx })),
-                            },
-                          };
-                        });
-                      }}
-                      aria-label="上移"
-                    >
-                      <ChevronUp className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      disabled={index === channels.length - 1}
-                      onClick={() => {
-                        patch((p) => {
-                          const list = [...p.social.channels].sort(
-                            (a, b) => a.sortOrder - b.sortOrder,
-                          );
-                          const i = list.findIndex((c) => c.id === channel.id);
-                          if (i < 0 || i >= list.length - 1) return p;
-                          [list[i]!, list[i + 1]!] = [list[i + 1]!, list[i]!];
-                          return {
-                            ...p,
-                            social: {
-                              channels: list.map((c, idx) => ({ ...c, sortOrder: idx })),
-                            },
-                          };
-                        });
-                      }}
-                      aria-label="下移"
-                    >
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() =>
-                        patch((p) => ({
-                          ...p,
-                          social: {
-                            channels: p.social.channels.filter((c) => c.id !== channel.id),
-                          },
-                        }))
-                      }
-                      aria-label="删除"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                  <div>
-                    <Label>平台</Label>
-                    <Select
-                      value={channel.platform}
-                      onValueChange={(platform: SocialPlatformId) =>
-                        patch((p) => ({
-                          ...p,
-                          social: {
-                            channels: p.social.channels.map((c) =>
-                              c.id === channel.id
-                                ? {
-                                    ...c,
-                                    platform,
-                                    purpose: c.purpose ?? defaultPurpose(platform),
-                                  }
-                                : c,
-                            ),
-                          },
-                        }))
-                      }
-                    >
-                      <SelectTrigger className="mt-1.5">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PLATFORMS.map((p) => (
-                          <SelectItem key={p.id} value={p.id}>
-                            {p.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>用途</Label>
-                    <Select
-                      value={channel.purpose ?? defaultPurpose(channel.platform)}
-                      onValueChange={(purpose: SocialChannelPurpose) =>
-                        patch((p) => ({
-                          ...p,
-                          social: {
-                            channels: p.social.channels.map((c) =>
-                              c.id === channel.id ? { ...c, purpose } : c,
-                            ),
-                          },
-                        }))
-                      }
-                    >
-                      <SelectTrigger className="mt-1.5">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PURPOSES.map((p) => (
-                          <SelectItem key={p.id} value={p.id}>
-                            {p.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {
-                        PURPOSES.find(
-                          (p) => p.id === (channel.purpose ?? defaultPurpose(channel.platform)),
-                        )?.hint
-                      }
-                    </p>
-                  </div>
-                  <div>
-                    <Label>二维码图片</Label>
-                    <div className="mt-1.5">
-                      <QrImageField
-                        value={channel.qr}
-                        onChange={(qr) =>
+              {channels.length === 0 ? (
+                <p className="text-sm text-muted-foreground">暂无社媒渠道，点击「添加渠道」</p>
+              ) : null}
+              {channels.map((channel, index) => (
+                <div key={channel.id} className="rounded-md border border-border p-4">
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <Switch
+                        checked={channel.enabled}
+                        onCheckedChange={(enabled) =>
                           patch((p) => ({
                             ...p,
                             social: {
                               channels: p.social.channels.map((c) =>
-                                c.id === channel.id ? { ...c, qr: qr || undefined } : c,
+                                c.id === channel.id ? { ...c, enabled } : c,
                               ),
                             },
                           }))
                         }
                       />
+                      <span className="text-sm font-medium">
+                        {PLATFORMS.find((p) => p.id === channel.platform)?.label ??
+                          channel.platform}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        disabled={index === 0}
+                        onClick={() => {
+                          patch((p) => {
+                            const list = [...p.social.channels].sort(
+                              (a, b) => a.sortOrder - b.sortOrder,
+                            );
+                            const i = list.findIndex((c) => c.id === channel.id);
+                            if (i <= 0) return p;
+                            [list[i - 1]!, list[i]!] = [list[i]!, list[i - 1]!];
+                            return {
+                              ...p,
+                              social: {
+                                channels: list.map((c, idx) => ({ ...c, sortOrder: idx })),
+                              },
+                            };
+                          });
+                        }}
+                        aria-label="上移"
+                      >
+                        <ChevronUp className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        disabled={index === channels.length - 1}
+                        onClick={() => {
+                          patch((p) => {
+                            const list = [...p.social.channels].sort(
+                              (a, b) => a.sortOrder - b.sortOrder,
+                            );
+                            const i = list.findIndex((c) => c.id === channel.id);
+                            if (i < 0 || i >= list.length - 1) return p;
+                            [list[i]!, list[i + 1]!] = [list[i + 1]!, list[i]!];
+                            return {
+                              ...p,
+                              social: {
+                                channels: list.map((c, idx) => ({ ...c, sortOrder: idx })),
+                              },
+                            };
+                          });
+                        }}
+                        aria-label="下移"
+                      >
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() =>
+                          patch((p) => ({
+                            ...p,
+                            social: {
+                              channels: p.social.channels.filter((c) => c.id !== channel.id),
+                            },
+                          }))
+                        }
+                        aria-label="删除"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
-                  <div>
-                    <Label>外链（可选）</Label>
-                    <Input
-                      value={channel.href ?? ""}
-                      onChange={(e) =>
-                        patch((p) => ({
-                          ...p,
-                          social: {
-                            channels: p.social.channels.map((c) =>
-                              c.id === channel.id
-                                ? { ...c, href: e.target.value.trim() || undefined }
-                                : c,
-                            ),
-                          },
-                        }))
-                      }
-                      placeholder="https://weibo.com/..."
-                      className="mt-1.5"
-                    />
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <div>
+                      <Label>平台</Label>
+                      <Select
+                        value={channel.platform}
+                        onValueChange={(platform: SocialPlatformId) =>
+                          patch((p) => ({
+                            ...p,
+                            social: {
+                              channels: p.social.channels.map((c) =>
+                                c.id === channel.id
+                                  ? {
+                                      ...c,
+                                      platform,
+                                      purpose: c.purpose ?? defaultPurpose(platform),
+                                    }
+                                  : c,
+                              ),
+                            },
+                          }))
+                        }
+                      >
+                        <SelectTrigger className="mt-1.5">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {PLATFORMS.map((p) => (
+                            <SelectItem key={p.id} value={p.id}>
+                              {p.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>用途</Label>
+                      <Select
+                        value={channel.purpose ?? defaultPurpose(channel.platform)}
+                        onValueChange={(purpose: SocialChannelPurpose) =>
+                          patch((p) => ({
+                            ...p,
+                            social: {
+                              channels: p.social.channels.map((c) =>
+                                c.id === channel.id ? { ...c, purpose } : c,
+                              ),
+                            },
+                          }))
+                        }
+                      >
+                        <SelectTrigger className="mt-1.5">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {PURPOSES.map((p) => (
+                            <SelectItem key={p.id} value={p.id}>
+                              {p.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {
+                          PURPOSES.find(
+                            (p) => p.id === (channel.purpose ?? defaultPurpose(channel.platform)),
+                          )?.hint
+                        }
+                      </p>
+                    </div>
+                    <div>
+                      <Label>二维码图片</Label>
+                      <div className="mt-1.5">
+                        <QrImageField
+                          value={channel.qr}
+                          onChange={(qr) =>
+                            patch((p) => ({
+                              ...p,
+                              social: {
+                                channels: p.social.channels.map((c) =>
+                                  c.id === channel.id ? { ...c, qr: qr || undefined } : c,
+                                ),
+                              },
+                            }))
+                          }
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label>外链（可选）</Label>
+                      <Input
+                        value={channel.href ?? ''}
+                        onChange={(e) =>
+                          patch((p) => ({
+                            ...p,
+                            social: {
+                              channels: p.social.channels.map((c) =>
+                                c.id === channel.id
+                                  ? { ...c, href: e.target.value.trim() || undefined }
+                                  : c,
+                              ),
+                            },
+                          }))
+                        }
+                        placeholder="https://weibo.com/..."
+                        className="mt-1.5"
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
             </CardContent>
           </ImagePreviewProvider>
           <CardFooter className="items-center justify-end border-t bg-muted/20 px-6 py-4">
             <ModuleSaveButton
               pending={updateSettings.isPending}
-              onClick={() => savePublicSettings("社交媒体已保存")}
+              onClick={() => savePublicSettings('社交媒体已保存')}
             />
           </CardFooter>
         </Card>

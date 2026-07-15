@@ -1,9 +1,9 @@
-import { Injectable, UnauthorizedException } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
-import { PassportStrategy } from "@nestjs/passport";
-import { ExtractJwt, Strategy } from "passport-jwt";
-import { PrismaService } from "../../prisma/prisma.service";
-import type { AuthUser, JwtPayload, Role } from "../roles";
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { PassportStrategy } from '@nestjs/passport';
+import { ExtractJwt, Strategy } from 'passport-jwt';
+import { PrismaService } from '../../prisma/prisma.service';
+import type { AuthUser, JwtPayload, Role } from '../roles';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -14,19 +14,19 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: config.getOrThrow<string>("JWT_SECRET"),
+      secretOrKey: config.getOrThrow<string>('JWT_SECRET'),
     });
   }
 
   async validate(payload: JwtPayload): Promise<AuthUser> {
-    if (payload.type === "refresh") {
-      throw new UnauthorizedException("不能使用刷新令牌访问资源");
+    if (payload.type === 'refresh') {
+      throw new UnauthorizedException('不能使用刷新令牌访问资源');
     }
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
     });
     if (!user || !user.isActive) {
-      throw new UnauthorizedException("账号不存在或已停用");
+      throw new UnauthorizedException('账号不存在或已停用');
     }
     return {
       id: user.id,

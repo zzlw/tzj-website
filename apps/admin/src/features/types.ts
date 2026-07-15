@@ -223,6 +223,31 @@ export interface AuditLogItem {
   createdAt: string;
 }
 
+export interface CustomerItem extends BaseEntity {
+  name: string;
+  company?: string | null;
+  title?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  customerType: string;
+  source?: string | null;
+  level: string;
+  stage: string;
+  amount?: number | null;
+  region?: string | null;
+  address?: string | null;
+  tags: string[];
+  notes?: string | null;
+  ownerId?: string | null;
+  owner?: ContentOperatorUser | null;
+  lastContactAt?: string | null;
+  nextFollowAt?: string | null;
+  createdBy?: string | null;
+  createdByUser?: ContentOperatorUser | null;
+  lastOperator?: string | null;
+  lastOperatorUser?: ContentOperatorUser | null;
+}
+
 export interface DocFolderTreeNode {
   id: string;
   name: string;
@@ -250,7 +275,7 @@ export interface InternalDocumentItem extends BaseEntity {
   lastOperator?: string | null;
   lastOperatorUser?: ContentOperatorUser | null;
   /** 可见范围：private(仅自己) | partial(部分人) | public(全局) */
-  visibility?: "private" | "partial" | "public";
+  visibility?: 'private' | 'partial' | 'public';
 }
 
 export interface DocRevisionItem {

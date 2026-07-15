@@ -3,11 +3,11 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
-} from "@nestjs/common";
-import { Prisma } from "@prisma/client/index";
-import { PrismaService } from "../prisma/prisma.service";
-import { ContentStatus } from "../common/enums/content-status.enum";
-import { slugifyTitle } from "../common/utils/slug";
+} from '@nestjs/common';
+import type { Prisma } from '@prisma/client/index';
+import { ContentStatus } from '../common/enums/content-status.enum';
+import { slugifyTitle } from '../common/utils/slug';
+import { PrismaService } from '../prisma/prisma.service';
 
 export interface DocTagScope {
   mine?: boolean;
@@ -44,10 +44,10 @@ export class DocTagsService {
   }
 
   private normalizeName(name: string): string {
-    const trimmed = name.trim().replace(/\s+/g, " ");
-    if (!trimmed) throw new BadRequestException("标签名称不能为空");
+    const trimmed = name.trim().replace(/\s+/g, ' ');
+    if (!trimmed) throw new BadRequestException('标签名称不能为空');
     if (trimmed.length > 50) {
-      throw new BadRequestException("标签名称不能超过 50 个字符");
+      throw new BadRequestException('标签名称不能超过 50 个字符');
     }
     return trimmed;
   }
@@ -90,13 +90,10 @@ export class DocTagsService {
       for (const raw of doc.tags) {
         const name = raw.trim();
         if (!name) continue;
-        const key = `${ownerId ?? "org"}:${name.toLowerCase()}`;
+        const key = `${ownerId ?? 'org'}:${name.toLowerCase()}`;
         if (seen.has(key)) continue;
         seen.add(key);
-        const slug = await this.ensureUniqueSlug(
-          ownerId,
-          slugifyTitle(name) || `tag-${seen.size}`,
-        );
+        const slug = await this.ensureUniqueSlug(ownerId, slugifyTitle(name) || `tag-${seen.size}`);
         await this.prisma.docTag.create({
           data: { ownerId, name, slug },
         });
@@ -124,7 +121,7 @@ export class DocTagsService {
 
     const registry = await this.prisma.docTag.findMany({
       where: { ownerId },
-      orderBy: { name: "asc" },
+      orderBy: { name: 'asc' },
     });
 
     const items: DocTagListItem[] = [];
@@ -138,9 +135,7 @@ export class DocTagsService {
       });
     }
 
-    return items.sort(
-      (a, b) => b.count - a.count || a.tag.localeCompare(b.tag, "zh-CN"),
-    );
+    return items.sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag, 'zh-CN'));
   }
 
   async createTag(name: string, actorId: string, scope: DocTagScope) {
@@ -151,7 +146,7 @@ export class DocTagsService {
     const dup = await this.prisma.docTag.findFirst({
       where: {
         ownerId,
-        name: { equals: normalized, mode: "insensitive" },
+        name: { equals: normalized, mode: 'insensitive' },
       },
     });
     if (dup) {
@@ -169,11 +164,7 @@ export class DocTagsService {
   }
 
   /** 文档保存时确保标签已注册 */
-  async ensureTags(
-    tagNames: string[],
-    scope: DocTagScope,
-    actorId?: string,
-  ) {
+  async ensureTags(tagNames: string[], scope: DocTagScope, actorId?: string) {
     const ownerId = this.scopeOwnerId(scope);
     for (const raw of tagNames) {
       const name = raw.trim();
@@ -181,7 +172,7 @@ export class DocTagsService {
       const exists = await this.prisma.docTag.findFirst({
         where: {
           ownerId,
-          name: { equals: name, mode: "insensitive" },
+          name: { equals: name, mode: 'insensitive' },
         },
       });
       if (exists) continue;
@@ -202,18 +193,18 @@ export class DocTagsService {
     const oldName = this.normalizeName(from);
     const newName = this.normalizeName(to);
     if (oldName.toLowerCase() === newName.toLowerCase()) {
-      throw new BadRequestException("新名称与原名相同");
+      throw new BadRequestException('新名称与原名相同');
     }
 
     const row = await this.prisma.docTag.findFirst({
-      where: { ownerId, name: { equals: oldName, mode: "insensitive" } },
+      where: { ownerId, name: { equals: oldName, mode: 'insensitive' } },
     });
     if (!row) throw new NotFoundException(`标签「${oldName}」不存在`);
 
     const conflict = await this.prisma.docTag.findFirst({
       where: {
         ownerId,
-        name: { equals: newName, mode: "insensitive" },
+        name: { equals: newName, mode: 'insensitive' },
         id: { not: row.id },
       },
     });
@@ -221,11 +212,7 @@ export class DocTagsService {
       throw new ConflictException(`标签「${newName}」已存在，请使用合并`);
     }
 
-    const newSlug = await this.ensureUniqueSlug(
-      ownerId,
-      slugifyTitle(newName),
-      row.id,
-    );
+    const newSlug = await this.ensureUniqueSlug(ownerId, slugifyTitle(newName), row.id);
 
     await this.prisma.$transaction(async (tx) => {
       await tx.docTag.update({
@@ -237,11 +224,7 @@ export class DocTagsService {
         select: { id: true, tags: true },
       });
       for (const doc of docs) {
-        const tags = [
-          ...new Set(
-            doc.tags.map((t) => (t === row.name ? newName : t)),
-          ),
-        ];
+        const tags = [...new Set(doc.tags.map((t) => (t === row.name ? newName : t)))];
         await tx.internalDocument.update({
           where: { id: doc.id },
           data: { tags },
@@ -257,14 +240,14 @@ export class DocTagsService {
     const fromName = this.normalizeName(from);
     const toName = this.normalizeName(to);
     if (fromName.toLowerCase() === toName.toLowerCase()) {
-      throw new BadRequestException("合并源与目标不能相同");
+      throw new BadRequestException('合并源与目标不能相同');
     }
 
     const source = await this.prisma.docTag.findFirst({
-      where: { ownerId, name: { equals: fromName, mode: "insensitive" } },
+      where: { ownerId, name: { equals: fromName, mode: 'insensitive' } },
     });
     let target = await this.prisma.docTag.findFirst({
-      where: { ownerId, name: { equals: toName, mode: "insensitive" } },
+      where: { ownerId, name: { equals: toName, mode: 'insensitive' } },
     });
 
     if (!target) {
@@ -282,9 +265,7 @@ export class DocTagsService {
       for (const doc of docs) {
         const tags = [
           ...new Set(
-            doc.tags
-              .map((t) => (t === fromName ? target!.name : t))
-              .filter((t) => t !== fromName),
+            doc.tags.map((t) => (t === fromName ? target!.name : t)).filter((t) => t !== fromName),
           ),
         ];
         if (!tags.includes(target!.name)) tags.push(target!.name);
@@ -306,7 +287,7 @@ export class DocTagsService {
     const tagName = this.normalizeName(name);
 
     const row = await this.prisma.docTag.findFirst({
-      where: { ownerId, name: { equals: tagName, mode: "insensitive" } },
+      where: { ownerId, name: { equals: tagName, mode: 'insensitive' } },
     });
     if (!row) throw new NotFoundException(`标签「${tagName}」不存在`);
 

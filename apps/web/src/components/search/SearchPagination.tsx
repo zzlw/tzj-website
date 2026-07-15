@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { Suspense } from "react";
-import { ContentPagination } from "@/components/content/ContentPagination";
-import type { SearchPagination } from "@/lib/search/types";
+import { Suspense } from 'react';
+import { ContentPagination } from '@/components/content/ContentPagination';
+import type { SearchPagination } from '@/lib/search/types';
 
 function SearchPaginationInner({
   pagination,

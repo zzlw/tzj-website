@@ -1,24 +1,27 @@
-import { Plus } from "lucide-react";
-import { Container, PageHero, RbButton } from "@/components/ui";
-import { getTranslations } from "next-intl/server";
-import { createPageMetadata } from "@/lib/i18n/metadata";
+import { Plus } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
+import { Container, PageHero, RbButton } from '@/components/ui';
+import { createPageMetadata } from '@/lib/i18n/metadata';
 
 export async function generateMetadata() {
-  return createPageMetadata({ namespace: "pages.resourcesFaqs", path: "/resources/faqs" });
+  return createPageMetadata({ namespace: 'pages.resourcesFaqs', path: '/resources/faqs' });
 }
 
 export default async function FaqsPage() {
-  const t = await getTranslations("pages.resourcesFaqs");
-  const tCta = await getTranslations("cta");
+  const t = await getTranslations('pages.resourcesFaqs');
+  const tCta = await getTranslations('cta');
 
-  const groups = t.raw("groups") as Array<{ title: string; items: Array<{ q: string; a: string }> }>;
+  const groups = t.raw('groups') as Array<{
+    title: string;
+    items: Array<{ q: string; a: string }>;
+  }>;
 
   return (
     <div className="pb-20">
       <PageHero
-        eyebrow={t("hero.eyebrow")}
-        title={t("hero.title")}
-        description={t("hero.description")}
+        eyebrow={t('hero.eyebrow')}
+        title={t('hero.title')}
+        description={t('hero.description')}
       />
 
       <section>
@@ -46,9 +49,9 @@ export default async function FaqsPage() {
 
       <Container>
         <div className="flex flex-col items-center gap-5 border border-neutral-300 bg-white p-10 text-center md:p-14">
-          <h2 className="rb-h3 text-neutral-900">{t("cta.title")}</h2>
-          <p className="text-secondary-text">{t("cta.description")}</p>
-          <RbButton href="/contact">{tCta("bookConsult")}</RbButton>
+          <h2 className="rb-h3 text-neutral-900">{t('cta.title')}</h2>
+          <p className="text-secondary-text">{t('cta.description')}</p>
+          <RbButton href="/contact">{tCta('bookConsult')}</RbButton>
         </div>
       </Container>
     </div>

@@ -1,7 +1,6 @@
-"use client";
+'use client';
 
-import { useEffect, useMemo, useState } from "react";
-import { Ban, Loader2 } from "lucide-react";
+import type { AnalyticsIpTrafficRow, BlockedIpItem, BlockIpDuration } from '@tzj/types';
 import {
   Button,
   DataTable,
@@ -15,39 +14,34 @@ import {
   SelectValue,
   TablePagination,
   Textarea,
-} from "@tzj/ui";
-import type { AnalyticsIpTrafficRow, BlockedIpItem, BlockIpDuration } from "@tzj/types";
-import { Can } from "@/components/Can";
-import { CopyableIp, CopyableText } from "@/components/CopyableText";
+} from '@tzj/ui';
+import { Ban, Loader2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Can } from '@/components/Can';
+import { CopyableIp, CopyableText } from '@/components/CopyableText';
 import {
   BLOCK_DURATION_OPTIONS,
   formatBlockedExpiry,
   formatLastSeen,
-  useBlockIp,
   useBlockedIps,
+  useBlockIp,
   useSecurityIpTraffic,
   useUnblockIp,
-} from "@/features/security-ip-block";
-import { notifyError, notifySuccess } from "@/lib/notify";
+} from '@/features/security-ip-block';
+import { notifyError, notifySuccess } from '@/lib/notify';
 
 const IP_TRAFFIC_TOP = 100;
 
-function BlockIpForm({
-  hint,
-  onSuccess,
-}: {
-  hint?: string;
-  onSuccess?: () => void;
-}) {
+function BlockIpForm({ hint, onSuccess }: { hint?: string; onSuccess?: () => void }) {
   const blockMut = useBlockIp();
-  const [ip, setIp] = useState("");
-  const [reason, setReason] = useState("");
-  const [duration, setDuration] = useState<BlockIpDuration>("7d");
+  const [ip, setIp] = useState('');
+  const [reason, setReason] = useState('');
+  const [duration, setDuration] = useState<BlockIpDuration>('7d');
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!ip.trim()) {
-      notifyError("请输入 IP 地址");
+      notifyError('请输入 IP 地址');
       return;
     }
     try {
@@ -56,13 +50,13 @@ function BlockIpForm({
         reason: reason.trim() || undefined,
         duration,
       });
-      notifySuccess("IP 已封禁，后续访问将被静默拒绝");
-      setIp("");
-      setReason("");
-      setDuration("7d");
+      notifySuccess('IP 已封禁，后续访问将被静默拒绝');
+      setIp('');
+      setReason('');
+      setDuration('7d');
       onSuccess?.();
     } catch (err) {
-      notifyError(err, "封禁失败");
+      notifyError(err, '封禁失败');
     }
   }
 
@@ -149,32 +143,32 @@ export function IpBlockPanel({ from, to }: { from?: string; to?: string }) {
 
   const trafficColumns: DataTableColumn<AnalyticsIpTrafficRow>[] = [
     {
-      key: "ip",
-      header: "IP",
+      key: 'ip',
+      header: 'IP',
       cell: (row) => <CopyableIp ip={row.ip} ipMasked={row.ipMasked} />,
     },
-    { key: "region", header: "地区", cell: (row) => row.region || "—" },
+    { key: 'region', header: '地区', cell: (row) => row.region || '—' },
     {
-      key: "pageViews",
-      header: "PV",
+      key: 'pageViews',
+      header: 'PV',
       cell: (row) => row.pageViews.toLocaleString(),
       sortable: false,
     },
     {
-      key: "uniqueVisitors",
-      header: "UV",
+      key: 'uniqueVisitors',
+      header: 'UV',
       cell: (row) => row.uniqueVisitors.toLocaleString(),
       sortable: false,
     },
     {
-      key: "lastSeenAt",
-      header: "最近访问",
+      key: 'lastSeenAt',
+      header: '最近访问',
       cell: (row) => formatLastSeen(row.lastSeenAt),
       sortable: false,
     },
     {
-      key: "actions",
-      header: "",
+      key: 'actions',
+      header: '',
       cell: (row) => (
         <Can perm="security.manage">
           <Button
@@ -182,9 +176,9 @@ export function IpBlockPanel({ from, to }: { from?: string; to?: string }) {
             variant="outline"
             size="sm"
             onClick={() => {
-              const label = row.ip ?? row.ipMasked ?? "—";
+              const label = row.ip ?? row.ipMasked ?? '—';
               setBlockHint(
-                `IP ${label}（${row.region || "未知地区"}，PV ${row.pageViews}）。确认后可直接封禁，或修改上方表单。`,
+                `IP ${label}（${row.region || '未知地区'}，PV ${row.pageViews}）。确认后可直接封禁，或修改上方表单。`,
               );
             }}
           >
@@ -198,28 +192,28 @@ export function IpBlockPanel({ from, to }: { from?: string; to?: string }) {
 
   const blockedColumns: DataTableColumn<BlockedIpItem>[] = [
     {
-      key: "ipMasked",
-      header: "IP",
+      key: 'ipMasked',
+      header: 'IP',
       cell: (row) => <CopyableText value={row.ipMasked} />,
     },
     {
-      key: "reason",
-      header: "原因",
-      cell: (row) => row.reason || "—",
+      key: 'reason',
+      header: '原因',
+      cell: (row) => row.reason || '—',
     },
     {
-      key: "expires",
-      header: "到期",
+      key: 'expires',
+      header: '到期',
       cell: (row) => formatBlockedExpiry(row),
     },
     {
-      key: "createdBy",
-      header: "操作人",
-      cell: (row) => row.createdBy?.nickname || row.createdBy?.username || "—",
+      key: 'createdBy',
+      header: '操作人',
+      cell: (row) => row.createdBy?.nickname || row.createdBy?.username || '—',
     },
     {
-      key: "actions",
-      header: "",
+      key: 'actions',
+      header: '',
       cell: (row) => (
         <Can perm="security.manage">
           <Button
@@ -230,9 +224,9 @@ export function IpBlockPanel({ from, to }: { from?: string; to?: string }) {
             onClick={async () => {
               try {
                 await unblockMut.mutateAsync(row.id);
-                notifySuccess("已解除封禁");
+                notifySuccess('已解除封禁');
               } catch (err) {
-                notifyError(err, "解封失败");
+                notifyError(err, '解封失败');
               }
             }}
           >
@@ -276,7 +270,8 @@ export function IpBlockPanel({ from, to }: { from?: string; to?: string }) {
       <div className="space-y-2">
         <h3 className="text-sm font-medium">高频 IP（当前时段 Top {IP_TRAFFIC_TOP}）</h3>
         <p className="text-xs text-muted-foreground">
-          数据来自访客分析采集，按 PV 降序取前 {IP_TRAFFIC_TOP} 名。封禁时需输入完整 IP（可从列表复制）。
+          数据来自访客分析采集，按 PV 降序取前 {IP_TRAFFIC_TOP} 名。封禁时需输入完整
+          IP（可从列表复制）。
         </p>
         <DataTable
           columns={trafficColumns}

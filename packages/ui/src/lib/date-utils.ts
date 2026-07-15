@@ -7,10 +7,10 @@ export function parseDateValue(value?: string): Date | undefined {
 }
 
 export function toDateValue(d: Date): string {
-  const p = (n: number) => String(n).padStart(2, "0");
+  const p = (n: number) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
 
-export const formatDateLabel = new Intl.DateTimeFormat("zh-CN", {
-  dateStyle: "long",
+export const formatDateLabel = new Intl.DateTimeFormat('zh-CN', {
+  dateStyle: 'long',
 });

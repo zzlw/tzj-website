@@ -1,12 +1,12 @@
+import type { NavNode } from './navigation';
 import {
+  linesByFamily,
   PRODUCT_FAMILIES,
   PRODUCT_LINE_COUNT,
   PRODUCT_LINES_BY_FAMILY,
-  linesByFamily,
-} from "./product-catalog";
-import type { NavNode } from "./navigation";
+} from './product-catalog';
 
-export const PRODUCTS_HREF = "/towers";
+export const PRODUCTS_HREF = '/towers';
 
 /** 从 product-catalog 生成产品中心导航树（四大板块 → 十三大产品线） */
 export function buildProductNavNodes(): NavNode[] {

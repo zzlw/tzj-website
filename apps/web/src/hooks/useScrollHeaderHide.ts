@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from 'react';
 
 type Options = {
   /** 开始隐藏前至少滚动的距离 */
@@ -46,14 +46,14 @@ export function useScrollHeaderHide({ minScroll = 72, delta = 8, disabled = fals
 
     lastY.current = window.scrollY;
     onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, [disabled, minScroll, delta]);
 
   useEffect(() => {
     const root = document.documentElement;
     if (hidden && !disabled) {
-      root.dataset.headerHidden = "";
+      root.dataset.headerHidden = '';
     } else {
       delete root.dataset.headerHidden;
     }

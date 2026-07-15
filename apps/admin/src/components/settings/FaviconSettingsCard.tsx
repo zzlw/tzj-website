@@ -1,20 +1,13 @@
-"use client";
+'use client';
 
-import { useRef, useState } from "react";
-import { Globe, Loader2, Trash2, Upload } from "lucide-react";
-import {
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@tzj/ui";
-import { useFavicon, useUploadFavicon, useDeleteFavicon } from "@/features/favicon";
-import { ApiError } from "@/lib/apiClient";
-import { notifyError, notifySuccess } from "@/lib/notify";
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@tzj/ui';
+import { Globe, Loader2, Trash2, Upload } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { useDeleteFavicon, useFavicon, useUploadFavicon } from '@/features/favicon';
+import { ApiError } from '@/lib/apiClient';
+import { notifyError, notifySuccess } from '@/lib/notify';
 
-const ACCEPT = ".ico,.png,.jpg,.jpeg,.webp";
+const ACCEPT = '.ico,.png,.jpg,.jpeg,.webp';
 
 export function FaviconSettingsCard() {
   const { data, isLoading } = useFavicon();
@@ -30,9 +23,9 @@ export function FaviconSettingsCard() {
   async function handleFile(file: File) {
     try {
       await upload.mutateAsync(file);
-      notifySuccess("Favicon 已上传", "官网约 5 分钟内生效");
+      notifySuccess('Favicon 已上传', '官网约 5 分钟内生效');
     } catch (e) {
-      notifyError(e instanceof ApiError ? e.message : e, "上传失败");
+      notifyError(e instanceof ApiError ? e.message : e, '上传失败');
     }
   }
 
@@ -40,7 +33,7 @@ export function FaviconSettingsCard() {
     const file = e.target.files?.[0];
     if (file) handleFile(file);
     // reset so same file can be re-selected
-    e.target.value = "";
+    e.target.value = '';
   }
 
   function onDrop(e: React.DragEvent) {
@@ -53,9 +46,9 @@ export function FaviconSettingsCard() {
   async function onDelete() {
     try {
       await remove.mutateAsync();
-      notifySuccess("Favicon 已删除");
+      notifySuccess('Favicon 已删除');
     } catch (e) {
-      notifyError(e instanceof ApiError ? e.message : e, "删除失败");
+      notifyError(e instanceof ApiError ? e.message : e, '删除失败');
     }
   }
 
@@ -89,9 +82,7 @@ export function FaviconSettingsCard() {
         {/* 预览区域 */}
         <div
           className={`relative flex items-center justify-center rounded-lg border-2 border-dashed p-6 transition-colors ${
-            dragOver
-              ? "border-primary bg-primary/5"
-              : "border-border bg-muted/20"
+            dragOver ? 'border-primary bg-primary/5' : 'border-border bg-muted/20'
           }`}
           onDragOver={(e) => {
             e.preventDefault();
@@ -141,7 +132,7 @@ export function FaviconSettingsCard() {
             ) : (
               <>
                 <Upload className="mr-2 h-4 w-4" />
-                {faviconUrl ? "更换图标" : "上传图标"}
+                {faviconUrl ? '更换图标' : '上传图标'}
               </>
             )}
           </Button>

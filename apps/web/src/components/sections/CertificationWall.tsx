@@ -1,31 +1,31 @@
-import { Award, ShieldCheck, FileCheck, BadgeCheck } from "lucide-react";
-import { getTranslations } from "next-intl/server";
-import { Container, SectionHeading } from "@/components/ui";
+import { Award, BadgeCheck, FileCheck, ShieldCheck } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
+import { Container, SectionHeading } from '@/components/ui';
 
-const CERT_KEYS = ["iso9001", "hitech", "patents", "safety"] as const;
+const CERT_KEYS = ['iso9001', 'hitech', 'patents', 'safety'] as const;
 const CERT_ICONS = [ShieldCheck, Award, FileCheck, BadgeCheck] as const;
 
 const CLIENT_KEYS = [
-  "fire",
-  "police",
-  "mine",
-  "university",
-  "tourism",
-  "military",
-  "petrochemical",
-  "maritime",
+  'fire',
+  'police',
+  'mine',
+  'university',
+  'tourism',
+  'military',
+  'petrochemical',
+  'maritime',
 ] as const;
 
 export async function CertificationWall() {
-  const t = await getTranslations("home.certification");
+  const t = await getTranslations('home.certification');
 
   return (
     <section className="bg-neutral-100 py-16 lg:py-24">
       <Container>
         <SectionHeading
-          eyebrow={t("eyebrow")}
-          title={t("title")}
-          description={t("description")}
+          eyebrow={t('eyebrow')}
+          title={t('title')}
+          description={t('description')}
           align="center"
         />
 
@@ -51,7 +51,7 @@ export async function CertificationWall() {
 
         <div className="mt-12 border-t border-neutral-300 pt-10">
           <p className="mb-6 text-center text-xs font-bold uppercase tracking-[0.18em] text-secondary-text">
-            {t("clientsHeading")}
+            {t('clientsHeading')}
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             {CLIENT_KEYS.map((key) => (

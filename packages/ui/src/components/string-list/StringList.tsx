@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { Plus, Trash2 } from "lucide-react";
-import { Button } from "../button";
-import { Input } from "../input";
+import { Plus, Trash2 } from 'lucide-react';
+import { Button } from '../button';
+import { Input } from '../input';
 
 export interface StringListProps {
   value: string[];
@@ -15,10 +15,10 @@ export interface StringListProps {
 export function StringList({
   value,
   onChange,
-  itemPlaceholder = "请输入内容",
-  addLabel = "添加一条",
+  itemPlaceholder = '请输入内容',
+  addLabel = '添加一条',
 }: StringListProps) {
-  const rows = Array.isArray(value) && value.length > 0 ? value : [""];
+  const rows = Array.isArray(value) && value.length > 0 ? value : [''];
 
   function updateRow(index: number, text: string) {
     const next = rows.map((row, i) => (i === index ? text : row));
@@ -26,12 +26,12 @@ export function StringList({
   }
 
   function addRow() {
-    onChange([...rows, ""]);
+    onChange([...rows, '']);
   }
 
   function removeRow(index: number) {
     const next = rows.filter((_, i) => i !== index);
-    onChange(next.length ? next : [""]);
+    onChange(next.length ? next : ['']);
   }
 
   return (

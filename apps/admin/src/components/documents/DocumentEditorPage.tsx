@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useMemo } from "react";
-import { useSearchParams } from "next/navigation";
-import { ResourceEditor } from "@/components/crud/ResourceEditor";
-import { useDocFolderOptions, useDocTags } from "@/features/documents";
-import type { DocumentsResourceConfig } from "@/features/resources/documents";
+import { useSearchParams } from 'next/navigation';
+import { useMemo } from 'react';
+import { ResourceEditor } from '@/components/crud/ResourceEditor';
+import { useDocFolderOptions, useDocTags } from '@/features/documents';
+import type { DocumentsResourceConfig } from '@/features/resources/documents';
 
 export function DocumentEditorPage({
   config,
@@ -14,13 +14,10 @@ export function DocumentEditorPage({
   id?: string;
 }) {
   const sp = useSearchParams();
-  const folderFromUrl = sp.get("folder");
+  const folderFromUrl = sp.get('folder');
   const { options } = useDocFolderOptions();
   const { data: tagStats } = useDocTags();
-  const tagSuggestions = useMemo(
-    () => tagStats?.map((t) => t.tag) ?? [],
-    [tagStats],
-  );
+  const tagSuggestions = useMemo(() => tagStats?.map((t) => t.tag) ?? [], [tagStats]);
   const defaultOverrides = useMemo(
     () => (!id && folderFromUrl ? { folderId: folderFromUrl } : undefined),
     [id, folderFromUrl],

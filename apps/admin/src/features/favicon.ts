@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ApiError } from "@/lib/apiClient";
-import { BASE_PATH } from "@/lib/config";
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { ApiError } from '@/lib/apiClient';
+import { BASE_PATH } from '@/lib/config';
 
 interface FaviconResult {
   key: string;
@@ -14,7 +14,7 @@ interface FaviconResult {
 /** 查询当前 favicon URL（通过 BFF 代理到 Nest 公开接口） */
 export function useFavicon() {
   return useQuery<{ url: string | null; previewUrl?: string | null }>({
-    queryKey: ["settings", "favicon"],
+    queryKey: ['settings', 'favicon'],
     queryFn: async () => {
       const res = await fetch(`${BASE_PATH}/api/bff/site-settings/favicon`);
       const body = await res.json().catch(() => null);
@@ -26,10 +26,10 @@ export function useFavicon() {
 /** 上传 favicon（走专用 BFF，multipart） */
 export async function uploadFavicon(file: File): Promise<FaviconResult> {
   const fd = new FormData();
-  fd.append("file", file);
+  fd.append('file', file);
 
   const res = await fetch(`${BASE_PATH}/api/site-settings/favicon`, {
-    method: "POST",
+    method: 'POST',
     body: fd,
   });
   const body = await res.json().catch(() => null);
@@ -49,7 +49,7 @@ export function useUploadFavicon() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (file: File) => uploadFavicon(file),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["settings", "favicon"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['settings', 'favicon'] }),
   });
 }
 
@@ -59,18 +59,15 @@ export function useDeleteFavicon() {
   return useMutation({
     mutationFn: async () => {
       const res = await fetch(`${BASE_PATH}/api/site-settings/favicon`, {
-        method: "DELETE",
+        method: 'DELETE',
       });
       if (!res.ok) {
         const body = await res.json().catch(() => null);
         if (body?.success === false) {
-          throw new ApiError(
-            body?.error?.message ?? "删除失败",
-            res.status,
-          );
+          throw new ApiError(body?.error?.message ?? '删除失败', res.status);
         }
       }
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["settings", "favicon"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['settings', 'favicon'] }),
   });
 }

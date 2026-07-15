@@ -1,4 +1,4 @@
-import type { PrismaService } from "../../prisma/prisma.service";
+import { PrismaService } from '../../prisma/prisma.service';
 
 /** 后台内容作者展示：账户名（昵称优先）+ 手机号。 */
 export function formatAuthorLabel(user: {
@@ -11,14 +11,11 @@ export function formatAuthorLabel(user: {
   return phone ? `${name} ${phone}` : name;
 }
 
-export async function resolveContentAuthor(
-  prisma: PrismaService,
-  userId: string,
-): Promise<string> {
+export async function resolveContentAuthor(prisma: PrismaService, userId: string): Promise<string> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { nickname: true, username: true, phone: true },
   });
-  if (!user) return "未知用户";
+  if (!user) return '未知用户';
   return formatAuthorLabel(user);
 }

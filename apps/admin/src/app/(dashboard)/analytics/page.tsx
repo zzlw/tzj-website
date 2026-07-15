@@ -1,8 +1,6 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useMemo, useState } from "react";
-import { ArrowRight, ShieldBan } from "lucide-react";
+import type { AnalyticsIpTrafficRow } from '@tzj/types';
 import {
   Card,
   CardContent,
@@ -16,17 +14,22 @@ import {
   PageHeader,
   Skeleton,
   TablePagination,
-} from "@tzj/ui";
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@tzj/ui';
+import { ArrowRight, ShieldBan } from 'lucide-react';
+import Link from 'next/link';
+import { useMemo, useState } from 'react';
+import { DonutChart, HorizontalBarChart, TrendChart } from '@/components/analytics/AnalyticsCharts';
+import { Can } from '@/components/Can';
+import { CopyableIp } from '@/components/CopyableText';
+import { RichHint } from '@/components/RichHint';
 import {
-  DonutChart,
-  HorizontalBarChart,
-  TrendChart,
-} from "@/components/analytics/AnalyticsCharts";
-import { RichHint } from "@/components/RichHint";
-import { Can } from "@/components/Can";
-import { CopyableIp } from "@/components/CopyableText";
-import { GPS_GEO_RESOLVE_NOTE } from "@/lib/analytics-geo-hints";
-import {
+  type AnalyticsPageRow,
+  type AnalyticsReferrerRow,
+  type AnalyticsRegionRow,
   DEFAULT_PAGE_SORT,
   DEFAULT_REFERRER_SORT,
   DEFAULT_REGION_SORT,
@@ -37,11 +40,8 @@ import {
   useAnalyticsPages,
   useAnalyticsReferrers,
   useAnalyticsRegions,
-  type AnalyticsPageRow,
-  type AnalyticsReferrerRow,
-  type AnalyticsRegionRow,
-} from "@/features/analytics";
-import type { AnalyticsIpTrafficRow } from "@tzj/types";
+} from '@/features/analytics';
+import { GPS_GEO_RESOLVE_NOTE } from '@/lib/analytics-geo-hints';
 
 function StatCard({
   label,
@@ -59,7 +59,7 @@ function StatCard({
       <CardHeader className="pb-2">
         <CardDescription>{label}</CardDescription>
         <CardTitle className="text-3xl tabular-nums">
-          {loading ? <Skeleton className="h-9 w-20" /> : value.toLocaleString("zh-CN")}
+          {loading ? <Skeleton className="h-9 w-20" /> : value.toLocaleString('zh-CN')}
         </CardTitle>
         {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
       </CardHeader>
@@ -68,8 +68,8 @@ function StatCard({
 }
 
 export default function AnalyticsPage() {
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
 
   const [pagesPage, setPagesPage] = useState(1);
   const [pagesPageSize, setPagesPageSize] = useState(10);
@@ -81,9 +81,7 @@ export default function AnalyticsPage() {
 
   const [referrersPage, setReferrersPage] = useState(1);
   const [referrersPageSize, setReferrersPageSize] = useState(10);
-  const [referrersSort, setReferrersSort] = useState<DataTableSort | null>(
-    DEFAULT_REFERRER_SORT,
-  );
+  const [referrersSort, setReferrersSort] = useState<DataTableSort | null>(DEFAULT_REFERRER_SORT);
 
   const [ipTrafficPage, setIpTrafficPage] = useState(1);
   const [ipTrafficPageSize, setIpTrafficPageSize] = useState(10);
@@ -150,121 +148,121 @@ export default function AnalyticsPage() {
 
   const pageColumns: DataTableColumn<AnalyticsPageRow>[] = [
     {
-      key: "path",
-      header: "页面路径",
+      key: 'path',
+      header: '页面路径',
       sortable: true,
-      className: "max-w-[240px] truncate font-mono text-xs",
+      className: 'max-w-[240px] truncate font-mono text-xs',
       cell: (r) => r.path,
     },
     {
-      key: "title",
-      header: "标题",
+      key: 'title',
+      header: '标题',
       sortable: true,
-      className: "max-w-[200px] truncate text-muted-foreground",
-      cell: (r) => r.title ?? "—",
+      className: 'max-w-[200px] truncate text-muted-foreground',
+      cell: (r) => r.title ?? '—',
     },
     {
-      key: "pageViews",
-      header: "PV",
+      key: 'pageViews',
+      header: 'PV',
       sortable: true,
-      className: "tabular-nums",
-      cell: (r) => r.pageViews.toLocaleString("zh-CN"),
+      className: 'tabular-nums',
+      cell: (r) => r.pageViews.toLocaleString('zh-CN'),
     },
     {
-      key: "uniqueVisitors",
-      header: "UV",
+      key: 'uniqueVisitors',
+      header: 'UV',
       sortable: true,
-      className: "tabular-nums",
-      cell: (r) => r.uniqueVisitors.toLocaleString("zh-CN"),
+      className: 'tabular-nums',
+      cell: (r) => r.uniqueVisitors.toLocaleString('zh-CN'),
     },
   ];
 
   const ipTrafficColumns: DataTableColumn<AnalyticsIpTrafficRow>[] = [
     {
-      key: "ip",
-      header: "IP",
+      key: 'ip',
+      header: 'IP',
       cell: (r) => <CopyableIp ip={r.ip} ipMasked={r.ipMasked} />,
     },
     {
-      key: "region",
-      header: "地区",
-      cell: (r) => r.region || "—",
+      key: 'region',
+      header: '地区',
+      cell: (r) => r.region || '—',
     },
     {
-      key: "pageViews",
-      header: "PV",
-      className: "tabular-nums",
-      cell: (r) => r.pageViews.toLocaleString("zh-CN"),
+      key: 'pageViews',
+      header: 'PV',
+      className: 'tabular-nums',
+      cell: (r) => r.pageViews.toLocaleString('zh-CN'),
     },
     {
-      key: "uniqueVisitors",
-      header: "UV",
-      className: "tabular-nums",
-      cell: (r) => r.uniqueVisitors.toLocaleString("zh-CN"),
+      key: 'uniqueVisitors',
+      header: 'UV',
+      className: 'tabular-nums',
+      cell: (r) => r.uniqueVisitors.toLocaleString('zh-CN'),
     },
     {
-      key: "lastSeenAt",
-      header: "最近访问",
+      key: 'lastSeenAt',
+      header: '最近访问',
       cell: (r) => formatLastSeen(r.lastSeenAt),
     },
   ];
 
   const referrerColumns: DataTableColumn<AnalyticsReferrerRow>[] = [
     {
-      key: "referrerHost",
-      header: "来源域名",
+      key: 'referrerHost',
+      header: '来源域名',
       sortable: true,
       cell: (r) => r.referrerHost,
     },
     {
-      key: "region",
-      header: "地区",
+      key: 'region',
+      header: '地区',
       sortable: true,
       cell: (r) => r.region,
     },
     {
-      key: "geoSource",
-      header: "定位依据",
+      key: 'geoSource',
+      header: '定位依据',
       sortable: true,
-      className: "tabular-nums text-muted-foreground",
+      className: 'tabular-nums text-muted-foreground',
       cell: (r) => r.geoSource,
     },
     {
-      key: "pageViews",
-      header: "PV",
+      key: 'pageViews',
+      header: 'PV',
       sortable: true,
-      className: "tabular-nums",
-      cell: (r) => r.pageViews.toLocaleString("zh-CN"),
+      className: 'tabular-nums',
+      cell: (r) => r.pageViews.toLocaleString('zh-CN'),
     },
   ];
 
   const regionColumns: DataTableColumn<AnalyticsRegionRow>[] = [
     {
-      key: "region",
-      header: "地区",
+      key: 'region',
+      header: '地区',
       sortable: true,
       cell: (r) => r.region,
     },
     {
-      key: "geoSource",
-      header: "定位依据",
+      key: 'geoSource',
+      header: '定位依据',
       sortable: true,
-      className: "tabular-nums text-muted-foreground",
+      className: 'tabular-nums text-muted-foreground',
       cell: (r) => r.geoSource,
     },
     {
-      key: "pageViews",
-      header: "PV",
+      key: 'pageViews',
+      header: 'PV',
       sortable: true,
-      className: "tabular-nums",
-      cell: (r) => r.pageViews.toLocaleString("zh-CN"),
+      className: 'tabular-nums',
+      cell: (r) => r.pageViews.toLocaleString('zh-CN'),
     },
     {
-      key: "uniqueVisitors",
-      header: "UV",
+      key: 'uniqueVisitors',
+      header: 'UV',
       sortable: true,
-      className: "tabular-nums",
-      cell: (r) => r.uniqueVisitors.toLocaleString("zh-CN"),
+      className: 'tabular-nums',
+      cell: (r) => r.uniqueVisitors.toLocaleString('zh-CN'),
     },
   ];
 
@@ -312,17 +310,12 @@ export default function AnalyticsPage() {
             to={to}
             onChange={({ from: f, to: t }) => resetDateFilters(f, t)}
           />
-          <p className="text-xs text-muted-foreground">
-            未选日期时默认展示近 7 天。
-          </p>
-          <RichHint
-            text={GPS_GEO_RESOLVE_NOTE}
-            className="w-full text-xs text-muted-foreground"
-          />
+          <p className="text-xs text-muted-foreground">未选日期时默认展示近 7 天。</p>
+          <RichHint text={GPS_GEO_RESOLVE_NOTE} className="w-full text-xs text-muted-foreground" />
         </CardContent>
       </Card>
 
-      <Can anyPerm={["security.view", "security.manage"]}>
+      <Can anyPerm={['security.view', 'security.manage']}>
         <Card className="mb-6 border-border/80 shadow-sm">
           <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
             <div className="flex items-start gap-3">
@@ -359,7 +352,7 @@ export default function AnalyticsPage() {
         <StatCard
           label="时段 PV"
           value={data?.summary.pageViews ?? 0}
-          hint={from && to ? `${from} ~ ${to}` : "近 7 天"}
+          hint={from && to ? `${from} ~ ${to}` : '近 7 天'}
           loading={overviewLoading}
         />
         <StatCard
@@ -460,89 +453,103 @@ export default function AnalyticsPage() {
         ) : null}
       </div>
 
-      <div className="mb-6 space-y-2">
-        <h2 className="text-base font-semibold">访客地区明细</h2>
-        <DataTable
-          columns={regionColumns}
-          rows={regionsQuery.data?.data ?? []}
-          loading={regionsQuery.isLoading || regionsQuery.isFetching}
-          emptyText="暂无地区数据"
-          sort={regionsSort}
-          defaultSort={DEFAULT_REGION_SORT}
-          onSortChange={(next) => {
-            setRegionsPage(1);
-            setRegionsSort(next);
-          }}
-        />
-        {regionsQuery.data?.pagination ? (
-          <TablePagination
-            page={regionsPage}
-            totalPages={regionsQuery.data.pagination.totalPages}
-            total={regionsQuery.data.pagination.total}
-            pageSize={regionsPageSize}
-            onPageChange={setRegionsPage}
-            onPageSizeChange={(size) => {
-              setRegionsPageSize(size);
-              setRegionsPage(1);
-            }}
-          />
-        ) : null}
-      </div>
+      <Card className="mb-6 border-border/80 shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-base">访客明细</CardTitle>
+          <CardDescription>按地区、IP 与流量来源三个维度查看访客分布。</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="regions" className="w-full">
+            <TabsList className="mb-4">
+              <TabsTrigger value="regions">访客地区明细</TabsTrigger>
+              <TabsTrigger value="ip">访客 IP</TabsTrigger>
+              <TabsTrigger value="referrers">流量来源（Referrer）</TabsTrigger>
+            </TabsList>
 
-      <div className="mb-6 space-y-2">
-        <h2 className="text-base font-semibold">访客 IP</h2>
-        <p className="text-xs text-muted-foreground">
-          按 IP 聚合的访问明细。完整 IP 自本次升级后的新访问起记录；更早数据可能仅显示脱敏地址。点击 IP 右侧图标可复制。
-        </p>
-        <DataTable
-          columns={ipTrafficColumns}
-          rows={ipTrafficQuery.data?.data ?? []}
-          loading={ipTrafficQuery.isLoading || ipTrafficQuery.isFetching}
-          emptyText="暂无 IP 访问记录"
-        />
-        {ipTrafficQuery.data?.pagination ? (
-          <TablePagination
-            page={ipTrafficPage}
-            totalPages={ipTrafficQuery.data.pagination.totalPages}
-            total={ipTrafficQuery.data.pagination.total}
-            pageSize={ipTrafficPageSize}
-            onPageChange={setIpTrafficPage}
-            onPageSizeChange={(size) => {
-              setIpTrafficPageSize(size);
-              setIpTrafficPage(1);
-            }}
-          />
-        ) : null}
-      </div>
+            <TabsContent value="regions" className="space-y-2">
+              <DataTable
+                columns={regionColumns}
+                rows={regionsQuery.data?.data ?? []}
+                loading={regionsQuery.isLoading || regionsQuery.isFetching}
+                emptyText="暂无地区数据"
+                sort={regionsSort}
+                defaultSort={DEFAULT_REGION_SORT}
+                onSortChange={(next) => {
+                  setRegionsPage(1);
+                  setRegionsSort(next);
+                }}
+              />
+              {regionsQuery.data?.pagination ? (
+                <TablePagination
+                  page={regionsPage}
+                  totalPages={regionsQuery.data.pagination.totalPages}
+                  total={regionsQuery.data.pagination.total}
+                  pageSize={regionsPageSize}
+                  onPageChange={setRegionsPage}
+                  onPageSizeChange={(size) => {
+                    setRegionsPageSize(size);
+                    setRegionsPage(1);
+                  }}
+                />
+              ) : null}
+            </TabsContent>
 
-      <div className="space-y-2">
-        <h2 className="text-base font-semibold">流量来源（Referrer）</h2>
-        <DataTable
-          columns={referrerColumns}
-          rows={referrersQuery.data?.data ?? []}
-          loading={referrersQuery.isLoading || referrersQuery.isFetching}
-          emptyText="暂无外部来源（直接访问不记录 referrer）"
-          sort={referrersSort}
-          defaultSort={DEFAULT_REFERRER_SORT}
-          onSortChange={(next) => {
-            setReferrersPage(1);
-            setReferrersSort(next);
-          }}
-        />
-        {referrersQuery.data?.pagination ? (
-          <TablePagination
-            page={referrersPage}
-            totalPages={referrersQuery.data.pagination.totalPages}
-            total={referrersQuery.data.pagination.total}
-            pageSize={referrersPageSize}
-            onPageChange={setReferrersPage}
-            onPageSizeChange={(size) => {
-              setReferrersPageSize(size);
-              setReferrersPage(1);
-            }}
-          />
-        ) : null}
-      </div>
+            <TabsContent value="ip" className="space-y-2">
+              <p className="text-xs text-muted-foreground">
+                按 IP 聚合的访问明细。完整 IP
+                自本次升级后的新访问起记录；更早数据可能仅显示脱敏地址。点击 IP 右侧图标可复制。
+              </p>
+              <DataTable
+                columns={ipTrafficColumns}
+                rows={ipTrafficQuery.data?.data ?? []}
+                loading={ipTrafficQuery.isLoading || ipTrafficQuery.isFetching}
+                emptyText="暂无 IP 访问记录"
+              />
+              {ipTrafficQuery.data?.pagination ? (
+                <TablePagination
+                  page={ipTrafficPage}
+                  totalPages={ipTrafficQuery.data.pagination.totalPages}
+                  total={ipTrafficQuery.data.pagination.total}
+                  pageSize={ipTrafficPageSize}
+                  onPageChange={setIpTrafficPage}
+                  onPageSizeChange={(size) => {
+                    setIpTrafficPageSize(size);
+                    setIpTrafficPage(1);
+                  }}
+                />
+              ) : null}
+            </TabsContent>
+
+            <TabsContent value="referrers" className="space-y-2">
+              <DataTable
+                columns={referrerColumns}
+                rows={referrersQuery.data?.data ?? []}
+                loading={referrersQuery.isLoading || referrersQuery.isFetching}
+                emptyText="暂无外部来源（直接访问不记录 referrer）"
+                sort={referrersSort}
+                defaultSort={DEFAULT_REFERRER_SORT}
+                onSortChange={(next) => {
+                  setReferrersPage(1);
+                  setReferrersSort(next);
+                }}
+              />
+              {referrersQuery.data?.pagination ? (
+                <TablePagination
+                  page={referrersPage}
+                  totalPages={referrersQuery.data.pagination.totalPages}
+                  total={referrersQuery.data.pagination.total}
+                  pageSize={referrersPageSize}
+                  onPageChange={setReferrersPage}
+                  onPageSizeChange={(size) => {
+                    setReferrersPageSize(size);
+                    setReferrersPage(1);
+                  }}
+                />
+              ) : null}
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </>
   );
 }

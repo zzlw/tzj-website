@@ -1,6 +1,6 @@
-import { cn } from "../../lib/utils";
-import { Card } from "../card";
-import { Skeleton } from "../skeleton";
+import { cn } from '../../lib/utils';
+import { Card } from '../card';
+import { Skeleton } from '../skeleton';
 
 export interface ContentListSkeletonProps {
   count?: number;
@@ -8,17 +8,9 @@ export interface ContentListSkeletonProps {
 }
 
 /** 内容列表加载占位。 */
-export function ContentListSkeleton({
-  count = 5,
-  className,
-}: ContentListSkeletonProps) {
+export function ContentListSkeleton({ count = 5, className }: ContentListSkeletonProps) {
   return (
-    <Card
-      className={cn(
-        "overflow-hidden border-border/80 py-0 shadow-sm",
-        className,
-      )}
-    >
+    <Card className={cn('overflow-hidden border-border/80 py-0 shadow-sm', className)}>
       <div className="divide-y divide-border/60">
         {Array.from({ length: count }, (_, i) => (
           <div key={i} className="flex gap-4 px-5 py-4">

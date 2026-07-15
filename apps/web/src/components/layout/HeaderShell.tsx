@@ -1,7 +1,7 @@
-import { getTranslations } from "next-intl/server";
-import { Header } from "@/components/layout/Header";
-import { getSitePublicSettings } from "@/lib/site-settings";
-import { resolveSocialChannels } from "@/lib/resolve-social-channels";
+import { getTranslations } from 'next-intl/server';
+import { Header } from '@/components/layout/Header';
+import { resolveSocialChannels } from '@/lib/resolve-social-channels';
+import { getSitePublicSettings } from '@/lib/site-settings';
 
 /**
  * 导航区壳组件（Server Component）
@@ -9,14 +9,12 @@ import { resolveSocialChannels } from "@/lib/resolve-social-channels";
  */
 export async function HeaderShell() {
   const settings = await getSitePublicSettings();
-  const tContact = await getTranslations("contact");
+  const tContact = await getTranslations('contact');
 
-  const socialChannels = resolveSocialChannels(
-    settings,
-    undefined,
-    (key) => tContact(key as Parameters<typeof tContact>[0]),
+  const socialChannels = resolveSocialChannels(settings, undefined, (key) =>
+    tContact(key as Parameters<typeof tContact>[0]),
   );
-  const scanHint = tContact("scanToFollow");
+  const scanHint = tContact('scanToFollow');
 
   return (
     <Header

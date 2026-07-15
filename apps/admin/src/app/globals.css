@@ -38,6 +38,10 @@
   --radius-md: 2px;
   --radius-lg: 4px;
   --radius-xl: 4px;
+  /* 桥梁档位：锐利小刻度(xl=4px) → 大圆角(ui 3xl+/4xl+) 间补 2xl/3xl，
+     消除 xl→2xl 断崖，保持刻度单调递增（4→8→16→32…） */
+  --radius-2xl: 8px;
+  --radius-3xl: 1rem;
 
   --font-sans: "Inter", "Noto Sans SC", system-ui, sans-serif;
 
@@ -136,7 +140,9 @@ body {
 /* 注意不能写成 button.vditor-tooltipped：上传项渲染的是 div 而非 button */
 .markdown-editor .vditor:has(button[data-type="preview"].vditor-menu--current)
   .vditor-toolbar
-  .vditor-tooltipped:not([data-type="preview"]):not([data-type="fullscreen"]):not([data-type="outline"]) {
+  .vditor-tooltipped:not([data-type="preview"]):not([data-type="fullscreen"]):not(
+    [data-type="outline"]
+  ) {
   color: var(--second-color) !important;
   pointer-events: none;
   cursor: not-allowed;
@@ -145,7 +151,9 @@ body {
    仅禁用图标元素时该 input 仍可悬停/点击弹出文件选择框 */
 .markdown-editor .vditor:has(button[data-type="preview"].vditor-menu--current)
   .vditor-toolbar
-  .vditor-toolbar__item:not(:has([data-type="preview"], [data-type="fullscreen"], [data-type="outline"])) {
+  .vditor-toolbar__item:not(
+    :has([data-type="preview"], [data-type="fullscreen"], [data-type="outline"])
+  ) {
   pointer-events: none;
 }
 /* 字数统计固定靠右：绝对定位，不参与 flex 布局
@@ -182,6 +190,18 @@ body {
 .markdown-editor .vditor-counter {
   color: var(--color-muted-foreground);
   background: transparent;
+}
+
+/* 客服聊天编辑器：外层卡片为 rounded-2xl / sm:rounded-3xl，而全站编辑器默认 2px 锐利边角，
+   风格冲突。此处仅对聊天页编辑器做例外，圆角与卡片对齐，并用 overflow:hidden
+   裁掉工具栏/内容区的方角（否则方角会顶破圆角边框）。不影响文档/CMS 编辑器的锐利风格。 */
+.chat-composer-editor .markdown-editor .vditor {
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+/* 初始化占位框（Vditor 就绪前的 textarea）同步圆角，避免一闪的方角 */
+.chat-composer-editor .markdown-editor > div:first-child {
+  border-radius: 0.75rem;
 }
 
 /* 内部文档阅读页 Markdown 预览 */
@@ -252,3 +272,69 @@ body {
   font-weight: 600;
 }
 
+/* 聊天气泡内联 Markdown：收敛 article 级大间距，贴合气泡容器 */
+.chat-md-reset.vditor-reset {
+  color: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  word-break: break-word;
+}
+.chat-md-reset.vditor-reset > :first-child {
+  margin-top: 0;
+}
+.chat-md-reset.vditor-reset > :last-child {
+  margin-bottom: 0;
+}
+.chat-md-reset.vditor-reset p,
+.chat-md-reset.vditor-reset ul,
+.chat-md-reset.vditor-reset ol,
+.chat-md-reset.vditor-reset blockquote,
+.chat-md-reset.vditor-reset pre,
+.chat-md-reset.vditor-reset table,
+.chat-md-reset.vditor-reset h1,
+.chat-md-reset.vditor-reset h2,
+.chat-md-reset.vditor-reset h3,
+.chat-md-reset.vditor-reset h4 {
+  margin: 0.4rem 0;
+}
+.chat-md-reset.vditor-reset p:first-child,
+.chat-md-reset.vditor-reset ul:first-child,
+.chat-md-reset.vditor-reset ol:first-child,
+.chat-md-reset.vditor-reset blockquote:first-child,
+.chat-md-reset.vditor-reset pre:first-child {
+  margin-top: 0;
+}
+.chat-md-reset.vditor-reset :last-child {
+  margin-bottom: 0;
+}
+.chat-md-reset.vditor-reset img {
+  max-width: 240px;
+  max-height: 240px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 0.5rem;
+  margin: 0.5rem 0;
+  cursor: zoom-in;
+}
+/* 聊天气泡内的视频：默认由 mediaMarkdown 注入的内联 max-width:100% 会撑满气泡，
+   这里用 !important 覆盖，限制为较小的尺寸，避免渲染过大 */
+.chat-md-reset.vditor-reset video {
+  display: block;
+  max-width: 280px !important;
+  width: auto !important;
+  max-height: 260px;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 0.5rem 0;
+  background: #000;
+}
+.chat-md-reset.vditor-reset pre {
+  background: rgba(127, 127, 127, 0.18);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+}
+.chat-md-reset.vditor-reset a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

@@ -1,21 +1,23 @@
-const STORAGE_KEY = "_tzj_recent_searches";
+const STORAGE_KEY = '_tzj_recent_searches';
 const MAX_RECENT = 5;
 
 function readAll(): string[] {
-  if (typeof window === "undefined") return [];
+  if (typeof window === 'undefined') return [];
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter((item): item is string => typeof item === "string" && item.trim().length > 0);
+    return parsed.filter(
+      (item): item is string => typeof item === 'string' && item.trim().length > 0,
+    );
   } catch {
     return [];
   }
 }
 
 function writeAll(queries: string[]): void {
-  if (typeof window === "undefined") return;
+  if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(queries.slice(0, MAX_RECENT)));
   } catch {
@@ -38,7 +40,7 @@ export function addRecentSearch(query: string): void {
 
 /** 清除全部最近搜索。 */
 export function clearRecentSearches(): void {
-  if (typeof window === "undefined") return;
+  if (typeof window === 'undefined') return;
   try {
     localStorage.removeItem(STORAGE_KEY);
   } catch {

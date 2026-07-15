@@ -1,30 +1,30 @@
-import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { API_BASE, COOKIE } from "@/lib/config";
-import { applyTokenCookies, refreshAccessToken } from "@/lib/tokenRefresh";
-import { retryFetch } from "@/lib/fetch-retry";
+import { cookies } from 'next/headers';
+import { type NextRequest, NextResponse } from 'next/server';
+import { API_BASE, COOKIE } from '@/lib/config';
+import { retryFetch } from '@/lib/fetch-retry';
+import { applyTokenCookies, refreshAccessToken } from '@/lib/tokenRefresh';
 
 async function proxy(req: NextRequest, path: string[]) {
   const store = await cookies();
   let accessToken = store.get(COOKIE.access)?.value;
   const refreshToken = store.get(COOKIE.refresh)?.value;
 
-  const search = req.nextUrl.search || "";
-  const target = `${API_BASE}/${path.join("/")}${search}`;
+  const search = req.nextUrl.search || '';
+  const target = `${API_BASE}/${path.join('/')}${search}`;
 
   const method = req.method.toUpperCase();
-  const hasBody = !["GET", "HEAD"].includes(method);
+  const hasBody = !['GET', 'HEAD'].includes(method);
   const rawBody = hasBody ? await req.text() : undefined;
 
   const forward = (bearer?: string) =>
     retryFetch(target, {
       method,
       headers: {
-        "Content-Type": req.headers.get("content-type") || "application/json",
+        'Content-Type': req.headers.get('content-type') || 'application/json',
         ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
       },
       body: rawBody,
-      cache: "no-store",
+      cache: 'no-store',
     }); // 仅 GET/HEAD/OPTIONS 自动重试，写操作不重试
 
   let apiRes = await forward(accessToken);
@@ -42,8 +42,7 @@ async function proxy(req: NextRequest, path: string[]) {
   const res = new NextResponse(text, {
     status: apiRes.status,
     headers: {
-      "content-type":
-        apiRes.headers.get("content-type") || "application/json",
+      'content-type': apiRes.headers.get('content-type') || 'application/json',
     },
   });
 

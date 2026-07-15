@@ -1,16 +1,15 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from 'react';
 import {
+  type AliyunCaptchaPublicConfig,
   getIntegrationsPublicConfig,
   resolveAliyunCaptchaConfig,
-  type AliyunCaptchaPublicConfig,
-} from "@/lib/integrations-public";
+} from '@/lib/integrations-public';
 
-const SCRIPT_URL =
-  "https://o.alicdn.com/captcha-frontend/aliyunCaptcha/AliyunCaptcha.js";
-const CAPTCHA_ELEMENT_ID = "aliyun-captcha-element";
-const SUBMIT_BUTTON_ID = "contact-submit-btn";
+const SCRIPT_URL = 'https://o.alicdn.com/captcha-frontend/aliyunCaptcha/AliyunCaptcha.js';
+const CAPTCHA_ELEMENT_ID = 'aliyun-captcha-element';
+const SUBMIT_BUTTON_ID = 'contact-submit-btn';
 
 declare global {
   interface Window {
@@ -19,7 +18,7 @@ declare global {
   }
 }
 
-export type CaptchaLanguage = "cn" | "tw" | "en";
+export type CaptchaLanguage = 'cn' | 'tw' | 'en';
 
 /** 从后台集成配置或 env 读取阿里云验证码公开参数 */
 export function useAliyunCaptchaConfig() {
@@ -42,20 +41,20 @@ export function useAliyunCaptchaConfig() {
 }
 
 function loadCaptchaScript(): Promise<void> {
-  if (typeof window === "undefined") return Promise.resolve();
+  if (typeof window === 'undefined') return Promise.resolve();
   if (window.initAliyunCaptcha) return Promise.resolve();
 
   return new Promise((resolve, reject) => {
     const existing = document.querySelector(`script[src="${SCRIPT_URL}"]`);
     if (existing) {
-      existing.addEventListener("load", () => resolve(), { once: true });
+      existing.addEventListener('load', () => resolve(), { once: true });
       return;
     }
-    const script = document.createElement("script");
+    const script = document.createElement('script');
     script.src = SCRIPT_URL;
     script.async = true;
     script.onload = () => resolve();
-    script.onerror = () => reject(new Error("验证码脚本加载失败"));
+    script.onerror = () => reject(new Error('验证码脚本加载失败'));
     document.head.appendChild(script);
   });
 }
@@ -81,7 +80,7 @@ export function AliyunCaptchaEmbed({
     if (initialized.current) return;
 
     window.AliyunCaptchaConfig = {
-      region: config.region === "sgp" ? "sgp" : "cn",
+      region: config.region === 'sgp' ? 'sgp' : 'cn',
       prefix: config.prefix,
     };
 
@@ -93,7 +92,7 @@ export function AliyunCaptchaEmbed({
 
         window.initAliyunCaptcha({
           SceneId: config.sceneId,
-          mode: "embed",
+          mode: 'embed',
           element: `#${CAPTCHA_ELEMENT_ID}`,
           button: `#${SUBMIT_BUTTON_ID}`,
           captchaVerifyCallback: async (captchaVerifyParam: string) => {

@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional, PartialType } from "@nestjs/swagger";
+import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import {
   IsArray,
   IsBoolean,
@@ -8,40 +8,40 @@ import {
   IsString,
   MaxLength,
   MinLength,
-} from "class-validator";
-import { ContentStatus } from "../../common/enums/content-status.enum";
+} from 'class-validator';
+import { ContentStatus } from '../../common/enums/content-status.enum';
 
 export class CreateDocumentDto {
-  @ApiProperty({ description: "文档标题" })
+  @ApiProperty({ description: '文档标题' })
   @IsString()
   @MinLength(1)
   @MaxLength(300)
   title!: string;
 
-  @ApiPropertyOptional({ description: "URL slug（留空则根据标题自动生成）" })
+  @ApiPropertyOptional({ description: 'URL slug（留空则根据标题自动生成）' })
   @IsOptional()
   @IsString()
   @MinLength(1)
   @MaxLength(200)
   slug?: string;
 
-  @ApiPropertyOptional({ description: "所属文件夹 ID" })
+  @ApiPropertyOptional({ description: '所属文件夹 ID' })
   @IsOptional()
   @IsString()
   folderId?: string | null;
 
-  @ApiPropertyOptional({ description: "正文 Markdown" })
+  @ApiPropertyOptional({ description: '正文 Markdown' })
   @IsOptional()
   @IsString()
   content?: string;
 
-  @ApiPropertyOptional({ type: [String], description: "标签" })
+  @ApiPropertyOptional({ type: [String], description: '标签' })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
   tags?: string[];
 
-  @ApiPropertyOptional({ description: "置顶" })
+  @ApiPropertyOptional({ description: '置顶' })
   @IsOptional()
   @IsBoolean()
   isPinned?: boolean;
@@ -51,13 +51,13 @@ export class CreateDocumentDto {
   @IsEnum(ContentStatus)
   status?: ContentStatus;
 
-  @ApiPropertyOptional({ description: "内部发布时间" })
+  @ApiPropertyOptional({ description: '内部发布时间' })
   @IsOptional()
   @IsDateString()
   publishedAt?: string;
 
   @ApiPropertyOptional({
-    description: "true = 个人文档（仅「文档中心」），false/省略 = 组织内部文档",
+    description: 'true = 个人文档（仅「文档中心」），false/省略 = 组织内部文档',
   })
   @IsOptional()
   @IsBoolean()
@@ -68,20 +68,20 @@ export class UpdateDocumentDto extends PartialType(CreateDocumentDto) {}
 
 /** 文档中心 — 个人文件夹（slug 服务端自动生成） */
 export class CreatePersonalDocFolderDto {
-  @ApiProperty({ description: "文件夹名称" })
+  @ApiProperty({ description: '文件夹名称' })
   @IsString()
   @MinLength(1)
   @MaxLength(100)
   name!: string;
 
-  @ApiPropertyOptional({ description: "父文件夹 ID" })
+  @ApiPropertyOptional({ description: '父文件夹 ID' })
   @IsOptional()
   @IsString()
   parentId?: string | null;
 }
 
 export class CreateDocTagDto {
-  @ApiProperty({ description: "标签名称" })
+  @ApiProperty({ description: '标签名称' })
   @IsString()
   @MinLength(1)
   @MaxLength(50)
@@ -89,12 +89,12 @@ export class CreateDocTagDto {
 }
 
 export class RenameDocTagDto {
-  @ApiProperty({ description: "原标签名" })
+  @ApiProperty({ description: '原标签名' })
   @IsString()
   @MinLength(1)
   from!: string;
 
-  @ApiProperty({ description: "新标签名" })
+  @ApiProperty({ description: '新标签名' })
   @IsString()
   @MinLength(1)
   @MaxLength(50)
@@ -102,12 +102,12 @@ export class RenameDocTagDto {
 }
 
 export class MergeDocTagsDto {
-  @ApiProperty({ description: "被合并的标签" })
+  @ApiProperty({ description: '被合并的标签' })
   @IsString()
   @MinLength(1)
   from!: string;
 
-  @ApiProperty({ description: "合并目标标签" })
+  @ApiProperty({ description: '合并目标标签' })
   @IsString()
   @MinLength(1)
   to!: string;

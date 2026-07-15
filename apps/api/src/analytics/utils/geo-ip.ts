@@ -1,4 +1,4 @@
-import geoip from "geoip-lite";
+import geoip from 'geoip-lite';
 
 export interface GeoLookup {
   country: string | null;
@@ -7,12 +7,12 @@ export interface GeoLookup {
 }
 
 function normalizeIp(ip: string): string {
-  return ip.replace(/^::ffff:/, "").trim();
+  return ip.replace(/^::ffff:/, '').trim();
 }
 
 function isPrivateIp(ip: string): boolean {
-  if (ip === "::1" || ip === "127.0.0.1" || ip === "localhost") return true;
-  if (ip.startsWith("10.") || ip.startsWith("192.168.")) return true;
+  if (ip === '::1' || ip === '127.0.0.1' || ip === 'localhost') return true;
+  if (ip.startsWith('10.') || ip.startsWith('192.168.')) return true;
   if (/^172\.(1[6-9]|2\d|3[01])\./.test(ip)) return true;
   return false;
 }
@@ -25,7 +25,7 @@ export function lookupGeo(ip?: string | null): GeoLookup {
 
   const normalized = normalizeIp(ip);
   if (isPrivateIp(normalized)) {
-    return { country: "LOCAL", region: null, city: null };
+    return { country: 'LOCAL', region: null, city: null };
   }
 
   const hit = geoip.lookup(normalized);

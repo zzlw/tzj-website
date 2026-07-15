@@ -1,31 +1,28 @@
-"use client";
+'use client';
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, ApiError, type ListResult } from "@/lib/apiClient";
-import { BASE_PATH } from "@/lib/config";
-import type { MediaAsset } from "./types";
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { ApiError, api, type ListResult } from '@/lib/apiClient';
+import { BASE_PATH } from '@/lib/config';
+import type { MediaAsset } from './types';
 
 type Params = Record<string, string | number | boolean | undefined>;
 
 export function useMediaList(params?: Params) {
   return useQuery<ListResult<MediaAsset>>({
-    queryKey: ["media", "list", params ?? {}],
-    queryFn: () => api.list<MediaAsset>("media", params),
+    queryKey: ['media', 'list', params ?? {}],
+    queryFn: () => api.list<MediaAsset>('media', params),
     placeholderData: (prev) => prev,
   });
 }
 
 /** 上传单个文件到媒体库（走媒体专用 BFF，multipart）。 */
-export async function uploadMedia(
-  file: File,
-  folder = "uploads",
-): Promise<MediaAsset> {
+export async function uploadMedia(file: File, folder = 'uploads'): Promise<MediaAsset> {
   const fd = new FormData();
-  fd.append("file", file);
-  fd.append("folder", folder);
+  fd.append('file', file);
+  fd.append('folder', folder);
 
   const res = await fetch(`${BASE_PATH}/api/media/upload`, {
-    method: "POST",
+    method: 'POST',
     body: fd,
   });
   const body = await res.json().catch(() => null);
@@ -41,11 +38,11 @@ export async function uploadMedia(
   return body.data as MediaAsset;
 }
 
-export function useUploadMedia(folder = "uploads") {
+export function useUploadMedia(folder = 'uploads') {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (file: File) => uploadMedia(file, folder),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["media"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['media'] }),
   });
 }
 
@@ -53,8 +50,8 @@ export function useUploadMedia(folder = "uploads") {
 export function useDeleteMedia() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.remove("media", id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["media"] }),
+    mutationFn: (id: string) => api.remove('media', id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['media'] }),
   });
 }
 
@@ -62,7 +59,7 @@ export function useRestoreMedia() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.post<MediaAsset>(`media/${id}/restore`, {}),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["media"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['media'] }),
   });
 }
 
@@ -70,8 +67,8 @@ export function useRestoreMedia() {
 export function usePurgeMedia() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.remove("media", id, { purge: true }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["media"] }),
+    mutationFn: (id: string) => api.remove('media', id, { purge: true }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['media'] }),
   });
 }
 
@@ -81,10 +78,10 @@ export async function replaceSiteMedia(
   file: File,
 ): Promise<MediaAsset & { backupKey?: string }> {
   const fd = new FormData();
-  fd.append("file", file);
+  fd.append('file', file);
 
   const res = await fetch(`${BASE_PATH}/api/media/replace-site/${id}`, {
-    method: "POST",
+    method: 'POST',
     body: fd,
   });
   const body = await res.json().catch(() => null);
@@ -103,9 +100,8 @@ export async function replaceSiteMedia(
 export function useReplaceSiteMedia() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, file }: { id: string; file: File }) =>
-      replaceSiteMedia(id, file),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["media"] }),
+    mutationFn: ({ id, file }: { id: string; file: File }) => replaceSiteMedia(id, file),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['media'] }),
   });
 }
 
@@ -116,11 +112,11 @@ interface MediaDeleteErrorDetails {
 }
 
 export function formatMediaDeleteError(error: unknown): string {
-  if (!(error instanceof ApiError)) return "操作失败";
-  if (error.code === "MEDIA_PROTECTED") {
-    return "该素材为站点静态资源，无法删除";
+  if (!(error instanceof ApiError)) return '操作失败';
+  if (error.code === 'MEDIA_PROTECTED') {
+    return '该素材为站点静态资源，无法删除';
   }
-  if (error.code === "MEDIA_IN_USE") {
+  if (error.code === 'MEDIA_IN_USE') {
     const details = error.details as MediaDeleteErrorDetails | undefined;
     const count = details?.usageCount;
     if (count && count > 0) {

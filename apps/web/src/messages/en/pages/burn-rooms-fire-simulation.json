@@ -29,12 +29,30 @@
     "title": "Six advantages of simulation systems"
   },
   "features": [
-    { "title": "Multi-scenario simulation", "desc": "Simulate pan fires, gas, electrical, kitchen, and other fire types from a single facility." },
-    { "title": "Adjustable conditions", "desc": "Scale flame and smoke intensity from introductory lessons through advanced practical drills." },
-    { "title": "High-frequency repeatability", "desc": "Fast ignition and reset support large-volume, routine, repeatable training." },
-    { "title": "Clean and eco-friendly", "desc": "Primarily gas and electronic simulation with minimal smoke—ideal for indoor and densely populated areas." },
-    { "title": "Lower operating cost", "desc": "No solid fuel or frequent liner replacement—more economical over the long term." },
-    { "title": "Safe and controllable", "desc": "Safety interlocks and emergency shutoff keep the training environment safe, controlled, and auditable." }
+    {
+      "title": "Multi-scenario simulation",
+      "desc": "Simulate pan fires, gas, electrical, kitchen, and other fire types from a single facility."
+    },
+    {
+      "title": "Adjustable conditions",
+      "desc": "Scale flame and smoke intensity from introductory lessons through advanced practical drills."
+    },
+    {
+      "title": "High-frequency repeatability",
+      "desc": "Fast ignition and reset support large-volume, routine, repeatable training."
+    },
+    {
+      "title": "Clean and eco-friendly",
+      "desc": "Primarily gas and electronic simulation with minimal smoke—ideal for indoor and densely populated areas."
+    },
+    {
+      "title": "Lower operating cost",
+      "desc": "No solid fuel or frequent liner replacement—more economical over the long term."
+    },
+    {
+      "title": "Safe and controllable",
+      "desc": "Safety interlocks and emergency shutoff keep the training environment safe, controlled, and auditable."
+    }
   ],
   "programsSection": {
     "eyebrow": "Training programs",
@@ -49,9 +67,18 @@
     "Routine drill programs for career departments"
   ],
   "relatedLinks": [
-    { "label": "CFBT Fire Behavior Training", "desc": "Advanced live fire and fire-behavior assessment." },
-    { "label": "Fire Safety Education Center", "desc": "Immersive public fire safety experience space." },
-    { "label": "Enterprise & Campus Solutions", "desc": "Emergency readiness for enterprises and campuses." }
+    {
+      "label": "CFBT Fire Behavior Training",
+      "desc": "Advanced live fire and fire-behavior assessment."
+    },
+    {
+      "label": "Fire Safety Education Center",
+      "desc": "Immersive public fire safety experience space."
+    },
+    {
+      "label": "Enterprise & Campus Solutions",
+      "desc": "Emergency readiness for enterprises and campuses."
+    }
   ],
   "cta": {
     "title": "Configure simulation training for your site",

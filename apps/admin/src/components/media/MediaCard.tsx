@@ -1,35 +1,27 @@
-"use client";
+'use client';
 
-import {
-  Check,
-  Copy,
-  Download,
-  ExternalLink,
-  RefreshCw,
-  RotateCcw,
-  Trash2,
-} from "lucide-react";
-import { PhotoView } from "react-photo-view";
 import {
   Badge,
   Button,
   Card,
   CardContent,
+  ImagePreview,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@tzj/ui";
-import { Can } from "@/components/Can";
-import { isMediaDeletable } from "@/features/media";
-import type { MediaAsset } from "@/features/types";
+} from '@tzj/ui';
+import { Check, Copy, Download, ExternalLink, RefreshCw, RotateCcw, Trash2 } from 'lucide-react';
+import { Can } from '@/components/Can';
+import { isMediaDeletable } from '@/features/media';
+import type { MediaAsset } from '@/features/types';
+import { MediaThumbnail } from './MediaPreviewDialog';
 import {
   downloadMediaAsset,
   formatFileSize,
   getMediaKind,
   openInNewTab,
   previewMediaAsset,
-} from "./media-utils";
-import { MediaThumbnail } from "./MediaPreviewDialog";
+} from './media-utils';
 
 function MediaStatusBadges({ asset }: { asset: MediaAsset }) {
   if (!asset.isSiteResource && !(asset.usageCount && asset.usageCount > 0)) {
@@ -58,7 +50,7 @@ export function MediaCard({
   onDelete,
   onPreview,
   onReplaceSite,
-  mode = "active",
+  mode = 'active',
   onRestore,
   onPurge,
 }: {
@@ -68,12 +60,12 @@ export function MediaCard({
   onDelete: (asset: MediaAsset) => void;
   onPreview: (asset: MediaAsset) => void;
   onReplaceSite?: (asset: MediaAsset) => void;
-  mode?: "active" | "trash";
+  mode?: 'active' | 'trash';
   onRestore?: (asset: MediaAsset) => void;
   onPurge?: (asset: MediaAsset) => void;
 }) {
   const kind = getMediaKind(asset.mimeType, asset.filename);
-  const isImage = kind === "image";
+  const isImage = kind === 'image';
   const canDelete = isMediaDeletable(asset);
 
   function handleActivate() {
@@ -102,14 +94,14 @@ export function MediaCard({
 
   const thumb = (
     <div
-      role={isImage ? undefined : "button"}
+      role={isImage ? undefined : 'button'}
       tabIndex={isImage ? undefined : 0}
       onClick={isImage ? undefined : handleActivate}
       onKeyDown={
         isImage
           ? undefined
           : (e) => {
-              if (e.key === "Enter" || e.key === " ") {
+              if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 handleActivate();
               }
@@ -119,17 +111,17 @@ export function MediaCard({
       aria-label={isImage ? undefined : `预览 ${asset.filename}`}
     >
       {thumbInner}
-      {mode === "active" ? <MediaStatusBadges asset={asset} /> : null}
+      {mode === 'active' ? <MediaStatusBadges asset={asset} /> : null}
     </div>
   );
 
   return (
     <Card className="group overflow-hidden border-border/80 py-0 shadow-sm transition-colors hover:border-primary/30">
       <div className="relative">
-        {isImage ? <PhotoView src={asset.url}>{thumb}</PhotoView> : thumb}
+        {isImage ? <ImagePreview src={asset.url}>{thumb}</ImagePreview> : thumb}
         <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex justify-end gap-1 p-2 opacity-0 transition-opacity group-hover:opacity-100 group-hover:pointer-events-auto">
           <div className="flex gap-1" onClick={stop}>
-            {mode === "active" ? (
+            {mode === 'active' ? (
               <>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -161,7 +153,7 @@ export function MediaCard({
                   </TooltipTrigger>
                   <TooltipContent>下载</TooltipContent>
                 </Tooltip>
-                {kind === "pdf" ? (
+                {kind === 'pdf' ? (
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
@@ -210,10 +202,10 @@ export function MediaCard({
                     </TooltipTrigger>
                     <TooltipContent>
                       {canDelete
-                        ? "移入回收站"
+                        ? '移入回收站'
                         : asset.isSiteResource
-                          ? "站点资源不可删除"
-                          : "内容引用中，不可删除"}
+                          ? '站点资源不可删除'
+                          : '内容引用中，不可删除'}
                     </TooltipContent>
                   </Tooltip>
                 </Can>
@@ -259,9 +251,7 @@ export function MediaCard({
         <p className="truncate text-xs font-medium" title={asset.filename}>
           {asset.filename}
         </p>
-        <p className="mt-0.5 text-[10px] text-muted-foreground">
-          {formatFileSize(asset.size)}
-        </p>
+        <p className="mt-0.5 text-[10px] text-muted-foreground">{formatFileSize(asset.size)}</p>
       </CardContent>
     </Card>
   );

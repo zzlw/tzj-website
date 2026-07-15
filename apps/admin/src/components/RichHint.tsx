@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from 'react';
 
 /** 将 [文字](url) 解析为可点击链接，其余按换行分段 */
 export function RichHint({ text, className }: { text: string; className?: string }) {
@@ -7,7 +7,7 @@ export function RichHint({ text, className }: { text: string; className?: string
   return (
     <div className={className}>
       {paragraphs.map((paragraph, pi) => (
-        <p key={pi} className={pi > 0 ? "mt-2" : undefined}>
+        <p key={pi} className={pi > 0 ? 'mt-2' : undefined}>
           {parseInlineLinks(paragraph)}
         </p>
       ))}

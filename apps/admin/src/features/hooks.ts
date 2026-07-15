@@ -1,17 +1,13 @@
-"use client";
+'use client';
 
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
-import { api, type ListResult } from "@/lib/apiClient";
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { api, type ListResult } from '@/lib/apiClient';
 
 type Params = Record<string, string | number | boolean | undefined | null>;
 
 export function useList<T>(resource: string, params?: Params) {
   return useQuery<ListResult<T>>({
-    queryKey: [resource, "list", params ?? {}],
+    queryKey: [resource, 'list', params ?? {}],
     queryFn: () => api.list<T>(resource, params),
     placeholderData: (prev) => prev, // keepPreviousData：翻页/搜索不闪烁
   });
@@ -19,7 +15,7 @@ export function useList<T>(resource: string, params?: Params) {
 
 export function useOne<T>(resource: string, idOrSlug: string | undefined) {
   return useQuery<T>({
-    queryKey: [resource, "detail", idOrSlug],
+    queryKey: [resource, 'detail', idOrSlug],
     queryFn: () => api.get<T>(resource, idOrSlug as string),
     enabled: Boolean(idOrSlug),
   });

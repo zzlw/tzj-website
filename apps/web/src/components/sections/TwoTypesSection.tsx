@@ -1,34 +1,34 @@
-import { Check } from "lucide-react";
-import { Container, SectionHeading, RbButton } from "@/components/ui";
+import { Check } from 'lucide-react';
+import { Container, RbButton, SectionHeading } from '@/components/ui';
 
 const TYPES = [
   {
-    tag: "模块化",
-    title: "模块化训练塔",
-    href: "/modular-tower",
+    tag: '模块化',
+    title: '模块化训练塔',
+    href: '/modular-tower',
     points: [
-      "热浸镀锌钢框架，性能优于集装箱",
-      "外置结构支撑，实现开放式平面",
-      "门、窗、墙体可互换",
-      "安装、运输与场地成本更低",
-      "无需结构改造即可扩展/堆叠",
-      "燃烧室可承受高达 1100°C 高温",
+      '热浸镀锌钢框架，性能优于集装箱',
+      '外置结构支撑，实现开放式平面',
+      '门、窗、墙体可互换',
+      '安装、运输与场地成本更低',
+      '无需结构改造即可扩展/堆叠',
+      '燃烧室可承受高达 1100°C 高温',
     ],
-    cta: "查看模块化系列",
+    cta: '查看模块化系列',
   },
   {
-    tag: "固定式",
-    title: "固定训练塔",
-    href: "/fixed-tower",
+    tag: '固定式',
+    title: '固定训练塔',
+    href: '/fixed-tower',
     points: [
-      "外部加肋并螺栓紧固的镀锌钢板墙体",
-      "15 套建筑设计可选并深度定制",
-      "燃烧室内无明火布置限制",
-      "开放式平面，预留重组与扩建燃烧室的空间",
-      "8 种不同屋面形式",
-      "8 种配色方案",
+      '外部加肋并螺栓紧固的镀锌钢板墙体',
+      '15 套建筑设计可选并深度定制',
+      '燃烧室内无明火布置限制',
+      '开放式平面，预留重组与扩建燃烧室的空间',
+      '8 种不同屋面形式',
+      '8 种配色方案',
     ],
-    cta: "查看固定塔系列",
+    cta: '查看固定塔系列',
   },
 ];
 

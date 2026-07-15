@@ -1,4 +1,4 @@
-import { Container } from "@/components/ui";
+import { Container } from '@/components/ui';
 
 /** 首页首屏以下 Streaming 占位，保留布局高度减少 CLS。 */
 export function HomeBelowFoldSkeleton() {

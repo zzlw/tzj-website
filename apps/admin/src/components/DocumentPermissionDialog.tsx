@@ -1,15 +1,6 @@
-"use client";
+'use client';
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Globe,
-  Loader2,
-  Lock,
-  Trash2,
-  UserPlus,
-  Users,
-} from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Badge,
   Button,
@@ -28,15 +19,17 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@tzj/ui";
-import { api } from "@/lib/apiClient";
-import { useRoleOptions } from "@/features/access";
-import { notifyError, notifySuccess } from "@/lib/notify";
+} from '@tzj/ui';
+import { Globe, Loader2, Lock, Trash2, UserPlus, Users } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRoleOptions } from '@/features/access';
+import { api } from '@/lib/apiClient';
+import { notifyError, notifySuccess } from '@/lib/notify';
 
 // ─── Types ────────────────────────────────────────────
 
-type PermissionRole = "viewer" | "editor";
-type PermissionTargetType = "user" | "role" | "public";
+type PermissionRole = 'viewer' | 'editor';
+type PermissionTargetType = 'user' | 'role' | 'public';
 
 interface PermissionItem {
   id: string;
@@ -69,14 +62,14 @@ export interface DocumentPermissionDialogProps {
 // ─── Helpers ──────────────────────────────────────────
 
 const ROLE_LABELS: Record<PermissionRole, string> = {
-  viewer: "可查看",
-  editor: "可编辑",
+  viewer: '可查看',
+  editor: '可编辑',
 };
 
 const TARGET_LABELS: Record<PermissionTargetType, string> = {
-  user: "指定用户",
-  role: "指定角色",
-  public: "所有人",
+  user: '指定用户',
+  role: '指定角色',
+  public: '所有人',
 };
 
 // ─── Component ────────────────────────────────────────
@@ -90,23 +83,16 @@ export function DocumentPermissionDialog({
   const qc = useQueryClient();
 
   // ── Fetch current permissions ──
-  const {
-    data: permissions = [],
-    isLoading: loadingPerms,
-  } = useQuery<PermissionItem[]>({
-    queryKey: ["documents", documentId, "permissions"],
-    queryFn: () =>
-      api.query<PermissionItem[]>(`documents/${documentId}/permissions`),
+  const { data: permissions = [], isLoading: loadingPerms } = useQuery<PermissionItem[]>({
+    queryKey: ['documents', documentId, 'permissions'],
+    queryFn: () => api.query<PermissionItem[]>(`documents/${documentId}/permissions`),
     enabled: open && !!documentId,
   });
 
   // ── Fetch available users ──
   const { data: usersData } = useQuery<{ data: UserOption[] }>({
-    queryKey: ["users", "list", "all"],
-    queryFn: () =>
-      api
-        .list<UserOption>("users", { limit: 200 })
-        .then((r) => ({ data: r.data })),
+    queryKey: ['users', 'list', 'all'],
+    queryFn: () => api.list<UserOption>('users', { limit: 200 }).then((r) => ({ data: r.data })),
     enabled: open,
     staleTime: 60_000,
   });
@@ -121,49 +107,45 @@ export function DocumentPermissionDialog({
       role: PermissionRole;
       targetType: PermissionTargetType;
       targetId?: string | null;
-    }) =>
-      api.post<PermissionItem>(`documents/${documentId}/permissions`, payload),
+    }) => api.post<PermissionItem>(`documents/${documentId}/permissions`, payload),
     onSuccess: () => {
       qc.invalidateQueries({
-        queryKey: ["documents", documentId, "permissions"],
+        queryKey: ['documents', documentId, 'permissions'],
       });
-      notifySuccess("已添加权限");
+      notifySuccess('已添加权限');
     },
-    onError: (e) => notifyError(e, "添加权限失败"),
+    onError: (e) => notifyError(e, '添加权限失败'),
   });
 
   // ── Remove permission mutation ──
   const removeMut = useMutation({
-    mutationFn: (permId: string) =>
-      api.remove(`documents/${documentId}/permissions`, permId),
+    mutationFn: (permId: string) => api.remove(`documents/${documentId}/permissions`, permId),
     onSuccess: () => {
       qc.invalidateQueries({
-        queryKey: ["documents", documentId, "permissions"],
+        queryKey: ['documents', documentId, 'permissions'],
       });
-      notifySuccess("已移除权限");
+      notifySuccess('已移除权限');
     },
-    onError: (e) => notifyError(e, "移除权限失败"),
+    onError: (e) => notifyError(e, '移除权限失败'),
   });
 
   // ── Local form state for adding a new permission ──
-  const [addType, setAddType] = useState<PermissionTargetType | undefined>(
-    undefined,
-  );
-  const [addTarget, setAddTarget] = useState("");
+  const [addType, setAddType] = useState<PermissionTargetType | undefined>(undefined);
+  const [addTarget, setAddTarget] = useState('');
   const [addRole, setAddRole] = useState<PermissionRole | undefined>(undefined);
 
   // Reset form when dialog opens
   useEffect(() => {
     if (open) {
       setAddType(undefined);
-      setAddTarget("");
+      setAddTarget('');
       setAddRole(undefined);
     }
   }, [open]);
 
   // ── Check if public access is already configured ──
   const hasPublic = useMemo(
-    () => permissions.some((p) => p.targetType === "public"),
+    () => permissions.some((p) => p.targetType === 'public'),
     [permissions],
   );
 
@@ -171,8 +153,8 @@ export function DocumentPermissionDialog({
   const handleAdd = useCallback(() => {
     if (!addType || !addRole) return;
 
-    if (addType === "public") {
-      addMut.mutate({ role: addRole, targetType: "public" });
+    if (addType === 'public') {
+      addMut.mutate({ role: addRole, targetType: 'public' });
       setAddType(undefined);
       setAddRole(undefined);
     } else if (addTarget) {
@@ -182,19 +164,14 @@ export function DocumentPermissionDialog({
         targetId: addTarget,
       });
       setAddType(undefined);
-      setAddTarget("");
+      setAddTarget('');
       setAddRole(undefined);
     }
   }, [addType, addTarget, addRole, addMut]);
 
   // ── Available users (excluding already-added) ──
   const addedUserIds = useMemo(
-    () =>
-      new Set(
-        permissions
-          .filter((p) => p.targetType === "user")
-          .map((p) => p.targetId),
-      ),
+    () => new Set(permissions.filter((p) => p.targetType === 'user').map((p) => p.targetId)),
     [permissions],
   );
   const availableUsers = useMemo(
@@ -204,12 +181,7 @@ export function DocumentPermissionDialog({
 
   // ── Available roles (excluding already-added) ──
   const addedRoleSlugs = useMemo(
-    () =>
-      new Set(
-        permissions
-          .filter((p) => p.targetType === "role")
-          .map((p) => p.targetId),
-      ),
+    () => new Set(permissions.filter((p) => p.targetType === 'role').map((p) => p.targetId)),
     [permissions],
   );
   const availableRoles = useMemo(
@@ -226,7 +198,7 @@ export function DocumentPermissionDialog({
             权限管理
           </DialogTitle>
           <DialogDescription>
-            管理「{documentTitle ?? "文档"}」的可见范围和编辑权限
+            管理「{documentTitle ?? '文档'}」的可见范围和编辑权限
           </DialogDescription>
         </DialogHeader>
 
@@ -236,13 +208,11 @@ export function DocumentPermissionDialog({
             <div className="flex items-end gap-2">
               {/* Target type */}
               <div className="w-[110px] space-y-1">
-                <label className="text-xs text-muted-foreground">
-                  授权对象
-                </label>
+                <label className="text-xs text-muted-foreground">授权对象</label>
                 <Select
                   onValueChange={(v) => {
                     setAddType(v as PermissionTargetType);
-                    setAddTarget("");
+                    setAddTarget('');
                   }}
                 >
                   <SelectTrigger className="h-9">
@@ -261,10 +231,7 @@ export function DocumentPermissionDialog({
                     </SelectItem>
                     <SelectItem value="role">
                       <span className="flex items-center gap-1.5">
-                        <Badge
-                          variant="outline"
-                          className="h-4 px-1 text-[10px]"
-                        >
+                        <Badge variant="outline" className="h-4 px-1 text-[10px]">
                           R
                         </Badge>
                         角色
@@ -285,23 +252,17 @@ export function DocumentPermissionDialog({
               {/* Target selector */}
               {!addType && (
                 <div className="flex-1 space-y-1">
-                  <label className="text-xs text-muted-foreground">
-                    选择目标
-                  </label>
+                  <label className="text-xs text-muted-foreground">选择目标</label>
                   <div className="flex h-9 items-center rounded-md border px-3 text-sm text-muted-foreground">
                     请先选择授权对象类型
                   </div>
                 </div>
               )}
 
-              {addType === "user" && (
+              {addType === 'user' && (
                 <div className="flex-1 space-y-1">
-                  <label className="text-xs text-muted-foreground">
-                    选择用户
-                  </label>
-                  <Select
-                    onValueChange={setAddTarget}
-                  >
+                  <label className="text-xs text-muted-foreground">选择用户</label>
+                  <Select onValueChange={setAddTarget}>
                     <SelectTrigger className="h-9">
                       {addTarget ? (
                         <SelectValue />
@@ -311,9 +272,7 @@ export function DocumentPermissionDialog({
                     </SelectTrigger>
                     <SelectContent>
                       {availableUsers.length === 0 ? (
-                        <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                          无可用用户
-                        </div>
+                        <div className="px-2 py-1.5 text-sm text-muted-foreground">无可用用户</div>
                       ) : (
                         availableUsers.map((u) => (
                           <SelectItem key={u.id} value={u.id}>
@@ -326,14 +285,10 @@ export function DocumentPermissionDialog({
                 </div>
               )}
 
-              {addType === "role" && (
+              {addType === 'role' && (
                 <div className="flex-1 space-y-1">
-                  <label className="text-xs text-muted-foreground">
-                    选择角色
-                  </label>
-                  <Select
-                    onValueChange={setAddTarget}
-                  >
+                  <label className="text-xs text-muted-foreground">选择角色</label>
+                  <Select onValueChange={setAddTarget}>
                     <SelectTrigger className="h-9">
                       {addTarget ? (
                         <SelectValue />
@@ -343,9 +298,7 @@ export function DocumentPermissionDialog({
                     </SelectTrigger>
                     <SelectContent>
                       {availableRoles.length === 0 ? (
-                        <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                          无可用角色
-                        </div>
+                        <div className="px-2 py-1.5 text-sm text-muted-foreground">无可用角色</div>
                       ) : (
                         availableRoles.map((r) => (
                           <SelectItem key={r.value} value={r.value}>
@@ -358,11 +311,9 @@ export function DocumentPermissionDialog({
                 </div>
               )}
 
-              {addType === "public" && (
+              {addType === 'public' && (
                 <div className="flex-1 space-y-1">
-                  <label className="text-xs text-muted-foreground">
-                    公开访问
-                  </label>
+                  <label className="text-xs text-muted-foreground">公开访问</label>
                   <div className="flex h-9 items-center gap-1.5 rounded-md border px-3 text-sm text-muted-foreground">
                     <Globe className="h-3.5 w-3.5" />
                     所有人可访问
@@ -373,9 +324,7 @@ export function DocumentPermissionDialog({
               {/* Role selector */}
               <div className="w-[110px] space-y-1">
                 <label className="text-xs text-muted-foreground">权限</label>
-                <Select
-                  onValueChange={(v) => setAddRole(v as PermissionRole)}
-                >
+                <Select onValueChange={(v) => setAddRole(v as PermissionRole)}>
                   <SelectTrigger className="h-9">
                     {addRole ? (
                       <SelectValue />
@@ -395,10 +344,7 @@ export function DocumentPermissionDialog({
                 size="sm"
                 className="h-9 w-9 shrink-0 p-0"
                 disabled={
-                  addMut.isPending ||
-                  !addType ||
-                  !addRole ||
-                  (addType !== "public" && !addTarget)
+                  addMut.isPending || !addType || !addRole || (addType !== 'public' && !addTarget)
                 }
                 onClick={handleAdd}
               >
@@ -436,15 +382,12 @@ export function DocumentPermissionDialog({
                       <div className="flex items-center gap-2 overflow-hidden">
                         {/* Icon */}
                         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted">
-                          {perm.targetType === "public" ? (
+                          {perm.targetType === 'public' ? (
                             <Globe className="h-3.5 w-3.5 text-muted-foreground" />
-                          ) : perm.targetType === "user" ? (
+                          ) : perm.targetType === 'user' ? (
                             <Users className="h-3.5 w-3.5 text-muted-foreground" />
                           ) : (
-                            <Badge
-                              variant="outline"
-                              className="h-4 px-1 text-[10px]"
-                            >
+                            <Badge variant="outline" className="h-4 px-1 text-[10px]">
                               R
                             </Badge>
                           )}
@@ -452,22 +395,16 @@ export function DocumentPermissionDialog({
                         {/* Name + type badge */}
                         <div className="flex items-center gap-1.5 overflow-hidden">
                           <span className="truncate text-sm">
-                            {perm.targetName ??
-                              TARGET_LABELS[perm.targetType]}
+                            {perm.targetName ?? TARGET_LABELS[perm.targetType]}
                           </span>
-                          <Badge
-                            variant="secondary"
-                            className="shrink-0 text-[10px]"
-                          >
+                          <Badge variant="secondary" className="shrink-0 text-[10px]">
                             {TARGET_LABELS[perm.targetType]}
                           </Badge>
                         </div>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <Badge
-                          variant={
-                            perm.role === "editor" ? "default" : "outline"
-                          }
+                          variant={perm.role === 'editor' ? 'default' : 'outline'}
                           className="text-[11px]"
                         >
                           {ROLE_LABELS[perm.role] ?? perm.role}

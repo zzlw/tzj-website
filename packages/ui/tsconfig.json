@@ -4,6 +4,7 @@
     "rootDir": "src",
     "outDir": "dist",
     "jsx": "react-jsx",
+    "types": ["node", "react", "react-dom"],
     "paths": {
       "@tzj/ui/*": ["./src/*"]
     }

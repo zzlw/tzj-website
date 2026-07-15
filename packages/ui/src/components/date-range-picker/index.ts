@@ -1,4 +1,4 @@
 export {
   DateRangePicker,
   type DateRangePickerProps,
-} from "./DateRangePicker";
+} from './DateRangePicker';

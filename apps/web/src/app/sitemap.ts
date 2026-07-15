@@ -1,8 +1,8 @@
-import type { MetadataRoute } from "next";
-import { siteConfig } from "@/lib/site";
-import { staticRoutes } from "@/lib/routes";
-import { getAllSolutionSlugs } from "@/lib/solutions";
-import { getBlogs, getCases, getNewsList } from "@/lib/api";
+import type { MetadataRoute } from 'next';
+import { getBlogs, getCases, getNewsList } from '@/lib/api';
+import { staticRoutes } from '@/lib/routes';
+import { siteConfig } from '@/lib/site';
+import { getAllSolutionSlugs } from '@/lib/solutions';
 
 async function fetchSlugs(
   fetcher: (params: { limit: number; page: number }) => Promise<{ data?: { slug: string }[] }>,
@@ -34,36 +34,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const caseEntries = caseSlugs.map((slug) => ({
     url: `${baseUrl}/cases/${slug}`,
     lastModified: new Date(),
-    changeFrequency: "monthly" as const,
+    changeFrequency: 'monthly' as const,
     priority: 0.6,
   }));
 
   const blogEntries = blogSlugs.map((slug) => ({
     url: `${baseUrl}/resources/blog/${slug}`,
     lastModified: new Date(),
-    changeFrequency: "monthly" as const,
+    changeFrequency: 'monthly' as const,
     priority: 0.5,
   }));
 
   const newsEntries = newsSlugs.map((slug) => ({
     url: `${baseUrl}/resources/news/${slug}`,
     lastModified: new Date(),
-    changeFrequency: "monthly" as const,
+    changeFrequency: 'monthly' as const,
     priority: 0.5,
   }));
 
   const solutionEntries = getAllSolutionSlugs().map((slug) => ({
     url: `${baseUrl}/solutions/${slug}`,
     lastModified: new Date(),
-    changeFrequency: "monthly" as const,
+    changeFrequency: 'monthly' as const,
     priority: 0.7,
   }));
 
-  return [
-    ...staticEntries,
-    ...caseEntries,
-    ...blogEntries,
-    ...newsEntries,
-    ...solutionEntries,
-  ];
+  return [...staticEntries, ...caseEntries, ...blogEntries, ...newsEntries, ...solutionEntries];
 }

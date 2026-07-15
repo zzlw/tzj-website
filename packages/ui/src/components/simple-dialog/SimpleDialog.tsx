@@ -1,14 +1,8 @@
-"use client";
+'use client';
 
-import type { ReactNode } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "../dialog";
-import { cn } from "../../lib/utils";
+import type { ReactNode } from 'react';
+import { cn } from '../../lib/utils';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '../dialog';
 
 export interface SimpleDialogProps {
   open: boolean;
@@ -28,12 +22,9 @@ export interface SimpleDialogProps {
   modal?: boolean;
 }
 
-function isNestedOverlayTarget(
-  target: EventTarget | null,
-  dialogContent: EventTarget | null,
-) {
+function isNestedOverlayTarget(target: EventTarget | null, dialogContent: EventTarget | null) {
   if (!(target instanceof HTMLElement) || !dialogContent) return false;
-  if (target.closest(".PhotoView-Portal")) return true;
+  if (target.closest('.PhotoView-Portal')) return true;
   const nestedLayer = target.closest('[role="dialog"], [role="alertdialog"]');
   return Boolean(nestedLayer && nestedLayer !== dialogContent);
 }
@@ -56,17 +47,13 @@ export function SimpleDialog({
     if (!next && !dismissBlocked) onClose();
   }
 
-  const widthClass = xl
-    ? "w-[min(96vw,72rem)] max-w-6xl"
-    : wide
-      ? "sm:max-w-2xl"
-      : "sm:max-w-lg";
+  const widthClass = xl ? 'w-[min(96vw,72rem)] max-w-6xl' : wide ? 'sm:max-w-2xl' : 'sm:max-w-lg';
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange} modal={modal}>
       {open ? (
         <DialogContent
-          className={cn("max-h-[90vh] overflow-hidden p-0", widthClass)}
+          className={cn('max-h-[90vh] overflow-hidden p-0', widthClass)}
           onPointerDownOutside={(e) => {
             if (!dismissBlocked) return;
             if (isNestedOverlayTarget(e.target, e.currentTarget)) return;
@@ -74,7 +61,7 @@ export function SimpleDialog({
           }}
           onEscapeKeyDown={(e) => {
             if (!dismissBlocked) return;
-            if (document.querySelector(".PhotoView-Portal")) return;
+            if (document.querySelector('.PhotoView-Portal')) return;
             e.preventDefault();
           }}
         >
@@ -85,8 +72,8 @@ export function SimpleDialog({
             </DialogHeader>
             <div
               className={cn(
-                "max-h-[60vh] overflow-y-auto px-6 py-5",
-                xl && "max-h-[min(calc(90vh-12rem),720px)]",
+                'max-h-[60vh] overflow-y-auto px-6 py-5',
+                xl && 'max-h-[min(calc(90vh-12rem),720px)]',
                 bodyClassName,
               )}
             >

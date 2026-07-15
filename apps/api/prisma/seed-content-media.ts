@@ -7,21 +7,21 @@
  *   pnpm --filter @tzj/api prisma:sync:static-media -- --force
  *   pnpm --filter @tzj/api prisma:sync:static-media -- --force --keys=hero.mp4,og-default.jpg
  */
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from '@prisma/client';
 import {
   patchContentImageUrls,
-  syncSiteStaticMedia,
   type SyncSiteStaticMediaOptions,
-} from "./lib/sync-content-media";
+  syncSiteStaticMedia,
+} from './lib/sync-content-media';
 
 function parseCliOptions(): SyncSiteStaticMediaOptions {
   const opts: SyncSiteStaticMediaOptions = {};
   for (const arg of process.argv.slice(2)) {
-    if (arg === "--force") opts.force = true;
-    else if (arg.startsWith("--keys=")) {
+    if (arg === '--force') opts.force = true;
+    else if (arg.startsWith('--keys=')) {
       opts.keys = arg
-        .slice("--keys=".length)
-        .split(",")
+        .slice('--keys='.length)
+        .split(',')
         .map((s) => s.trim())
         .filter(Boolean);
     }
@@ -40,7 +40,7 @@ async function main(): Promise<void> {
 
 main()
   .catch((e: unknown) => {
-    console.error("❌ 静态资源迁移 MinIO 失败:", e);
+    console.error('❌ 静态资源迁移 MinIO 失败:', e);
     process.exit(1);
   })
   .finally(async () => {

@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   ArrayMinSize,
   IsArray,
@@ -7,25 +7,25 @@ import {
   Matches,
   MaxLength,
   MinLength,
-} from "class-validator";
+} from 'class-validator';
 
 export class CreateAccessRoleDto {
-  @ApiProperty({ example: "内容审核员" })
+  @ApiProperty({ example: '内容审核员' })
   @IsString()
   @MinLength(1)
   @MaxLength(64)
   name!: string;
 
   @ApiPropertyOptional({
-    example: "content-reviewer",
-    description: "留空则根据名称自动生成",
+    example: 'content-reviewer',
+    description: '留空则根据名称自动生成',
   })
   @IsOptional()
   @IsString()
   @MinLength(2)
   @MaxLength(64)
   @Matches(/^[a-z][a-z0-9-]*$/, {
-    message: "标识仅允许小写字母、数字与连字符，且以字母开头",
+    message: '标识仅允许小写字母、数字与连字符，且以字母开头',
   })
   slug?: string;
 
@@ -35,7 +35,7 @@ export class CreateAccessRoleDto {
   @MaxLength(200)
   description?: string;
 
-  @ApiProperty({ type: [String], example: ["content.view", "content.edit"] })
+  @ApiProperty({ type: [String], example: ['content.view', 'content.edit'] })
   @IsArray()
   @ArrayMinSize(1)
   @IsString({ each: true })

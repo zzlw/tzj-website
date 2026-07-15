@@ -1,29 +1,17 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
-import type {
-  IntegrationAdminItem,
-  IntegrationsAdminOverview,
-  IntegrationTestResult,
-  UpdateIntegrationDto,
-} from "@tzj/types";
-import { PrismaService } from "../prisma/prisma.service";
-import { LAST_OPERATOR_USER_SELECT, mapOperatorUser } from "../common/utils/content-list";
-import {
-  decryptSecrets,
-  encryptSecrets,
-  maskSecret,
-} from "../common/crypto/secrets-crypto";
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { UpdateIntegrationDto } from '@tzj/types';
+import type { IntegrationAdminItem, IntegrationsAdminOverview, IntegrationTestResult } from '@tzj/types';
+import { decryptSecrets, encryptSecrets, maskSecret } from '../common/crypto/secrets-crypto';
+import { LAST_OPERATOR_USER_SELECT, mapOperatorUser } from '../common/utils/content-list';
+import { PrismaService } from '../prisma/prisma.service';
 import {
   getIntegrationDef,
   INFRASTRUCTURE_ENV_KEYS,
   INTEGRATION_ENV_FALLBACK,
   INTEGRATION_REGISTRY,
-} from "./integration.registry";
-import { INTEGRATION_TESTERS } from "./integration.testers";
+} from './integration.registry';
+import { INTEGRATION_TESTERS } from './integration.testers';
 
 @Injectable()
 export class IntegrationsService {
@@ -58,7 +46,7 @@ export class IntegrationsService {
   /** 解析公开/半公开配置 */
   async resolveConfig(slug: string, fieldKey: string): Promise<string | null> {
     const row = await this.prisma.integration.findUnique({ where: { slug } });
-    if (row?.config && typeof row.config === "object") {
+    if (row?.config && typeof row.config === 'object') {
       const value = (row.config as Record<string, string>)[fieldKey]?.trim();
       if (value) return value;
     }
@@ -99,8 +87,7 @@ export class IntegrationsService {
       const value = await this.resolveConfig(slug, field.key);
       if (!value) return false;
     }
-    return def.secretFields.some((f) => f.required) ||
-      def.configFields.some((f) => f.required);
+    return def.secretFields.some((f) => f.required) || def.configFields.some((f) => f.required);
   }
 
   /** C 端可公开的集成配置（仅 registry 中 public: true 的字段） */
@@ -132,35 +119,33 @@ export class IntegrationsService {
     });
     const rowMap = new Map(rows.map((row) => [row.slug, row]));
 
-    const integrations: IntegrationAdminItem[] = INTEGRATION_REGISTRY.map(
-      (def) => {
-        const row = rowMap.get(def.slug);
-        const secretsMask = (row?.secretsMask ?? {}) as Record<string, string>;
-        const config = (row?.config ?? {}) as Record<string, string>;
-        const envFallback = INTEGRATION_ENV_FALLBACK[def.slug];
-        const envSecretsConfigured = def.secretFields.some((field) => {
-          const envKey = envFallback?.secrets?.[field.key];
-          return envKey ? Boolean(this.config.get<string>(envKey)?.trim()) : false;
-        });
+    const integrations: IntegrationAdminItem[] = INTEGRATION_REGISTRY.map((def) => {
+      const row = rowMap.get(def.slug);
+      const secretsMask = (row?.secretsMask ?? {}) as Record<string, string>;
+      const config = (row?.config ?? {}) as Record<string, string>;
+      const envFallback = INTEGRATION_ENV_FALLBACK[def.slug];
+      const envSecretsConfigured = def.secretFields.some((field) => {
+        const envKey = envFallback?.secrets?.[field.key];
+        return envKey ? Boolean(this.config.get<string>(envKey)?.trim()) : false;
+      });
 
-        return {
-          slug: def.slug,
-          label: def.label,
-          description: def.description,
-          docUrl: def.docUrl,
-          setupGuide: def.setupGuide,
-          enabled: row?.enabled ?? false,
-          config,
-          secretsMask,
-          secretFields: def.secretFields,
-          configFields: def.configFields,
-          secretsConfigured: Boolean(row?.secretsEnc),
-          envFallbackActive: !row?.secretsEnc && envSecretsConfigured,
-          updatedAt: row?.updatedAt?.toISOString() ?? null,
-          updatedBy: mapOperatorUser(row?.updatedBy),
-        };
-      },
-    );
+      return {
+        slug: def.slug,
+        label: def.label,
+        description: def.description,
+        docUrl: def.docUrl,
+        setupGuide: def.setupGuide,
+        enabled: row?.enabled ?? false,
+        config,
+        secretsMask,
+        secretFields: def.secretFields,
+        configFields: def.configFields,
+        secretsConfigured: Boolean(row?.secretsEnc),
+        envFallbackActive: !row?.secretsEnc && envSecretsConfigured,
+        updatedAt: row?.updatedAt?.toISOString() ?? null,
+        updatedBy: mapOperatorUser(row?.updatedBy),
+      };
+    });
 
     const infrastructure = INFRASTRUCTURE_ENV_KEYS.map((item) => ({
       key: item.key,
@@ -174,14 +159,14 @@ export class IntegrationsService {
 
   async update(slug: string, dto: UpdateIntegrationDto, userId?: string) {
     const def = getIntegrationDef(slug);
-    if (!def) throw new NotFoundException("集成不存在");
+    if (!def) throw new NotFoundException('集成不存在');
 
     const existing = await this.prisma.integration.findUnique({
       where: { slug },
     });
 
     let secretsEnc = existing?.secretsEnc ?? null;
-    let secretsMask = {
+    const secretsMask = {
       ...((existing?.secretsMask ?? {}) as Record<string, string>),
     };
     const config = {
@@ -251,13 +236,13 @@ export class IntegrationsService {
   async testConnection(slug: string): Promise<IntegrationTestResult> {
     const tester = INTEGRATION_TESTERS[slug];
     if (!tester) {
-      throw new NotFoundException("该集成不支持连接测试");
+      throw new NotFoundException('该集成不支持连接测试');
     }
     return tester(this);
   }
 
   private getEncryptionKeyOrNull(): string | null {
-    const key = this.config.get<string>("SECRETS_ENCRYPTION_KEY")?.trim();
+    const key = this.config.get<string>('SECRETS_ENCRYPTION_KEY')?.trim();
     return key && key.length >= 32 ? key : null;
   }
 
@@ -265,7 +250,7 @@ export class IntegrationsService {
     const key = this.getEncryptionKeyOrNull();
     if (!key) {
       throw new BadRequestException(
-        "未配置 SECRETS_ENCRYPTION_KEY（至少 32 字符），无法保存加密凭证。请在部署环境变量中设置。",
+        '未配置 SECRETS_ENCRYPTION_KEY（至少 32 字符），无法保存加密凭证。请在部署环境变量中设置。',
       );
     }
     return key;

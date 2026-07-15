@@ -12,14 +12,12 @@ export interface SiteNotificationSettings {
   };
 }
 
-export type NotificationChannel = "email";
+export type NotificationChannel = 'email';
 
-export type NotificationStatus = "pending" | "sent" | "failed";
+export type NotificationStatus = 'pending' | 'sent' | 'failed';
 
 /** 通知模板标识 */
-export type NotificationTemplate =
-  | "contact.staff-notify"
-  | "contact.auto-reply";
+export type NotificationTemplate = 'contact.staff-notify' | 'contact.auto-reply';
 
 export interface NotificationLogItem {
   id: string;

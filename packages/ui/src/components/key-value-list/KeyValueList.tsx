@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { Plus, Trash2 } from "lucide-react";
-import { Button } from "../button";
-import { Input } from "../input";
+import { Plus, Trash2 } from 'lucide-react';
+import { Button } from '../button';
+import { Input } from '../input';
 
 export interface KeyValuePair {
   label: string;
@@ -21,14 +21,11 @@ export interface KeyValueListProps {
 export function KeyValueList({
   value,
   onChange,
-  labelPlaceholder = "参数名",
-  valuePlaceholder = "参数值",
-  addLabel = "添加参数",
+  labelPlaceholder = '参数名',
+  valuePlaceholder = '参数值',
+  addLabel = '添加参数',
 }: KeyValueListProps) {
-  const rows =
-    Array.isArray(value) && value.length > 0
-      ? value
-      : [{ label: "", value: "" }];
+  const rows = Array.isArray(value) && value.length > 0 ? value : [{ label: '', value: '' }];
 
   function updateRow(index: number, patch: Partial<KeyValuePair>) {
     const next = rows.map((row, i) => (i === index ? { ...row, ...patch } : row));
@@ -36,12 +33,12 @@ export function KeyValueList({
   }
 
   function addRow() {
-    onChange([...rows, { label: "", value: "" }]);
+    onChange([...rows, { label: '', value: '' }]);
   }
 
   function removeRow(index: number) {
     const next = rows.filter((_, i) => i !== index);
-    onChange(next.length ? next : [{ label: "", value: "" }]);
+    onChange(next.length ? next : [{ label: '', value: '' }]);
   }
 
   return (

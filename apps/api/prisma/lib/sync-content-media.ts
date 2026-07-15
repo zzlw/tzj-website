@@ -1,26 +1,22 @@
-import {
-  HeadObjectCommand,
-  PutObjectCommand,
-  S3Client,
-} from "@aws-sdk/client-s3";
-import type { PrismaClient } from "@prisma/client";
-import * as fs from "node:fs";
-import * as path from "node:path";
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { HeadObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import type { PrismaClient } from '@prisma/client';
 import {
   collectSiteStaticMediaPaths,
   TRADE_SHOW_COVERS,
-} from "../../../web/src/lib/static-media-paths";
+} from '../../../web/src/lib/static-media-paths';
 
 const MIME_MAP: Record<string, string> = {
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-  ".png": "image/png",
-  ".webp": "image/webp",
-  ".gif": "image/gif",
-  ".svg": "image/svg+xml",
-  ".mp4": "video/mp4",
-  ".webm": "video/webm",
-  ".ico": "image/x-icon",
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.png': 'image/png',
+  '.webp': 'image/webp',
+  '.gif': 'image/gif',
+  '.svg': 'image/svg+xml',
+  '.mp4': 'video/mp4',
+  '.webm': 'video/webm',
+  '.ico': 'image/x-icon',
 };
 
 interface S3Config {
@@ -33,49 +29,48 @@ interface S3Config {
 
 function loadS3Config(): S3Config {
   return {
-    bucket: process.env.S3_BUCKET || "tzj-uploads-dev",
-    endpoint: process.env.S3_ENDPOINT || "http://localhost:9000",
-    accessKeyId: process.env.S3_ACCESS_KEY_ID || "minioadmin",
-    secretAccessKey: process.env.S3_ACCESS_KEY_SECRET || "minioadmin",
-    publicDomain:
-      process.env.S3_PUBLIC_DOMAIN || "http://localhost:9000/tzj-uploads-dev",
+    bucket: process.env.S3_BUCKET || 'tzj-uploads-dev',
+    endpoint: process.env.S3_ENDPOINT || 'http://localhost:9000',
+    accessKeyId: process.env.S3_ACCESS_KEY_ID || 'minioadmin',
+    secretAccessKey: process.env.S3_ACCESS_KEY_SECRET || 'minioadmin',
+    publicDomain: process.env.S3_PUBLIC_DOMAIN || 'http://localhost:9000/tzj-uploads-dev',
   };
 }
 
 function getMimeType(filePath: string): string {
   const ext = path.extname(filePath).toLowerCase();
-  return MIME_MAP[ext] ?? "application/octet-stream";
+  return MIME_MAP[ext] ?? 'application/octet-stream';
 }
 
 function isWebStaticPath(url: string): boolean {
   return (
-    url.startsWith("/media/") ||
-    url.startsWith("/og-") ||
-    url === "/favicon.ico" ||
-    url === "/apple-touch-icon.png"
+    url.startsWith('/media/') ||
+    url.startsWith('/og-') ||
+    url === '/favicon.ico' ||
+    url === '/apple-touch-icon.png'
   );
 }
 
 function toMinioPublicUrl(webPath: string, publicDomain: string): string {
-  const base = publicDomain.replace(/\/$/, "");
-  if (webPath.startsWith("/media/")) {
-    return `${base}/content/${webPath.slice("/media/".length)}`;
+  const base = publicDomain.replace(/\/$/, '');
+  if (webPath.startsWith('/media/')) {
+    return `${base}/content/${webPath.slice('/media/'.length)}`;
   }
-  const filename = webPath.startsWith("/") ? webPath.slice(1) : webPath;
-  if (filename && !filename.includes("/")) {
+  const filename = webPath.startsWith('/') ? webPath.slice(1) : webPath;
+  if (filename && !filename.includes('/')) {
     return `${base}/content/${filename}`;
   }
   return webPath;
 }
 
 function localPathFor(webPath: string): string {
-  const root = path.resolve(__dirname, "../../../web/public");
-  return path.join(root, webPath.replace(/^\//, ""));
+  const root = path.resolve(__dirname, '../../../web/public');
+  return path.join(root, webPath.replace(/^\//, ''));
 }
 
 function createS3Client(config: S3Config): S3Client {
   return new S3Client({
-    region: process.env.S3_REGION || "us-east-1",
+    region: process.env.S3_REGION || 'us-east-1',
     endpoint: config.endpoint,
     credentials: {
       accessKeyId: config.accessKeyId,
@@ -92,12 +87,10 @@ async function uploadIfNeeded(
   key: string,
   force = false,
 ): Promise<string> {
-  const url = `${config.publicDomain.replace(/\/$/, "")}/${key}`;
+  const url = `${config.publicDomain.replace(/\/$/, '')}/${key}`;
   if (!force) {
     try {
-      await client.send(
-        new HeadObjectCommand({ Bucket: config.bucket, Key: key }),
-      );
+      await client.send(new HeadObjectCommand({ Bucket: config.bucket, Key: key }));
       return url;
     } catch {
       // 对象不存在，继续上传
@@ -142,14 +135,14 @@ export async function syncSiteStaticMedia(
   let paths = collectSiteStaticMediaPaths();
   if (options.keys?.length) {
     const names = new Set(
-      options.keys.map((k) => k.replace(/^content\//, "").trim()).filter(Boolean),
+      options.keys.map((k) => k.replace(/^content\//, '').trim()).filter(Boolean),
     );
     paths = paths.filter((p) => names.has(path.basename(p)));
   }
   const map = new Map<string, string>();
 
   console.log(
-    `\n🖼️  同步站点静态资源到 MinIO（${paths.length} 个文件${options.force ? "，强制覆盖" : ""}）…`,
+    `\n🖼️  同步站点静态资源到 MinIO（${paths.length} 个文件${options.force ? '，强制覆盖' : ''}）…`,
   );
 
   for (const webPath of paths) {
@@ -161,13 +154,7 @@ export async function syncSiteStaticMedia(
 
     const filename = path.basename(webPath);
     const key = `content/${filename}`;
-    const url = await uploadIfNeeded(
-      client,
-      config,
-      localPath,
-      key,
-      options.force,
-    );
+    const url = await uploadIfNeeded(client, config, localPath, key, options.force);
     const stat = fs.statSync(localPath);
 
     await prisma.mediaAsset.upsert({
@@ -178,7 +165,7 @@ export async function syncSiteStaticMedia(
         filename,
         mimeType: getMimeType(localPath),
         size: stat.size,
-        folder: "content",
+        folder: 'content',
       },
       update: { url, size: stat.size, mimeType: getMimeType(localPath) },
     });
@@ -197,7 +184,7 @@ export const syncContentMedia = syncSiteStaticMedia;
 export function resolveContentUrl(
   value: string | null | undefined,
   map: Map<string, string>,
-  publicDomain = process.env.S3_PUBLIC_DOMAIN || "http://localhost:9000/tzj-uploads-dev",
+  publicDomain = process.env.S3_PUBLIC_DOMAIN || 'http://localhost:9000/tzj-uploads-dev',
 ): string | undefined {
   if (!value?.trim()) return undefined;
   const src = value.trim();
@@ -207,14 +194,9 @@ export function resolveContentUrl(
   return src;
 }
 
-function resolveImages(
-  values: string[] | null | undefined,
-  map: Map<string, string>,
-): string[] {
+function resolveImages(values: string[] | null | undefined, map: Map<string, string>): string[] {
   if (!Array.isArray(values)) return [];
-  return values
-    .map((v) => resolveContentUrl(v, map))
-    .filter((v): v is string => Boolean(v));
+  return values.map((v) => resolveContentUrl(v, map)).filter((v): v is string => Boolean(v));
 }
 
 /** 将数据库中已有内容的 coverImage / images 更新为媒体库 URL。 */

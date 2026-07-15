@@ -1,45 +1,45 @@
-"use client";
+'use client';
 
-import { useState, useCallback, useMemo } from "react";
-import { useTranslations } from "next-intl";
-import type { SitePublicSettings } from "@tzj/types";
-import { useLocale } from "next-intl";
-import { submitContact } from "@/lib/api";
-import {
-  validateContactForm,
-  isHoneypotTriggered,
-  type ContactFormValues,
-  type ContactFieldErrors,
-} from "@/lib/validation/contact";
+import type { SitePublicSettings } from '@tzj/types';
+import { Mail, MapPin, Phone, Send } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
+import { useCallback, useMemo, useState } from 'react';
 import {
   AliyunCaptchaEmbed,
+  type CaptchaLanguage,
   SUBMIT_BUTTON_ID,
   useAliyunCaptchaConfig,
-  type CaptchaLanguage,
-} from "@/components/AliyunCaptcha";
-import { Phone, Mail, MapPin, Send } from "lucide-react";
-import { Container, Eyebrow } from "@/components/ui";
-import { SocialConnectPanel } from "@/components/contact/SocialConnectPanel";
-import { resolveAllSocialQrChannels } from "@/lib/resolve-social-channels";
+} from '@/components/AliyunCaptcha';
+import { SocialConnectPanel } from '@/components/contact/SocialConnectPanel';
+import { Container, Eyebrow } from '@/components/ui';
+import { identify } from '@/lib/analytics';
+import { submitContact } from '@/lib/api';
+import { resolveAllSocialQrChannels } from '@/lib/resolve-social-channels';
+import {
+  type ContactFieldErrors,
+  type ContactFormValues,
+  isHoneypotTriggered,
+  validateContactForm,
+} from '@/lib/validation/contact';
 
 const FIELD_CLASS =
-  "w-full border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 placeholder:text-neutral-500 transition-colors focus:border-neutral-900 focus:outline-none";
-const FIELD_ERROR_CLASS = "border-red-600 focus:border-red-600";
-const LABEL_CLASS = "mb-1.5 block text-sm font-medium text-neutral-700";
+  'w-full border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 placeholder:text-neutral-500 transition-colors focus:border-neutral-900 focus:outline-none';
+const FIELD_ERROR_CLASS = 'border-red-600 focus:border-red-600';
+const LABEL_CLASS = 'mb-1.5 block text-sm font-medium text-neutral-700';
 
 const INITIAL_FORM: ContactFormValues = {
-  name: "",
-  phone: "",
-  email: "",
-  company: "",
-  message: "",
-  website: "",
+  name: '',
+  phone: '',
+  email: '',
+  company: '',
+  message: '',
+  website: '',
 };
 
 function localeToCaptchaLanguage(locale: string): CaptchaLanguage {
-  if (locale === "zh-TW") return "tw";
-  if (locale === "en") return "en";
-  return "cn";
+  if (locale === 'zh-TW') return 'tw';
+  if (locale === 'en') return 'en';
+  return 'cn';
 }
 
 export function ContactSection({
@@ -49,21 +49,21 @@ export function ContactSection({
   settings: SitePublicSettings;
   address: string;
 }) {
-  const t = useTranslations("contact");
+  const t = useTranslations('contact');
   const locale = useLocale();
   const [formData, setFormData] = useState<ContactFormValues>(INITIAL_FORM);
   const [fieldErrors, setFieldErrors] = useState<ContactFieldErrors>({});
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
-  const [statusMessage, setStatusMessage] = useState("");
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [statusMessage, setStatusMessage] = useState('');
   const { config: captchaConfig, enabled: captchaEnabled } = useAliyunCaptchaConfig();
 
   const validationMessages = useMemo(
     () => ({
-      nameRequired: t("validation.nameRequired"),
-      nameMinLength: t("validation.nameMinLength"),
-      phoneRequired: t("validation.phoneRequired"),
-      phoneInvalid: t("validation.phoneInvalid"),
-      emailInvalid: t("validation.emailInvalid"),
+      nameRequired: t('validation.nameRequired'),
+      nameMinLength: t('validation.nameMinLength'),
+      phoneRequired: t('validation.phoneRequired'),
+      phoneInvalid: t('validation.phoneInvalid'),
+      emailInvalid: t('validation.emailInvalid'),
     }),
     [t],
   );
@@ -77,19 +77,19 @@ export function ContactSection({
     () => [
       {
         icon: Phone,
-        label: t("phoneLabel"),
+        label: t('phoneLabel'),
         value: settings.contact.phone,
-        href: `tel:${settings.contact.phone.replace(/-/g, "")}`,
+        href: `tel:${settings.contact.phone.replace(/-/g, '')}`,
       },
       {
         icon: Mail,
-        label: t("emailLabel"),
+        label: t('emailLabel'),
         value: settings.contact.email,
         href: `mailto:${settings.contact.email}`,
       },
       {
         icon: MapPin,
-        label: t("addressLabel"),
+        label: t('addressLabel'),
         value: address,
         href: undefined,
       },
@@ -97,47 +97,58 @@ export function ContactSection({
     [settings, address, t],
   );
 
-  const submitPayload = useCallback(async (captchaVerifyParam?: string) => {
-    if (isHoneypotTriggered(formData)) {
-      setStatus("success");
-      setStatusMessage(t("status.success"));
-      return true;
-    }
+  const submitPayload = useCallback(
+    async (captchaVerifyParam?: string) => {
+      if (isHoneypotTriggered(formData)) {
+        setStatus('success');
+        setStatusMessage(t('status.success'));
+        return true;
+      }
 
-    const errors = validateContactForm(formData, validationMessages);
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
-      setStatusMessage(t("validation.formFix"));
-      return false;
-    }
+      const errors = validateContactForm(formData, validationMessages);
+      if (Object.keys(errors).length > 0) {
+        setFieldErrors(errors);
+        setStatusMessage(t('validation.formFix'));
+        return false;
+      }
 
-    setStatus("loading");
-    try {
-      await submitContact({
-        name: formData.name.trim(),
-        phone: formData.phone.trim(),
-        email: formData.email.trim() || undefined,
-        company: formData.company.trim() || undefined,
-        message: formData.message.trim() || t("emptyMessage"),
-        source: "website",
-        captchaVerifyParam,
-      });
-      setStatus("success");
-      setStatusMessage(t("status.success"));
-      setFormData(INITIAL_FORM);
-      return true;
-    } catch {
-      setStatus("error");
-      setStatusMessage(t("status.error"));
-      return false;
-    }
-  }, [formData, t, validationMessages]);
+      setStatus('loading');
+      try {
+        const res = await submitContact({
+          name: formData.name.trim(),
+          phone: formData.phone.trim(),
+          email: formData.email.trim() || undefined,
+          company: formData.company.trim() || undefined,
+          message: formData.message.trim() || t('emptyMessage'),
+          source: 'website',
+          captchaVerifyParam,
+        });
+        // identify 升级：将匿名浏览会话与本询盘（已知身份）归并
+        identify({
+          userId: res.data?.id,
+          name: formData.name.trim(),
+          email: formData.email.trim() || undefined,
+          phone: formData.phone.trim(),
+          company: formData.company.trim() || undefined,
+        });
+        setStatus('success');
+        setStatusMessage(t('status.success'));
+        setFormData(INITIAL_FORM);
+        return true;
+      } catch {
+        setStatus('error');
+        setStatusMessage(t('status.error'));
+        return false;
+      }
+    },
+    [formData, t, validationMessages],
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (captchaEnabled) return;
     setFieldErrors({});
-    setStatusMessage("");
+    setStatusMessage('');
     await submitPayload();
   };
 
@@ -161,9 +172,9 @@ export function ContactSection({
         <div className="mb-10 h-px bg-neutral-300 md:mb-12" />
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-16">
           <div>
-            <Eyebrow>{t("eyebrow")}</Eyebrow>
-            <h2 className="rb-h2 mt-5 text-neutral-900">{t("title")}</h2>
-            <p className="mb-8 mt-4 leading-relaxed text-secondary-text">{t("description")}</p>
+            <Eyebrow>{t('eyebrow')}</Eyebrow>
+            <h2 className="rb-h2 mt-5 text-neutral-900">{t('title')}</h2>
+            <p className="mb-8 mt-4 leading-relaxed text-secondary-text">{t('description')}</p>
 
             <div className="space-y-4">
               {contactInfo.map((info) => {
@@ -197,7 +208,7 @@ export function ContactSection({
             {socialConnectChannels.length > 0 ? (
               <SocialConnectPanel
                 channels={socialConnectChannels}
-                sectionTitle={t("instantContact")}
+                sectionTitle={t('instantContact')}
               />
             ) : null}
           </div>
@@ -213,25 +224,25 @@ export function ContactSection({
                   tabIndex={-1}
                   autoComplete="off"
                   value={formData.website}
-                  onChange={(e) => updateField("website", e.target.value)}
+                  onChange={(e) => updateField('website', e.target.value)}
                 />
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label htmlFor="name" className={LABEL_CLASS}>
-                    {t("form.nameLabel")}
+                    {t('form.nameLabel')}
                   </label>
                   <input
                     id="name"
                     type="text"
-                    placeholder={t("form.namePlaceholder")}
+                    placeholder={t('form.namePlaceholder')}
                     required
                     aria-invalid={Boolean(fieldErrors.name)}
-                    aria-describedby={fieldErrors.name ? "name-error" : undefined}
-                    className={`${FIELD_CLASS} ${fieldErrors.name ? FIELD_ERROR_CLASS : ""}`}
+                    aria-describedby={fieldErrors.name ? 'name-error' : undefined}
+                    className={`${FIELD_CLASS} ${fieldErrors.name ? FIELD_ERROR_CLASS : ''}`}
                     value={formData.name}
-                    onChange={(e) => updateField("name", e.target.value)}
+                    onChange={(e) => updateField('name', e.target.value)}
                   />
                   {fieldErrors.name && (
                     <p id="name-error" className="mt-1 text-xs text-red-600" role="alert">
@@ -241,18 +252,18 @@ export function ContactSection({
                 </div>
                 <div>
                   <label htmlFor="phone" className={LABEL_CLASS}>
-                    {t("form.phoneLabel")}
+                    {t('form.phoneLabel')}
                   </label>
                   <input
                     id="phone"
                     type="tel"
-                    placeholder={t("form.phonePlaceholder")}
+                    placeholder={t('form.phonePlaceholder')}
                     required
                     aria-invalid={Boolean(fieldErrors.phone)}
-                    aria-describedby={fieldErrors.phone ? "phone-error" : undefined}
-                    className={`${FIELD_CLASS} ${fieldErrors.phone ? FIELD_ERROR_CLASS : ""}`}
+                    aria-describedby={fieldErrors.phone ? 'phone-error' : undefined}
+                    className={`${FIELD_CLASS} ${fieldErrors.phone ? FIELD_ERROR_CLASS : ''}`}
                     value={formData.phone}
-                    onChange={(e) => updateField("phone", e.target.value)}
+                    onChange={(e) => updateField('phone', e.target.value)}
                   />
                   {fieldErrors.phone && (
                     <p id="phone-error" className="mt-1 text-xs text-red-600" role="alert">
@@ -265,17 +276,17 @@ export function ContactSection({
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label htmlFor="email" className={LABEL_CLASS}>
-                    {t("form.emailLabel")}
+                    {t('form.emailLabel')}
                   </label>
                   <input
                     id="email"
                     type="email"
-                    placeholder={t("form.emailPlaceholder")}
+                    placeholder={t('form.emailPlaceholder')}
                     aria-invalid={Boolean(fieldErrors.email)}
-                    aria-describedby={fieldErrors.email ? "email-error" : undefined}
-                    className={`${FIELD_CLASS} ${fieldErrors.email ? FIELD_ERROR_CLASS : ""}`}
+                    aria-describedby={fieldErrors.email ? 'email-error' : undefined}
+                    className={`${FIELD_CLASS} ${fieldErrors.email ? FIELD_ERROR_CLASS : ''}`}
                     value={formData.email}
-                    onChange={(e) => updateField("email", e.target.value)}
+                    onChange={(e) => updateField('email', e.target.value)}
                   />
                   {fieldErrors.email && (
                     <p id="email-error" className="mt-1 text-xs text-red-600" role="alert">
@@ -285,30 +296,30 @@ export function ContactSection({
                 </div>
                 <div>
                   <label htmlFor="company" className={LABEL_CLASS}>
-                    {t("form.companyLabel")}
+                    {t('form.companyLabel')}
                   </label>
                   <input
                     id="company"
                     type="text"
-                    placeholder={t("form.companyPlaceholder")}
+                    placeholder={t('form.companyPlaceholder')}
                     className={FIELD_CLASS}
                     value={formData.company}
-                    onChange={(e) => updateField("company", e.target.value)}
+                    onChange={(e) => updateField('company', e.target.value)}
                   />
                 </div>
               </div>
 
               <div>
                 <label htmlFor="message" className={LABEL_CLASS}>
-                  {t("form.messageLabel")}
+                  {t('form.messageLabel')}
                 </label>
                 <textarea
                   id="message"
                   rows={10}
-                  placeholder={t("form.messagePlaceholder")}
+                  placeholder={t('form.messagePlaceholder')}
                   className={FIELD_CLASS}
                   value={formData.message}
-                  onChange={(e) => updateField("message", e.target.value)}
+                  onChange={(e) => updateField('message', e.target.value)}
                 />
               </div>
 
@@ -318,14 +329,14 @@ export function ContactSection({
                   language={localeToCaptchaLanguage(locale)}
                   onSubmit={async (captchaVerifyParam) => {
                     setFieldErrors({});
-                    setStatusMessage("");
+                    setStatusMessage('');
                     return submitPayload(captchaVerifyParam);
                   }}
                   onSuccess={() => {}}
                   onError={() => {
-                    if (status !== "error") {
-                      setStatus("error");
-                      setStatusMessage(t("status.error"));
+                    if (status !== 'error') {
+                      setStatus('error');
+                      setStatusMessage(t('status.error'));
                     }
                   }}
                 />
@@ -334,22 +345,22 @@ export function ContactSection({
               <button
                 id={captchaEnabled ? SUBMIT_BUTTON_ID : undefined}
                 type="submit"
-                disabled={status === "loading"}
+                disabled={status === 'loading'}
                 className="group inline-flex w-full items-center justify-center gap-2 bg-primary py-3.5 font-display text-base font-bold text-white transition-colors hover:bg-primary-hover disabled:opacity-60"
               >
                 <Send className="h-4 w-4" aria-hidden="true" />
-                {status === "loading" ? t("form.submitting") : t("form.submit")}
+                {status === 'loading' ? t('form.submitting') : t('form.submit')}
               </button>
 
               <div role="status" aria-live="polite" aria-atomic="true">
                 {statusMessage && (
                   <p
                     className={`text-center text-sm font-medium ${
-                      status === "success"
-                        ? "text-primary"
-                        : status === "error"
-                          ? "text-red-600"
-                          : "text-secondary-text"
+                      status === 'success'
+                        ? 'text-primary'
+                        : status === 'error'
+                          ? 'text-red-600'
+                          : 'text-secondary-text'
                     }`}
                   >
                     {statusMessage}

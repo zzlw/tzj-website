@@ -4,17 +4,13 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
-} from "@nestjs/common";
-import * as bcrypt from "bcrypt";
-import { Prisma } from "@prisma/client/index";
-import { PrismaService } from "../prisma/prisma.service";
-import { Role } from "../auth/roles";
-import {
-  CreateUserDto,
-  ResetUserPasswordDto,
-  UpdateUserDto,
-} from "./dto/user.dto";
-import { RolesService } from "../access/roles.service";
+} from '@nestjs/common';
+import type { Prisma } from '@prisma/client/index';
+import * as bcrypt from 'bcrypt';
+import { RolesService } from '../access/roles.service';
+import { Role } from '../auth/roles';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateUserDto, ResetUserPasswordDto, UpdateUserDto } from './dto/user.dto';
 
 @Injectable()
 export class UsersService {
@@ -23,21 +19,16 @@ export class UsersService {
     private readonly rolesService: RolesService,
   ) {}
 
-  async findAll(params: {
-    page: number;
-    limit: number;
-    search?: string;
-    role?: string;
-  }) {
+  async findAll(params: { page: number; limit: number; search?: string; role?: string }) {
     const { page, limit, search, role } = params;
     const skip = (page - 1) * limit;
     const where: Prisma.UserWhereInput = {};
     if (role) where.role = role;
     if (search) {
       where.OR = [
-        { username: { contains: search, mode: "insensitive" } },
-        { nickname: { contains: search, mode: "insensitive" } },
-        { email: { contains: search, mode: "insensitive" } },
+        { username: { contains: search, mode: 'insensitive' } },
+        { nickname: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
       ];
     }
 
@@ -46,7 +37,7 @@ export class UsersService {
         where,
         skip,
         take: limit,
-        orderBy: [{ createdAt: "desc" }],
+        orderBy: [{ createdAt: 'desc' }],
         select: {
           id: true,
           username: true,
@@ -87,7 +78,7 @@ export class UsersService {
         updatedAt: true,
       },
     });
-    if (!user) throw new NotFoundException("用户不存在");
+    if (!user) throw new NotFoundException('用户不存在');
     return user;
   }
 
@@ -123,7 +114,7 @@ export class UsersService {
 
   async update(id: string, dto: UpdateUserDto, actorId: string) {
     const existing = await this.prisma.user.findUnique({ where: { id } });
-    if (!existing) throw new NotFoundException("用户不存在");
+    if (!existing) throw new NotFoundException('用户不存在');
 
     if (dto.username && dto.username !== existing.username) {
       await this.assertUsernameAvailable(dto.username);
@@ -137,7 +128,7 @@ export class UsersService {
     }
 
     if (dto.isActive === false && id === actorId) {
-      throw new BadRequestException("不能停用自己的账号");
+      throw new BadRequestException('不能停用自己的账号');
     }
 
     if (dto.role && dto.role !== Role.ADMIN && existing.role === Role.ADMIN) {
@@ -188,10 +179,10 @@ export class UsersService {
 
   async remove(id: string, actorId: string) {
     if (id === actorId) {
-      throw new BadRequestException("不能删除自己的账号");
+      throw new BadRequestException('不能删除自己的账号');
     }
     const existing = await this.prisma.user.findUnique({ where: { id } });
-    if (!existing) throw new NotFoundException("用户不存在");
+    if (!existing) throw new NotFoundException('用户不存在');
     if (existing.role === Role.ADMIN) {
       await this.assertNotLastAdmin(id);
     }
@@ -202,7 +193,7 @@ export class UsersService {
 
   async resetPassword(id: string, dto: ResetUserPasswordDto) {
     const existing = await this.prisma.user.findUnique({ where: { id } });
-    if (!existing) throw new NotFoundException("用户不存在");
+    if (!existing) throw new NotFoundException('用户不存在');
 
     await this.prisma.user.update({
       where: { id },
@@ -214,13 +205,13 @@ export class UsersService {
 
   private async assertUsernameAvailable(username: string) {
     const found = await this.prisma.user.findUnique({ where: { username } });
-    if (found) throw new ConflictException("用户名已存在");
+    if (found) throw new ConflictException('用户名已存在');
   }
 
   private async assertEmailAvailable(email: string, excludeId?: string) {
     const found = await this.prisma.user.findFirst({ where: { email } });
     if (found && found.id !== excludeId) {
-      throw new ConflictException("邮箱已被使用");
+      throw new ConflictException('邮箱已被使用');
     }
   }
 
@@ -229,7 +220,7 @@ export class UsersService {
       where: { role: Role.ADMIN, isActive: true, id: { not: userId } },
     });
     if (adminCount < 1) {
-      throw new ForbiddenException("系统至少保留一名启用的超级管理员");
+      throw new ForbiddenException('系统至少保留一名启用的超级管理员');
     }
   }
 

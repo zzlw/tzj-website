@@ -1,15 +1,9 @@
-"use client";
+'use client';
 
-import {
-  useCallback,
-  useMemo,
-  useRef,
-  useState,
-  type KeyboardEvent,
-} from "react";
-import { X } from "lucide-react";
-import { cn } from "../../lib/utils";
-import { TagChip } from "../tag/TagChip";
+import { X } from 'lucide-react';
+import { type KeyboardEvent, useCallback, useMemo, useRef, useState } from 'react';
+import { cn } from '../../lib/utils';
+import { TagChip } from '../tag/TagChip';
 
 function parseTags(value: string): string[] {
   return value
@@ -19,7 +13,7 @@ function parseTags(value: string): string[] {
 }
 
 function joinTags(tags: string[]): string {
-  return tags.join(", ");
+  return tags.join(', ');
 }
 
 export interface TagsInputProps {
@@ -37,12 +31,12 @@ export function TagsInput({
   value,
   onChange,
   suggestions = [],
-  placeholder = "输入标签后按 Enter 添加…",
+  placeholder = '输入标签后按 Enter 添加…',
   disabled = false,
   className,
   id,
 }: TagsInputProps) {
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState('');
   const [focused, setFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -51,17 +45,15 @@ export function TagsInput({
   const filteredSuggestions = useMemo(() => {
     const q = input.trim().toLowerCase();
     if (!q) return suggestions.filter((s) => !tags.includes(s)).slice(0, 8);
-    return suggestions
-      .filter((s) => !tags.includes(s) && s.toLowerCase().includes(q))
-      .slice(0, 8);
+    return suggestions.filter((s) => !tags.includes(s) && s.toLowerCase().includes(q)).slice(0, 8);
   }, [input, suggestions, tags]);
 
   const addTag = useCallback(
     (raw: string) => {
-      const name = raw.trim().replace(/\s+/g, " ");
+      const name = raw.trim().replace(/\s+/g, ' ');
       if (!name || tags.includes(name)) return;
       onChange(joinTags([...tags, name]));
-      setInput("");
+      setInput('');
     },
     [onChange, tags],
   );
@@ -74,21 +66,21 @@ export function TagsInput({
   );
 
   function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter" || e.key === "," || e.key === "，") {
+    if (e.key === 'Enter' || e.key === ',' || e.key === '，') {
       e.preventDefault();
       if (input.trim()) addTag(input);
-    } else if (e.key === "Backspace" && !input && tags.length) {
+    } else if (e.key === 'Backspace' && !input && tags.length) {
       removeTag(tags[tags.length - 1]!);
     }
   }
 
   return (
-    <div className={cn("relative space-y-2", className)}>
+    <div className={cn('relative space-y-2', className)}>
       <div
         className={cn(
-          "flex min-h-10 flex-wrap items-center gap-1.5 rounded-md border border-input bg-background px-2 py-1.5 shadow-sm transition-colors",
-          focused && "ring-2 ring-ring ring-offset-2 ring-offset-background",
-          disabled && "cursor-not-allowed opacity-60",
+          'flex min-h-10 flex-wrap items-center gap-1.5 rounded-md border border-input bg-background px-2 py-1.5 shadow-sm transition-colors',
+          focused && 'ring-2 ring-ring ring-offset-2 ring-offset-background',
+          disabled && 'cursor-not-allowed opacity-60',
         )}
         onClick={() => inputRef.current?.focus()}
       >
@@ -123,7 +115,7 @@ export function TagsInput({
           onKeyDown={handleKeyDown}
           onFocus={() => setFocused(true)}
           onBlur={() => setTimeout(() => setFocused(false), 150)}
-          placeholder={tags.length ? "" : placeholder}
+          placeholder={tags.length ? '' : placeholder}
           className="min-w-[120px] flex-1 border-0 bg-transparent px-1 py-0.5 text-sm outline-none placeholder:text-muted-foreground"
         />
       </div>
@@ -133,11 +125,7 @@ export function TagsInput({
           <p className="mb-1.5 px-1 text-xs text-muted-foreground">已有标签</p>
           <div className="flex flex-wrap gap-1.5">
             {filteredSuggestions.map((s) => (
-              <TagChip
-                key={s}
-                label={s}
-                onClick={() => addTag(s)}
-              />
+              <TagChip key={s} label={s} onClick={() => addTag(s)} />
             ))}
           </div>
         </div>

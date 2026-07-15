@@ -29,12 +29,30 @@
     "title": "Six capabilities of CFBT facilities"
   },
   "features": [
-    { "title": "Real fire behavior", "desc": "Solid fuels reproduce smoke layer development, rollover, and flashover precursors for fire behavior reading." },
-    { "title": "Flashover warning", "desc": "Observe flashover progression from a safe distance so trainees learn to recognize critical signs and act in time." },
-    { "title": "Hose stream & ventilation tactics", "desc": "Pulsed application and ventilation control train hose stream use and smoke layer management." },
-    { "title": "Controlled temperatures", "desc": "Temperature monitoring at ceiling and working level balances realism with crew safety." },
-    { "title": "Interlocking insulation liner", "desc": "Calcium silicate interlocking liners withstand high heat, protect structure, and allow single-tile replacement." },
-    { "title": "Repeatable training", "desc": "Controlled fuel and conditions support high-frequency, repeatable standardized training." }
+    {
+      "title": "Real fire behavior",
+      "desc": "Solid fuels reproduce smoke layer development, rollover, and flashover precursors for fire behavior reading."
+    },
+    {
+      "title": "Flashover warning",
+      "desc": "Observe flashover progression from a safe distance so trainees learn to recognize critical signs and act in time."
+    },
+    {
+      "title": "Hose stream & ventilation tactics",
+      "desc": "Pulsed application and ventilation control train hose stream use and smoke layer management."
+    },
+    {
+      "title": "Controlled temperatures",
+      "desc": "Temperature monitoring at ceiling and working level balances realism with crew safety."
+    },
+    {
+      "title": "Interlocking insulation liner",
+      "desc": "Calcium silicate interlocking liners withstand high heat, protect structure, and allow single-tile replacement."
+    },
+    {
+      "title": "Repeatable training",
+      "desc": "Controlled fuel and conditions support high-frequency, repeatable standardized training."
+    }
   ],
   "programsSection": {
     "eyebrow": "Training programs",
@@ -49,9 +67,15 @@
     "Attack route selection and safe withdrawal"
   ],
   "relatedLinks": [
-    { "label": "Burn Rooms & Interlocking Liners", "desc": "The core of safe, realistic live-fire training." },
+    {
+      "label": "Burn Rooms & Interlocking Liners",
+      "desc": "The core of safe, realistic live-fire training."
+    },
     { "label": "Fire Simulation Training", "desc": "Low-cost, repeatable simulated training." },
-    { "label": "Fire & Rescue Solutions", "desc": "Integrated training solutions for fire & rescue agencies." }
+    {
+      "label": "Fire & Rescue Solutions",
+      "desc": "Integrated training solutions for fire & rescue agencies."
+    }
   ],
   "cta": {
     "title": "Build your CFBT training center",

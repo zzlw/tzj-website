@@ -1,8 +1,8 @@
-import { getTranslations } from "next-intl/server";
-import type { ProductFamily, ProductLine } from "@/lib/product-catalog";
+import { getTranslations } from 'next-intl/server';
+import type { ProductFamily, ProductLine } from '@/lib/product-catalog';
 
 export async function getLocalizedFamily(family: ProductFamily) {
-  const t = await getTranslations("catalog.families");
+  const t = await getTranslations('catalog.families');
   return {
     ...family,
     title: t(`${family.id}.title`),
@@ -11,7 +11,7 @@ export async function getLocalizedFamily(family: ProductFamily) {
 }
 
 export async function getLocalizedLine(line: ProductLine) {
-  const t = await getTranslations("catalog.lines");
+  const t = await getTranslations('catalog.lines');
   return {
     ...line,
     title: t(`${line.id}.title`),
@@ -21,7 +21,7 @@ export async function getLocalizedLine(line: ProductLine) {
 }
 
 export async function getLocalizedLines(lines: ProductLine[]) {
-  const t = await getTranslations("catalog.lines");
+  const t = await getTranslations('catalog.lines');
   return lines.map((line) => ({
     ...line,
     title: t(`${line.id}.title`),

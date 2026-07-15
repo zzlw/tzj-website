@@ -1,16 +1,16 @@
-import Link from "next/link";
-import { ChevronDown } from "lucide-react";
-import { getTranslations } from "next-intl/server";
-import { MediaImage } from "@/components/MediaImage";
-import { MediaVideo } from "@/components/MediaVideo";
-import { Container, Eyebrow, RbButton } from "@/components/ui";
-import { PRODUCT_LINE_COUNT } from "@/lib/product-catalog";
+import { ChevronDown } from 'lucide-react';
+import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
+import { MediaImage } from '@/components/MediaImage';
+import { MediaVideo } from '@/components/MediaVideo';
+import { Container, Eyebrow, RbButton } from '@/components/ui';
+import { PRODUCT_LINE_COUNT } from '@/lib/product-catalog';
 
-const HERO_VIDEO = "/media/hero.mp4";
-const HERO_POSTER = "/media/fixed-tower-hero.jpg";
+const HERO_VIDEO = '/media/hero.mp4';
+const HERO_POSTER = '/media/fixed-tower-hero.jpg';
 
 export async function HeroSection() {
-  const t = await getTranslations("home.hero");
+  const t = await getTranslations('home.hero');
 
   return (
     <section className="relative flex min-h-screen flex-col justify-end overflow-hidden bg-neutral-900">
@@ -52,26 +52,29 @@ export async function HeroSection() {
       <div className="absolute inset-0 z-10 rb-media-shade-strong" aria-hidden="true" />
 
       <Container className="rb-on-media relative z-20 pb-16 pt-28 md:pb-20">
-        <Eyebrow inverted>{t("eyebrow")}</Eyebrow>
+        <Eyebrow inverted>{t('eyebrow')}</Eyebrow>
 
         <h1 className="rb-display mt-6 max-w-4xl text-white">
-          {t("titleLine1")}
+          {t('titleLine1')}
           <br />
-          <span className="text-primary">{t("titleLine2")}</span>
+          <span className="text-primary">{t('titleLine2')}</span>
         </h1>
 
         <p className="mt-6 mb-9 max-w-2xl text-base leading-relaxed text-white/85 md:text-lg">
-          {t("description", { count: PRODUCT_LINE_COUNT })}
+          {t('description', { count: PRODUCT_LINE_COUNT })}
         </p>
 
         <div className="flex flex-wrap items-center gap-4">
-          <RbButton href="#products">{t("browseProducts")}</RbButton>
+          <RbButton href="#products">{t('browseProducts')}</RbButton>
           <Link
             href="/solutions"
             className="group inline-flex items-center gap-2 font-display text-sm font-bold uppercase tracking-wide text-white transition-colors hover:text-white/80"
           >
-            {t("viewSolutions")}
-            <ChevronDown className="h-4 w-4 transition-transform duration-300 group-hover:translate-y-1" aria-hidden="true" />
+            {t('viewSolutions')}
+            <ChevronDown
+              className="h-4 w-4 transition-transform duration-300 group-hover:translate-y-1"
+              aria-hidden="true"
+            />
           </Link>
         </div>
       </Container>

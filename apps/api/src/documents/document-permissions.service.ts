@@ -3,16 +3,9 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
-} from "@nestjs/common";
-import { PrismaService } from "../prisma/prisma.service";
-import {
-  CreateDocumentPermissionDto,
-  DocumentAccessInfo,
-  DocumentPermissionItem,
-  PermissionRole,
-  PermissionTargetType,
-  UpdateDocumentPermissionDto,
-} from "./dto/document-permission.dto";
+} from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateDocumentPermissionDto, DocumentAccessInfo, DocumentPermissionItem, PermissionRole, PermissionTargetType, UpdateDocumentPermissionDto } from './dto/document-permission.dto';
 
 @Injectable()
 export class DocumentPermissionsService {
@@ -30,7 +23,7 @@ export class DocumentPermissionsService {
       where: { id: documentId },
       include: {
         permissions: {
-          orderBy: [{ role: "asc" }, { targetType: "asc" }, { targetId: "asc" }],
+          orderBy: [{ role: 'asc' }, { targetType: 'asc' }, { targetId: 'asc' }],
           include: {
             user: {
               select: {
@@ -50,7 +43,7 @@ export class DocumentPermissionsService {
     });
 
     if (!doc) {
-      throw new NotFoundException("文档不存在");
+      throw new NotFoundException('文档不存在');
     }
 
     // 所有者始终拥有完全权限
@@ -130,17 +123,17 @@ export class DocumentPermissionsService {
     });
 
     if (!doc) {
-      throw new NotFoundException("文档不存在");
+      throw new NotFoundException('文档不存在');
     }
 
     // 只有所有者或管理员可以查看权限列表
     if (doc.ownerId !== userId && !canManage) {
-      throw new ForbiddenException("无权查看权限设置");
+      throw new ForbiddenException('无权查看权限设置');
     }
 
     const permissions = await this.prisma.documentPermission.findMany({
       where: { documentId },
-      orderBy: [{ role: "asc" }, { targetType: "asc" }, { targetId: "asc" }],
+      orderBy: [{ role: 'asc' }, { targetType: 'asc' }, { targetId: 'asc' }],
       include: {
         user: {
           select: {
@@ -174,12 +167,12 @@ export class DocumentPermissionsService {
     });
 
     if (!doc) {
-      throw new NotFoundException("文档不存在");
+      throw new NotFoundException('文档不存在');
     }
 
     // 只有所有者或管理员可以修改权限
     if (doc.ownerId !== userId && !canManage) {
-      throw new ForbiddenException("无权修改权限设置");
+      throw new ForbiddenException('无权修改权限设置');
     }
 
     // 验证权限配置
@@ -205,7 +198,7 @@ export class DocumentPermissionsService {
     // 返回更新后的权限列表
     const updated = await this.prisma.documentPermission.findMany({
       where: { documentId },
-      orderBy: [{ role: "asc" }, { targetType: "asc" }, { targetId: "asc" }],
+      orderBy: [{ role: 'asc' }, { targetType: 'asc' }, { targetId: 'asc' }],
       include: {
         user: {
           select: {
@@ -239,11 +232,11 @@ export class DocumentPermissionsService {
     });
 
     if (!doc) {
-      throw new NotFoundException("文档不存在");
+      throw new NotFoundException('文档不存在');
     }
 
     if (doc.ownerId !== userId && !canManage) {
-      throw new ForbiddenException("无权修改权限设置");
+      throw new ForbiddenException('无权修改权限设置');
     }
 
     await this.validatePermissions([permission], userId, canManage);
@@ -258,7 +251,7 @@ export class DocumentPermissionsService {
     });
 
     if (existing) {
-      throw new BadRequestException("该权限已存在");
+      throw new BadRequestException('该权限已存在');
     }
 
     const created = await this.prisma.documentPermission.create({
@@ -302,11 +295,11 @@ export class DocumentPermissionsService {
     });
 
     if (!doc) {
-      throw new NotFoundException("文档不存在");
+      throw new NotFoundException('文档不存在');
     }
 
     if (doc.ownerId !== userId && !canManage) {
-      throw new ForbiddenException("无权修改权限设置");
+      throw new ForbiddenException('无权修改权限设置');
     }
 
     const perm = await this.prisma.documentPermission.findUnique({
@@ -314,7 +307,7 @@ export class DocumentPermissionsService {
     });
 
     if (!perm || perm.documentId !== documentId) {
-      throw new NotFoundException("权限不存在");
+      throw new NotFoundException('权限不存在');
     }
 
     await this.prisma.documentPermission.delete({
@@ -333,7 +326,7 @@ export class DocumentPermissionsService {
     // 检查是否有重复的权限目标
     const seen = new Set<string>();
     for (const p of permissions) {
-      const key = `${p.targetType}:${p.targetId ?? "null"}`;
+      const key = `${p.targetType}:${p.targetId ?? 'null'}`;
       if (seen.has(key)) {
         throw new BadRequestException(`重复的权限目标: ${key}`);
       }
@@ -406,7 +399,7 @@ export class DocumentPermissionsService {
         : p.targetType === PermissionTargetType.ROLE
           ? p.targetId
           : p.targetType === PermissionTargetType.PUBLIC
-            ? "所有人"
+            ? '所有人'
             : null,
       grantedBy: p.grantedBy,
       grantorName: p.grantor?.nickname || p.grantor?.username || null,
@@ -418,20 +411,18 @@ export class DocumentPermissionsService {
   /**
    * 格式化单个权限（含名称）
    */
-  private formatPermissionWithName(
-    permission: {
-      id: string;
-      documentId: string;
-      role: string;
-      targetType: string;
-      targetId: string | null;
-      grantedBy: string | null;
-      createdAt: Date;
-      updatedAt: Date;
-      user?: { username: string; nickname: string | null } | null;
-      grantor?: { username: string; nickname: string | null } | null;
-    },
-  ): DocumentPermissionItem {
+  private formatPermissionWithName(permission: {
+    id: string;
+    documentId: string;
+    role: string;
+    targetType: string;
+    targetId: string | null;
+    grantedBy: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+    user?: { username: string; nickname: string | null } | null;
+    grantor?: { username: string; nickname: string | null } | null;
+  }): DocumentPermissionItem {
     return {
       id: permission.id,
       documentId: permission.documentId,
@@ -443,7 +434,7 @@ export class DocumentPermissionsService {
         : permission.targetType === PermissionTargetType.ROLE
           ? permission.targetId
           : permission.targetType === PermissionTargetType.PUBLIC
-            ? "所有人"
+            ? '所有人'
             : null,
       grantedBy: permission.grantedBy,
       grantorName: permission.grantor?.nickname || permission.grantor?.username || null,

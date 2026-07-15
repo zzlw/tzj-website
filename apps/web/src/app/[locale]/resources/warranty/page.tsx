@@ -1,44 +1,51 @@
-import { PencilRuler, Factory, Truck } from "lucide-react";
-import { Container, PageHero, SectionHeading } from "@/components/ui";
-import { RelatedLinks, CtaBand } from "@/components/sections/blocks";
-import { StatBandI18n, ProcessBandI18n } from "@/components/sections/blocks-i18n";
-import { getTranslations } from "next-intl/server";
-import { createPageMetadata } from "@/lib/i18n/metadata";
+import { Factory, PencilRuler, Truck } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
+import { CtaBand, RelatedLinks } from '@/components/sections/blocks';
+import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
+import { Container, PageHero, SectionHeading } from '@/components/ui';
+import { createPageMetadata } from '@/lib/i18n/metadata';
 
 export async function generateMetadata() {
-  return createPageMetadata({ namespace: "pages.resourcesWarranty", path: "/resources/warranty" });
+  return createPageMetadata({ namespace: 'pages.resourcesWarranty', path: '/resources/warranty' });
 }
 
 const RESPONSIBILITY_ICONS = [PencilRuler, Factory, Truck] as const;
-const RELATED_HREFS = ["/resources/inspections", "/resources/how-to-buy", "/resources/faqs"];
+const RELATED_HREFS = ['/resources/inspections', '/resources/how-to-buy', '/resources/faqs'];
 
 export default async function WarrantyPage() {
-  const t = await getTranslations("pages.resourcesWarranty");
-  const tCta = await getTranslations("cta");
-  const tBlocks = await getTranslations("blocks.relatedLinks");
+  const t = await getTranslations('pages.resourcesWarranty');
+  const tCta = await getTranslations('cta');
+  const tBlocks = await getTranslations('blocks.relatedLinks');
 
-  const responsibilityRaw = t.raw("responsibility") as Array<{ title: string; desc: string }>;
-  const responsibility = responsibilityRaw.map((item, i) => ({ ...item, icon: RESPONSIBILITY_ICONS[i]! }));
-  const warrantyRows = t.raw("warrantyRows") as Array<{ item: string; scope: string; note: string }>;
-  const support = t.raw("support") as string[];
-  const relatedLinks = t.raw("relatedLinks") as Array<{ label: string; desc: string }>;
-  const tableHeaders = t.raw("tableHeaders") as { item: string; scope: string; note: string };
+  const responsibilityRaw = t.raw('responsibility') as Array<{ title: string; desc: string }>;
+  const responsibility = responsibilityRaw.map((item, i) => ({
+    ...item,
+    icon: RESPONSIBILITY_ICONS[i]!,
+  }));
+  const warrantyRows = t.raw('warrantyRows') as Array<{
+    item: string;
+    scope: string;
+    note: string;
+  }>;
+  const support = t.raw('support') as string[];
+  const relatedLinks = t.raw('relatedLinks') as Array<{ label: string; desc: string }>;
+  const tableHeaders = t.raw('tableHeaders') as { item: string; scope: string; note: string };
 
   return (
     <div className="pb-20">
       <PageHero
-        eyebrow={t("hero.eyebrow")}
-        title={t("hero.title")}
-        description={t("hero.description")}
+        eyebrow={t('hero.eyebrow')}
+        title={t('hero.title')}
+        description={t('hero.description')}
       />
 
       <section>
         <Container className="py-16 lg:py-24">
           <div className="grid grid-cols-1 gap-10 lg:grid-cols-2 lg:gap-16">
             <SectionHeading
-              eyebrow={t("integratedSection.eyebrow")}
-              title={t("integratedSection.title")}
-              description={t("integratedSection.description")}
+              eyebrow={t('integratedSection.eyebrow')}
+              title={t('integratedSection.title')}
+              description={t('integratedSection.description')}
             />
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               {responsibility.map((r) => {
@@ -62,7 +69,10 @@ export default async function WarrantyPage() {
 
       <section>
         <Container className="py-16 lg:py-24">
-          <SectionHeading eyebrow={t("warrantySection.eyebrow")} title={t("warrantySection.title")} />
+          <SectionHeading
+            eyebrow={t('warrantySection.eyebrow')}
+            title={t('warrantySection.title')}
+          />
           <div className="mt-10 overflow-x-auto">
             <table className="w-full min-w-[640px] border-collapse text-left">
               <thead>
@@ -89,16 +99,19 @@ export default async function WarrantyPage() {
               </tbody>
             </table>
           </div>
-          <p className="mt-4 text-xs text-secondary-text">{t("warrantyFootnote")}</p>
+          <p className="mt-4 text-xs text-secondary-text">{t('warrantyFootnote')}</p>
         </Container>
       </section>
 
       <section className="bg-neutral-100">
         <Container className="py-16 lg:py-24">
-          <SectionHeading eyebrow={t("supportSection.eyebrow")} title={t("supportSection.title")} />
+          <SectionHeading eyebrow={t('supportSection.eyebrow')} title={t('supportSection.title')} />
           <ul className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
             {support.map((s) => (
-              <li key={s} className="border-l-2 border-primary bg-white p-5 text-base text-neutral-900">
+              <li
+                key={s}
+                className="border-l-2 border-primary bg-white p-5 text-base text-neutral-900"
+              >
                 {s}
               </li>
             ))}
@@ -109,16 +122,16 @@ export default async function WarrantyPage() {
       <ProcessBandI18n />
 
       <RelatedLinks
-        title={tBlocks("titleDefault")}
-        learnMore={tBlocks("learnMore")}
-        eyebrow={tBlocks("eyebrow")}
+        title={tBlocks('titleDefault')}
+        learnMore={tBlocks('learnMore')}
+        eyebrow={tBlocks('eyebrow')}
         links={relatedLinks.map((l, i) => ({ ...l, href: RELATED_HREFS[i]! }))}
       />
 
       <CtaBand
-        title={t("cta.title")}
-        primaryLabel={tCta("bookConsult")}
-        secondaryLabel={t("cta.secondaryLabel")}
+        title={t('cta.title')}
+        primaryLabel={tCta('bookConsult')}
+        secondaryLabel={t('cta.secondaryLabel')}
         secondaryHref="/resources/inspections"
       />
     </div>

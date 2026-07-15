@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Check, Copy } from "lucide-react";
-import { cn } from "@tzj/ui";
-import { notifyError, notifySuccess } from "@/lib/notify";
+import { cn } from '@tzj/ui';
+import { Check, Copy } from 'lucide-react';
+import { useState } from 'react';
+import { notifyError, notifySuccess } from '@/lib/notify';
 
 /** 可复制文本（常用于 IP 列），右侧带复制图标 */
 export function CopyableText({
@@ -18,23 +18,23 @@ export function CopyableText({
   const [copied, setCopied] = useState(false);
 
   if (!value) {
-    return <span className={cn("text-muted-foreground", className)}>—</span>;
+    return <span className={cn('text-muted-foreground', className)}>—</span>;
   }
 
   async function onCopy() {
     try {
       await navigator.clipboard.writeText(value!);
       setCopied(true);
-      notifySuccess("已复制到剪贴板");
+      notifySuccess('已复制到剪贴板');
       window.setTimeout(() => setCopied(false), 2000);
     } catch {
-      notifyError("复制失败，请手动选择复制");
+      notifyError('复制失败，请手动选择复制');
     }
   }
 
   return (
-    <span className={cn("inline-flex items-center gap-1.5", className)}>
-      <span className={mono ? "font-mono text-sm" : "text-sm"}>{value}</span>
+    <span className={cn('inline-flex items-center gap-1.5', className)}>
+      <span className={mono ? 'font-mono text-sm' : 'text-sm'}>{value}</span>
       <button
         type="button"
         onClick={() => void onCopy()}

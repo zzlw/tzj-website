@@ -1,18 +1,14 @@
-"use client";
+'use client';
 
-import { useMemo, useState } from "react";
-import type { DateRange } from "react-day-picker";
-import { zhCN } from "react-day-picker/locale";
-import { CalendarIcon, X } from "lucide-react";
-import { cn } from "../../lib/utils";
-import {
-  formatDateLabel,
-  parseDateValue,
-  toDateValue,
-} from "../../lib/date-utils";
-import { Button } from "../button";
-import { Calendar } from "../calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "../popover";
+import { CalendarIcon, X } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import type { DateRange } from 'react-day-picker';
+import { zhCN } from 'react-day-picker/locale';
+import { formatDateLabel, parseDateValue, toDateValue } from '../../lib/date-utils';
+import { cn } from '../../lib/utils';
+import { Button } from '../button';
+import { Calendar } from '../calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '../popover';
 
 export interface DateRangePickerProps {
   /** 开始日期 "yyyy-MM-dd" */
@@ -52,7 +48,7 @@ function DateRangePicker({
   from,
   to,
   onChange,
-  placeholder = "选择日期范围",
+  placeholder = '选择日期范围',
   id,
   disabled,
   className,
@@ -102,8 +98,8 @@ function DateRangePicker({
           variant="outline"
           disabled={disabled}
           className={cn(
-            "h-9 w-full justify-start px-3 text-left font-normal shadow-sm",
-            !hasValue && "text-muted-foreground",
+            'h-9 w-full justify-start px-3 text-left font-normal shadow-sm',
+            !hasValue && 'text-muted-foreground',
             className,
           )}
         >
@@ -118,7 +114,7 @@ function DateRangePicker({
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
-                onChange({ from: "", to: "" });
+                onChange({ from: '', to: '' });
                 setDraft(undefined);
               }}
             >
@@ -144,11 +140,10 @@ function DateRangePicker({
           resetOnSelect
           classNames={{
             range_start:
-              "rounded-l-md bg-primary [&>button]:bg-primary [&>button]:text-primary-foreground [&>button]:hover:bg-primary",
+              'rounded-l-md bg-primary [&>button]:bg-primary [&>button]:text-primary-foreground [&>button]:hover:bg-primary',
             range_end:
-              "rounded-r-md bg-primary [&>button]:bg-primary [&>button]:text-primary-foreground [&>button]:hover:bg-primary",
-            range_middle:
-              "bg-accent [&>button]:bg-transparent [&>button]:text-foreground",
+              'rounded-r-md bg-primary [&>button]:bg-primary [&>button]:text-primary-foreground [&>button]:hover:bg-primary',
+            range_middle: 'bg-accent [&>button]:bg-transparent [&>button]:text-foreground',
           }}
         />
       </PopoverContent>

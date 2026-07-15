@@ -1,17 +1,6 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import {
-  BookOpen,
-  CheckCircle2,
-  ChevronDown,
-  ExternalLink,
-  KeyRound,
-  Loader2,
-  Plug,
-  Shield,
-  XCircle,
-} from "lucide-react";
+import type { IntegrationAdminItem, UpdateIntegrationDto } from '@tzj/types';
 import {
   Badge,
   Button,
@@ -27,18 +16,29 @@ import {
   Label,
   PageHeader,
   Switch,
-} from "@tzj/ui";
-import type { IntegrationAdminItem, UpdateIntegrationDto } from "@tzj/types";
-import { Can } from "@/components/Can";
-import { LastOperatorCell } from "@/components/LastOperatorCell";
-import { RichHint } from "@/components/RichHint";
-import { formatDateTime } from "@/features/constants";
+} from '@tzj/ui';
+import {
+  BookOpen,
+  CheckCircle2,
+  ChevronDown,
+  ExternalLink,
+  KeyRound,
+  Loader2,
+  Plug,
+  Shield,
+  XCircle,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Can } from '@/components/Can';
+import { LastOperatorCell } from '@/components/LastOperatorCell';
+import { RichHint } from '@/components/RichHint';
+import { formatDateTime } from '@/features/constants';
 import {
   useIntegrationsOverview,
   useTestIntegration,
   useUpdateIntegration,
-} from "@/features/integrations";
-import { notifyError, notifySuccess } from "@/lib/notify";
+} from '@/features/integrations';
+import { notifyError, notifySuccess } from '@/lib/notify';
 
 function FieldLabel({
   htmlFor,
@@ -54,9 +54,7 @@ function FieldLabel({
   return (
     <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
       <Label htmlFor={htmlFor}>{label}</Label>
-      {publicField && (
-        <span className="text-xs font-normal text-muted-foreground">（可公开）</span>
-      )}
+      {publicField && <span className="text-xs font-normal text-muted-foreground">（可公开）</span>}
       {helpUrl && (
         <a
           href={helpUrl}
@@ -176,7 +174,7 @@ function IntegrationCard({ item }: { item: IntegrationAdminItem }) {
       setSecretsDraft({});
       notifySuccess(`${item.label} 已保存`);
     } catch (e) {
-      notifyError(e, "保存失败");
+      notifyError(e, '保存失败');
     }
   }
 
@@ -186,7 +184,7 @@ function IntegrationCard({ item }: { item: IntegrationAdminItem }) {
       if (result.ok) notifySuccess(result.message);
       else notifyError(result.message);
     } catch (e) {
-      notifyError(e, "测试失败");
+      notifyError(e, '测试失败');
     }
   }
 
@@ -200,12 +198,8 @@ function IntegrationCard({ item }: { item: IntegrationAdminItem }) {
           <CardTitle className="flex flex-wrap items-center gap-2 text-lg">
             <Plug className="h-4 w-4 text-muted-foreground" />
             {item.label}
-            {item.secretsConfigured && (
-              <Badge variant="secondary">DB 已配置</Badge>
-            )}
-            {item.envFallbackActive && (
-              <Badge variant="outline">Env 兜底</Badge>
-            )}
+            {item.secretsConfigured && <Badge variant="secondary">DB 已配置</Badge>}
+            {item.envFallbackActive && <Badge variant="outline">Env 兜底</Badge>}
           </CardTitle>
           <CardDescription>{item.description}</CardDescription>
         </div>
@@ -214,11 +208,7 @@ function IntegrationCard({ item }: { item: IntegrationAdminItem }) {
             <Label htmlFor={`enabled-${item.slug}`} className="text-sm text-muted-foreground">
               启用
             </Label>
-            <Switch
-              id={`enabled-${item.slug}`}
-              checked={enabled}
-              onCheckedChange={setEnabled}
-            />
+            <Switch id={`enabled-${item.slug}`} checked={enabled} onCheckedChange={setEnabled} />
           </div>
         </Can>
       </CardHeader>
@@ -237,7 +227,7 @@ function IntegrationCard({ item }: { item: IntegrationAdminItem }) {
                   publicField={field.public}
                 />
                 <p className="mt-1.5 font-mono text-sm text-muted-foreground">
-                  {config[field.key] || "—"}
+                  {config[field.key] || '—'}
                 </p>
               </div>
             }
@@ -257,10 +247,8 @@ function IntegrationCard({ item }: { item: IntegrationAdminItem }) {
               )}
               <Input
                 id={`${item.slug}-config-${field.key}`}
-                value={config[field.key] ?? ""}
-                onChange={(e) =>
-                  setConfig((prev) => ({ ...prev, [field.key]: e.target.value }))
-                }
+                value={config[field.key] ?? ''}
+                onChange={(e) => setConfig((prev) => ({ ...prev, [field.key]: e.target.value }))}
                 className="mt-1.5"
                 disabled={!enabled}
               />
@@ -276,10 +264,7 @@ function IntegrationCard({ item }: { item: IntegrationAdminItem }) {
               helpUrl={field.helpUrl}
             />
             {field.description && (
-              <RichHint
-                text={field.description}
-                className="mt-0.5 text-xs text-muted-foreground"
-              />
+              <RichHint text={field.description} className="mt-0.5 text-xs text-muted-foreground" />
             )}
             {item.secretsMask[field.key] && (
               <p className="mt-1 font-mono text-xs text-muted-foreground">
@@ -291,12 +276,8 @@ function IntegrationCard({ item }: { item: IntegrationAdminItem }) {
                 id={`${item.slug}-secret-${field.key}`}
                 type="password"
                 autoComplete="new-password"
-                placeholder={
-                  item.secretsMask[field.key]
-                    ? "留空则不修改"
-                    : "输入密钥"
-                }
-                value={secretsDraft[field.key] ?? ""}
+                placeholder={item.secretsMask[field.key] ? '留空则不修改' : '输入密钥'}
+                value={secretsDraft[field.key] ?? ''}
                 onChange={(e) =>
                   setSecretsDraft((prev) => ({
                     ...prev,
@@ -340,7 +321,7 @@ export default function IntegrationsSettingsPage() {
   if (isError || !data) {
     return (
       <p className="text-sm text-destructive">
-        {error instanceof Error ? error.message : "加载失败"}
+        {error instanceof Error ? error.message : '加载失败'}
       </p>
     );
   }

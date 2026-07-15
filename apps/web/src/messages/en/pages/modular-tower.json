@@ -22,24 +22,64 @@
     "linkText": "View modular series details"
   },
   "series": [
-    { "name": "M Series", "desc": "Entry-level simulator for basic live-fire training; 2-story main tower plus single-story annex.", "spec": "24′W × 20′L footprint · 2 stories · 4 modules" },
-    { "name": "O Series", "desc": "Open floor plan for office/warehouse scenarios; 2-story residential/industrial units plus annex.", "spec": "40′W × 20′L footprint · 2 stories · 9+1 modules" },
-    { "name": "D Series", "desc": "Large open-span floor plan; 2-story residential/industrial units.", "spec": "32′W × 40′L footprint · 2 stories · 16 modules" },
-    { "name": "X Series", "desc": "4-story main tower plus 2-story residential/industrial units and single-story annex.", "spec": "56′W × 20′L footprint · 4 stories · 16 modules" }
+    {
+      "name": "M Series",
+      "desc": "Entry-level simulator for basic live-fire training; 2-story main tower plus single-story annex.",
+      "spec": "24′W × 20′L footprint · 2 stories · 4 modules"
+    },
+    {
+      "name": "O Series",
+      "desc": "Open floor plan for office/warehouse scenarios; 2-story residential/industrial units plus annex.",
+      "spec": "40′W × 20′L footprint · 2 stories · 9+1 modules"
+    },
+    {
+      "name": "D Series",
+      "desc": "Large open-span floor plan; 2-story residential/industrial units.",
+      "spec": "32′W × 40′L footprint · 2 stories · 16 modules"
+    },
+    {
+      "name": "X Series",
+      "desc": "4-story main tower plus 2-story residential/industrial units and single-story annex.",
+      "spec": "56′W × 20′L footprint · 4 stories · 16 modules"
+    }
   ],
   "compareSection": {
     "eyebrow": "Modular vs. containers",
     "title": "Better construction, longer life, greater flexibility",
     "description": "Yes, containers can be adapted—but should firefighters face additional toxin exposure on top of an already high-risk profession?",
     "linkText": "View full comparison",
-    "headers": { "feature": "Comparison item", "modular": "MOD modular series", "container": "Container conversion" }
+    "headers": {
+      "feature": "Comparison item",
+      "modular": "MOD modular series",
+      "container": "Container conversion"
+    }
   },
   "compareRows": [
-    { "label": "Structure protection", "modx": "Hot-dip galvanized steel; no recoating required", "container": "Rust begins at delivery; compromises structural capacity" },
-    { "label": "Layout & stacking", "modx": "Custom module sizes; stack up to 5 stories", "container": "Unrealistic layout—corridors too wide, rooms too small" },
-    { "label": "Materials & process", "modx": "Purpose-built with new materials; no welded assembly", "container": "Fumigation treatment; toxic coatings; hard to meet standards" },
-    { "label": "Drainage", "modx": "Sloped floors with integrated drainage", "container": "No interior drainage design; standing water" },
-    { "label": "Service life", "modx": "Built for durability; 50+ years", "container": "High conversion cost; ~15-year lifespan" }
+    {
+      "label": "Structure protection",
+      "modx": "Hot-dip galvanized steel; no recoating required",
+      "container": "Rust begins at delivery; compromises structural capacity"
+    },
+    {
+      "label": "Layout & stacking",
+      "modx": "Custom module sizes; stack up to 5 stories",
+      "container": "Unrealistic layout—corridors too wide, rooms too small"
+    },
+    {
+      "label": "Materials & process",
+      "modx": "Purpose-built with new materials; no welded assembly",
+      "container": "Fumigation treatment; toxic coatings; hard to meet standards"
+    },
+    {
+      "label": "Drainage",
+      "modx": "Sloped floors with integrated drainage",
+      "container": "No interior drainage design; standing water"
+    },
+    {
+      "label": "Service life",
+      "modx": "Built for durability; 50+ years",
+      "container": "High conversion cost; ~15-year lifespan"
+    }
   ],
   "customSection": {
     "eyebrow": "Custom modular",
@@ -51,7 +91,10 @@
   },
   "relatedLinks": [
     { "label": "Modular series", "desc": "M / O / D / X series in flexible combinations." },
-    { "label": "Modular vs. containers", "desc": "Full comparison from materials to load ratings." },
+    {
+      "label": "Modular vs. containers",
+      "desc": "Full comparison from materials to load ratings."
+    },
     { "label": "Fixed training tower", "desc": "Durable multi-story steel training towers." }
   ],
   "cta": {

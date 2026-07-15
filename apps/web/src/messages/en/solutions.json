@@ -8,16 +8,40 @@
         "TZJ delivers turnkey training bases — from fixed towers and burn rooms to specialized scenarios — designed to NFPA and relevant GB standards, balancing realism with long-term durability."
       ],
       "focus": [
-        { "title": "Live-Fire Capability", "desc": "Interlocking liner burn rooms and CFBT systems for controlled, repeatable high-heat training." },
-        { "title": "High-Rise & Interior Attack", "desc": "Multi-story towers replicate high-rise buildings for ladder work, interior search, and self-rescue." },
-        { "title": "Hazmat Response", "desc": "Instructor props and mobile trailers recreate leak, plug, and decontamination scenarios." },
-        { "title": "Long-Term Reliability", "desc": "Hot-dip galvanized steel plus annual inspections for decades of safe service." }
+        {
+          "title": "Live-Fire Capability",
+          "desc": "Interlocking liner burn rooms and CFBT systems for controlled, repeatable high-heat training."
+        },
+        {
+          "title": "High-Rise & Interior Attack",
+          "desc": "Multi-story towers replicate high-rise buildings for ladder work, interior search, and self-rescue."
+        },
+        {
+          "title": "Hazmat Response",
+          "desc": "Instructor props and mobile trailers recreate leak, plug, and decontamination scenarios."
+        },
+        {
+          "title": "Long-Term Reliability",
+          "desc": "Hot-dip galvanized steel plus annual inspections for decades of safe service."
+        }
       ],
       "recommended": [
-        { "label": "Fixed Training Tower (Steel)", "desc": "Multi-story live-fire structure, heat- and wind-load rated." },
-        { "label": "Burn Room & Interlocking Liner", "desc": "The core of safe, realistic live-fire training." },
-        { "label": "CFBT Fire Behavior Training", "desc": "Train fire behavior recognition and flashover warning." },
-        { "label": "Hazmat Training", "desc": "Full-process leak, plug, and decontamination drills." }
+        {
+          "label": "Fixed Training Tower (Steel)",
+          "desc": "Multi-story live-fire structure, heat- and wind-load rated."
+        },
+        {
+          "label": "Burn Room & Interlocking Liner",
+          "desc": "The core of safe, realistic live-fire training."
+        },
+        {
+          "label": "CFBT Fire Behavior Training",
+          "desc": "Train fire behavior recognition and flashover warning."
+        },
+        {
+          "label": "Hazmat Training",
+          "desc": "Full-process leak, plug, and decontamination drills."
+        }
       ],
       "programs": [
         "High-rise firefighting and interior search",
@@ -36,16 +60,34 @@
         "TZJ customizes climbing towers and tactical training facilities that integrate realistic scenarios into the structure — supporting breaching, building movement, and rope descent drills."
       ],
       "focus": [
-        { "title": "Climbing Tower Structure", "desc": "Multi-story towers replicate real buildings for free climbing, rappelling, and window entry." },
-        { "title": "Tactical Scenarios", "desc": "Reconfigurable breaching doors, rope anchors, and props for CQB and tactical entry." },
-        { "title": "Custom Layouts", "desc": "Floor plans and scenarios tailored to unit tactics and operational flow." },
-        { "title": "Team Coordination", "desc": "Multi-level, multi-point designs for team coordination and command training." }
+        {
+          "title": "Climbing Tower Structure",
+          "desc": "Multi-story towers replicate real buildings for free climbing, rappelling, and window entry."
+        },
+        {
+          "title": "Tactical Scenarios",
+          "desc": "Reconfigurable breaching doors, rope anchors, and props for CQB and tactical entry."
+        },
+        {
+          "title": "Custom Layouts",
+          "desc": "Floor plans and scenarios tailored to unit tactics and operational flow."
+        },
+        {
+          "title": "Team Coordination",
+          "desc": "Multi-level, multi-point designs for team coordination and command training."
+        }
       ],
       "recommended": [
-        { "label": "Police & SWAT Climbing Tower", "desc": "Integrated climbing, rappelling, and entry structure." },
+        {
+          "label": "Police & SWAT Climbing Tower",
+          "desc": "Integrated climbing, rappelling, and entry structure."
+        },
         { "label": "Tactical Training", "desc": "Reconfigurable breaching and CQB scenarios." },
         { "label": "Custom Training Tower", "desc": "Layouts tailored to tactical workflows." },
-        { "label": "Fitness & Vestibular Equipment", "desc": "Build fitness and vestibular tolerance." }
+        {
+          "label": "Fitness & Vestibular Equipment",
+          "desc": "Build fitness and vestibular tolerance."
+        }
       ],
       "programs": [
         "Free climbing and rapid ascent",
@@ -64,16 +106,40 @@
         "TZJ provides combinable towers, psychological challenge courses, and fitness equipment to build high-intensity, multi-discipline training grounds within limited space."
       ],
       "focus": [
-        { "title": "Fitness & Obstacles", "desc": "Climbing, obstacles, and fitness equipment for strength, endurance, and coordination." },
-        { "title": "Psychological Training", "desc": "High-altitude bridges and challenge elements to build courage and resolve." },
-        { "title": "Rope & Rescue", "desc": "Mountain rope and high-angle transfer for complex terrain rescue." },
-        { "title": "Modular Expansion", "desc": "Modular systems expand in phases as teams and budgets grow." }
+        {
+          "title": "Fitness & Obstacles",
+          "desc": "Climbing, obstacles, and fitness equipment for strength, endurance, and coordination."
+        },
+        {
+          "title": "Psychological Training",
+          "desc": "High-altitude bridges and challenge elements to build courage and resolve."
+        },
+        {
+          "title": "Rope & Rescue",
+          "desc": "Mountain rope and high-angle transfer for complex terrain rescue."
+        },
+        {
+          "title": "Modular Expansion",
+          "desc": "Modular systems expand in phases as teams and budgets grow."
+        }
       ],
       "recommended": [
-        { "label": "Fixed Training Tower (Steel)", "desc": "Multi-story climbing and comprehensive training structure." },
-        { "label": "Psychological Challenge Course", "desc": "High-altitude elements to build mental toughness." },
-        { "label": "Mountain & Rope Rescue", "desc": "Complex terrain rope and high-angle transfer." },
-        { "label": "Fitness & Vestibular Equipment", "desc": "Physical and vestibular conditioning." }
+        {
+          "label": "Fixed Training Tower (Steel)",
+          "desc": "Multi-story climbing and comprehensive training structure."
+        },
+        {
+          "label": "Psychological Challenge Course",
+          "desc": "High-altitude elements to build mental toughness."
+        },
+        {
+          "label": "Mountain & Rope Rescue",
+          "desc": "Complex terrain rope and high-angle transfer."
+        },
+        {
+          "label": "Fitness & Vestibular Equipment",
+          "desc": "Physical and vestibular conditioning."
+        }
       ],
       "programs": [
         "Climbing, obstacles, and fitness",
@@ -92,15 +158,33 @@
         "TZJ simulates underground tunnels, shafts, and confined spaces with smoke and heat systems to create safe, controlled high-risk rescue training environments."
       ],
       "focus": [
-        { "title": "Underground Simulation", "desc": "Tunnels, shafts, and confined spaces for search and rescue in tight environments." },
-        { "title": "Smoke & Heat", "desc": "Smoke generation and heat systems for low visibility and high-temperature conditions." },
-        { "title": "Vertical Rescue", "desc": "Shaft and elevation scenarios for rope and litter vertical transfer." },
-        { "title": "Corrosion-Resistant Structure", "desc": "Hot-dip galvanized steel for humid, corrosive training environments." }
+        {
+          "title": "Underground Simulation",
+          "desc": "Tunnels, shafts, and confined spaces for search and rescue in tight environments."
+        },
+        {
+          "title": "Smoke & Heat",
+          "desc": "Smoke generation and heat systems for low visibility and high-temperature conditions."
+        },
+        {
+          "title": "Vertical Rescue",
+          "desc": "Shaft and elevation scenarios for rope and litter vertical transfer."
+        },
+        {
+          "title": "Corrosion-Resistant Structure",
+          "desc": "Hot-dip galvanized steel for humid, corrosive training environments."
+        }
       ],
       "recommended": [
-        { "label": "Modular Training Tower", "desc": "Flexible underground and confined-space simulation." },
+        {
+          "label": "Modular Training Tower",
+          "desc": "Flexible underground and confined-space simulation."
+        },
         { "label": "Mountain & Rope Rescue", "desc": "Shaft and vertical elevation rescue." },
-        { "label": "Burn Room & Interlocking Liner", "desc": "Search and self-rescue in smoke and heat." },
+        {
+          "label": "Burn Room & Interlocking Liner",
+          "desc": "Search and self-rescue in smoke and heat."
+        },
         { "label": "Hazmat Training", "desc": "Toxic gas and hazardous atmosphere response." }
       ],
       "programs": [
@@ -120,16 +204,40 @@
         "TZJ provides teaching-friendly towers, low-intensity burn rooms, and education centers with complete drawings to deliver standardized training bases within budget."
       ],
       "focus": [
-        { "title": "Teaching-Friendly Design", "desc": "Low-intensity burn rooms and open platforms for group instruction and repeat drills." },
-        { "title": "Education Center", "desc": "Immersive fire safety experiences for students and public education." },
-        { "title": "Multi-Program Use", "desc": "Open platforms shared across fire, safety engineering, and related programs." },
-        { "title": "Budget-Conscious Delivery", "desc": "Standard tower packages with full drawings for rapid, cost-effective build-out." }
+        {
+          "title": "Teaching-Friendly Design",
+          "desc": "Low-intensity burn rooms and open platforms for group instruction and repeat drills."
+        },
+        {
+          "title": "Education Center",
+          "desc": "Immersive fire safety experiences for students and public education."
+        },
+        {
+          "title": "Multi-Program Use",
+          "desc": "Open platforms shared across fire, safety engineering, and related programs."
+        },
+        {
+          "title": "Budget-Conscious Delivery",
+          "desc": "Standard tower packages with full drawings for rapid, cost-effective build-out."
+        }
       ],
       "recommended": [
-        { "label": "Fire Safety Education Center", "desc": "Immersive public fire safety experience space." },
-        { "label": "Standard Tower Series", "desc": "Preset layouts for rapid teaching deployment." },
-        { "label": "Modular Training Tower", "desc": "Flexible, open design for multi-program use." },
-        { "label": "Fire Simulation Systems", "desc": "Safe, controlled simulation for instruction." }
+        {
+          "label": "Fire Safety Education Center",
+          "desc": "Immersive public fire safety experience space."
+        },
+        {
+          "label": "Standard Tower Series",
+          "desc": "Preset layouts for rapid teaching deployment."
+        },
+        {
+          "label": "Modular Training Tower",
+          "desc": "Flexible, open design for multi-program use."
+        },
+        {
+          "label": "Fire Simulation Systems",
+          "desc": "Safe, controlled simulation for instruction."
+        }
       ],
       "programs": [
         "Fire and safety engineering lab training",
@@ -148,15 +256,33 @@
         "TZJ customizes facilities combining hazmat, simulation, and live-fire training to help industrial brigades build sustainable, repeatable emergency response capability."
       ],
       "focus": [
-        { "title": "Process Risk Alignment", "desc": "Hazmat scenarios tailored to site processes and media hazards." },
-        { "title": "Live Fire & Simulation", "desc": "Live fire and simulation combined for realism and operating cost balance." },
-        { "title": "Competition & Drills", "desc": "Competition facilities to motivate regular brigade training." },
-        { "title": "Plan-Based Exercises", "desc": "Scenarios aligned with site emergency plans for routine drills." }
+        {
+          "title": "Process Risk Alignment",
+          "desc": "Hazmat scenarios tailored to site processes and media hazards."
+        },
+        {
+          "title": "Live Fire & Simulation",
+          "desc": "Live fire and simulation combined for realism and operating cost balance."
+        },
+        {
+          "title": "Competition & Drills",
+          "desc": "Competition facilities to motivate regular brigade training."
+        },
+        {
+          "title": "Plan-Based Exercises",
+          "desc": "Scenarios aligned with site emergency plans for routine drills."
+        }
       ],
       "recommended": [
-        { "label": "Hazmat Training", "desc": "Leak, plug, and decontamination operational drills." },
+        {
+          "label": "Hazmat Training",
+          "desc": "Leak, plug, and decontamination operational drills."
+        },
         { "label": "Fire Simulation Systems", "desc": "Low-cost, repeatable simulation training." },
-        { "label": "Competition Training Facilities", "desc": "Motivate regular brigade skill maintenance." },
+        {
+          "label": "Competition Training Facilities",
+          "desc": "Motivate regular brigade skill maintenance."
+        },
         { "label": "Modular Training Tower", "desc": "Flexible deployment with phased expansion." }
       ],
       "programs": [

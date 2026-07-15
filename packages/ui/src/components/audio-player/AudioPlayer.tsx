@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import { useCallback, useEffect, useState } from "react";
-import { Loader2, Pause, Play, Volume2, VolumeX } from "lucide-react";
-import { useAudioPlayer } from "react-use-audio-player";
-import { cn } from "../../lib/utils";
-import { Button } from "../button/Button";
-import { Slider } from "../slider/Slider";
+import { Loader2, Pause, Play, Volume2, VolumeX } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { useAudioPlayer } from 'react-use-audio-player';
+import { cn } from '../../lib/utils';
+import { Button } from '../button/Button';
+import { Slider } from '../slider/Slider';
 
 function formatTime(seconds: number): string {
-  if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
+  if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds % 60);
-  return `${m}:${String(s).padStart(2, "0")}`;
+  return `${m}:${String(s).padStart(2, '0')}`;
 }
 
 export interface AudioPlayerProps {
@@ -79,7 +79,7 @@ export function AudioPlayer({ src, className, autoPlay = false }: AudioPlayerPro
   return (
     <div
       className={cn(
-        "relative flex w-full items-center gap-3 rounded-lg border border-border bg-card p-4 shadow-sm",
+        'relative flex w-full items-center gap-3 rounded-lg border border-border bg-card p-4 shadow-sm',
         className,
       )}
       role="group"
@@ -92,7 +92,7 @@ export function AudioPlayer({ src, className, autoPlay = false }: AudioPlayerPro
         className="h-10 w-10 shrink-0"
         disabled={!isReady || Boolean(error)}
         onClick={togglePlayPause}
-        aria-label={isPlaying ? "暂停" : "播放"}
+        aria-label={isPlaying ? '暂停' : '播放'}
       >
         {isLoading ? (
           <Loader2 className="h-4 w-4 animate-spin" />
@@ -138,7 +138,7 @@ export function AudioPlayer({ src, className, autoPlay = false }: AudioPlayerPro
           className="h-8 w-8 shrink-0"
           disabled={!isReady}
           onClick={toggleMute}
-          aria-label={isMuted ? "取消静音" : "静音"}
+          aria-label={isMuted ? '取消静音' : '静音'}
         >
           {isMuted || volume === 0 ? (
             <VolumeX className="h-4 w-4" />

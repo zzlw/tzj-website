@@ -1,22 +1,22 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useTranslations } from "next-intl";
-import { MediaImage as Image } from "@/components/MediaImage";
-import { ArrowRight } from "lucide-react";
-import type { ProductLine } from "@/lib/product-catalog";
+import { ArrowRight } from 'lucide-react';
+import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { MediaImage as Image } from '@/components/MediaImage';
+import type { ProductLine } from '@/lib/product-catalog';
 
 type ProductLineCardProps = {
   line: ProductLine;
   /** compact：概览矩阵；default：分区详情 */
-  variant?: "compact" | "default";
+  variant?: 'compact' | 'default';
 };
 
-export function ProductLineCard({ line, variant = "default" }: ProductLineCardProps) {
-  const t = useTranslations("cta");
-  const indexLabel = String(line.index).padStart(2, "0");
+export function ProductLineCard({ line, variant = 'default' }: ProductLineCardProps) {
+  const t = useTranslations('cta');
+  const indexLabel = String(line.index).padStart(2, '0');
 
-  if (variant === "compact") {
+  if (variant === 'compact') {
     return (
       <Link
         href={line.href}
@@ -86,7 +86,7 @@ export function ProductLineCard({ line, variant = "default" }: ProductLineCardPr
           </ul>
         ) : null}
         <span className="mt-5 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-primary">
-          {t("learnMore")}
+          {t('learnMore')}
           <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1.5" />
         </span>
       </div>

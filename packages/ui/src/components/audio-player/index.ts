@@ -1,8 +1,8 @@
-export { AudioPlayer, type AudioPlayerProps } from "./AudioPlayer";
 export {
+  type AudioLoadOptions,
+  type AudioPlayer as AudioPlayerController,
   AudioPlayerProvider,
   useAudioPlayer,
   useAudioPlayerContext,
-  type AudioPlayer as AudioPlayerController,
-  type AudioLoadOptions,
-} from "react-use-audio-player";
+} from 'react-use-audio-player';
+export { AudioPlayer, type AudioPlayerProps } from './AudioPlayer';

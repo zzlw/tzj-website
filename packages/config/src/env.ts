@@ -57,7 +57,7 @@ export const webEnv = webEnvSchema.parse(process.env);
 export const adminEnv = adminEnvSchema.parse(process.env);
 
 // Re-export schemas for extension
-export { baseEnvSchema, apiEnvSchema, webEnvSchema, adminEnvSchema };
+export { adminEnvSchema, apiEnvSchema, baseEnvSchema, webEnvSchema };
 
 // Type exports
 export type BaseEnv = z.infer<typeof baseEnvSchema>;

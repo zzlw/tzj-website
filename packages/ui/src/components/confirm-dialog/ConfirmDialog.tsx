@@ -1,6 +1,5 @@
-"use client";
+'use client';
 
-import { Button } from "../button";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -9,7 +8,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "../alert-dialog";
+} from '../alert-dialog';
+import { Button } from '../button';
 
 export interface ConfirmDialogProps {
   open: boolean;
@@ -28,8 +28,8 @@ export function ConfirmDialog({
   onOpenChange,
   title,
   description,
-  confirmLabel = "确认",
-  cancelLabel = "取消",
+  confirmLabel = '确认',
+  cancelLabel = '取消',
   onConfirm,
   loading,
 }: ConfirmDialogProps) {
@@ -38,18 +38,12 @@ export function ConfirmDialog({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
-          {description && (
-            <AlertDialogDescription>{description}</AlertDialogDescription>
-          )}
+          {description && <AlertDialogDescription>{description}</AlertDialogDescription>}
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={loading}>{cancelLabel}</AlertDialogCancel>
-          <Button
-            variant="destructive"
-            disabled={loading}
-            onClick={() => void onConfirm()}
-          >
-            {loading ? "处理中…" : confirmLabel}
+          <Button variant="destructive" disabled={loading} onClick={() => void onConfirm()}>
+            {loading ? '处理中…' : confirmLabel}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

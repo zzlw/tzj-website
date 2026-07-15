@@ -1,18 +1,16 @@
-import type { AppLocale } from "@/i18n/routing";
-import { kebabToCamelCase } from "./page-ids";
-import { resolveMessageLoadPlan } from "./message-modules";
+import type { AppLocale } from '@/i18n/routing';
+import { resolveMessageLoadPlan } from './message-modules';
+import { kebabToCamelCase } from './page-ids';
 
 /** 核心 messages（layout / header / nav 等全局命名空间）。 */
-async function loadCore(
-  locale: AppLocale,
-): Promise<Record<string, unknown>> {
+async function loadCore(locale: AppLocale): Promise<Record<string, unknown>> {
   switch (locale) {
-    case "zh-CN":
-      return (await import("@/messages/zh-CN.json")).default;
-    case "zh-TW":
-      return (await import("@/messages/zh-TW.json")).default;
-    case "en":
-      return (await import("@/messages/en.json")).default;
+    case 'zh-CN':
+      return (await import('@/messages/zh-CN.json')).default;
+    case 'zh-TW':
+      return (await import('@/messages/zh-TW.json')).default;
+    case 'en':
+      return (await import('@/messages/en.json')).default;
   }
 }
 
@@ -27,25 +25,62 @@ async function loadModule(
     let mod;
     const key = `${locale}/${name}`;
     switch (key) {
-      case "zh-CN/blocks": mod = await import("@/messages/zh-CN/blocks.json"); break;
-      case "zh-CN/content": mod = await import("@/messages/zh-CN/content.json"); break;
-      case "zh-CN/error": mod = await import("@/messages/zh-CN/error.json"); break;
-      case "zh-CN/catalog": mod = await import("@/messages/zh-CN/catalog.json"); break;
-      case "zh-CN/home": mod = await import("@/messages/zh-CN/home.json"); break;
-      case "zh-CN/solutions": mod = await import("@/messages/zh-CN/solutions.json"); break;
-      case "zh-TW/blocks": mod = await import("@/messages/zh-TW/blocks.json"); break;
-      case "zh-TW/content": mod = await import("@/messages/zh-TW/content.json"); break;
-      case "zh-TW/error": mod = await import("@/messages/zh-TW/error.json"); break;
-      case "zh-TW/catalog": mod = await import("@/messages/zh-TW/catalog.json"); break;
-      case "zh-TW/home": mod = await import("@/messages/zh-TW/home.json"); break;
-      case "zh-TW/solutions": mod = await import("@/messages/zh-TW/solutions.json"); break;
-      case "en/blocks": mod = await import("@/messages/en/blocks.json"); break;
-      case "en/content": mod = await import("@/messages/en/content.json"); break;
-      case "en/error": mod = await import("@/messages/en/error.json"); break;
-      case "en/catalog": mod = await import("@/messages/en/catalog.json"); break;
-      case "en/home": mod = await import("@/messages/en/home.json"); break;
-      case "en/solutions": mod = await import("@/messages/en/solutions.json"); break;
-      default: return null;
+      case 'zh-CN/blocks':
+        mod = await import('@/messages/zh-CN/blocks.json');
+        break;
+      case 'zh-CN/content':
+        mod = await import('@/messages/zh-CN/content.json');
+        break;
+      case 'zh-CN/error':
+        mod = await import('@/messages/zh-CN/error.json');
+        break;
+      case 'zh-CN/catalog':
+        mod = await import('@/messages/zh-CN/catalog.json');
+        break;
+      case 'zh-CN/home':
+        mod = await import('@/messages/zh-CN/home.json');
+        break;
+      case 'zh-CN/solutions':
+        mod = await import('@/messages/zh-CN/solutions.json');
+        break;
+      case 'zh-TW/blocks':
+        mod = await import('@/messages/zh-TW/blocks.json');
+        break;
+      case 'zh-TW/content':
+        mod = await import('@/messages/zh-TW/content.json');
+        break;
+      case 'zh-TW/error':
+        mod = await import('@/messages/zh-TW/error.json');
+        break;
+      case 'zh-TW/catalog':
+        mod = await import('@/messages/zh-TW/catalog.json');
+        break;
+      case 'zh-TW/home':
+        mod = await import('@/messages/zh-TW/home.json');
+        break;
+      case 'zh-TW/solutions':
+        mod = await import('@/messages/zh-TW/solutions.json');
+        break;
+      case 'en/blocks':
+        mod = await import('@/messages/en/blocks.json');
+        break;
+      case 'en/content':
+        mod = await import('@/messages/en/content.json');
+        break;
+      case 'en/error':
+        mod = await import('@/messages/en/error.json');
+        break;
+      case 'en/catalog':
+        mod = await import('@/messages/en/catalog.json');
+        break;
+      case 'en/home':
+        mod = await import('@/messages/en/home.json');
+        break;
+      case 'en/solutions':
+        mod = await import('@/messages/en/solutions.json');
+        break;
+      default:
+        return null;
     }
     return mod.default as Record<string, unknown>;
   } catch (err) {
@@ -70,14 +105,12 @@ async function loadPageFile(
 /** 合并核心 messages 与当前路由所需的模块（按需加载）。 */
 export async function loadMessages(
   locale: AppLocale,
-  pathname = "/",
+  pathname = '/',
 ): Promise<Record<string, unknown>> {
   const core = await loadCore(locale);
   const { extraModules, pageIds } = resolveMessageLoadPlan(pathname);
 
-  const extras = await Promise.all(
-    extraModules.map((name) => loadModule(locale, name)),
-  );
+  const extras = await Promise.all(extraModules.map((name) => loadModule(locale, name)));
 
   const pages: Record<string, unknown> = {};
   await Promise.all(

@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import dynamic from "next/dynamic";
-import type { SitePublicSettings } from "@tzj/types";
-import { Container } from "@/components/ui";
+import type { SitePublicSettings } from '@tzj/types';
+import dynamic from 'next/dynamic';
+import { Container } from '@/components/ui';
 
 const ContactSection = dynamic(
   () =>
-    import("@/components/sections/ContactSection").then((m) => ({
+    import('@/components/sections/ContactSection').then((m) => ({
       default: m.ContactSection,
     })),
   {

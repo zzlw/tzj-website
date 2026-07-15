@@ -1,23 +1,29 @@
-import Link from "next/link";
-import { MediaImage as Image } from "@/components/MediaImage";
-import { Clock, ArrowRight } from "lucide-react";
-import { getBlogs } from "@/lib/api";
-import type { Blog } from "@tzj/types";
-import { blogCategoryLabel, formatContentDate } from "@/lib/content-labels";
-import { buildListQuery, normalizePagination, parseContentListState, pickCoverImage, pickSummary } from "@/lib/content-list";
-import { getBlogCategoryFilter } from "@/lib/i18n/content-filters";
-import { getBlogSortOptions } from "@/lib/i18n/sort-options";
-import { Container, PageHero, SectionHeading, RbButton } from "@/components/ui";
-import { RelatedLinks } from "@/components/sections/blocks";
-import { ContentListShell, ContentPaginationShell } from "@/components/content/ContentListShell";
-import { ContentPagination } from "@/components/content/ContentPagination";
-import { getTranslations } from "next-intl/server";
-import { createPageMetadata } from "@/lib/i18n/metadata";
+import type { Blog } from '@tzj/types';
+import { ArrowRight, Clock } from 'lucide-react';
+import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
+import { ContentListShell, ContentPaginationShell } from '@/components/content/ContentListShell';
+import { ContentPagination } from '@/components/content/ContentPagination';
+import { MediaImage as Image } from '@/components/MediaImage';
+import { RelatedLinks } from '@/components/sections/blocks';
+import { Container, PageHero, RbButton, SectionHeading } from '@/components/ui';
+import { getBlogs } from '@/lib/api';
+import { blogCategoryLabel, formatContentDate } from '@/lib/content-labels';
+import {
+  buildListQuery,
+  normalizePagination,
+  parseContentListState,
+  pickCoverImage,
+  pickSummary,
+} from '@/lib/content-list';
+import { getBlogCategoryFilter } from '@/lib/i18n/content-filters';
+import { createPageMetadata } from '@/lib/i18n/metadata';
+import { getBlogSortOptions } from '@/lib/i18n/sort-options';
 
-const RELATED_HREFS = ["/resources/faqs", "/cases", "/resources/design-center"];
+const RELATED_HREFS = ['/resources/faqs', '/cases', '/resources/design-center'];
 
 export async function generateMetadata() {
-  return createPageMetadata({ namespace: "pages.resourcesBlog", path: "/resources/blog" });
+  return createPageMetadata({ namespace: 'pages.resourcesBlog', path: '/resources/blog' });
 }
 
 type PageProps = {
@@ -26,7 +32,7 @@ type PageProps = {
 
 async function fetchFeaturedBlog(): Promise<Blog | null> {
   try {
-    const res = await getBlogs({ limit: 24, sortBy: "publishedAt", sortOrder: "desc" });
+    const res = await getBlogs({ limit: 24, sortBy: 'publishedAt', sortOrder: 'desc' });
     return res.data?.find((b) => b.isFeatured) ?? res.data?.[0] ?? null;
   } catch {
     return null;
@@ -34,11 +40,11 @@ async function fetchFeaturedBlog(): Promise<Blog | null> {
 }
 
 export default async function BlogPage({ searchParams }: PageProps) {
-  const t = await getTranslations("pages.resourcesBlog");
-  const tList = await getTranslations("content.list");
-  const tContent = await getTranslations("content");
-  const tCta = await getTranslations("cta");
-  const tBlocks = await getTranslations("blocks.relatedLinks");
+  const t = await getTranslations('pages.resourcesBlog');
+  const tList = await getTranslations('content.list');
+  const tContent = await getTranslations('content');
+  const tCta = await getTranslations('cta');
+  const tBlocks = await getTranslations('blocks.relatedLinks');
 
   const categoryFilter = await getBlogCategoryFilter();
   const sortOptions = await getBlogSortOptions();
@@ -46,9 +52,9 @@ export default async function BlogPage({ searchParams }: PageProps) {
   const raw = await searchParams;
   const state = parseContentListState(raw, {
     limit: 9,
-    sortBy: "publishedAt",
-    sortOrder: "desc",
-    filterKey: "category",
+    sortBy: 'publishedAt',
+    sortOrder: 'desc',
+    filterKey: 'category',
   });
 
   const showFeatured = state.page === 1 && !state.filter;
@@ -59,7 +65,7 @@ export default async function BlogPage({ searchParams }: PageProps) {
 
   try {
     const [listRes, featuredBlog] = await Promise.all([
-      getBlogs(buildListQuery(state, "category")),
+      getBlogs(buildListQuery(state, 'category')),
       showFeatured ? fetchFeaturedBlog() : Promise.resolve(null),
     ]);
     items = listRes.data ?? [];
@@ -72,27 +78,30 @@ export default async function BlogPage({ searchParams }: PageProps) {
     /* empty */
   }
 
-  const relatedLinks = t.raw("relatedLinks") as Array<{ label: string; desc: string }>;
+  const relatedLinks = t.raw('relatedLinks') as Array<{ label: string; desc: string }>;
 
   return (
     <div className="pb-20">
       <PageHero
-        eyebrow={t("hero.eyebrow")}
-        title={t("hero.title")}
-        description={t("hero.description")}
+        eyebrow={t('hero.eyebrow')}
+        title={t('hero.title')}
+        description={t('hero.description')}
       />
 
       {featured ? (
         <section>
           <Container className="py-16 lg:py-24">
-            <SectionHeading eyebrow={t("featuredSection.eyebrow")} title={t("featuredSection.title")} />
+            <SectionHeading
+              eyebrow={t('featuredSection.eyebrow')}
+              title={t('featuredSection.title')}
+            />
             <Link
               href={`/resources/blog/${featured.slug}`}
               className="group mt-10 grid grid-cols-1 overflow-hidden border border-neutral-300 bg-white transition-colors hover:border-neutral-900 lg:grid-cols-2"
             >
               <div className="relative min-h-[240px] overflow-hidden bg-neutral-900">
                 <Image
-                  src={pickCoverImage(featured.coverImage, "/media/tower-wylie.jpg")}
+                  src={pickCoverImage(featured.coverImage, '/media/tower-wylie.jpg')}
                   alt={featured.title}
                   fill
                   sizes="(max-width: 1024px) 100vw, 50vw"
@@ -122,7 +131,7 @@ export default async function BlogPage({ searchParams }: PageProps) {
 
       <section className="bg-neutral-100">
         <Container className="py-16 lg:py-24">
-          <SectionHeading eyebrow={t("listSection.eyebrow")} title={t("listSection.title")} />
+          <SectionHeading eyebrow={t('listSection.eyebrow')} title={t('listSection.title')} />
 
           <div className="mt-8">
             <ContentListShell
@@ -134,7 +143,7 @@ export default async function BlogPage({ searchParams }: PageProps) {
             >
               {items.length === 0 ? (
                 <p className="mt-8 border border-dashed border-neutral-300 bg-white py-16 text-center text-sm text-secondary-text">
-                  {tList("emptyBlog")}
+                  {tList('emptyBlog')}
                 </p>
               ) : (
                 <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -167,7 +176,10 @@ export default async function BlogPage({ searchParams }: PageProps) {
               )}
 
               <ContentPaginationShell>
-                <ContentPagination pagination={pagination} unit={tContent("pagination.units.articles")} />
+                <ContentPagination
+                  pagination={pagination}
+                  unit={tContent('pagination.units.articles')}
+                />
               </ContentPaginationShell>
             </ContentListShell>
           </div>
@@ -175,17 +187,17 @@ export default async function BlogPage({ searchParams }: PageProps) {
       </section>
 
       <RelatedLinks
-        title={tBlocks("titleDefault")}
-        learnMore={tBlocks("learnMore")}
-        eyebrow={tBlocks("eyebrow")}
+        title={tBlocks('titleDefault')}
+        learnMore={tBlocks('learnMore')}
+        eyebrow={tBlocks('eyebrow')}
         links={relatedLinks.map((l, i) => ({ ...l, href: RELATED_HREFS[i]! }))}
       />
 
       <Container className="pt-4 lg:pt-8">
         <div className="flex flex-col items-center gap-5 border border-neutral-300 bg-white p-10 text-center md:p-14">
-          <h2 className="rb-h3 text-neutral-900">{t("cta.title")}</h2>
-          <p className="text-secondary-text">{t("cta.description")}</p>
-          <RbButton href="/contact">{tCta("bookConsult")}</RbButton>
+          <h2 className="rb-h3 text-neutral-900">{t('cta.title')}</h2>
+          <p className="text-secondary-text">{t('cta.description')}</p>
+          <RbButton href="/contact">{tCta('bookConsult')}</RbButton>
         </div>
       </Container>
     </div>

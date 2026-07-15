@@ -1,68 +1,66 @@
-"use client";
+'use client';
 
-import { useRef, useState } from "react";
-import { ImageOff, Loader2, Search, Upload, X } from "lucide-react";
-import { PhotoProvider } from "react-photo-view";
-import "react-photo-view/dist/react-photo-view.css";
-import "@/components/media/photo-view-overrides.css";
 import {
   Alert,
   Button,
   Card,
   CardContent,
   ConfirmDialog,
+  ImagePreviewProvider,
   Input,
   PageHeader,
+  TablePagination,
   Tabs,
   TabsList,
   TabsTrigger,
   TooltipProvider,
-  TablePagination,
-} from "@tzj/ui";
-import { Can } from "@/components/Can";
+} from '@tzj/ui';
+import { ImageOff, Loader2, Search, Upload, X } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { Can } from '@/components/Can';
+import { MediaCard } from '@/components/media/MediaCard';
+import { MediaPreviewDialog } from '@/components/media/MediaPreviewDialog';
 import {
   formatMediaDeleteError,
-  useMediaList,
-  useUploadMedia,
   useDeleteMedia,
-  useRestoreMedia,
+  useMediaList,
   usePurgeMedia,
   useReplaceSiteMedia,
-} from "@/features/media";
-import { ApiError } from "@/lib/apiClient";
-import { notifyError, notifySuccess } from "@/lib/notify";
-import type { MediaAsset } from "@/features/types";
-import { MediaCard } from "@/components/media/MediaCard";
-import { MediaPreviewDialog } from "@/components/media/MediaPreviewDialog";
+  useRestoreMedia,
+  useUploadMedia,
+} from '@/features/media';
+import type { MediaAsset } from '@/features/types';
+import { ApiError } from '@/lib/apiClient';
+import { notifyError, notifySuccess } from '@/lib/notify';
 
 const TYPE_FILTERS = [
-  { label: "全部", value: "" },
-  { label: "图片", value: "image" },
-  { label: "视频", value: "video" },
-  { label: "文件", value: "file" },
+  { label: '全部', value: '' },
+  { label: '图片', value: 'image' },
+  { label: '视频', value: 'video' },
+  { label: '文件', value: 'file' },
 ];
 
 const FOLDER_FILTERS = [
-  { label: "全部", value: "" },
-  { label: "站点资源", value: "content" },
-  { label: "CMS", value: "cms" },
+  { label: '全部', value: '' },
+  { label: '站点资源', value: 'content' },
+  { label: 'CMS', value: 'cms' },
 ] as const;
 
 const VIEW_TABS = [
-  { label: "媒体库", value: "library" },
-  { label: "回收站", value: "trash" },
+  { label: '媒体库', value: 'library' },
+  { label: '回收站', value: 'trash' },
 ] as const;
 
-type ViewTab = (typeof VIEW_TABS)[number]["value"];
+type ViewTab = (typeof VIEW_TABS)[number]['value'];
 
 export default function MediaPage() {
-  const [view, setView] = useState<ViewTab>("library");
-  const [type, setType] = useState("");
-  const [folder, setFolder] = useState("");
+  const [view, setView] = useState<ViewTab>('library');
+  const [type, setType] = useState('');
+  const [folder, setFolder] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(24);
-  const [search, setSearch] = useState("");
-  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<MediaAsset | null>(null);
   const [purgeTarget, setPurgeTarget] = useState<MediaAsset | null>(null);
@@ -72,7 +70,7 @@ export default function MediaPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const replaceFileRef = useRef<HTMLInputElement>(null);
 
-  const isTrash = view === "trash";
+  const isTrash = view === 'trash';
 
   const { data, isLoading, isError, error } = useMediaList({
     page,
@@ -103,9 +101,9 @@ export default function MediaPage() {
       }
     }
     if (ok > 0) {
-      notifySuccess(ok === 1 ? "上传成功" : `已上传 ${ok} 个文件`);
+      notifySuccess(ok === 1 ? '上传成功' : `已上传 ${ok} 个文件`);
     }
-    if (fileRef.current) fileRef.current.value = "";
+    if (fileRef.current) fileRef.current.value = '';
   }
 
   async function handleDeleteConfirm() {
@@ -114,7 +112,7 @@ export default function MediaPage() {
       await remove.mutateAsync(deleteTarget.id);
       if (previewAsset?.id === deleteTarget.id) setPreviewAsset(null);
       setDeleteTarget(null);
-      notifySuccess("已移入回收站");
+      notifySuccess('已移入回收站');
     } catch (e) {
       notifyError(e, formatMediaDeleteError(e));
     }
@@ -124,9 +122,9 @@ export default function MediaPage() {
     try {
       await restore.mutateAsync(asset.id);
       if (previewAsset?.id === asset.id) setPreviewAsset(null);
-      notifySuccess("已恢复");
+      notifySuccess('已恢复');
     } catch (e) {
-      notifyError(e, "恢复失败");
+      notifyError(e, '恢复失败');
     }
   }
 
@@ -136,9 +134,9 @@ export default function MediaPage() {
       await purge.mutateAsync(purgeTarget.id);
       if (previewAsset?.id === purgeTarget.id) setPreviewAsset(null);
       setPurgeTarget(null);
-      notifySuccess("已永久删除");
+      notifySuccess('已永久删除');
     } catch (e) {
-      notifyError(e, "永久删除失败");
+      notifyError(e, '永久删除失败');
     }
   }
 
@@ -154,7 +152,7 @@ export default function MediaPage() {
       return;
     }
     setReplaceFile(file);
-    if (replaceFileRef.current) replaceFileRef.current.value = "";
+    if (replaceFileRef.current) replaceFileRef.current.value = '';
   }
 
   async function handleReplaceConfirm() {
@@ -164,16 +162,16 @@ export default function MediaPage() {
       if (previewAsset?.id === replaceTarget.id) setPreviewAsset(null);
       setReplaceTarget(null);
       setReplaceFile(null);
-      notifySuccess("站点资源已替换", "若仍见旧图，请强制刷新或清除 CDN 缓存");
+      notifySuccess('站点资源已替换', '若仍见旧图，请强制刷新或清除 CDN 缓存');
     } catch (e) {
-      notifyError(e, "替换失败");
+      notifyError(e, '替换失败');
     }
   }
 
   function copyUrl(url: string) {
     navigator.clipboard.writeText(url);
     setCopiedUrl(url);
-    notifySuccess("链接已复制");
+    notifySuccess('链接已复制');
     setTimeout(() => setCopiedUrl(null), 1500);
   }
 
@@ -183,8 +181,8 @@ export default function MediaPage() {
         title="媒体库"
         description={
           isTrash
-            ? "回收站中的素材仍占用存储；永久删除需超级管理员权限"
-            : "站点资源可「替换」；CMS 素材上传至 cms/ 目录"
+            ? '回收站中的素材仍占用存储；永久删除需超级管理员权限'
+            : '站点资源可「替换」；CMS 素材上传至 cms/ 目录'
         }
         action={
           !isTrash ? (
@@ -196,16 +194,13 @@ export default function MediaPage() {
                 className="hidden"
                 onChange={(e) => onFiles(e.target.files)}
               />
-              <Button
-                onClick={() => fileRef.current?.click()}
-                disabled={upload.isPending}
-              >
+              <Button onClick={() => fileRef.current?.click()} disabled={upload.isPending}>
                 {upload.isPending ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
                   <Upload className="mr-2 h-4 w-4" />
                 )}
-                {upload.isPending ? "上传中…" : "上传文件"}
+                {upload.isPending ? '上传中…' : '上传文件'}
               </Button>
             </Can>
           ) : undefined
@@ -217,7 +212,7 @@ export default function MediaPage() {
         onValueChange={(v) => {
           setView(v as ViewTab);
           setPage(1);
-          setType("");
+          setType('');
         }}
         className="mb-4"
       >
@@ -242,7 +237,7 @@ export default function MediaPage() {
           >
             <TabsList>
               {TYPE_FILTERS.map((t) => (
-                <TabsTrigger key={t.value || "all"} value={t.value}>
+                <TabsTrigger key={t.value || 'all'} value={t.value}>
                   {t.label}
                 </TabsTrigger>
               ))}
@@ -258,7 +253,7 @@ export default function MediaPage() {
           >
             <TabsList>
               {FOLDER_FILTERS.map((t) => (
-                <TabsTrigger key={t.value || "all-folder"} value={t.value}>
+                <TabsTrigger key={t.value || 'all-folder'} value={t.value}>
                   {t.label}
                 </TabsTrigger>
               ))}
@@ -290,8 +285,8 @@ export default function MediaPage() {
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 aria-label="清除搜索"
                 onClick={() => {
-                  setSearchInput("");
-                  setSearch("");
+                  setSearchInput('');
+                  setSearch('');
                   setPage(1);
                 }}
               >
@@ -304,10 +299,8 @@ export default function MediaPage() {
 
       {isError && (
         <Alert variant="destructive" icon="error" className="mb-4">
-          加载失败：{error instanceof Error ? error.message : "未知错误"}
-          {error instanceof ApiError && error.status === 401
-            ? "（会话已过期，请重新登录）"
-            : null}
+          加载失败：{error instanceof Error ? error.message : '未知错误'}
+          {error instanceof ApiError && error.status === 401 ? '（会话已过期，请重新登录）' : null}
         </Alert>
       )}
 
@@ -323,56 +316,19 @@ export default function MediaPage() {
               {search
                 ? `未找到与「${search}」匹配的媒体`
                 : isTrash
-                  ? "回收站为空"
-                  : "媒体库为空，点击右上角上传"}
+                  ? '回收站为空'
+                  : '媒体库为空，点击右上角上传'}
             </p>
           </CardContent>
         </Card>
       ) : (
-        <PhotoProvider
-          maskOpacity={0.85}
-          toolbarRender={({ onScale, scale, rotate, onRotate, onClose }) => (
-            <div className="flex items-center gap-1 text-white">
-              <button
-                type="button"
-                className="cursor-pointer rounded px-2 py-1 text-sm hover:bg-white/10"
-                onClick={() => onScale(scale + 0.5)}
-              >
-                放大
-              </button>
-              <button
-                type="button"
-                className="cursor-pointer rounded px-2 py-1 text-sm hover:bg-white/10"
-                onClick={() => onScale(Math.max(0.5, scale - 0.5))}
-              >
-                缩小
-              </button>
-              <button
-                type="button"
-                className="cursor-pointer rounded px-2 py-1 text-sm hover:bg-white/10"
-                onClick={() => onRotate(rotate + 90)}
-              >
-                旋转
-              </button>
-              <span className="mx-1 h-4 w-px bg-white/20" aria-hidden />
-              <button
-                type="button"
-                className="flex cursor-pointer items-center gap-1 rounded px-2 py-1 text-sm hover:bg-white/10"
-                onClick={() => onClose()}
-                aria-label="关闭预览"
-              >
-                <X className="h-4 w-4" />
-                关闭
-              </button>
-            </div>
-          )}
-        >
+        <ImagePreviewProvider>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
             {assets.map((a) => (
               <MediaCard
                 key={a.id}
                 asset={a}
-                mode={isTrash ? "trash" : "active"}
+                mode={isTrash ? 'trash' : 'active'}
                 copiedUrl={copiedUrl}
                 onCopy={copyUrl}
                 onDelete={setDeleteTarget}
@@ -383,7 +339,7 @@ export default function MediaPage() {
               />
             ))}
           </div>
-        </PhotoProvider>
+        </ImagePreviewProvider>
       )}
 
       {pagination && (

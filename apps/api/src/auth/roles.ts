@@ -1,7 +1,7 @@
 export const Role = {
-  ADMIN: "admin",
-  EDITOR: "editor",
-  VIEWER: "viewer",
+  ADMIN: 'admin',
+  EDITOR: 'editor',
+  VIEWER: 'viewer',
 } as const;
 
 export type Role = (typeof Role)[keyof typeof Role];
@@ -20,5 +20,5 @@ export interface JwtPayload {
   sub: string;
   username: string;
   role: string;
-  type?: "access" | "refresh";
+  type?: 'access' | 'refresh';
 }

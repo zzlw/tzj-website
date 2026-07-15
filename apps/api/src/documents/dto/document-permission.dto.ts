@@ -1,42 +1,42 @@
-import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsArray, IsEnum, IsOptional, IsString, ValidateIf } from "class-validator";
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsArray, IsEnum, IsOptional, IsString, ValidateIf } from 'class-validator';
 
 export enum PermissionRole {
-  VIEWER = "viewer",
-  EDITOR = "editor",
-  OWNER = "owner",
+  VIEWER = 'viewer',
+  EDITOR = 'editor',
+  OWNER = 'owner',
 }
 
 export enum PermissionTargetType {
-  USER = "user",
-  ROLE = "role",
-  PUBLIC = "public",
+  USER = 'user',
+  ROLE = 'role',
+  PUBLIC = 'public',
 }
 
 export class CreateDocumentPermissionDto {
-  @ApiProperty({ description: "权限角色", enum: PermissionRole })
+  @ApiProperty({ description: '权限角色', enum: PermissionRole })
   @IsEnum(PermissionRole)
   role!: PermissionRole;
 
-  @ApiProperty({ description: "目标类型", enum: PermissionTargetType })
+  @ApiProperty({ description: '目标类型', enum: PermissionTargetType })
   @IsEnum(PermissionTargetType)
   targetType!: PermissionTargetType;
 
-  @ApiPropertyOptional({ description: "目标ID（用户ID或角色slug，public时为空）" })
+  @ApiPropertyOptional({ description: '目标ID（用户ID或角色slug，public时为空）' })
   @ValidateIf((o) => o.targetType !== PermissionTargetType.PUBLIC)
   @IsString()
   targetId?: string | null;
 }
 
 export class UpdateDocumentPermissionDto {
-  @ApiPropertyOptional({ description: "权限角色", enum: PermissionRole })
+  @ApiPropertyOptional({ description: '权限角色', enum: PermissionRole })
   @IsOptional()
   @IsEnum(PermissionRole)
   role?: PermissionRole;
 }
 
 export class BatchUpdatePermissionsDto {
-  @ApiProperty({ type: [CreateDocumentPermissionDto], description: "权限列表" })
+  @ApiProperty({ type: [CreateDocumentPermissionDto], description: '权限列表' })
   @IsArray()
   permissions!: CreateDocumentPermissionDto[];
 }

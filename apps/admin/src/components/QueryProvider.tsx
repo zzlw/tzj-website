@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { useState } from "react";
 import {
+  type DefaultOptions,
   MutationCache,
   QueryCache,
   QueryClient,
   QueryClientProvider,
-  type DefaultOptions,
-} from "@tanstack/react-query";
-import { ApiError } from "@/lib/apiClient";
-import { BASE_PATH } from "@/lib/config";
+} from '@tanstack/react-query';
+import { useState } from 'react';
+import { ApiError } from '@/lib/apiClient';
+import { BASE_PATH } from '@/lib/config';
 
 const defaultOptions: DefaultOptions = {
   queries: {
@@ -23,10 +23,10 @@ const defaultOptions: DefaultOptions = {
 };
 
 function handleAuthError(error: unknown) {
-  if (typeof window === "undefined") return;
+  if (typeof window === 'undefined') return;
   if (error instanceof ApiError && error.status === 401) {
     const login = `${BASE_PATH}/login`;
-    if (!window.location.pathname.endsWith("/login")) {
+    if (!window.location.pathname.endsWith('/login')) {
       window.location.href = login;
     }
   }
@@ -41,7 +41,5 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
         mutationCache: new MutationCache({ onError: handleAuthError }),
       }),
   );
-  return (
-    <QueryClientProvider client={client}>{children}</QueryClientProvider>
-  );
+  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 }

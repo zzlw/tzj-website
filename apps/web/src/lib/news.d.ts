@@ -1,16 +1,16 @@
 export interface NewsSection {
-    heading?: string;
-    paragraphs: string[];
-    bullets?: string[];
+  heading?: string;
+  paragraphs: string[];
+  bullets?: string[];
 }
 export interface NewsItem {
-    slug: string;
-    tag: string;
-    title: string;
-    date: string;
-    desc: string;
-    image: string;
-    content: NewsSection[];
+  slug: string;
+  tag: string;
+  title: string;
+  date: string;
+  desc: string;
+  image: string;
+  content: NewsSection[];
 }
 export declare const newsItems: NewsItem[];
 export declare function getNewsBySlug(slug: string): NewsItem | undefined;

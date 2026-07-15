@@ -1,7 +1,5 @@
-"use client";
+'use client';
 
-import { useMemo, useState } from "react";
-import { Eye, Search } from "lucide-react";
 import {
   Badge,
   Button,
@@ -24,8 +22,10 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@tzj/ui";
-import { Can } from "@/components/Can";
+} from '@tzj/ui';
+import { Eye, Search } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Can } from '@/components/Can';
 import {
   AUDIT_ACTION_OPTIONS,
   AUDIT_RESOURCE_OPTIONS,
@@ -34,11 +34,11 @@ import {
   auditUserLabel,
   formatAuditDateTime,
   useAuditLogList,
-} from "@/features/audit";
-import { useList } from "@/features/hooks";
-import type { AuditLogItem } from "@/features/types";
+} from '@/features/audit';
+import { useList } from '@/features/hooks';
+import type { AuditLogItem } from '@/features/types';
 
-const DEFAULT_SORT: DataTableSort = { column: "createdAt", order: "desc" };
+const DEFAULT_SORT: DataTableSort = { column: 'createdAt', order: 'desc' };
 
 function DetailBlock({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -52,13 +52,13 @@ function DetailBlock({ label, children }: { label: string; children: React.React
 export default function AuditLogsPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [userId, setUserId] = useState<string>("all");
-  const [resource, setResource] = useState<string>("all");
-  const [action, setAction] = useState<string>("all");
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
-  const [searchInput, setSearchInput] = useState("");
-  const [search, setSearch] = useState("");
+  const [userId, setUserId] = useState<string>('all');
+  const [resource, setResource] = useState<string>('all');
+  const [action, setAction] = useState<string>('all');
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
   const [sort, setSort] = useState<DataTableSort | null>(DEFAULT_SORT);
   const [detailId, setDetailId] = useState<string | null>(null);
 
@@ -66,9 +66,9 @@ export default function AuditLogsPage() {
     () => ({
       page,
       limit: pageSize,
-      userId: userId === "all" ? undefined : userId,
-      resource: resource === "all" ? undefined : resource,
-      action: action === "all" ? undefined : action,
+      userId: userId === 'all' ? undefined : userId,
+      resource: resource === 'all' ? undefined : resource,
+      action: action === 'all' ? undefined : action,
       from: from || undefined,
       to: to || undefined,
       search: search || undefined,
@@ -84,7 +84,7 @@ export default function AuditLogsPage() {
   const detailRow = rows.find((r) => r.id === detailId) ?? null;
 
   const { data: usersData } = useList<{ id: string; username: string; nickname?: string | null }>(
-    "users",
+    'users',
     { page: 1, limit: 100 },
   );
   const userOptions = usersData?.data ?? [];
@@ -92,47 +92,45 @@ export default function AuditLogsPage() {
   const columns: DataTableColumn<AuditLogItem>[] = useMemo(
     () => [
       {
-        key: "createdAt",
-        header: "时间",
+        key: 'createdAt',
+        header: '时间',
         sortable: true,
-        className: "whitespace-nowrap text-muted-foreground",
+        className: 'whitespace-nowrap text-muted-foreground',
         cell: (r) => formatAuditDateTime(r.createdAt),
       },
       {
-        key: "user",
-        header: "操作人",
+        key: 'user',
+        header: '操作人',
         sortable: true,
-        sortKey: "user",
-        className: "font-medium",
+        sortKey: 'user',
+        className: 'font-medium',
         cell: (r) => auditUserLabel(r),
       },
       {
-        key: "action",
-        header: "动作",
+        key: 'action',
+        header: '动作',
         sortable: true,
-        cell: (r) => (
-          <Badge variant="outline">{auditActionLabel(r.action)}</Badge>
-        ),
+        cell: (r) => <Badge variant="outline">{auditActionLabel(r.action)}</Badge>,
       },
       {
-        key: "resource",
-        header: "资源",
+        key: 'resource',
+        header: '资源',
         sortable: true,
         cell: (r) => auditResourceLabel(r.resource),
       },
       {
-        key: "resourceId",
-        header: "资源 ID",
+        key: 'resourceId',
+        header: '资源 ID',
         sortable: true,
-        className: "max-w-[140px] truncate font-mono text-xs text-muted-foreground",
-        cell: (r) => r.resourceId ?? "—",
+        className: 'max-w-[140px] truncate font-mono text-xs text-muted-foreground',
+        cell: (r) => r.resourceId ?? '—',
       },
       {
-        key: "ip",
-        header: "IP",
+        key: 'ip',
+        header: 'IP',
         sortable: true,
-        className: "whitespace-nowrap text-muted-foreground",
-        cell: (r) => r.ip ?? "—",
+        className: 'whitespace-nowrap text-muted-foreground',
+        cell: (r) => r.ip ?? '—',
       },
     ],
     [],
@@ -140,10 +138,7 @@ export default function AuditLogsPage() {
 
   return (
     <TooltipProvider>
-      <PageHeader
-        title="操作日志"
-        description="查看后台账号的操作记录，便于追溯与审计。"
-      />
+      <PageHeader title="操作日志" description="查看后台账号的操作记录，便于追溯与审计。" />
 
       <Card className="mb-6 border-border/80 py-0 shadow-sm">
         <CardContent className="flex flex-wrap items-center gap-3 p-4">
@@ -301,14 +296,14 @@ export default function AuditLogsPage() {
                 </span>
               ) : null}
             </DetailBlock>
-            <DetailBlock label="IP">{detailRow.ip ?? "—"}</DetailBlock>
+            <DetailBlock label="IP">{detailRow.ip ?? '—'}</DetailBlock>
             <DetailBlock label="User-Agent">
               <p className="break-all text-xs text-muted-foreground">
-                {detailRow.userAgent ?? "—"}
+                {detailRow.userAgent ?? '—'}
               </p>
             </DetailBlock>
             <DetailBlock label="Trace ID">
-              <span className="font-mono text-xs">{detailRow.traceId ?? "—"}</span>
+              <span className="font-mono text-xs">{detailRow.traceId ?? '—'}</span>
             </DetailBlock>
             <DetailBlock label="详情">
               {detailRow.detail ? (

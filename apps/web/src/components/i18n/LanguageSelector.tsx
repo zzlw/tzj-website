@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { createContext, useCallback, useContext, useState } from "react";
-import dynamic from "next/dynamic";
+import dynamic from 'next/dynamic';
+import { createContext, useCallback, useContext, useState } from 'react';
 
 const LanguageSelectorDrawer = dynamic(
   () =>
-    import("./LanguageSelectorDrawer").then((m) => ({
+    import('./LanguageSelectorDrawer').then((m) => ({
       default: m.LanguageSelectorDrawer,
     })),
   { ssr: false },
@@ -16,9 +16,7 @@ interface LanguageSelectorContextValue {
   close: () => void;
 }
 
-const LanguageSelectorContext = createContext<LanguageSelectorContextValue | null>(
-  null,
-);
+const LanguageSelectorContext = createContext<LanguageSelectorContextValue | null>(null);
 
 export function LanguageSelectorProvider({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
@@ -39,7 +37,7 @@ export function LanguageSelectorProvider({ children }: { children: React.ReactNo
 export function useLanguageSelector() {
   const ctx = useContext(LanguageSelectorContext);
   if (!ctx) {
-    throw new Error("useLanguageSelector must be used within LanguageSelectorProvider");
+    throw new Error('useLanguageSelector must be used within LanguageSelectorProvider');
   }
   return ctx;
 }

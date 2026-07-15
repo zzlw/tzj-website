@@ -1,20 +1,5 @@
-"use client";
+'use client';
 
-import { useMemo, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import {
-  Eye,
-  FileText,
-  FolderInput,
-  FolderOpen,
-  MoreHorizontal,
-  Pencil,
-  Pin,
-  Plus,
-  Tags,
-  Trash2,
-} from "lucide-react";
 import {
   Alert,
   Badge,
@@ -46,41 +31,56 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@tzj/ui";
-import { Can } from "@/components/Can";
-import { DocumentMoveDialog } from "@/components/documents/DocumentMoveDialog";
-import { DocumentTagsManageDialog } from "@/components/documents/DocumentTagsManageDialog";
-import { DocumentPermissionDialog } from "@/components/DocumentPermissionDialog";
-import { LastOperatorCell } from "@/components/LastOperatorCell";
-import type { DocumentsResourceConfig } from "@/features/resources/documents";
-import { buildDocListHref, useDocTags } from "@/features/documents";
-import { formatDateTime } from "@/features/constants";
-import { useList, useRemove } from "@/features/hooks";
-import type { InternalDocumentItem } from "@/features/types";
-import { notifyError, notifySuccess } from "@/lib/notify";
+} from '@tzj/ui';
+import {
+  Eye,
+  FileText,
+  FolderInput,
+  FolderOpen,
+  MoreHorizontal,
+  Pencil,
+  Pin,
+  Plus,
+  Tags,
+  Trash2,
+} from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useMemo, useState } from 'react';
+import { Can } from '@/components/Can';
+import { DocumentPermissionDialog } from '@/components/DocumentPermissionDialog';
+import { DocumentMoveDialog } from '@/components/documents/DocumentMoveDialog';
+import { DocumentTagsManageDialog } from '@/components/documents/DocumentTagsManageDialog';
+import { LastOperatorCell } from '@/components/LastOperatorCell';
+import { formatDateTime } from '@/features/constants';
+import { buildDocListHref, useDocTags } from '@/features/documents';
+import { useList, useRemove } from '@/features/hooks';
+import type { DocumentsResourceConfig } from '@/features/resources/documents';
+import type { InternalDocumentItem } from '@/features/types';
+import { notifyError, notifySuccess } from '@/lib/notify';
 
 const SORT_OPTIONS = [
-  { label: "最近更新", sortBy: "updatedAt", sortOrder: "desc" },
-  { label: "最近发布", sortBy: "publishedAt", sortOrder: "desc" },
-  { label: "标题 A–Z", sortBy: "title", sortOrder: "asc" },
-  { label: "阅读最多", sortBy: "viewCount", sortOrder: "desc" },
+  { label: '最近更新', sortBy: 'updatedAt', sortOrder: 'desc' },
+  { label: '最近发布', sortBy: 'publishedAt', sortOrder: 'desc' },
+  { label: '标题 A–Z', sortBy: 'title', sortOrder: 'asc' },
+  { label: '阅读最多', sortBy: 'viewCount', sortOrder: 'desc' },
 ] as const;
 
 function sortKey(sortBy: string, sortOrder: string) {
   return `${sortBy}:${sortOrder}`;
 }
 
-function perms(config: DocumentsResourceConfig, key: "create" | "edit" | "publish") {
+function perms(config: DocumentsResourceConfig, key: 'create' | 'edit' | 'publish') {
   const map = {
-    create: ["docs.create"],
-    edit: ["docs.edit"],
-    publish: ["docs.publish"],
+    create: ['docs.create'],
+    edit: ['docs.edit'],
+    publish: ['docs.publish'],
   } as const;
   return [...(config.permissions?.[key] ?? map[key])];
 }
 
 function deletePerm(config: DocumentsResourceConfig) {
-  return config.permissions?.delete ?? "docs.delete";
+  return config.permissions?.delete ?? 'docs.delete';
 }
 
 function MetaDot() {
@@ -116,7 +116,7 @@ function DocumentRowActions({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="min-w-56">
-          <Can anyPerm={perms(config, "edit")}>
+          <Can anyPerm={perms(config, 'edit')}>
             <DropdownMenuItem asChild>
               <Link href={editHref}>
                 <Pencil className="mr-2 h-4 w-4" />
@@ -124,7 +124,7 @@ function DocumentRowActions({
               </Link>
             </DropdownMenuItem>
           </Can>
-          <Can anyPerm={perms(config, "edit")}>
+          <Can anyPerm={perms(config, 'edit')}>
             <DropdownMenuItem onClick={() => setPermOpen(true)}>
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -144,7 +144,7 @@ function DocumentRowActions({
               权限管理
             </DropdownMenuItem>
           </Can>
-          <Can anyPerm={perms(config, "edit")}>
+          <Can anyPerm={perms(config, 'edit')}>
             <DropdownMenuItem onClick={onMove}>
               <FolderInput className="mr-2 h-4 w-4" />
               移动到…
@@ -198,28 +198,18 @@ function DocumentListRow({
   onDelete: () => void;
 }) {
   const readHref = config.detailPath?.(doc) ?? `/documents/mine/${doc.id}`;
-  const summary = doc.summary?.trim() || "暂无摘要";
+  const summary = doc.summary?.trim() || '暂无摘要';
   const pinned = doc.isPinned;
 
   return (
     <ContentListItem
       href={readHref}
       linkLabel={doc.title}
-      variant={pinned ? "pinned" : "default"}
-      icon={
-        pinned ? (
-          <Pin className="h-5 w-5 fill-current" />
-        ) : (
-          <FileText className="h-5 w-5" />
-        )
-      }
+      variant={pinned ? 'pinned' : 'default'}
+      icon={pinned ? <Pin className="h-5 w-5 fill-current" /> : <FileText className="h-5 w-5" />}
       title={doc.title}
       description={summary}
-      badges={
-        <>
-          {pinned ? <PinnedBadge /> : null}
-        </>
-      }
+      badges={<>{pinned ? <PinnedBadge /> : null}</>}
       tags={
         doc.tags?.length
           ? doc.tags.map((tag) => (
@@ -248,7 +238,7 @@ function DocumentListRow({
           )}
           <MetaDot />
           <span>更新 {formatDateTime(doc.updatedAt)}</span>
-          {doc.status === "published" && doc.publishedAt ? (
+          {doc.status === 'published' && doc.publishedAt ? (
             <>
               <MetaDot />
               <span>发布 {formatDateTime(doc.publishedAt)}</span>
@@ -260,42 +250,41 @@ function DocumentListRow({
             <>
               <MetaDot />
               <span className="inline-flex items-center gap-1">
-                <LastOperatorCell
-                  user={doc.lastOperatorUser}
-                  fallback={doc.lastOperator}
-                />
+                <LastOperatorCell user={doc.lastOperatorUser} fallback={doc.lastOperator} />
               </span>
             </>
           )}
           {/* 可见范围 */}
           <MetaDot />
           <span className="inline-flex items-center gap-1">
-            {doc.visibility === "public" && (
-              <Badge variant="outline" className="h-5 px-1.5 text-[10px] border-green-600 text-green-700 dark:border-green-500 dark:text-green-400">
+            {doc.visibility === 'public' && (
+              <Badge
+                variant="outline"
+                className="h-5 px-1.5 text-[10px] border-green-600 text-green-700 dark:border-green-500 dark:text-green-400"
+              >
                 全局可见
               </Badge>
             )}
-            {doc.visibility === "partial" && (
-              <Badge variant="outline" className="h-5 px-1.5 text-[10px] border-blue-600 text-blue-700 dark:border-blue-500 dark:text-blue-400">
+            {doc.visibility === 'partial' && (
+              <Badge
+                variant="outline"
+                className="h-5 px-1.5 text-[10px] border-blue-600 text-blue-700 dark:border-blue-500 dark:text-blue-400"
+              >
                 部分人可见
               </Badge>
             )}
-            {doc.visibility === "private" && (
-              <Badge variant="outline" className="h-5 px-1.5 text-[10px] border-gray-600 text-gray-700 dark:border-gray-500 dark:text-gray-400">
+            {doc.visibility === 'private' && (
+              <Badge
+                variant="outline"
+                className="h-5 px-1.5 text-[10px] border-gray-600 text-gray-700 dark:border-gray-500 dark:text-gray-400"
+              >
                 仅自己可见
               </Badge>
             )}
           </span>
         </>
       }
-      actions={
-        <DocumentRowActions
-          doc={doc}
-          config={config}
-          onMove={onMove}
-          onDelete={onDelete}
-        />
-      }
+      actions={<DocumentRowActions doc={doc} config={config} onMove={onMove} onDelete={onDelete} />}
     />
   );
 }
@@ -313,16 +302,12 @@ export function DocumentListView({
 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(defaultPageSize);
-  const [searchInput, setSearchInput] = useState("");
-  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
   const [sortIdx, setSortIdx] = useState(0);
-  const [deleteTarget, setDeleteTarget] = useState<InternalDocumentItem | null>(
-    null,
-  );
+  const [deleteTarget, setDeleteTarget] = useState<InternalDocumentItem | null>(null);
   const [tagsManageOpen, setTagsManageOpen] = useState(false);
-  const [moveTarget, setMoveTarget] = useState<InternalDocumentItem | null>(
-    null,
-  );
+  const [moveTarget, setMoveTarget] = useState<InternalDocumentItem | null>(null);
   const sort = SORT_OPTIONS[sortIdx] ?? SORT_OPTIONS[0];
   const folderId = extraListParams?.folderId;
   const activeTag = extraListParams?.tag;
@@ -373,7 +358,7 @@ export function DocumentListView({
       setDeleteTarget(null);
       notifySuccess(`${config.singular}已删除`);
     } catch (e) {
-      notifyError(e, "删除失败");
+      notifyError(e, '删除失败');
     }
   }
 
@@ -383,16 +368,13 @@ export function DocumentListView({
         title={config.title}
         action={
           <div className="flex flex-wrap items-center gap-2">
-            <Can anyPerm={["docs.create", "docs.manage"]}>
-              <Button
-                variant="outline"
-                onClick={() => setTagsManageOpen(true)}
-              >
+            <Can anyPerm={['docs.create', 'docs.manage']}>
+              <Button variant="outline" onClick={() => setTagsManageOpen(true)}>
                 <Tags className="mr-2 h-4 w-4" />
                 标签管理
               </Button>
             </Can>
-            <Can anyPerm={perms(config, "create")}>
+            <Can anyPerm={perms(config, 'create')}>
               <Button asChild>
                 <Link href={`${config.basePath}/new`}>
                   <Plus className="mr-2 h-4 w-4" />
@@ -404,10 +386,7 @@ export function DocumentListView({
         }
       />
 
-      <DocumentTagsManageDialog
-        open={tagsManageOpen}
-        onOpenChange={setTagsManageOpen}
-      />
+      <DocumentTagsManageDialog open={tagsManageOpen} onOpenChange={setTagsManageOpen} />
 
       <ListToolbar
         searchValue={searchInput}
@@ -452,7 +431,7 @@ export function DocumentListView({
           </CardContent>
         </Card>
       ) : (
-        <Can anyPerm={["docs.create", "docs.manage"]}>
+        <Can anyPerm={['docs.create', 'docs.manage']}>
           <div className="mb-4 flex justify-end">
             <Button
               variant="ghost"
@@ -469,7 +448,7 @@ export function DocumentListView({
 
       {isError ? (
         <Alert variant="destructive" icon="error" className="mb-4">
-          加载失败：{error instanceof Error ? error.message : "未知错误"}
+          加载失败：{error instanceof Error ? error.message : '未知错误'}
         </Alert>
       ) : null}
 
@@ -479,13 +458,9 @@ export function DocumentListView({
         <EmptyState
           icon={<FileText className="h-6 w-6" />}
           title="暂无文档"
-          description={
-            search
-              ? "没有匹配的文档，试试其他关键词"
-              : "点击上方「新增文档」开始创建"
-          }
+          description={search ? '没有匹配的文档，试试其他关键词' : '点击上方「新增文档」开始创建'}
           action={
-            <Can anyPerm={perms(config, "create")}>
+            <Can anyPerm={perms(config, 'create')}>
               <Button variant="outline" size="sm" asChild>
                 <Link href={`${config.basePath}/new`}>
                   <Plus className="mr-2 h-4 w-4" />
@@ -566,7 +541,6 @@ export function DocumentListView({
           onOpenChange={(open) => !open && setMoveTarget(null)}
         />
       ) : null}
-
     </TooltipProvider>
   );
 }

@@ -20,8 +20,8 @@ const DEFAULT_BASE_DELAY_MS = 300;
 function isRetryable(err: unknown): boolean {
   if (!(err instanceof Error)) return false;
   const cause = (err as Error & { cause?: { code?: string } }).cause;
-  if (cause?.code === "ECONNREFUSED" || cause?.code === "ECONNRESET") return true;
-  return err.name === "AbortError";
+  if (cause?.code === 'ECONNREFUSED' || cause?.code === 'ECONNRESET') return true;
+  return err.name === 'AbortError';
 }
 
 export async function retryFetch(
@@ -35,8 +35,8 @@ export async function retryFetch(
     retryWrites = false,
   } = opts;
 
-  const method = (init.method ?? "GET").toUpperCase();
-  const canRetry = retryWrites || ["GET", "HEAD", "OPTIONS"].includes(method);
+  const method = (init.method ?? 'GET').toUpperCase();
+  const canRetry = retryWrites || ['GET', 'HEAD', 'OPTIONS'].includes(method);
 
   let lastError: Error | undefined;
 
@@ -50,5 +50,5 @@ export async function retryFetch(
     }
   }
 
-  throw lastError ?? new Error("Unknown fetch error");
+  throw lastError ?? new Error('Unknown fetch error');
 }

@@ -1,38 +1,42 @@
-import { MediaImage as Image } from "@/components/MediaImage";
-import Link from "next/link";
-import { MapPin } from "lucide-react";
-import { getTranslations } from "next-intl/server";
-import { Container, SectionHeading, RbButton } from "@/components/ui";
+import { MapPin } from 'lucide-react';
+import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
+import { MediaImage as Image } from '@/components/MediaImage';
+import { Container, RbButton, SectionHeading } from '@/components/ui';
 
 const DELIVERY_SLUGS = [
-  "henan-fire-rescue",
-  "shandong-police",
-  "shanxi-mine-rescue",
-  "jiangsu-university",
-  "zhejiang-outdoor",
-  "guangdong-cfbt",
+  'henan-fire-rescue',
+  'shandong-police',
+  'shanxi-mine-rescue',
+  'jiangsu-university',
+  'zhejiang-outdoor',
+  'guangdong-cfbt',
 ] as const;
 
 const DELIVERY_IMAGES: Record<(typeof DELIVERY_SLUGS)[number], string> = {
-  "henan-fire-rescue": "/media/tower-wylie.jpg",
-  "shandong-police": "/media/tower-hamilton.jpg",
-  "shanxi-mine-rescue": "/media/tower-eastside.jpg",
-  "jiangsu-university": "/media/tower-macon.jpg",
-  "zhejiang-outdoor": "/media/tower-denver.jpg",
-  "guangdong-cfbt": "/media/tower-chino.jpg",
+  'henan-fire-rescue': '/media/tower-wylie.jpg',
+  'shandong-police': '/media/tower-hamilton.jpg',
+  'shanxi-mine-rescue': '/media/tower-eastside.jpg',
+  'jiangsu-university': '/media/tower-macon.jpg',
+  'zhejiang-outdoor': '/media/tower-denver.jpg',
+  'guangdong-cfbt': '/media/tower-chino.jpg',
 };
 
 export async function DeliveriesSection() {
-  const t = await getTranslations("home.deliveries");
+  const t = await getTranslations('home.deliveries');
 
   return (
     <section className="bg-white py-20 lg:py-28">
       <Container>
         <div className="mb-10 h-px bg-neutral-300 md:mb-12" />
         <div className="mb-12 flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
-          <SectionHeading eyebrow={t("eyebrow")} title={t("title")} description={t("description")} />
+          <SectionHeading
+            eyebrow={t('eyebrow')}
+            title={t('title')}
+            description={t('description')}
+          />
           <div className="shrink-0">
-            <RbButton href="/cases">{t("viewAll")}</RbButton>
+            <RbButton href="/cases">{t('viewAll')}</RbButton>
           </div>
         </div>
 

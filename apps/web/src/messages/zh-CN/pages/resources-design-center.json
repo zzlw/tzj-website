@@ -10,10 +10,22 @@
   },
   "catalogSection": { "eyebrow": "产品目录", "title": "按产品系列浏览", "viewDetails": "查看详情" },
   "catalog": [
-    { "title": "固定训练塔", "desc": "标准塔型系列与定制方案，钢结构 + 全镀锌墙体。", "href": "/fixed-tower" },
-    { "title": "模块化训练塔", "desc": "M/O/D/X 系列，可重组、可堆叠、可扩展。", "href": "/modular-tower" },
+    {
+      "title": "固定训练塔",
+      "desc": "标准塔型系列与定制方案，钢结构 + 全镀锌墙体。",
+      "href": "/fixed-tower"
+    },
+    {
+      "title": "模块化训练塔",
+      "desc": "M/O/D/X 系列，可重组、可堆叠、可扩展。",
+      "href": "/modular-tower"
+    },
     { "title": "燃烧室", "desc": "互锁隔热衬里燃烧室，耐用与隔热兼得。", "href": "/burn-rooms" },
-    { "title": "训练配件与道具", "desc": "海事、战术、危化品等多场景训练道具。", "href": "/accessories" }
+    {
+      "title": "训练配件与道具",
+      "desc": "海事、战术、危化品等多场景训练道具。",
+      "href": "/accessories"
+    }
   ],
   "resourcesSection": {
     "eyebrow": "设计资料",

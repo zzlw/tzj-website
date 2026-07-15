@@ -1,33 +1,33 @@
-import type { SocialChannelId } from "@/lib/social-channels";
-import { cn } from "@/lib/utils";
+import type { SocialChannelId } from '@/lib/social-channels';
+import { cn } from '@/lib/utils';
 
-const ICON_CLASS = "h-4 w-4";
+const ICON_CLASS = 'h-4 w-4';
 
 /** 社媒平台图标 — 新增渠道时在 switch 中补 SVG */
 export function SocialIcon({ id, className }: { id: SocialChannelId; className?: string }) {
   const cls = cn(ICON_CLASS, className);
 
   switch (id) {
-    case "wechat":
+    case 'wechat':
       return (
         <svg viewBox="0 0 24 24" className={cls} aria-hidden="true" fill="currentColor">
           <path d="M9.5 4C5.91 4 3 6.46 3 9.58c0 1.75.93 3.33 2.4 4.38l-.6 2.22 2.55-1.34c.7.2 1.44.31 2.15.31.28 0 .55-.02.82-.05-.17-.58-.26-1.19-.26-1.82 0-3.47 3.13-6.28 7-6.28.38 0 .75.03 1.11.08C17.09 5.67 13.54 4 9.5 4zm-2.9 4.1a1.1 1.1 0 110 2.2 1.1 1.1 0 010-2.2zm5.8 0a1.1 1.1 0 110 2.2 1.1 1.1 0 010-2.2z" />
           <path d="M21 11.42c0-2.62-2.47-4.75-5.5-4.75-3.04 0-5.5 2.13-5.5 4.75S12.46 16.17 15.5 16.17c.64 0 1.26-.11 1.84-.31l2.16 1.14-.51-1.88c1.23-.94 2.01-2.34 2.01-3.9zm-7.3 1.65a.9.9 0 110-1.8.9.9 0 010 1.8zm3.6 0a.9.9 0 110-1.8.9.9 0 010 1.8z" />
         </svg>
       );
-    case "douyin":
+    case 'douyin':
       return (
         <svg viewBox="0 0 24 24" className={cls} aria-hidden="true" fill="currentColor">
           <path d="M16.6 5.82s.51.5 0 0A4.28 4.28 0 0115.54 3h-3.09v12.4a2.59 2.59 0 01-2.59 2.5c-1.42 0-2.6-1.16-2.6-2.6 0-1.72 1.66-3.01 3.37-2.48V9.66c-3.45-.46-6.47 2.22-6.47 5.64 0 3.33 2.76 5.7 5.69 5.7 3.14 0 5.69-2.55 5.69-5.7V9.01a7.35 7.35 0 004.3 1.38V7.3a4.27 4.27 0 01-1-.48z" />
         </svg>
       );
-    case "weibo":
+    case 'weibo':
       return (
         <svg viewBox="0 0 24 24" className={cls} aria-hidden="true" fill="currentColor">
           <path d="M10.06 20.02c-3.9.48-7.32-1.52-7.65-4.46-.33-2.94 2.52-5.96 6.42-6.44 3.9-.48 7.32 1.52 7.65 4.46.33 2.94-2.52 5.96-6.42 6.44zm-.84-2.05c2.63-.32 4.57-2.35 4.33-4.53-.24-2.18-2.56-3.72-5.19-3.4-2.63.32-4.57 2.35-4.33 4.53.24 2.18 2.56 3.72 5.19 3.4zm8.9-8.38c-.18-.02-.37-.03-.56-.03-1.97 0-3.72 1.02-4.74 2.57 1.28-.15 2.64.08 3.84.68 1.47.76 2.52 2.01 2.92 3.48 1.2-.98 1.88-2.42 1.54-3.95-.28-1.24-1.28-2.3-2.5-2.75h-.5zm1.5-2.67C19.07 4.5 16.9 3.5 14.5 3.5c-4.97 0-9 3.58-9 8 0 .55.06 1.08.17 1.6 1.15-1.65 3.05-2.72 5.2-2.88 3.45-.25 6.48 1.85 6.85 4.72.05.38.07.76.07 1.14 0 .34-.02.67-.06 1 2.15-.95 3.67-3.08 3.67-5.56 0-3.31-2.69-6-6-6-.34 0-.67.03-1 .08z" />
         </svg>
       );
-    case "xiaohongshu":
+    case 'xiaohongshu':
       return (
         <svg viewBox="0 0 24 24" className={cls} aria-hidden="true" fill="currentColor">
           <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1.5 5.5h3v2h-3v-2zm-2 4h7v2h-3.5v4.5h-2V13.5H6.5v-2z" />

@@ -1,17 +1,17 @@
-import type { Metadata } from "next";
-import { MediaImage as Image } from "@/components/MediaImage";
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import { Check, ArrowRight } from "lucide-react";
-import { getTranslations } from "next-intl/server";
-import { generateSeo } from "@/lib/seo";
-import { getLocalizedSolution, getLocalizedSolutions } from "@/lib/i18n/solutions";
-import { getAllSolutionSlugs } from "@/lib/solutions";
-import { breadcrumbJsonLd } from "@/lib/jsonld";
-import { JsonLd } from "@/components/JsonLd";
-import { Container, Eyebrow, SectionHeading, RbButton, RbLink } from "@/components/ui";
-import { FeatureGrid } from "@/components/sections/blocks";
-import { StatBandI18n, ProcessBandI18n } from "@/components/sections/blocks-i18n";
+import { ArrowRight, Check } from 'lucide-react';
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+import { JsonLd } from '@/components/JsonLd';
+import { MediaImage as Image } from '@/components/MediaImage';
+import { FeatureGrid } from '@/components/sections/blocks';
+import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
+import { Container, Eyebrow, RbButton, RbLink, SectionHeading } from '@/components/ui';
+import { getLocalizedSolution, getLocalizedSolutions } from '@/lib/i18n/solutions';
+import { breadcrumbJsonLd } from '@/lib/jsonld';
+import { generateSeo } from '@/lib/seo';
+import { getAllSolutionSlugs } from '@/lib/solutions';
 
 interface SolutionPageProps {
   params: Promise<{ slug: string }>;
@@ -26,14 +26,14 @@ export async function generateMetadata({ params }: SolutionPageProps): Promise<M
   const solution = await getLocalizedSolution(slug);
   if (!solution) return {};
 
-  const t = await getTranslations("pages.solutionDetail");
-  const tCommon = await getTranslations("common");
+  const t = await getTranslations('pages.solutionDetail');
+  const tCommon = await getTranslations('common');
   return generateSeo({
-    title: `${solution.name}${t("meta.titleSuffix")}`,
+    title: `${solution.name}${t('meta.titleSuffix')}`,
     description: solution.tagline,
     path: `/solutions/${slug}`,
     image: solution.image,
-    siteName: tCommon("brandName"),
+    siteName: tCommon('brandName'),
   });
 }
 
@@ -42,9 +42,9 @@ export default async function SolutionDetailPage({ params }: SolutionPageProps) 
   const solution = await getLocalizedSolution(slug);
   if (!solution) notFound();
 
-  const t = await getTranslations("pages.solutionDetail");
-  const tCta = await getTranslations("cta");
-  const tBread = await getTranslations("breadcrumbs");
+  const t = await getTranslations('pages.solutionDetail');
+  const tCta = await getTranslations('cta');
+  const tBread = await getTranslations('breadcrumbs');
   const others = (await getLocalizedSolutions()).filter((s) => s.slug !== solution.slug);
 
   return (
@@ -52,8 +52,8 @@ export default async function SolutionDetailPage({ params }: SolutionPageProps) 
       <JsonLd
         data={[
           breadcrumbJsonLd([
-            { name: tBread("home"), path: "/" },
-            { name: tBread("solutions"), path: "/solutions" },
+            { name: tBread('home'), path: '/' },
+            { name: tBread('solutions'), path: '/solutions' },
             { name: solution.name, path: `/solutions/${slug}` },
           ]),
         ]}
@@ -65,19 +65,20 @@ export default async function SolutionDetailPage({ params }: SolutionPageProps) 
             src={solution.image}
             alt={solution.name}
             fill
-            preload loading="eager"
+            preload
+            loading="eager"
             sizes="100vw"
             className="object-cover"
           />
           <div className="absolute inset-0 rb-media-shade-strong" />
           <Container className="rb-on-media relative z-10 flex h-full flex-col justify-end pb-12 pt-24">
             <Eyebrow inverted>
-              {t("hero.eyebrowPrefix")}
+              {t('hero.eyebrowPrefix')}
               {solution.name}
             </Eyebrow>
             <h1 className="rb-h1 mt-4 max-w-3xl text-white">
               {solution.name}
-              {t("meta.titleSuffix")}
+              {t('meta.titleSuffix')}
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-relaxed text-white/85 md:text-lg">
               {solution.tagline}
@@ -89,14 +90,16 @@ export default async function SolutionDetailPage({ params }: SolutionPageProps) 
           <Container className="py-16 lg:py-24">
             <div className="grid grid-cols-1 gap-10 lg:grid-cols-2 lg:gap-16">
               <SectionHeading
-                eyebrow={t("intro.eyebrow")}
-                title={`${solution.name}${t("intro.titleSuffix")}`}
+                eyebrow={t('intro.eyebrow')}
+                title={`${solution.name}${t('intro.titleSuffix')}`}
               />
               <div className="flex flex-col justify-center gap-4 border-l-2 border-primary pl-6">
                 {solution.intro.map((p, i) => (
                   <p
                     key={i}
-                    className={i === 0 ? "text-lg leading-relaxed text-neutral-900" : "text-secondary-text"}
+                    className={
+                      i === 0 ? 'text-lg leading-relaxed text-neutral-900' : 'text-secondary-text'
+                    }
                   >
                     {p}
                   </p>
@@ -108,7 +111,7 @@ export default async function SolutionDetailPage({ params }: SolutionPageProps) 
 
         <section className="bg-neutral-100">
           <Container className="py-16 lg:py-24">
-            <SectionHeading eyebrow={t("focus.eyebrow")} title={t("focus.title")} />
+            <SectionHeading eyebrow={t('focus.eyebrow')} title={t('focus.title')} />
             <div className="mt-10">
               <FeatureGrid items={solution.focus} columns={4} />
             </div>
@@ -118,9 +121,9 @@ export default async function SolutionDetailPage({ params }: SolutionPageProps) 
         <section>
           <Container className="py-16 lg:py-24">
             <SectionHeading
-              eyebrow={t("recommended.eyebrow")}
-              title={t("recommended.title")}
-              description={t("recommended.description")}
+              eyebrow={t('recommended.eyebrow')}
+              title={t('recommended.title')}
+              description={t('recommended.description')}
             />
             <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2">
               {solution.recommended.map((r) => (
@@ -144,10 +147,13 @@ export default async function SolutionDetailPage({ params }: SolutionPageProps) 
 
         <section className="bg-neutral-100">
           <Container className="py-16 lg:py-24">
-            <SectionHeading eyebrow={t("programs.eyebrow")} title={t("programs.title")} />
+            <SectionHeading eyebrow={t('programs.eyebrow')} title={t('programs.title')} />
             <ul className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {solution.programs.map((p) => (
-                <li key={p} className="flex items-start gap-3 border border-neutral-300 bg-white p-5">
+                <li
+                  key={p}
+                  className="flex items-start gap-3 border border-neutral-300 bg-white p-5"
+                >
                   <Check className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
                   <span className="text-sm leading-relaxed text-neutral-900">{p}</span>
                 </li>
@@ -155,7 +161,7 @@ export default async function SolutionDetailPage({ params }: SolutionPageProps) 
             </ul>
             {solution.caseHref ? (
               <div className="mt-8">
-                <RbLink href={solution.caseHref}>{t("programs.caseLink")}</RbLink>
+                <RbLink href={solution.caseHref}>{t('programs.caseLink')}</RbLink>
               </div>
             ) : null}
           </Container>
@@ -167,7 +173,7 @@ export default async function SolutionDetailPage({ params }: SolutionPageProps) 
 
         <section>
           <Container className="py-16 lg:py-24">
-            <h2 className="rb-h3 mb-10 text-neutral-900">{t("others.title")}</h2>
+            <h2 className="rb-h3 mb-10 text-neutral-900">{t('others.title')}</h2>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {others.map((s) => {
                 const Icon = s.icon;
@@ -194,14 +200,14 @@ export default async function SolutionDetailPage({ params }: SolutionPageProps) 
         <Container>
           <div className="flex flex-col items-center gap-5 border border-neutral-300 bg-white p-10 text-center md:p-14">
             <h2 className="rb-h3 text-neutral-900">
-              {t("cta.titlePrefix")}
+              {t('cta.titlePrefix')}
               {solution.name}
-              {t("cta.titleSuffix")}
+              {t('cta.titleSuffix')}
             </h2>
-            <p className="max-w-xl text-secondary-text">{t("cta.description")}</p>
+            <p className="max-w-xl text-secondary-text">{t('cta.description')}</p>
             <div className="flex flex-wrap items-center justify-center gap-4">
-              <RbButton href="/contact">{tCta("bookConsult")}</RbButton>
-              <RbLink href="/solutions">{t("cta.backLink")}</RbLink>
+              <RbButton href="/contact">{tCta('bookConsult')}</RbButton>
+              <RbLink href="/solutions">{t('cta.backLink')}</RbLink>
             </div>
           </div>
         </Container>

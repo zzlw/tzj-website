@@ -1,8 +1,5 @@
-"use client";
+'use client';
 
-import { useMemo, useState } from "react";
-import Link from "next/link";
-import { Eye, Pencil, Plus, Search, Send, Trash2, Undo2 } from "lucide-react";
 import {
   Alert,
   Button,
@@ -10,6 +7,7 @@ import {
   CardContent,
   ConfirmDialog,
   DataTable,
+  type DataTableSort,
   Input,
   PageHeader,
   Select,
@@ -17,51 +15,57 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  TablePagination,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-  TablePagination,
-  type DataTableSort,
-} from "@tzj/ui";
-import { Can } from "@/components/Can";
-import { WEB_BASE } from "@/lib/config";
-import { useList, useUpdate, useRemove } from "@/features/hooks";
-import { notifyError, notifySuccess } from "@/lib/notify";
-import type { ResourceConfig } from "./config";
+} from '@tzj/ui';
+import { Eye, Pencil, Plus, Search, Send, Trash2, Undo2 } from 'lucide-react';
+import Link from 'next/link';
+import { type ReactNode, useMemo, useState } from 'react';
+import { Can } from '@/components/Can';
+import { useList, useRemove, useUpdate } from '@/features/hooks';
+import { WEB_BASE } from '@/lib/config';
+import { notifyError, notifySuccess } from '@/lib/notify';
+import type { ResourceConfig } from './config';
 
-function perms<T>(config: ResourceConfig<T>, key: "create" | "edit" | "publish") {
+function perms<T>(config: ResourceConfig<T>, key: 'create' | 'edit' | 'publish') {
   const map = {
-    create: ["content.create", "content.edit"],
-    edit: ["content.create", "content.edit"],
-    publish: ["content.create", "content.edit"],
+    create: ['content.create', 'content.edit'],
+    edit: ['content.create', 'content.edit'],
+    publish: ['content.create', 'content.edit'],
   } as const;
   return [...(config.permissions?.[key] ?? map[key])];
 }
 
 function deletePerm<T>(config: ResourceConfig<T>) {
-  return config.permissions?.delete ?? "content.delete";
+  return config.permissions?.delete ?? 'content.delete';
 }
 
 export function ResourceListView<T extends { id: string }>({
   config,
   defaultPageSize = 10,
   extraListParams,
+  rowActions,
+  titleOverride,
 }: {
   config: ResourceConfig<T>;
   /** 默认每页条数，用户可在分页器修改 */
   defaultPageSize?: number;
   /** 附加列表查询参数（如 folderId） */
   extraListParams?: Record<string, string | undefined>;
+  /** 行级自定义操作（追加在默认操作之前、extraActions 之后），如认领/退回/转移 */
+  rowActions?: (row: T) => ReactNode;
+  /** 覆盖 PageHeader 标题（子页面复用同一 config 时区分，如「我的客户」/「公海客户」） */
+  titleOverride?: string;
 }) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(defaultPageSize);
-  const [search, setSearch] = useState("");
-  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const [filters, setFilters] = useState<Record<string, string>>({});
-  const [sort, setSort] = useState<DataTableSort | null>(
-    config.defaultSort ?? null,
-  );
+  const [sort, setSort] = useState<DataTableSort | null>(config.defaultSort ?? null);
   const [deleteTarget, setDeleteTarget] = useState<T | null>(null);
 
   const params = useMemo(
@@ -86,12 +90,12 @@ export function ResourceListView<T extends { id: string }>({
 
   async function handleTogglePublish(row: T) {
     const cur = (row as { status?: string }).status;
-    const next = cur === "published" ? "draft" : "published";
+    const next = cur === 'published' ? 'draft' : 'published';
     try {
       await updateMut.mutateAsync({ id: row.id, payload: { status: next } });
-      notifySuccess(next === "published" ? "已发布" : "已转为草稿");
+      notifySuccess(next === 'published' ? '已发布' : '已转为草稿');
     } catch (e) {
-      notifyError(e, "操作失败");
+      notifyError(e, '操作失败');
     }
   }
 
@@ -102,16 +106,16 @@ export function ResourceListView<T extends { id: string }>({
       setDeleteTarget(null);
       notifySuccess(`${config.singular}已删除`);
     } catch (e) {
-      notifyError(e, "删除失败");
+      notifyError(e, '删除失败');
     }
   }
 
   return (
     <TooltipProvider>
       <PageHeader
-        title={config.title}
+        title={titleOverride ?? config.title}
         action={
-          <Can anyPerm={perms(config, "create")}>
+          <Can anyPerm={perms(config, 'create')}>
             <Button asChild>
               <Link href={`${config.basePath}/new`}>
                 <Plus className="mr-2 h-4 w-4" />
@@ -146,12 +150,12 @@ export function ResourceListView<T extends { id: string }>({
             {config.filters?.map((flt) => (
               <Select
                 key={flt.key}
-                value={filters[flt.key] ?? "__all__"}
+                value={filters[flt.key] ?? '__all__'}
                 onValueChange={(v) => {
                   setPage(1);
                   setFilters((prev) => {
                     const next = { ...prev };
-                    if (v && v !== "__all__") next[flt.key] = v;
+                    if (v && v !== '__all__') next[flt.key] = v;
                     else delete next[flt.key];
                     return next;
                   });
@@ -176,7 +180,7 @@ export function ResourceListView<T extends { id: string }>({
 
       {isError && (
         <Alert variant="destructive" icon="error" className="mb-4">
-          加载失败：{error instanceof Error ? error.message : "未知错误"}
+          加载失败：{error instanceof Error ? error.message : '未知错误'}
         </Alert>
       )}
 
@@ -193,6 +197,7 @@ export function ResourceListView<T extends { id: string }>({
         renderActions={(row) => (
           <div className="flex items-center justify-end gap-1">
             {config.extraActions?.(row)}
+            {rowActions?.(row)}
             {config.detailPath && (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -222,7 +227,7 @@ export function ResourceListView<T extends { id: string }>({
               </Tooltip>
             )}
             {config.publishable && (
-              <Can anyPerm={perms(config, "publish")}>
+              <Can anyPerm={perms(config, 'publish')}>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -231,7 +236,7 @@ export function ResourceListView<T extends { id: string }>({
                       className="h-8 w-8"
                       onClick={() => handleTogglePublish(row)}
                     >
-                      {(row as { status?: string }).status === "published" ? (
+                      {(row as { status?: string }).status === 'published' ? (
                         <Undo2 className="h-4 w-4" />
                       ) : (
                         <Send className="h-4 w-4" />
@@ -239,14 +244,14 @@ export function ResourceListView<T extends { id: string }>({
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    {(row as { status?: string }).status === "published"
-                      ? "下线为草稿"
-                      : "立即发布"}
+                    {(row as { status?: string }).status === 'published'
+                      ? '下线为草稿'
+                      : '立即发布'}
                   </TooltipContent>
                 </Tooltip>
               </Can>
             )}
-            <Can anyPerm={perms(config, "edit")}>
+            <Can anyPerm={perms(config, 'edit')}>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-8 w-8" asChild>

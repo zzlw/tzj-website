@@ -1,0 +1,11 @@
+{
+  "CORSRule": [
+    {
+      "AllowedOrigin": ["https://tzj.jiawen.live", "https://tzj-admin.jiawen.live"],
+      "AllowedMethod": ["GET", "PUT", "POST", "HEAD"],
+      "AllowedHeader": ["*"],
+      "ExposeHeader": ["ETag", "x-oss-request-id"],
+      "MaxAgeSeconds": 3000
+    }
+  ]
+}

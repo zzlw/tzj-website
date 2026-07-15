@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { Tag, X } from "lucide-react";
-import { cn } from "../../lib/utils";
-import { Button } from "../button";
-import { TagChip } from "./TagChip";
+import { Tag, X } from 'lucide-react';
+import { cn } from '../../lib/utils';
+import { Button } from '../button';
+import { TagChip } from './TagChip';
 
 export interface TagFilterItem {
   tag: string;
@@ -36,7 +36,7 @@ export function TagFilterBar({
 }: TagFilterBarProps) {
   if (loading) {
     return (
-      <div className={cn("flex items-center gap-2 text-xs text-muted-foreground", className)}>
+      <div className={cn('flex items-center gap-2 text-xs text-muted-foreground', className)}>
         <Tag className="h-3.5 w-3.5" />
         加载标签…
       </div>
@@ -49,7 +49,7 @@ export function TagFilterBar({
   const overflow = tags.length - visible.length;
 
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className={cn('space-y-2', className)}>
       <div className="flex flex-wrap items-center gap-2">
         <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
           <Tag className="h-3.5 w-3.5" />
@@ -106,9 +106,7 @@ export function TagFilterBar({
           />
         ))}
         {overflow > 0 ? (
-          <span className="self-center text-xs text-muted-foreground">
-            +{overflow} 个标签
-          </span>
+          <span className="self-center text-xs text-muted-foreground">+{overflow} 个标签</span>
         ) : null}
       </div>
     </div>

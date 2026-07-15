@@ -1,43 +1,57 @@
-import { MediaImage as Image } from "@/components/MediaImage";
-import { Check } from "lucide-react";
-import { getTranslations } from "next-intl/server";
-import { createPageMetadata } from "@/lib/i18n/metadata";
-import { Container, PageHero, SectionHeading } from "@/components/ui";
-import { RelatedLinks, CtaBand } from "@/components/sections/blocks";
-import { StatBandI18n, ProcessBandI18n } from "@/components/sections/blocks-i18n";
+import { Check } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
+import { MediaImage as Image } from '@/components/MediaImage';
+import { CtaBand, RelatedLinks } from '@/components/sections/blocks';
+import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
+import { Container, PageHero, SectionHeading } from '@/components/ui';
+import { createPageMetadata } from '@/lib/i18n/metadata';
 
-const RELATED_HREFS = ["/burn-rooms/comparison", "/burn-rooms", "/resources/inspections"];
+const RELATED_HREFS = ['/burn-rooms/comparison', '/burn-rooms', '/resources/inspections'];
 
 export async function generateMetadata() {
-  return createPageMetadata({ namespace: "pages.burnRoomsLiner", path: "/burn-rooms/liner" });
+  return createPageMetadata({ namespace: 'pages.burnRoomsLiner', path: '/burn-rooms/liner' });
 }
 
 export default async function LinerPage() {
-  const t = await getTranslations("pages.burnRoomsLiner");
-  const tCta = await getTranslations("cta");
-  const tBlocks = await getTranslations("blocks.relatedLinks");
+  const t = await getTranslations('pages.burnRoomsLiner');
+  const tCta = await getTranslations('cta');
+  const tBlocks = await getTranslations('blocks.relatedLinks');
 
-  const specs = t.raw("specs") as Array<{ item: string; value: string }>;
-  const features = t.raw("features") as string[];
-  const performance = t.raw("performance") as string[];
-  const relatedLinks = t.raw("relatedLinks") as Array<{ label: string; desc: string }>;
+  const specs = t.raw('specs') as Array<{ item: string; value: string }>;
+  const features = t.raw('features') as string[];
+  const performance = t.raw('performance') as string[];
+  const relatedLinks = t.raw('relatedLinks') as Array<{ label: string; desc: string }>;
 
   return (
     <div className="pb-20">
       <PageHero
-        eyebrow={t("hero.eyebrow")}
-        title={t("hero.title")}
-        description={t("hero.description")}
+        eyebrow={t('hero.eyebrow')}
+        title={t('hero.title')}
+        description={t('hero.description')}
       />
 
       <section>
         <Container className="pt-16 lg:pt-24">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="relative aspect-[4/3] overflow-hidden bg-neutral-900">
-              <Image src="/media/burn-room.webp" alt={t("gallery.linerAlt")} fill quality={70} sizes="(max-width: 768px) 50vw, 25vw" className="object-cover" />
+              <Image
+                src="/media/burn-room.webp"
+                alt={t('gallery.linerAlt')}
+                fill
+                quality={70}
+                sizes="(max-width: 768px) 50vw, 25vw"
+                className="object-cover"
+              />
             </div>
             <div className="relative aspect-[4/3] overflow-hidden bg-neutral-900">
-              <Image src="/media/galvanized-stair.webp" alt={t("gallery.steelAlt")} fill quality={70} sizes="(max-width: 768px) 50vw, 25vw" className="object-cover" />
+              <Image
+                src="/media/galvanized-stair.webp"
+                alt={t('gallery.steelAlt')}
+                fill
+                quality={70}
+                sizes="(max-width: 768px) 50vw, 25vw"
+                className="object-cover"
+              />
             </div>
           </div>
         </Container>
@@ -48,9 +62,9 @@ export default async function LinerPage() {
       <section>
         <Container className="py-16 lg:py-24">
           <SectionHeading
-            eyebrow={t("specsSection.eyebrow")}
-            title={t("specsSection.title")}
-            description={t("specsSection.description")}
+            eyebrow={t('specsSection.eyebrow')}
+            title={t('specsSection.title')}
+            description={t('specsSection.description')}
           />
           <div className="mt-10 overflow-x-auto">
             <table className="w-full min-w-[560px] border-collapse text-left">
@@ -70,8 +84,8 @@ export default async function LinerPage() {
       <section className="bg-neutral-100">
         <Container className="py-16 lg:py-24">
           <SectionHeading
-            eyebrow={t("featuresSection.eyebrow")}
-            title={t("featuresSection.title")}
+            eyebrow={t('featuresSection.eyebrow')}
+            title={t('featuresSection.title')}
           />
           <ul className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2">
             {features.map((f) => (
@@ -87,9 +101,9 @@ export default async function LinerPage() {
       <section>
         <Container className="py-16 lg:py-24">
           <SectionHeading
-            eyebrow={t("performanceSection.eyebrow")}
-            title={t("performanceSection.title")}
-            description={t("performanceSection.description")}
+            eyebrow={t('performanceSection.eyebrow')}
+            title={t('performanceSection.title')}
+            description={t('performanceSection.description')}
           />
           <ul className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-2">
             {performance.map((p) => (
@@ -106,16 +120,16 @@ export default async function LinerPage() {
       </section>
 
       <RelatedLinks
-        title={tBlocks("titleDefault")}
-        learnMore={tBlocks("learnMore")}
-        eyebrow={tBlocks("eyebrow")}
+        title={tBlocks('titleDefault')}
+        learnMore={tBlocks('learnMore')}
+        eyebrow={tBlocks('eyebrow')}
         links={relatedLinks.map((l, i) => ({ ...l, href: RELATED_HREFS[i]! }))}
       />
 
       <CtaBand
-        title={t("cta.title")}
-        primaryLabel={tCta("bookConsult")}
-        secondaryLabel={t("cta.secondaryLabel")}
+        title={t('cta.title')}
+        primaryLabel={tCta('bookConsult')}
+        secondaryLabel={t('cta.secondaryLabel')}
         secondaryHref="/burn-rooms/comparison"
       />
     </div>

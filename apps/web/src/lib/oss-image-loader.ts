@@ -1,4 +1,4 @@
-import type { ImageLoaderProps } from "next/image";
+import type { ImageLoaderProps } from 'next/image';
 
 /**
  * OSS 图片处理 Loader
@@ -16,8 +16,8 @@ export function ossImageLoader({ src, width, quality }: ImageLoaderProps): strin
     const url = new URL(src);
 
     // 本地开发 MinIO — 不做 OSS 处理，但附加 width 以满足 next/image 检查
-    if (url.hostname === "localhost" || url.hostname === "127.0.0.1") {
-      if (width) url.searchParams.set("w", String(width));
+    if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
+      if (width) url.searchParams.set('w', String(width));
       return url.toString();
     }
 
@@ -27,10 +27,7 @@ export function ossImageLoader({ src, width, quality }: ImageLoaderProps): strin
     }
 
     const q = quality ?? 75;
-    url.searchParams.set(
-      "x-oss-process",
-      `image/resize,w_${width}/quality,q_${q}/format,webp`,
-    );
+    url.searchParams.set('x-oss-process', `image/resize,w_${width}/quality,q_${q}/format,webp`);
     return url.toString();
   } catch {
     return src;

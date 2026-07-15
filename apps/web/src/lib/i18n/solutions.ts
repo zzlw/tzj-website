@@ -1,15 +1,15 @@
-import { getTranslations } from "next-intl/server";
-import type { Solution, SolutionConfig, SolutionFocus } from "@/lib/solutions";
-import { SOLUTION_META, solutionCasesHref, type SolutionMeta } from "@/lib/solutions";
+import { getTranslations } from 'next-intl/server';
+import type { Solution, SolutionConfig, SolutionFocus } from '@/lib/solutions';
+import { SOLUTION_META, type SolutionMeta, solutionCasesHref } from '@/lib/solutions';
 
-type SolutionListItem = Pick<Solution, "slug" | "name" | "icon" | "image" | "tagline">;
+type SolutionListItem = Pick<Solution, 'slug' | 'name' | 'icon' | 'image' | 'tagline'>;
 
 async function buildSolution(meta: SolutionMeta): Promise<Solution> {
   const t = await getTranslations(`solutions.${meta.slug}`);
-  const intro = t.raw("intro") as string[];
-  const focusRaw = t.raw("focus") as Array<{ title: string; desc: string }>;
-  const recommendedRaw = t.raw("recommended") as Array<{ label: string; desc: string }>;
-  const programs = t.raw("programs") as string[];
+  const intro = t.raw('intro') as string[];
+  const focusRaw = t.raw('focus') as Array<{ title: string; desc: string }>;
+  const recommendedRaw = t.raw('recommended') as Array<{ label: string; desc: string }>;
+  const programs = t.raw('programs') as string[];
 
   const focus: SolutionFocus[] = focusRaw.map((item, i) => ({
     icon: meta.focusIcons[i]!,
@@ -25,10 +25,10 @@ async function buildSolution(meta: SolutionMeta): Promise<Solution> {
 
   return {
     slug: meta.slug,
-    name: t("name"),
+    name: t('name'),
     icon: meta.icon,
     image: meta.image,
-    tagline: t("tagline"),
+    tagline: t('tagline'),
     intro,
     focus,
     recommended,
@@ -43,10 +43,10 @@ export async function getLocalizedSolutions(): Promise<SolutionListItem[]> {
     const t = await getTranslations(`solutions.${meta.slug}`);
     results.push({
       slug: meta.slug,
-      name: t("name"),
+      name: t('name'),
       icon: meta.icon,
       image: meta.image,
-      tagline: t("tagline"),
+      tagline: t('tagline'),
     });
   }
   return results;

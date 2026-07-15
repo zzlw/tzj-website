@@ -1,8 +1,8 @@
-import type { NavNode } from "@/lib/navigation";
-import { NAV_TREE } from "@/lib/navigation";
-import { buildProductNavNodes } from "@/lib/navigation-products";
-import { SOLUTION_META } from "@/lib/solutions";
-import type { SearchResult, SearchResultGroup } from "./types";
+import type { NavNode } from '@/lib/navigation';
+import { NAV_TREE } from '@/lib/navigation';
+import { buildProductNavNodes } from '@/lib/navigation-products';
+import { SOLUTION_META } from '@/lib/solutions';
+import type { SearchResult, SearchResultGroup } from './types';
 
 type StaticEntry = {
   href: string;
@@ -15,11 +15,11 @@ function solutionHref(slug: string): string {
 }
 
 function groupForHref(href: string): SearchResultGroup {
-  const base = href.split("#")[0]!;
+  const base = href.split('#')[0]!;
   if (SOLUTION_META.some((s) => solutionHref(s.slug) === base)) {
-    return "solution";
+    return 'solution';
   }
-  return "page";
+  return 'page';
 }
 
 function walkNav(
@@ -29,7 +29,7 @@ function walkNav(
   seen: Set<string>,
 ) {
   for (const node of nodes) {
-    const href = node.href.split("#")[0] || node.href;
+    const href = node.href.split('#')[0] || node.href;
     const label = labelFor(node.key);
     if (!seen.has(href)) {
       seen.add(href);
@@ -67,7 +67,7 @@ export function buildStaticSearchEntries(
       out.push({
         href,
         label: solutionNameFor(meta.slug),
-        group: "solution",
+        group: 'solution',
       });
     }
   }
@@ -86,10 +86,11 @@ export function searchStaticEntries(
 
   const filtered = entries
     .filter((e) => matchesQuery(e.label, q) || matchesQuery(e.href, q))
-    .sort((a, b) => matchRank(a.label, q) - matchRank(b.label, q) || a.label.localeCompare(b.label));
+    .sort(
+      (a, b) => matchRank(a.label, q) - matchRank(b.label, q) || a.label.localeCompare(b.label),
+    );
 
-  const slice =
-    options?.limit != null ? filtered.slice(0, options.limit) : filtered;
+  const slice = options?.limit != null ? filtered.slice(0, options.limit) : filtered;
   return slice.map(toResult);
 }
 

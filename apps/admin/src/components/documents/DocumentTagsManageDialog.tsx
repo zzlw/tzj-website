@@ -1,7 +1,5 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Pencil, Plus, Tags, Trash2 } from "lucide-react";
 import {
   Button,
   Dialog,
@@ -19,16 +17,18 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@tzj/ui";
-import { Can } from "@/components/Can";
+} from '@tzj/ui';
+import { Pencil, Plus, Tags, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { Can } from '@/components/Can';
 import {
   useCreateDocTag,
   useDeleteDocTag,
   useDocTags,
   useMergeDocTags,
   useRenameDocTag,
-} from "@/features/documents";
-import { notifyError, notifySuccess } from "@/lib/notify";
+} from '@/features/documents';
+import { notifyError, notifySuccess } from '@/lib/notify';
 
 export function DocumentTagsManageDialog({
   open,
@@ -43,21 +43,21 @@ export function DocumentTagsManageDialog({
   const mergeMut = useMergeDocTags();
   const deleteMut = useDeleteDocTag();
 
-  const [newName, setNewName] = useState("");
+  const [newName, setNewName] = useState('');
   const [renameFrom, setRenameFrom] = useState<string | null>(null);
-  const [renameTo, setRenameTo] = useState("");
+  const [renameTo, setRenameTo] = useState('');
   const [mergeFrom, setMergeFrom] = useState<string | null>(null);
-  const [mergeTo, setMergeTo] = useState("");
+  const [mergeTo, setMergeTo] = useState('');
 
   async function handleCreate() {
     const name = newName.trim();
     if (!name) return;
     try {
       await createMut.mutateAsync(name);
-      setNewName("");
+      setNewName('');
       notifySuccess(`标签「${name}」已创建`);
     } catch (e) {
-      notifyError(e, "创建失败");
+      notifyError(e, '创建失败');
     }
   }
 
@@ -66,10 +66,10 @@ export function DocumentTagsManageDialog({
     try {
       await renameMut.mutateAsync({ from: renameFrom, to: renameTo.trim() });
       setRenameFrom(null);
-      setRenameTo("");
-      notifySuccess("标签已重命名");
+      setRenameTo('');
+      notifySuccess('标签已重命名');
     } catch (e) {
-      notifyError(e, "重命名失败");
+      notifyError(e, '重命名失败');
     }
   }
 
@@ -78,10 +78,10 @@ export function DocumentTagsManageDialog({
     try {
       await mergeMut.mutateAsync({ from: mergeFrom, to: mergeTo.trim() });
       setMergeFrom(null);
-      setMergeTo("");
-      notifySuccess("标签已合并");
+      setMergeTo('');
+      notifySuccess('标签已合并');
     } catch (e) {
-      notifyError(e, "合并失败");
+      notifyError(e, '合并失败');
     }
   }
 
@@ -89,9 +89,9 @@ export function DocumentTagsManageDialog({
     if (!window.confirm(`删除标签「${tag}」？将从所有文档中移除。`)) return;
     try {
       await deleteMut.mutateAsync(tag);
-      notifySuccess("标签已删除");
+      notifySuccess('标签已删除');
     } catch (e) {
-      notifyError(e, "删除失败");
+      notifyError(e, '删除失败');
     }
   }
 
@@ -103,13 +103,11 @@ export function DocumentTagsManageDialog({
             <Tags className="h-5 w-5 text-muted-foreground" />
             标签管理
           </DialogTitle>
-          <DialogDescription>
-            统一管理标签命名；重命名与合并会同步更新所有文档。
-          </DialogDescription>
+          <DialogDescription>统一管理标签命名；重命名与合并会同步更新所有文档。</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 px-6 py-4">
-          <Can anyPerm={["docs.create"]}>
+          <Can anyPerm={['docs.create']}>
             <div className="space-y-1.5">
               <Label htmlFor="new-tag-name">新建标签</Label>
               <div className="flex items-center gap-2">
@@ -120,7 +118,7 @@ export function DocumentTagsManageDialog({
                   onChange={(e) => setNewName(e.target.value)}
                   placeholder="输入标签名称"
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") void handleCreate();
+                    if (e.key === 'Enter') void handleCreate();
                   }}
                 />
                 <Button
@@ -165,7 +163,7 @@ export function DocumentTagsManageDialog({
                         {row.count}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Can anyPerm={["docs.manage"]}>
+                        <Can anyPerm={['docs.manage']}>
                           <div className="flex justify-end gap-0.5">
                             <Button
                               variant="ghost"
@@ -215,11 +213,7 @@ export function DocumentTagsManageDialog({
                 >
                   确认重命名
                 </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setRenameFrom(null)}
-                >
+                <Button size="sm" variant="ghost" onClick={() => setRenameFrom(null)}>
                   取消
                 </Button>
                 <Button
@@ -228,7 +222,7 @@ export function DocumentTagsManageDialog({
                   className="ml-auto"
                   onClick={() => {
                     setMergeFrom(renameFrom);
-                    setMergeTo("");
+                    setMergeTo('');
                     setRenameFrom(null);
                   }}
                 >
@@ -240,9 +234,7 @@ export function DocumentTagsManageDialog({
 
           {mergeFrom ? (
             <div className="rounded-lg border border-border/80 bg-muted/30 p-3 space-y-2">
-              <p className="text-sm font-medium">
-                将「{mergeFrom}」合并到
-              </p>
+              <p className="text-sm font-medium">将「{mergeFrom}」合并到</p>
               <Input
                 value={mergeTo}
                 onChange={(e) => setMergeTo(e.target.value)}
@@ -262,11 +254,7 @@ export function DocumentTagsManageDialog({
                 >
                   确认合并
                 </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setMergeFrom(null)}
-                >
+                <Button size="sm" variant="ghost" onClick={() => setMergeFrom(null)}>
                   取消
                 </Button>
               </div>

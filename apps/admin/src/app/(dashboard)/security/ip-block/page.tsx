@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Card, CardContent, DateRangePicker, PageHeader } from "@tzj/ui";
-import { IpBlockPanel } from "@/components/security/IpBlockPanel";
+import { Card, CardContent, DateRangePicker, PageHeader } from '@tzj/ui';
+import { useState } from 'react';
+import { IpBlockPanel } from '@/components/security/IpBlockPanel';
 
 export default function SecurityIpBlockPage() {
   const [from, setFrom] = useState<string | undefined>();

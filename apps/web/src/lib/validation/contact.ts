@@ -35,7 +35,7 @@ export function validateContactForm(
   const phone = values.phone.trim();
   if (!phone) {
     errors.phone = messages.phoneRequired;
-  } else if (!PHONE_RE.test(phone.replace(/\s/g, ""))) {
+  } else if (!PHONE_RE.test(phone.replace(/\s/g, ''))) {
     errors.phone = messages.phoneInvalid;
   }
 

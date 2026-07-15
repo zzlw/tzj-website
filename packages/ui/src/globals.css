@@ -30,6 +30,13 @@
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
+  /* 默认刻度到 3xl(1.5rem)，显式声明以保持自定义刻度集中一致；
+     各 app 可在自身 @theme 覆盖（如 web 的锐利 3xl=8px / 4xl=2rem）。 */
+  --radius-2xl: 1rem;
+  --radius-3xl: 1.5rem;
+  --radius-4xl: 2rem;
+  --radius-6xl: 3rem;
+  --radius-8xl: 4rem;
 
   --font-sans: "Inter", "Noto Sans SC", system-ui, -apple-system, sans-serif;
 
@@ -76,7 +83,9 @@
     cursor: pointer;
   }
 
-  input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="checkbox"]):not([type="radio"]):not([type="file"]):not(:disabled),
+  input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="checkbox"]):not(
+    [type="radio"]
+  ):not([type="file"]):not(:disabled),
   textarea:not(:disabled),
   [contenteditable="true"]:not([aria-disabled="true"]) {
     cursor: text;

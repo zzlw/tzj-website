@@ -39,12 +39,18 @@
     "clsx": "^2.1.1",
     "lucide-react": "^1.22.0",
     "react-day-picker": "^10.0.1",
+    "react-markdown": "^10.1.0",
+    "react-photo-view": "^1.2.7",
+    "rehype-sanitize": "^6.0.0",
+    "remark-gfm": "^4.0.1",
     "react-use-audio-player": "^4.0.2",
     "sonner": "^2.0.7",
-    "tailwind-merge": "^3.6.0"
+    "tailwind-merge": "^3.6.0",
+    "vditor": "^3.11.2"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.1",
+    "@types/node": "^26.0.1",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "react": "^19.2.7",

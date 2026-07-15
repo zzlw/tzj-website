@@ -1,11 +1,11 @@
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-import { getTranslations } from "next-intl/server";
-import { Container, SectionHeading, RbButton } from "@/components/ui";
-import { getLocalizedSolutions } from "@/lib/i18n/solutions";
+import { ArrowRight } from 'lucide-react';
+import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
+import { Container, RbButton, SectionHeading } from '@/components/ui';
+import { getLocalizedSolutions } from '@/lib/i18n/solutions';
 
 export async function SolutionsSection() {
-  const t = await getTranslations("home.solutions");
+  const t = await getTranslations('home.solutions');
   const solutions = await getLocalizedSolutions();
 
   return (
@@ -13,12 +13,12 @@ export async function SolutionsSection() {
       <Container>
         <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
           <SectionHeading
-            eyebrow={t("eyebrow")}
-            title={t("title")}
-            description={t("description")}
+            eyebrow={t('eyebrow')}
+            title={t('title')}
+            description={t('description')}
           />
           <div className="shrink-0">
-            <RbButton href="/solutions">{t("viewAll")}</RbButton>
+            <RbButton href="/solutions">{t('viewAll')}</RbButton>
           </div>
         </div>
 
@@ -40,9 +40,11 @@ export async function SolutionsSection() {
                 <h3 className="rb-h5 text-neutral-900 transition-colors group-hover:text-primary">
                   {s.name}
                 </h3>
-                <p className="mt-2 flex-1 text-sm leading-relaxed text-secondary-text">{s.tagline}</p>
+                <p className="mt-2 flex-1 text-sm leading-relaxed text-secondary-text">
+                  {s.tagline}
+                </p>
                 <span className="mt-5 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-primary">
-                  {t("viewSolution")}
+                  {t('viewSolution')}
                   <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1.5" />
                 </span>
               </Link>

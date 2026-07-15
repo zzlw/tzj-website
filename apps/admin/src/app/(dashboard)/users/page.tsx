@@ -1,9 +1,5 @@
-"use client";
+'use client';
 
-import { useMemo, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { ArrowLeft, Plus, Search, Trash2, UserCog } from "lucide-react";
 import {
   Alert,
   Badge,
@@ -20,44 +16,44 @@ import {
   SelectValue,
   TablePagination,
   TooltipProvider,
-} from "@tzj/ui";
-import { useList, useRemove } from "@/features/hooks";
-import { useRoleOptions, type RoleOption } from "@/features/access";
-import { notifyError, notifySuccess } from "@/lib/notify";
-import type { UserItem } from "@/features/types";
-import { roleLabel } from "@/features/users";
-import { formatDate } from "@/features/constants";
+} from '@tzj/ui';
+import { ArrowLeft, Plus, Search, Trash2, UserCog } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useMemo, useState } from 'react';
+import { type RoleOption, useRoleOptions } from '@/features/access';
+import { formatDate } from '@/features/constants';
+import { useList, useRemove } from '@/features/hooks';
+import type { UserItem } from '@/features/types';
+import { roleLabel } from '@/features/users';
+import { notifyError, notifySuccess } from '@/lib/notify';
 
 const COLUMNS = (roleOptions: RoleOption[]): DataTableColumn<UserItem>[] => [
   {
-    key: "username",
-    header: "用户名",
-    className: "font-medium",
+    key: 'username',
+    header: '用户名',
+    className: 'font-medium',
     cell: (r) => (
       <div>
         <p>{r.username}</p>
-        {r.nickname ? (
-          <p className="text-xs text-muted-foreground">{r.nickname}</p>
-        ) : null}
+        {r.nickname ? <p className="text-xs text-muted-foreground">{r.nickname}</p> : null}
       </div>
     ),
   },
   {
-    key: "role",
-    header: "角色",
-    cell: (r) => (
-      <Badge variant="outline">{roleLabel(r.role, roleOptions)}</Badge>
-    ),
+    key: 'role',
+    header: '角色',
+    cell: (r) => <Badge variant="outline">{roleLabel(r.role, roleOptions)}</Badge>,
   },
   {
-    key: "email",
-    header: "邮箱",
-    className: "text-muted-foreground",
-    cell: (r) => r.email ?? "—",
+    key: 'email',
+    header: '邮箱',
+    className: 'text-muted-foreground',
+    cell: (r) => r.email ?? '—',
   },
   {
-    key: "isActive",
-    header: "状态",
+    key: 'isActive',
+    header: '状态',
     cell: (r) =>
       r.isActive ? (
         <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
@@ -70,19 +66,19 @@ const COLUMNS = (roleOptions: RoleOption[]): DataTableColumn<UserItem>[] => [
       ),
   },
   {
-    key: "lastLoginAt",
-    header: "最近登录",
-    className: "whitespace-nowrap text-muted-foreground",
-    cell: (r) => (r.lastLoginAt ? formatDate(r.lastLoginAt) : "—"),
+    key: 'lastLoginAt',
+    header: '最近登录',
+    className: 'whitespace-nowrap text-muted-foreground',
+    cell: (r) => (r.lastLoginAt ? formatDate(r.lastLoginAt) : '—'),
   },
 ];
 
 export default function UsersPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [searchInput, setSearchInput] = useState("");
-  const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState("");
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<UserItem | null>(null);
 
   const params = useMemo(
@@ -95,8 +91,8 @@ export default function UsersPage() {
     [page, pageSize, search, roleFilter],
   );
 
-  const { data, isLoading, isError, error } = useList<UserItem>("users", params);
-  const removeMut = useRemove("users");
+  const { data, isLoading, isError, error } = useList<UserItem>('users', params);
+  const removeMut = useRemove('users');
   const { data: roleOptions = [] } = useRoleOptions();
 
   const columns = useMemo(() => COLUMNS(roleOptions), [roleOptions]);
@@ -109,9 +105,9 @@ export default function UsersPage() {
     try {
       await removeMut.mutateAsync(deleteTarget.id);
       setDeleteTarget(null);
-      notifySuccess("账号已删除");
+      notifySuccess('账号已删除');
     } catch (e) {
-      notifyError(e, "删除失败");
+      notifyError(e, '删除失败');
     }
   }
 
@@ -153,9 +149,9 @@ export default function UsersPage() {
           </Button>
         </form>
         <Select
-          value={roleFilter || "all"}
+          value={roleFilter || 'all'}
           onValueChange={(v) => {
-            setRoleFilter(v === "all" ? "" : v);
+            setRoleFilter(v === 'all' ? '' : v);
             setPage(1);
           }}
         >
@@ -175,7 +171,7 @@ export default function UsersPage() {
 
       {isError && (
         <Alert variant="destructive" icon="error" className="mb-4">
-          加载失败：{error instanceof Error ? error.message : "未知错误"}
+          加载失败：{error instanceof Error ? error.message : '未知错误'}
         </Alert>
       )}
 

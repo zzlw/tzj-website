@@ -1,10 +1,11 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, useState } from "react";
-import type Vditor from "vditor";
-import { uploadMedia } from "@/features/media";
-import type { MediaAsset } from "@/features/types";
-import { VDITOR_I18N_ZH_CN } from "@/lib/vditor-i18n-zh-cn";
+import { useEffect, useRef, useState } from 'react';
+import Vditor from 'vditor';
+import 'vditor/dist/index.css';
+import { uploadMedia } from '@/features/media';
+import type { MediaAsset } from '@/features/types';
+import { VDITOR_I18N_ZH_CN } from '@/lib/vditor-i18n-zh-cn';
 
 export interface MarkdownEditorProps {
   value: string;
@@ -12,9 +13,11 @@ export interface MarkdownEditorProps {
   /** 上传子目录，对接媒体库 */
   folder?: string;
   minHeight?: number;
+  /** 受控高度（px）；聊天页拖拽调整时使用。未传则回退到 minHeight。 */
+  height?: number;
   placeholder?: string;
   /** 默认编辑模式；知识库文档建议 ir（即时渲染，粘贴 Markdown 源码更可靠） */
-  defaultMode?: "wysiwyg" | "ir" | "sv";
+  defaultMode?: 'wysiwyg' | 'ir' | 'sv';
 }
 
 type VditorInternal = Vditor & {
@@ -23,25 +26,28 @@ type VditorInternal = Vditor & {
 
 /** 单文件上限：与后端 multipart 限制（media.controller）保持一致 */
 const MAX_FILE_SIZE = 100 * 1024 * 1024;
-const MAX_FILE_SIZE_LABEL = "100MB";
+const MAX_FILE_SIZE_LABEL = '100MB';
 
 const UPLOAD_ACCEPT = [
-  "image/*",
-  "video/*",
-  "audio/*",
-  ".pdf",
-  ".doc",
-  ".docx",
-  ".xls",
-  ".xlsx",
-  ".ppt",
-  ".pptx",
-  ".zip",
-  ".rar",
-].join(",");
+  'image/*',
+  'video/*',
+  'audio/*',
+  '.pdf',
+  '.doc',
+  '.docx',
+  '.xls',
+  '.xlsx',
+  '.ppt',
+  '.pptx',
+  '.zip',
+  '.rar',
+].join(',');
 
 const textareaCls =
-  "flex min-h-[360px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
+  'flex w-full bg-transparent px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
+
+/** Vditor 工具栏高度（material 图标主题约 36px），用于加载态预留高度，避免布局跳动 */
+const TOOLBAR_RESERVE = 44;
 
 function isVditorInitialized(v: VditorInternal | null | undefined): boolean {
   return Boolean(v?.vditor?.element);
@@ -57,13 +63,9 @@ function safeDestroy(vditor: VditorInternal | null | undefined): void {
 }
 
 function vditorCdn(): string {
-  // Vditor 官方 CDN（生产环境）
-  // 注意：不要包含 /dist，Vditor 内部会自动追加 /dist/js/lute/lute.min.js
-  if (process.env.NODE_ENV === "production") {
-    return "https://unpkg.com/vditor@3.11.2";
-  }
-  // 开发环境：从 public/vditor-assets 加载
-  return "/vditor-assets";
+  // 统一使用本地资源（public/vditor-assets，由 copy-vditor-assets 脚本从
+  // node_modules/vditor/dist 拷贝；Vditor 内部会自动追加 /dist/js/lute/lute.min.js）
+  return '/vditor-assets';
 }
 
 /** 源码模式按钮图标（Material “code”，fill 风格与 vditor 图标一致） */
@@ -72,21 +74,19 @@ const SOURCE_MODE_ICON =
 
 /** 源码模式 = sv 编辑器可见且预览列隐藏 */
 function isSourceMode(root: HTMLElement): boolean {
-  const sv = root.querySelector<HTMLElement>(".vditor-sv");
-  const preview = root.querySelector<HTMLElement>(".vditor-preview");
-  return sv?.style.display === "block" && preview?.style.display !== "block";
+  const sv = root.querySelector<HTMLElement>('.vditor-sv');
+  const preview = root.querySelector<HTMLElement>('.vditor-preview');
+  return sv?.style.display === 'block' && preview?.style.display !== 'block';
 }
 
 function updateSourceButton(root: HTMLElement): void {
-  const btn = root.querySelector<HTMLElement>(
-    '.vditor-toolbar button[data-type="source-mode"]',
-  );
-  btn?.classList.toggle("vditor-menu--current", isSourceMode(root));
+  const btn = root.querySelector<HTMLElement>('.vditor-toolbar button[data-type="source-mode"]');
+  btn?.classList.toggle('vditor-menu--current', isSourceMode(root));
 }
 
 /** 粘贴内容是否像 Markdown 源码（多行结构） */
 function looksLikeMarkdown(text: string): boolean {
-  const lines = text.split("\n");
+  const lines = text.split('\n');
   if (lines.length < 2) return false;
   let score = 0;
   for (const line of lines.slice(0, 40)) {
@@ -109,8 +109,8 @@ function looksLikeMarkdown(text: string): boolean {
 function shouldPreferPlainMarkdownPaste(plain: string, html: string): boolean {
   if (!plain.trim() || !looksLikeMarkdown(plain)) return false;
   if (!html.trim()) return false;
-  const plainLines = plain.split("\n").length;
-  const htmlLines = html.split("\n").length;
+  const plainLines = plain.split('\n').length;
+  const htmlLines = html.split('\n').length;
   if (plainLines >= 3 && plainLines > htmlLines) return true;
   if (!/<(?:p|div|br|h[1-6]|ul|ol|li|table|tr|pre|blockquote)\b/i.test(html)) {
     return true;
@@ -120,14 +120,14 @@ function shouldPreferPlainMarkdownPaste(plain: string, html: string): boolean {
 
 /** 按 MIME 类型生成插入编辑器的 Markdown 片段 */
 function mediaMarkdown(asset: MediaAsset): string {
-  const name = asset.filename || "file";
-  if (asset.mimeType.startsWith("image/")) {
+  const name = asset.filename || 'file';
+  if (asset.mimeType.startsWith('image/')) {
     return `![${name}](${asset.url})`;
   }
-  if (asset.mimeType.startsWith("video/")) {
+  if (asset.mimeType.startsWith('video/')) {
     return `<video controls src="${asset.url}" style="max-width:100%"></video>`;
   }
-  if (asset.mimeType.startsWith("audio/")) {
+  if (asset.mimeType.startsWith('audio/')) {
     return `<audio controls src="${asset.url}"></audio>`;
   }
   return `[${name}](${asset.url})`;
@@ -140,18 +140,18 @@ function mediaMarkdown(asset: MediaAsset): string {
  * - 官网 CMS 默认 wysiwyg：富文本粘贴、表格浮层编辑
  * - 粘贴 / 拖拽 / 工具栏上传均走媒体库接口（MinIO / 阿里 OSS 由后端切换）
  * - 图片、视频、音频、文档按类型插入对应 Markdown
- * - 动态加载 vditor 包，加载完成前用 textarea 兜底
+ * - Vditor 与样式均随应用本地打包；初始化完成前用占位容器（预留高度）兜底，避免布局跳动
  */
 export function MarkdownEditor({
   value,
   onChange,
-  folder = "cms",
+  folder = 'cms',
   minHeight = 420,
-  placeholder = "支持 Markdown / GFM，可直接粘贴或拖拽图片、视频、音频、文档…",
+  height,
+  placeholder = '支持 Markdown / GFM，可直接粘贴或拖拽图片、视频、音频、文档…',
   defaultMode: defaultModeProp,
 }: MarkdownEditorProps) {
-  const defaultMode =
-    defaultModeProp ?? (folder === "documents" ? "ir" : "wysiwyg");
+  const defaultMode = defaultModeProp ?? (folder === 'documents' ? 'ir' : 'wysiwyg');
   const containerRef = useRef<HTMLDivElement>(null);
   const vditorRef = useRef<Vditor | null>(null);
   const mountIdRef = useRef(0);
@@ -185,12 +185,6 @@ export function MarkdownEditor({
       });
       if (cancelled || mountId !== mountIdRef.current || !containerRef.current) return;
 
-      const [{ default: VditorCtor }] = await Promise.all([
-        import("vditor"),
-        import("vditor/dist/index.css"),
-      ]);
-      if (cancelled || mountId !== mountIdRef.current || !containerRef.current) return;
-
       // 模式设计（对齐 Typora / GitBook / 语雀）：
       // - ir（即时渲染）：知识库默认，粘贴 Markdown 源码、写标题/列表体验最佳
       // - wysiwyg：CMS 默认，表格/图片浮层编辑
@@ -203,38 +197,40 @@ export function MarkdownEditor({
         const rootEl = vd?.vditor?.element;
         if (!vd || !rootEl) return;
         const modeBtn = (m: string) =>
-          rootEl.querySelector<HTMLButtonElement>(
-            `.vditor-toolbar button[data-mode="${m}"]`,
-          );
+          rootEl.querySelector<HTMLButtonElement>(`.vditor-toolbar button[data-mode="${m}"]`);
         if (isSourceMode(rootEl)) {
           sourceModeOn = false;
           modeBtn(editMode)?.click();
         } else {
           sourceModeOn = true;
-          modeBtn("sv")?.click();
-          vd.setPreviewMode("editor");
+          modeBtn('sv')?.click();
+          vd.setPreviewMode('editor');
         }
         requestAnimationFrame(() => updateSourceButton(rootEl));
       };
 
       const el = containerRef.current;
-      pending = new VditorCtor(el, {
-        height: minHeight,
+      pending = new Vditor(el, {
+        height: height ?? minHeight,
         mode: editMode,
-        theme: "classic",
-        icon: "material",
+        theme: 'classic',
+        icon: 'material',
         cdn: vditorCdn(),
         i18n: VDITOR_I18N_ZH_CN,
         placeholder,
         cache: { enable: false },
-        value: valueRef.current || "",
+        value: valueRef.current || '',
         // 全屏需盖住 Admin 的侧边栏（z-40/50）与顶栏（z-30）
         fullscreen: { index: 100 },
         toolbarConfig: { pin: true },
         // vditor 3.11 缺陷：wysiwyg 模式弹出工具栏会无条件调用该可选回调，缺省时报
         // "customWysiwygToolbar is not a function"，必须显式提供空实现
         customWysiwygToolbar: () => {},
-        counter: { enable: true, type: "markdown" },
+        counter: { enable: true, type: 'markdown' },
+        // 关闭输入防抖（默认 undoDelay 800ms）：Vditor 会把 input 回调延迟到「停止输入后」才触发，
+        // 导致聊天框发送按钮要等约 1s 才从 disabled 转为高亮。置 0 让 onChange 即时回传。
+        // 副作用：撤销粒度变为逐字符（原 800ms 内合并为一步），对聊天/CMS 场景可接受。
+        undoDelay: 0,
         input: (md) => {
           if (!cancelled && mountId === mountIdRef.current) {
             lastEmittedRef.current = md;
@@ -253,7 +249,7 @@ export function MarkdownEditor({
             const accepted = files.filter((f) => f.size <= MAX_FILE_SIZE);
             if (oversize.length > 0) {
               vd.tip(
-                `${oversize.map((f) => `「${f.name}」`).join("、")}超过 ${MAX_FILE_SIZE_LABEL}，已跳过`,
+                `${oversize.map((f) => `「${f.name}」`).join('、')}超过 ${MAX_FILE_SIZE_LABEL}，已跳过`,
                 4000,
               );
             }
@@ -271,61 +267,61 @@ export function MarkdownEditor({
               }
             }
             if (snippets.length > 0) {
-              vd.insertValue(`\n${snippets.join("\n\n")}\n`);
+              vd.insertValue(`\n${snippets.join('\n\n')}\n`);
             }
             if (failed.length > 0) {
-              vd.tip(`${failed.map((n) => `「${n}」`).join("、")}上传失败`, 4000);
+              vd.tip(`${failed.map((n) => `「${n}」`).join('、')}上传失败`, 4000);
             }
             return null;
           },
         },
         preview: {
-          theme: { current: "light" },
+          theme: { current: 'light' },
           markdown: { toc: true },
-          hljs: { style: "github" },
+          hljs: { style: 'github' },
           // 默认 800：内容会被排成居中窄栏，且初始化时机不同会导致
           // 首次加载与切换模式后对齐不一致；调大后始终通栏左对齐
           maxWidth: 10240,
           // 默认还含 mp-wechat / zhihu（复制到公众号/知乎），此处不需要
-          actions: ["desktop", "tablet", "mobile"],
+          actions: ['desktop', 'tablet', 'mobile'],
         },
         toolbar: [
-          "emoji",
-          "headings",
-          "bold",
-          "italic",
-          "strike",
-          "|",
-          "line",
-          "quote",
-          "list",
-          "ordered-list",
-          "check",
-          "outdent",
-          "indent",
-          "|",
-          "code",
-          "inline-code",
-          "upload",
-          "link",
-          "table",
-          "|",
-          "undo",
-          "redo",
-          "|",
+          'emoji',
+          'headings',
+          'bold',
+          'italic',
+          'strike',
+          '|',
+          'line',
+          'quote',
+          'list',
+          'ordered-list',
+          'check',
+          'outdent',
+          'indent',
+          '|',
+          'code',
+          'inline-code',
+          'upload',
+          'link',
+          'table',
+          '|',
+          'undo',
+          'redo',
+          '|',
           // edit-mode 仍需注册（源码切换依赖其隐藏的 data-mode 按钮），
           // 但通过 CSS 隐藏入口，用户可见的模式只有：编辑（默认）/ 源码 / 预览
-          "edit-mode",
+          'edit-mode',
           {
-            name: "source-mode",
-            tip: "源码模式",
-            tipPosition: "n",
+            name: 'source-mode',
+            tip: '源码模式',
+            tipPosition: 'n',
             icon: SOURCE_MODE_ICON,
             click: toggleSourceMode,
           },
-          "preview",
-          "outline",
-          "fullscreen",
+          'preview',
+          'outline',
+          'fullscreen',
         ],
         after: () => {
           if (cancelled || mountId !== mountIdRef.current) {
@@ -335,7 +331,7 @@ export function MarkdownEditor({
           }
           vditorRef.current = pending;
           setEditorReady(true);
-          const initial = valueRef.current || "";
+          const initial = valueRef.current || '';
           try {
             if (pending && pending.getValue() !== initial) {
               pending.setValue(initial);
@@ -346,7 +342,7 @@ export function MarkdownEditor({
           }
           // 初始化时容器为 display:none，宽度为 0；显示后触发 resize 让 Vditor 重算内边距
           requestAnimationFrame(() => {
-            window.dispatchEvent(new Event("resize"));
+            window.dispatchEvent(new Event('resize'));
           });
           // vditor 退出全屏时会重写所有工具按钮的 className（恢复 tooltip 方向），
           // 连带抹掉预览按钮的激活类，导致预览模式下工具栏被错误恢复可用。
@@ -354,27 +350,27 @@ export function MarkdownEditor({
           const rootEl = (pending as VditorInternal).vditor?.element;
           if (rootEl) {
             fullscreenObserver = new MutationObserver(() => {
-              const previewEl = rootEl.querySelector<HTMLElement>(".vditor-preview");
+              const previewEl = rootEl.querySelector<HTMLElement>('.vditor-preview');
               const previewBtn = rootEl.querySelector<HTMLElement>(
                 '.vditor-toolbar button[data-type="preview"]',
               );
-              if (previewEl?.style.display === "block") {
-                previewBtn?.classList.add("vditor-menu--current");
+              if (previewEl?.style.display === 'block') {
+                previewBtn?.classList.add('vditor-menu--current');
               }
               updateSourceButton(rootEl);
             });
             fullscreenObserver.observe(rootEl, {
               attributes: true,
-              attributeFilter: ["class"],
+              attributeFilter: ['class'],
             });
 
             // 监听 sv / 预览两列可见性，同步源码按钮高亮与标志位
-            const svEl = rootEl.querySelector<HTMLElement>(".vditor-sv");
-            const previewEl = rootEl.querySelector<HTMLElement>(".vditor-preview");
+            const svEl = rootEl.querySelector<HTMLElement>('.vditor-sv');
+            const previewEl = rootEl.querySelector<HTMLElement>('.vditor-preview');
             if (svEl && previewEl) {
               layoutObserver = new MutationObserver(() => {
-                const svVisible = svEl.style.display === "block";
-                const previewVisible = previewEl.style.display === "block";
+                const svVisible = svEl.style.display === 'block';
+                const previewVisible = previewEl.style.display === 'block';
                 if (!svVisible && !previewVisible) {
                   sourceModeOn = false; // 回到默认编辑
                 }
@@ -382,23 +378,23 @@ export function MarkdownEditor({
               });
               layoutObserver.observe(svEl, {
                 attributes: true,
-                attributeFilter: ["style"],
+                attributeFilter: ['style'],
               });
               layoutObserver.observe(previewEl, {
                 attributes: true,
-                attributeFilter: ["style"],
+                attributeFilter: ['style'],
               });
             }
 
             // 屏蔽 vditor 的编辑模式快捷键（⌥⌘7/8/9：所见即所得/即时渲染/分屏），
             // 避免用户误入已从 UI 移除的模式
             rootEl.addEventListener(
-              "keydown",
+              'keydown',
               (e: KeyboardEvent) => {
                 if (
                   e.altKey &&
                   (e.metaKey || e.ctrlKey) &&
-                  ["Digit7", "Digit8", "Digit9"].includes(e.code)
+                  ['Digit7', 'Digit8', 'Digit9'].includes(e.code)
                 ) {
                   e.preventDefault();
                   e.stopPropagation();
@@ -412,8 +408,8 @@ export function MarkdownEditor({
               if (sourceModeOn) return;
               const vd = vditorRef.current;
               if (!vd) return;
-              const plain = event.clipboardData?.getData("text/plain") ?? "";
-              const html = event.clipboardData?.getData("text/html") ?? "";
+              const plain = event.clipboardData?.getData('text/plain') ?? '';
+              const html = event.clipboardData?.getData('text/html') ?? '';
               if (!shouldPreferPlainMarkdownPaste(plain, html)) return;
               event.preventDefault();
               event.stopImmediatePropagation();
@@ -422,9 +418,8 @@ export function MarkdownEditor({
               lastEmittedRef.current = md;
               onChangeRef.current(md);
             };
-            rootEl.addEventListener("paste", onPasteCapture, true);
-            removePasteListener = () =>
-              rootEl.removeEventListener("paste", onPasteCapture, true);
+            rootEl.addEventListener('paste', onPasteCapture, true);
+            removePasteListener = () => rootEl.removeEventListener('paste', onPasteCapture, true);
           }
         },
       });
@@ -436,18 +431,16 @@ export function MarkdownEditor({
     const closePanelsOnOutsideClick = (evt: MouseEvent) => {
       const root = containerRef.current;
       if (!root || root.contains(evt.target as Node)) return;
-      root
-        .querySelectorAll<HTMLElement>(".vditor-panel, .vditor-hint")
-        .forEach((panel) => {
-          if (panel.style.display !== "none") panel.style.display = "none";
-        });
+      root.querySelectorAll<HTMLElement>('.vditor-panel, .vditor-hint').forEach((panel) => {
+        if (panel.style.display !== 'none') panel.style.display = 'none';
+      });
     };
-    document.addEventListener("mousedown", closePanelsOnOutsideClick);
+    document.addEventListener('mousedown', closePanelsOnOutsideClick);
 
     return () => {
       cancelled = true;
       setEditorReady(false);
-      document.removeEventListener("mousedown", closePanelsOnOutsideClick);
+      document.removeEventListener('mousedown', closePanelsOnOutsideClick);
       fullscreenObserver?.disconnect();
       layoutObserver?.disconnect();
       removePasteListener?.();
@@ -461,7 +454,7 @@ export function MarkdownEditor({
 
   // 编辑器从隐藏容器切换为可见后，让 Vditor 以真实宽度重算布局
   useEffect(() => {
-    if (editorReady) window.dispatchEvent(new Event("resize"));
+    if (editorReady) window.dispatchEvent(new Event('resize'));
   }, [editorReady]);
 
   // 仅当值来自外部（表单 reset、加载完成等）时回写编辑器；
@@ -471,27 +464,46 @@ export function MarkdownEditor({
     if (!vd || !editorReady) return;
     if (value === lastEmittedRef.current) return;
     try {
-      vd.setValue(value || "");
+      vd.setValue(value || '');
       lastEmittedRef.current = value;
     } catch {
       // 编辑器尚未 ready
     }
   }, [value, editorReady]);
 
+  // 动态高度（聊天页拖拽调整）：直接设置 .vditor 根元素高度，
+  // 与 Vditor 内置 resize 的处理方式一致（其无 setHeight API）。
+  // 注意：Vditor 把 `vditor` class 加在「挂载元素本身」（containerRef 的 div），
+  // 而非其子元素，故不能用 querySelector(".vditor")（只查子孙、不含自身），
+  // 否则永远取不到元素、高度不更新（表现为拖不动）。这里用实例的根元素。
+  const effectiveHeight = height ?? minHeight;
+  useEffect(() => {
+    if (!editorReady) return;
+    const rootEl = (vditorRef.current as VditorInternal | null)?.vditor?.element ?? null;
+    if (rootEl) rootEl.style.height = `${effectiveHeight}px`;
+  }, [effectiveHeight, editorReady]);
+
   return (
     <div className="markdown-editor">
       {!editorReady && (
-        <textarea
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          rows={14}
-          placeholder={`${placeholder}（富文本编辑器加载中，可先在此输入 Markdown）`}
-          className={textareaCls}
-        />
+        // 占位：仅预留与最终编辑器一致的高度（工具栏 + 编辑区），避免布局跳动。
+        // 本地化后初始化很快，不再显示「加载中」文案，呈现为一块干净的空白编辑区。
+        <div
+          className="overflow-hidden rounded-md border border-input"
+          style={{ minHeight: effectiveHeight + TOOLBAR_RESERVE }}
+        >
+          <textarea
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={`${placeholder}（可先在此输入 Markdown）`}
+            className={textareaCls}
+            style={{ minHeight: effectiveHeight, border: 'none', borderRadius: 0 }}
+          />
+        </div>
       )}
       {/* 隐藏类放在外层包裹 div 上：Vditor 会改写挂载元素的 className，
           若由 React 管理该属性，再次渲染会把 vditor 的 class 全部抹掉导致样式崩坏 */}
-      <div className={editorReady ? undefined : "hidden"}>
+      <div className={editorReady ? undefined : 'hidden'}>
         <div ref={containerRef} />
       </div>
     </div>

@@ -1,14 +1,14 @@
+export { buildPageItems } from './buildPageItems';
 export {
   Pagination,
   PaginationContent,
-  PaginationLink,
-  PaginationItem,
-  PaginationPrevious,
-  PaginationNext,
   PaginationEllipsis,
-} from "./Pagination";
-export { buildPageItems } from "./buildPageItems";
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from './Pagination';
 export {
   TablePagination,
   type TablePaginationProps,
-} from "./TablePagination";
+} from './TablePagination';

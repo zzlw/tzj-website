@@ -1,6 +1,11 @@
-import { getVisitorSessionId } from "@/lib/analytics";
+import { getVisitorId } from '@/lib/analytics';
 
-export type SearchEventType = "search_submit" | "suggest_click" | "recent_click" | "popular_click" | "zero_results";
+export type SearchEventType =
+  | 'search_submit'
+  | 'suggest_click'
+  | 'recent_click'
+  | 'popular_click'
+  | 'zero_results';
 
 export interface SearchEventPayload {
   type: SearchEventType;
@@ -12,28 +17,28 @@ export interface SearchEventPayload {
 
 /** 上报搜索交互事件（sendBeacon 优先，失败静默）。 */
 export function trackSearchEvent(payload: SearchEventPayload): void {
-  if (typeof window === "undefined") return;
-  if (process.env.NEXT_PUBLIC_ANALYTICS_ENABLED === "false") return;
+  if (typeof window === 'undefined') return;
+  if (process.env.NEXT_PUBLIC_ANALYTICS_ENABLED === 'false') return;
 
-  const sessionId = getVisitorSessionId();
-  if (!sessionId) return;
+  const visitorId = getVisitorId();
+  if (!visitorId) return;
 
   const body = JSON.stringify({
-    sessionId,
+    visitorId,
     ...payload,
     ts: Date.now(),
   });
 
-  const url = "/api/search/analytics";
+  const url = '/api/search/analytics';
 
   if (navigator.sendBeacon) {
-    const blob = new Blob([body], { type: "application/json" });
+    const blob = new Blob([body], { type: 'application/json' });
     if (navigator.sendBeacon(url, blob)) return;
   }
 
   void fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body,
     keepalive: true,
   }).catch(() => {

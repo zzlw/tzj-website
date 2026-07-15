@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { cn } from "@/lib/utils";
-import type { ContentOption } from "@/lib/content-labels";
+import type { ContentOption } from '@/lib/content-labels';
+import { cn } from '@/lib/utils';
 
 interface ContentCategoryTabsProps {
   paramKey: string;
@@ -20,20 +20,16 @@ export function ContentCategoryTabs({
   onChange,
 }: ContentCategoryTabsProps) {
   return (
-    <div
-      className="flex flex-wrap gap-2"
-      role="tablist"
-      aria-label={allLabel.replace(/^全部/, "")}
-    >
+    <div className="flex flex-wrap gap-2" role="tablist" aria-label={allLabel.replace(/^全部/, '')}>
       <button
         type="button"
         role="tab"
         aria-selected={!value}
         className={cn(
-          "px-4 py-2 text-sm font-bold transition-colors",
+          'px-4 py-2 text-sm font-bold transition-colors',
           !value
-            ? "bg-primary text-white"
-            : "border border-neutral-300 bg-white text-neutral-900 hover:border-neutral-900",
+            ? 'bg-primary text-white'
+            : 'border border-neutral-300 bg-white text-neutral-900 hover:border-neutral-900',
         )}
         onClick={() => onChange(undefined)}
       >
@@ -50,10 +46,10 @@ export function ContentCategoryTabs({
             data-param={paramKey}
             data-value={opt.value}
             className={cn(
-              "px-4 py-2 text-sm font-bold transition-colors",
+              'px-4 py-2 text-sm font-bold transition-colors',
               active
-                ? "bg-primary text-white"
-                : "border border-neutral-300 bg-white text-neutral-900 hover:border-neutral-900",
+                ? 'bg-primary text-white'
+                : 'border border-neutral-300 bg-white text-neutral-900 hover:border-neutral-900',
             )}
             onClick={() => onChange(opt.value)}
           >

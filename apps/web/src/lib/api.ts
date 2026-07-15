@@ -2,13 +2,14 @@ import type {
   ApiResponse,
   Blog,
   Case,
+  Contact,
   CreateContactDto,
   News,
   PaginatedResponse,
   TradeShow,
-} from "@tzj/types";
+} from '@tzj/types';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api/v1";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
 const DEFAULT_TIMEOUT_MS = 10_000;
 const DEFAULT_RETRIES = 2;
 
@@ -19,7 +20,7 @@ export class ApiError extends Error {
     public code?: string,
   ) {
     super(message);
-    this.name = "ApiError";
+    this.name = 'ApiError';
   }
 }
 
@@ -44,8 +45,7 @@ async function fetchWithTimeout(
 }
 
 async function fetchApi<T>(path: string, options: FetchOptions = {}): Promise<T> {
-  const { params, timeout = DEFAULT_TIMEOUT_MS, retries = DEFAULT_RETRIES, ...fetchOpts } =
-    options;
+  const { params, timeout = DEFAULT_TIMEOUT_MS, retries = DEFAULT_RETRIES, ...fetchOpts } = options;
 
   let url = `${API_BASE}${path}`;
   if (params) {
@@ -68,10 +68,10 @@ async function fetchApi<T>(path: string, options: FetchOptions = {}): Promise<T>
         {
           ...fetchOpts,
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
             ...fetchOpts.headers,
           },
-          next: fetchOpts.method === "POST" ? undefined : { revalidate: 60 },
+          next: fetchOpts.method === 'POST' ? undefined : { revalidate: 60 },
         },
         timeout,
       );
@@ -91,7 +91,7 @@ async function fetchApi<T>(path: string, options: FetchOptions = {}): Promise<T>
     }
   }
 
-  throw lastError ?? new Error("Unknown API error");
+  throw lastError ?? new Error('Unknown API error');
 }
 
 /** 网站联系表单提交载荷 */
@@ -108,54 +108,49 @@ export interface WebsiteContactPayload {
 }
 
 export const getCases = (params?: Record<string, string | number | boolean | undefined>) =>
-  fetchApi<PaginatedResponse<Case>>("/cases", { params });
+  fetchApi<PaginatedResponse<Case>>('/cases', { params });
 
 export const getCase = (slug: string) => fetchApi<ApiResponse<Case>>(`/cases/${slug}`);
 
-export const getNewsList = (
-  params?: Record<string, string | number | boolean | undefined>,
-) => fetchApi<PaginatedResponse<News>>("/news", { params });
+export const getNewsList = (params?: Record<string, string | number | boolean | undefined>) =>
+  fetchApi<PaginatedResponse<News>>('/news', { params });
 
-export const getNewsItem = (slug: string) =>
-  fetchApi<ApiResponse<News>>(`/news/${slug}`);
+export const getNewsItem = (slug: string) => fetchApi<ApiResponse<News>>(`/news/${slug}`);
 
-export const getBlogs = (
-  params?: Record<string, string | number | boolean | undefined>,
-) => fetchApi<PaginatedResponse<Blog>>("/blogs", { params });
+export const getBlogs = (params?: Record<string, string | number | boolean | undefined>) =>
+  fetchApi<PaginatedResponse<Blog>>('/blogs', { params });
 
-export const getBlog = (slug: string) =>
-  fetchApi<ApiResponse<Blog>>(`/blogs/${slug}`);
+export const getBlog = (slug: string) => fetchApi<ApiResponse<Blog>>(`/blogs/${slug}`);
 
-export const getTradeShows = (
-  params?: Record<string, string | number | boolean | undefined>,
-) => fetchApi<PaginatedResponse<TradeShow>>("/trade-shows", { params });
+export const getTradeShows = (params?: Record<string, string | number | boolean | undefined>) =>
+  fetchApi<PaginatedResponse<TradeShow>>('/trade-shows', { params });
 
 export const getTradeShow = (slug: string) =>
   fetchApi<ApiResponse<TradeShow>>(`/trade-shows/${slug}`);
 
-export const getPages = () => fetchApi<ApiResponse<unknown[]>>("/pages");
+export const getPages = () => fetchApi<ApiResponse<unknown[]>>('/pages');
 
 export const getPage = (slug: string) => fetchApi<ApiResponse<unknown>>(`/pages/${slug}`);
 
 export const submitContact = (data: WebsiteContactPayload) => {
-  const email = data.email?.trim() ?? "";
+  const email = data.email?.trim() ?? '';
   const payload: CreateContactDto = {
     name: data.name,
     phone: data.phone,
     email,
     company: data.company,
-    subject: data.subject || "网站咨询",
+    subject: data.subject || '网站咨询',
     message: data.message,
-    source: data.source || "website",
+    source: data.source || 'website',
   };
 
   const headers: Record<string, string> = {};
   if (data.captchaVerifyParam) {
-    headers["X-Captcha-Verify-Param"] = data.captchaVerifyParam;
+    headers['X-Captcha-Verify-Param'] = data.captchaVerifyParam;
   }
 
-  return fetchApi<ApiResponse<unknown>>("/contact", {
-    method: "POST",
+  return fetchApi<ApiResponse<Contact>>('/contact', {
+    method: 'POST',
     body: JSON.stringify(payload),
     headers,
     retries: 0,

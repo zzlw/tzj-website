@@ -1,5 +1,5 @@
-import { z } from "zod";
-import { INTEGRATION_SLUGS } from "./integration.registry";
+import { z } from 'zod';
+import { INTEGRATION_SLUGS } from './integration.registry';
 
 export const updateIntegrationSchema = z.object({
   enabled: z.boolean().optional(),

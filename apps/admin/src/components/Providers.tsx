@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { QueryProvider } from "./QueryProvider";
-import { SessionProvider, type ClientSession } from "./session";
+import { QueryProvider } from './QueryProvider';
+import { type ClientSession, SessionProvider } from './session';
 
 export function Providers({
   session,

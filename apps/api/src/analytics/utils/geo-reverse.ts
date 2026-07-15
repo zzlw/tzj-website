@@ -1,4 +1,4 @@
-import type { GeoLookup } from "./geo-ip";
+import type { GeoLookup } from './geo-ip';
 
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const FETCH_TIMEOUT_MS = 5000;
@@ -19,7 +19,7 @@ function normalizeAmapCity(city: string | string[] | undefined): string | null {
     return first || null;
   }
   const value = city.trim();
-  if (!value || value === "[]") return null;
+  if (!value || value === '[]') return null;
   return value;
 }
 
@@ -33,12 +33,12 @@ async function fetchAmap(
   longitude: number,
   apiKey: string,
 ): Promise<GeoLookup | null> {
-  const url = new URL("https://restapi.amap.com/v3/geocode/regeo");
-  url.searchParams.set("key", apiKey);
-  url.searchParams.set("location", `${longitude},${latitude}`);
-  url.searchParams.set("coordsys", "gps");
-  url.searchParams.set("extensions", "base");
-  url.searchParams.set("output", "JSON");
+  const url = new URL('https://restapi.amap.com/v3/geocode/regeo');
+  url.searchParams.set('key', apiKey);
+  url.searchParams.set('location', `${longitude},${latitude}`);
+  url.searchParams.set('coordsys', 'gps');
+  url.searchParams.set('extensions', 'base');
+  url.searchParams.set('output', 'JSON');
 
   const res = await fetch(url, {
     signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
@@ -55,19 +55,16 @@ async function fetchAmap(
       };
     };
   };
-  if (data.status !== "1") return null;
+  if (data.status !== '1') return null;
 
   const comp = data.regeocode?.addressComponent;
   if (!comp) return null;
 
   const region = comp.province?.trim() || null;
-  const city =
-    normalizeAmapCity(comp.city) ||
-    comp.district?.trim() ||
-    region;
+  const city = normalizeAmapCity(comp.city) || comp.district?.trim() || region;
 
   const geo: GeoLookup = {
-    country: "CN",
+    country: 'CN',
     region,
     city,
   };
@@ -75,14 +72,11 @@ async function fetchAmap(
 }
 
 /** 境外或高德不可用时的兜底（开发/海外访客）。 */
-async function fetchBigDataCloud(
-  latitude: number,
-  longitude: number,
-): Promise<GeoLookup | null> {
-  const url = new URL("https://api.bigdatacloud.net/data/reverse-geocode-client");
-  url.searchParams.set("latitude", String(latitude));
-  url.searchParams.set("longitude", String(longitude));
-  url.searchParams.set("localityLanguage", "zh");
+async function fetchBigDataCloud(latitude: number, longitude: number): Promise<GeoLookup | null> {
+  const url = new URL('https://api.bigdatacloud.net/data/reverse-geocode-client');
+  url.searchParams.set('latitude', String(latitude));
+  url.searchParams.set('longitude', String(longitude));
+  url.searchParams.set('localityLanguage', 'zh');
 
   const res = await fetch(url, {
     signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),

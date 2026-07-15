@@ -1,4 +1,4 @@
-import type { CaseType, NewsCategory, BlogCategory, TradeShowType } from "../enums/index.js";
+import type { BlogCategory, CaseType, NewsCategory, TradeShowType } from '../enums/index.js';
 
 /**
  * 通用查询参数
@@ -8,7 +8,7 @@ export interface QueryParams {
   pageSize?: number;
   search?: string;
   sortBy?: string;
-  sortOrder?: "asc" | "desc";
+  sortOrder?: 'asc' | 'desc';
 }
 
 /**

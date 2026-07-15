@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+
 // ============================================================
 // TZJ — Database Seed Script
 // ============================================================
@@ -10,45 +11,45 @@
 //   3. 写入 PostgreSQL
 // ============================================================
 
-import { PrismaClient } from "@prisma/client/index";
-import * as fs from "node:fs";
-import * as path from "node:path";
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { PrismaClient } from '@prisma/client/index';
 
 // ── Config ──────────────────────────────────────────────────
-const WORKSPACE = path.resolve(__dirname, "../../../../..");
-const TZJII_DIR = path.join(WORKSPACE, "www.tzjii.com");
-const MAP_FILE = path.join(__dirname, "media-map.json");
-const PUBLIC_DOMAIN = "http://localhost:9000/tzj-uploads-dev";
+const WORKSPACE = path.resolve(__dirname, '../../../../..');
+const TZJII_DIR = path.join(WORKSPACE, 'www.tzjii.com');
+const MAP_FILE = path.join(__dirname, 'media-map.json');
+const PUBLIC_DOMAIN = 'http://localhost:9000/tzj-uploads-dev';
 
 const prisma = new PrismaClient();
 
 // ── Load media map ──────────────────────────────────────────
 let mediaMap: Record<string, string> = {};
 if (fs.existsSync(MAP_FILE)) {
-  mediaMap = JSON.parse(fs.readFileSync(MAP_FILE, "utf-8"));
+  mediaMap = JSON.parse(fs.readFileSync(MAP_FILE, 'utf-8'));
   console.log(`📄 Loaded media map: ${Object.keys(mediaMap).length} entries`);
 } else {
-  console.warn("⚠️  media-map.json not found, images will use original paths");
+  console.warn('⚠️  media-map.json not found, images will use original paths');
 }
 
 // ── Resolve image path to MinIO URL ─────────────────────────
 function resolveImage(htmlPath: string): string | null {
   if (!htmlPath) return null;
   // Normalize path
-  const normalized = htmlPath.replace(/^\//, "").replace(/^uploads\//, "uploads/");
+  const normalized = htmlPath.replace(/^\//, '').replace(/^uploads\//, 'uploads/');
   // Try direct match
   if (mediaMap[normalized]) return mediaMap[normalized];
   if (mediaMap[htmlPath]) return mediaMap[htmlPath];
   // Try with uploads/images/ prefix
-  const withPrefix = `uploads/images/${htmlPath.replace(/^.*uploads\/images\//, "")}`;
+  const withPrefix = `uploads/images/${htmlPath.replace(/^.*uploads\/images\//, '')}`;
   if (mediaMap[withPrefix]) return mediaMap[withPrefix];
   // Fallback: construct MinIO URL directly
-  const cleanPath = htmlPath.replace(/^\//, "");
-  if (cleanPath.startsWith("uploads/images/")) {
-    return `${PUBLIC_DOMAIN}/images/${cleanPath.replace("uploads/images/", "")}`;
+  const cleanPath = htmlPath.replace(/^\//, '');
+  if (cleanPath.startsWith('uploads/images/')) {
+    return `${PUBLIC_DOMAIN}/images/${cleanPath.replace('uploads/images/', '')}`;
   }
-  if (cleanPath.startsWith("statics/images/")) {
-    return `${PUBLIC_DOMAIN}/statics/${cleanPath.replace("statics/images/", "")}`;
+  if (cleanPath.startsWith('statics/images/')) {
+    return `${PUBLIC_DOMAIN}/statics/${cleanPath.replace('statics/images/', '')}`;
   }
   return null;
 }
@@ -56,7 +57,7 @@ function resolveImage(htmlPath: string): string | null {
 // ── HTML parsing helpers ────────────────────────────────────
 
 function readHtml(filePath: string): string {
-  return fs.readFileSync(filePath, "utf-8");
+  return fs.readFileSync(filePath, 'utf-8');
 }
 
 function extractTitle(html: string): string {
@@ -71,9 +72,9 @@ function extractTitle(html: string): string {
   if (titleMatch?.[1]) {
     const raw = titleMatch[1].trim();
     // Remove suffix like "_拓展器材丨..."
-    return raw.split("_")[0] ?? raw;
+    return raw.split('_')[0] ?? raw;
   }
-  return "Untitled";
+  return 'Untitled';
 }
 
 function extractContent(html: string): string {
@@ -85,13 +86,11 @@ function extractContent(html: string): string {
     return replaceImagesInHtml(contentMatch[1].trim());
   }
   // Fallback: try simpler content div
-  const simpleMatch = html.match(
-    /<div class="content">\s*([\s\S]*?)\s*<\/div>/s,
-  );
+  const simpleMatch = html.match(/<div class="content">\s*([\s\S]*?)\s*<\/div>/s);
   if (simpleMatch?.[1]) {
     return replaceImagesInHtml(simpleMatch[1].trim());
   }
-  return "";
+  return '';
 }
 
 function replaceImagesInHtml(html: string): string {
@@ -110,8 +109,7 @@ function replaceImagesInHtml(html: string): string {
 
 function extractImages(html: string): string[] {
   const images: string[] = [];
-  const imgRegex =
-    /(?:src|jqimg|bimg)=["']?((?:uploads\/images\/|\/uploads\/images\/)[^"'>\s]+)/gi;
+  const imgRegex = /(?:src|jqimg|bimg)=["']?((?:uploads\/images\/|\/uploads\/images\/)[^"'>\s]+)/gi;
   let match: RegExpExecArray | null;
   while ((match = imgRegex.exec(html)) !== null) {
     const srcPath: string | undefined = match[1];
@@ -150,11 +148,9 @@ function extractCoverImage(html: string): string | null {
 
 function extractSummary(html: string): string {
   // Try meta description
-  const metaMatch = html.match(
-    /<meta name="description" content="([^"]+)"/,
-  );
+  const metaMatch = html.match(/<meta name="description" content="([^"]+)"/);
   if (metaMatch?.[1]) return metaMatch[1].trim();
-  return "";
+  return '';
 }
 
 function extractDate(html: string): Date {
@@ -165,37 +161,37 @@ function extractDate(html: string): Date {
 
 // ── Generate slug from filename ─────────────────────────────
 function slugFromFilename(filename: string): string {
-  return filename.replace(/\.html$/, "").replace(/[^a-zA-Z0-9-]/g, "-");
+  return filename.replace(/\.html$/, '').replace(/[^a-zA-Z0-9-]/g, '-');
 }
 
 const CASE_TYPE_MAP: Record<number, string> = {
-  52: "military",
-  53: "fire",
-  54: "police",
-  55: "scenic",
-  56: "school",
-  57: "enterprise",
+  52: 'military',
+  53: 'fire',
+  54: 'police',
+  55: 'scenic',
+  56: 'school',
+  57: 'enterprise',
 };
 
 const NEWS_CAT_MAP: Record<number, string> = {
-  64: "company",
-  65: "industry",
-  66: "knowledge",
-  67: "equipment",
+  64: 'company',
+  65: 'industry',
+  66: 'knowledge',
+  67: 'equipment',
 };
 
 function getCaseType(filename: string): string {
   const match = filename.match(/caseshow-(\d+)-\d+\.html/);
-  if (!match || !match[1]) return "fire";
+  if (!match || !match[1]) return 'fire';
   const typeId = Number.parseInt(match[1], 10);
-  return CASE_TYPE_MAP[typeId] ?? "fire";
+  return CASE_TYPE_MAP[typeId] ?? 'fire';
 }
 
 function getNewsCategory(filename: string): string {
   const match = filename.match(/newsshow-(\d+)-\d+\.html/);
-  if (!match || !match[1]) return "company";
+  if (!match || !match[1]) return 'company';
   const catId = Number.parseInt(match[1], 10);
-  return NEWS_CAT_MAP[catId] ?? "company";
+  return NEWS_CAT_MAP[catId] ?? 'company';
 }
 
 // ── File discovery ──────────────────────────────────────────
@@ -212,7 +208,7 @@ function findHtmlFiles(pattern: RegExp): string[] {
 // ── Seed functions ──────────────────────────────────────────
 
 async function seedCases(): Promise<void> {
-  console.log("\n📦 Seeding cases...");
+  console.log('\n📦 Seeding cases...');
   const files = findHtmlFiles(/^caseshow-\d+-\d+\.html$/);
   console.log(`   Found ${files.length} case files`);
 
@@ -238,7 +234,7 @@ async function seedCases(): Promise<void> {
         coverImage,
         images: allImages,
         caseType,
-        status: "published",
+        status: 'published',
         isFeatured: count < 6,
         sortOrder: count,
       },
@@ -249,7 +245,7 @@ async function seedCases(): Promise<void> {
 }
 
 async function seedNews(): Promise<void> {
-  console.log("\n📦 Seeding news...");
+  console.log('\n📦 Seeding news...');
   const files = findHtmlFiles(/^newsshow-\d+-\d+\.html$/);
   console.log(`   Found ${files.length} news files`);
 
@@ -276,8 +272,8 @@ async function seedNews(): Promise<void> {
         coverImage,
         images: allImages,
         category,
-        author: "拓之迹",
-        status: "published",
+        author: '拓之迹',
+        status: 'published',
         publishedAt,
         sortOrder: count,
       },
@@ -288,12 +284,12 @@ async function seedNews(): Promise<void> {
 }
 
 async function seedPages(): Promise<void> {
-  console.log("\n📦 Seeding static pages...");
+  console.log('\n📦 Seeding static pages...');
 
   const pages = [
-    { file: "page-38.html", slug: "service", title: "服务承诺" },
-    { file: "page-40.html", slug: "about", title: "关于我们" },
-    { file: "page-41.html", slug: "contact", title: "联系我们" },
+    { file: 'page-38.html', slug: 'service', title: '服务承诺' },
+    { file: 'page-40.html', slug: 'about', title: '关于我们' },
+    { file: 'page-41.html', slug: 'contact', title: '联系我们' },
   ];
 
   let count = 0;
@@ -314,7 +310,7 @@ async function seedPages(): Promise<void> {
         slug: page.slug,
         content,
         coverImage,
-        status: "published",
+        status: 'published',
         sortOrder: count,
       },
     });
@@ -325,7 +321,7 @@ async function seedPages(): Promise<void> {
 
 // ── Main ────────────────────────────────────────────────────
 async function main(): Promise<void> {
-  console.log("🚀 TZJ Database Seed");
+  console.log('🚀 TZJ Database Seed');
   console.log(`   Workspace: ${WORKSPACE}`);
   console.log(`   TZJII dir: ${TZJII_DIR}`);
 
@@ -346,7 +342,7 @@ async function main(): Promise<void> {
     prisma.page.count(),
   ]);
 
-  console.log("\n📊 Database summary:");
+  console.log('\n📊 Database summary:');
   console.log(`   Cases:     ${caseCount}`);
   console.log(`   News:      ${newsCount}`);
   console.log(`   Pages:     ${pageCount}`);
@@ -354,7 +350,7 @@ async function main(): Promise<void> {
 
 main()
   .catch((err: unknown) => {
-    console.error("Fatal error:", err);
+    console.error('Fatal error:', err);
     process.exit(1);
   })
   .finally(async () => {

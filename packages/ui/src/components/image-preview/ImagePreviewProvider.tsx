@@ -1,22 +1,27 @@
-"use client";
+'use client';
 
-import type { ReactNode } from "react";
-import { X } from "lucide-react";
-import { PhotoProvider } from "react-photo-view";
-import "react-photo-view/dist/react-photo-view.css";
-import "./photo-view-overrides.css";
+import { X } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { PhotoProvider } from 'react-photo-view';
+import 'react-photo-view/dist/react-photo-view.css';
 
-/** 与媒体库一致的图片灯箱 Provider，供编辑页封面图等复用。 */
+/**
+ * 项目统一的图片灯箱 Provider（封装 react-photo-view 的 PhotoProvider）。
+ * 提供中文工具栏（放大 / 缩小 / 旋转 / 关闭），maskOpacity 默认 0.85。
+ * 所有需要图片预览的区域都应包裹此组件，确保全站预览行为一致。
+ */
 export function ImagePreviewProvider({
   children,
   onVisibleChange,
+  maskOpacity = 0.85,
 }: {
   children: ReactNode;
   onVisibleChange?: (visible: boolean, index: number) => void;
+  maskOpacity?: number;
 }) {
   return (
     <PhotoProvider
-      maskOpacity={0.85}
+      maskOpacity={maskOpacity}
       onVisibleChange={onVisibleChange}
       toolbarRender={({ onScale, scale, rotate, onRotate, onClose }) => (
         <div className="flex items-center gap-1 text-white">

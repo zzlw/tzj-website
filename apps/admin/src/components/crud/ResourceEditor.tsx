@@ -1,23 +1,22 @@
-"use client";
+'use client';
 
-import { useMemo } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
-import { Alert, Button, Card, CardContent } from "@tzj/ui";
-import { Can } from "@/components/Can";
-import { useOne, useCreate, useUpdate } from "@/features/hooks";
-import { normalizeValues } from "@/features/normalize";
-import { notifyError, notifySuccess } from "@/lib/notify";
-import type { ResourceConfig } from "./config";
-import { ResourceForm } from "./ResourceForm";
-import { ImagePreviewProvider } from "@/components/media/ImagePreviewProvider";
+import { Alert, Button, Card, CardContent, ImagePreviewProvider } from '@tzj/ui';
+import { ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useMemo } from 'react';
+import { Can } from '@/components/Can';
+import { useCreate, useOne, useUpdate } from '@/features/hooks';
+import { normalizeValues } from '@/features/normalize';
+import { notifyError, notifySuccess } from '@/lib/notify';
+import type { ResourceConfig } from './config';
+import { ResourceForm } from './ResourceForm';
 
 function editPerms<T>(config: ResourceConfig<T>) {
-  return [...(config.permissions?.edit ?? ["content.create", "content.edit"])];
+  return [...(config.permissions?.edit ?? ['content.create', 'content.edit'])];
 }
 
-const FORM_ID = "resource-editor-form";
+const FORM_ID = 'resource-editor-form';
 
 export function ResourceEditor<T extends { id: string }>({
   config,
@@ -38,19 +37,14 @@ export function ResourceEditor<T extends { id: string }>({
   const router = useRouter();
   const isEdit = Boolean(id);
 
-  const { data: item, isLoading, isError, error } = useOne<T>(
-    config.resource,
-    id,
-  );
+  const { data: item, isLoading, isError, error } = useOne<T>(config.resource, id);
   const createMut = useCreate<T>(config.resource);
   const updateMut = useUpdate<T>(config.resource);
   const isSaving = createMut.isPending || updateMut.isPending;
 
   const defaults = useMemo(() => {
     if (!isEdit)
-      return defaultOverrides
-        ? { ...config.defaults, ...defaultOverrides }
-        : config.defaults;
+      return defaultOverrides ? { ...config.defaults, ...defaultOverrides } : config.defaults;
     if (!item) return null;
     return config.toForm ? config.toForm(item) : { ...config.defaults, ...item };
   }, [isEdit, item, config, defaultOverrides]);
@@ -71,11 +65,11 @@ export function ResourceEditor<T extends { id: string }>({
       router.push(config.basePath);
       router.refresh();
     } catch (e) {
-      notifyError(e, "保存失败");
+      notifyError(e, '保存失败');
     }
   }
 
-  const title = `${isEdit ? "编辑" : "新增"}${config.singular}`;
+  const title = `${isEdit ? '编辑' : '新增'}${config.singular}`;
 
   return (
     <div>
@@ -86,15 +80,11 @@ export function ResourceEditor<T extends { id: string }>({
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            {title}
-          </h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">{title}</h1>
         </div>
         <Can
           anyPerm={
-            isEdit
-              ? editPerms(config)
-              : [...(config.permissions?.create ?? editPerms(config))]
+            isEdit ? editPerms(config) : [...(config.permissions?.create ?? editPerms(config))]
           }
         >
           <div className="flex shrink-0 items-center gap-2 sm:ml-auto">
@@ -102,7 +92,7 @@ export function ResourceEditor<T extends { id: string }>({
               <Link href={config.basePath}>取消</Link>
             </Button>
             <Button form={FORM_ID} type="submit" disabled={isSaving || (isEdit && !item)}>
-              {isSaving ? "保存中…" : "保存"}
+              {isSaving ? '保存中…' : '保存'}
             </Button>
           </div>
         </Can>
@@ -110,7 +100,7 @@ export function ResourceEditor<T extends { id: string }>({
 
       {isEdit && isError && (
         <Alert variant="destructive" icon="error" className="mb-4">
-          加载失败：{error instanceof Error ? error.message : "未知错误"}
+          加载失败：{error instanceof Error ? error.message : '未知错误'}
         </Alert>
       )}
 
@@ -129,6 +119,7 @@ export function ResourceEditor<T extends { id: string }>({
                 defaultValues={defaults}
                 dynamicOptions={dynamicOptions}
                 tagSuggestions={tagSuggestions}
+                autoSlug={config.autoSlug ?? true}
                 onSubmit={handleSubmit}
               />
             </ImagePreviewProvider>

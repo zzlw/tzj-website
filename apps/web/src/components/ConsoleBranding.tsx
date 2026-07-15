@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useEffect } from "react";
+import { useEffect } from 'react';
 
 /**
  * 控制台品牌欢迎语 —— 仅在生产环境客户端执行
@@ -9,8 +9,8 @@ import { useEffect } from "react";
 export function ConsoleBranding() {
   useEffect(() => {
     // 仅在生产环境执行，避免 React DevTools 冲突
-    if (process.env.NODE_ENV !== "production") return;
-    if (typeof window === "undefined") return;
+    if (process.env.NODE_ENV !== 'production') return;
+    if (typeof window === 'undefined') return;
 
     const timer = window.setTimeout(() => {
       const styles = {
@@ -49,11 +49,11 @@ export function ConsoleBranding() {
       console.log(
         `%c拓 之 迹%c\n%cEmpowering Resilience · Innovating with Purpose%c\n%c© ${new Date().getFullYear()} Henan TZJ Industrial Co., Ltd.%c`,
         styles.logo,
-        "",
+        '',
         styles.slogan,
-        "",
+        '',
         styles.company,
-        ""
+        '',
       );
     }, 0);
 

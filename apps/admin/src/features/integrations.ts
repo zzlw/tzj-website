@@ -1,18 +1,18 @@
-"use client";
+'use client';
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/apiClient";
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   IntegrationAdminItem,
   IntegrationsAdminOverview,
   IntegrationTestResult,
   UpdateIntegrationDto,
-} from "@tzj/types";
+} from '@tzj/types';
+import { api } from '@/lib/apiClient';
 
 export function useIntegrationsOverview() {
   return useQuery({
-    queryKey: ["integrations", "admin"],
-    queryFn: () => api.query<IntegrationsAdminOverview>("integrations/admin"),
+    queryKey: ['integrations', 'admin'],
+    queryFn: () => api.query<IntegrationsAdminOverview>('integrations/admin'),
   });
 }
 
@@ -21,7 +21,7 @@ export function useUpdateIntegration(slug: string) {
   return useMutation({
     mutationFn: (payload: UpdateIntegrationDto) =>
       api.put<IntegrationAdminItem>(`integrations/${slug}`, payload),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["integrations", "admin"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['integrations', 'admin'] }),
   });
 }
 

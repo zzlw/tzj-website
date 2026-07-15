@@ -1,5 +1,6 @@
-"use client";
+'use client';
 
+import { Skeleton } from '@tzj/ui';
 import {
   Area,
   Bar,
@@ -15,17 +16,16 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-} from "recharts";
-import { Skeleton } from "@tzj/ui";
-import type { AnalyticsOverview } from "@/features/analytics";
-import { formatShortDate } from "@/features/analytics";
+} from 'recharts';
+import type { AnalyticsOverview } from '@/features/analytics';
+import { formatShortDate } from '@/features/analytics';
 import {
   CHART_COLORS,
   CHART_GRID,
   CHART_MUTED,
   CHART_PRIMARY,
   CHART_SECONDARY,
-} from "./chart-theme";
+} from './chart-theme';
 
 function ChartTooltip({
   active,
@@ -49,7 +49,7 @@ function ChartTooltip({
           />
           <span>{item.name}</span>
           <span className="ml-auto tabular-nums font-medium text-foreground">
-            {typeof item.value === "number" ? item.value.toLocaleString("zh-CN") : item.value}
+            {typeof item.value === 'number' ? item.value.toLocaleString('zh-CN') : item.value}
           </span>
         </p>
       ))}
@@ -66,7 +66,7 @@ export function TrendChart({
   loading,
   height = 320,
 }: {
-  daily: AnalyticsOverview["daily"];
+  daily: AnalyticsOverview['daily'];
   loading?: boolean;
   height?: number;
 }) {
@@ -116,9 +116,7 @@ export function TrendChart({
         <Legend
           verticalAlign="top"
           height={28}
-          formatter={(value) => (
-            <span className="text-xs text-muted-foreground">{value}</span>
-          )}
+          formatter={(value) => <span className="text-xs text-muted-foreground">{value}</span>}
         />
         <Area
           yAxisId="left"
@@ -149,7 +147,7 @@ export function TrendChart({
 export function DonutChart({
   items,
   loading,
-  emptyText = "暂无数据",
+  emptyText = '暂无数据',
 }: {
   items: Array<{ name: string; value: number }>;
   loading?: boolean;
@@ -212,8 +210,8 @@ export function DonutChart({
 export function HorizontalBarChart({
   items,
   loading,
-  emptyText = "暂无数据",
-  valueKey = "value",
+  emptyText = '暂无数据',
+  valueKey = 'value',
 }: {
   items: Array<{ name: string; value: number }>;
   loading?: boolean;
@@ -234,11 +232,7 @@ export function HorizontalBarChart({
 
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <BarChart
-        data={items}
-        layout="vertical"
-        margin={{ top: 4, right: 16, left: 4, bottom: 4 }}
-      >
+      <BarChart data={items} layout="vertical" margin={{ top: 4, right: 16, left: 4, bottom: 4 }}>
         <CartesianGrid stroke={CHART_GRID} strokeDasharray="3 3" horizontal={false} />
         <XAxis
           type="number"
@@ -255,7 +249,7 @@ export function HorizontalBarChart({
           axisLine={false}
           tickLine={false}
         />
-        <Tooltip content={<ChartTooltip />} cursor={{ fill: "var(--color-muted)", opacity: 0.4 }} />
+        <Tooltip content={<ChartTooltip />} cursor={{ fill: 'var(--color-muted)', opacity: 0.4 }} />
         <Bar dataKey={valueKey} name="访问量" radius={[0, 2, 2, 0]} maxBarSize={24}>
           {items.map((entry, index) => (
             <Cell key={entry.name} fill={CHART_COLORS[index % CHART_COLORS.length]} />

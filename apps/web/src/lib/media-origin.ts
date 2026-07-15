@@ -1,4 +1,4 @@
-import { getS3PublicDomain } from "./media-url";
+import { getS3PublicDomain } from './media-url';
 
 /** 媒体 CDN / MinIO 源站 origin，用于 preconnect。 */
 export function getMediaOrigin(): string {

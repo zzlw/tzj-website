@@ -1,13 +1,13 @@
-import type { NextConfig } from "next";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import type { NextConfig } from 'next';
 
 const appDir = dirname(fileURLToPath(import.meta.url));
-const monorepoRoot = join(appDir, "..", "..");
+const monorepoRoot = join(appDir, '..', '..');
 
 const nextConfig: NextConfig = {
-  output: "standalone",
-  transpilePackages: ["@tzj/ui", "@tzj/types"],
+  output: 'standalone',
+  transpilePackages: ['@tzj/ui', '@tzj/types'],
   // monorepo 下显式指定 Turbopack 根目录，避免推断错误导致 dev 崩溃
   turbopack: {
     root: monorepoRoot,
@@ -20,7 +20,7 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     // 优化大包导入，减少初始 JS 体积
-    optimizePackageImports: ["lucide-react"],
+    optimizePackageImports: ['lucide-react'],
   },
 };
 

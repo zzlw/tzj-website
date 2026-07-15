@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import dynamic from "next/dynamic";
+import dynamic from 'next/dynamic';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 const SearchOverlay = dynamic(
-  () => import("./SearchOverlay").then((m) => ({ default: m.SearchOverlay })),
+  () => import('./SearchOverlay').then((m) => ({ default: m.SearchOverlay })),
   { ssr: false },
 );
 
@@ -27,13 +27,13 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setOpen((v) => !v);
       }
     };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
   }, []);
 
   return (
@@ -47,7 +47,7 @@ export function SearchProvider({ children }: { children: React.ReactNode }) {
 export function useSearch() {
   const ctx = useContext(SearchContext);
   if (!ctx) {
-    throw new Error("useSearch must be used within SearchProvider");
+    throw new Error('useSearch must be used within SearchProvider');
   }
   return ctx;
 }

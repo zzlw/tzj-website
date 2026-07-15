@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import type { FormEvent, ReactNode } from "react";
-import { Search } from "lucide-react";
-import { cn } from "../../lib/utils";
-import { Card, CardContent } from "../card";
-import { Input } from "../input";
+import { Search } from 'lucide-react';
+import type { FormEvent, ReactNode } from 'react';
+import { cn } from '../../lib/utils';
+import { Card, CardContent } from '../card';
+import { Input } from '../input';
 
 export interface ListToolbarProps {
   searchValue: string;
@@ -21,7 +21,7 @@ export function ListToolbar({
   searchValue,
   onSearchValueChange,
   onSearchSubmit,
-  searchPlaceholder = "搜索…",
+  searchPlaceholder = '搜索…',
   children,
   className,
 }: ListToolbarProps) {
@@ -31,12 +31,9 @@ export function ListToolbar({
   }
 
   return (
-    <Card className={cn("mb-4 border-border/80 py-0 shadow-sm", className)}>
+    <Card className={cn('mb-4 border-border/80 py-0 shadow-sm', className)}>
       <CardContent className="flex flex-wrap items-center gap-3 p-4">
-        <form
-          className="relative min-w-[220px] flex-1"
-          onSubmit={handleSubmit}
-        >
+        <form className="relative min-w-[220px] flex-1" onSubmit={handleSubmit}>
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={searchValue}

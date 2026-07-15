@@ -1,9 +1,9 @@
-import { Injectable, Logger } from "@nestjs/common";
-import Dm20151123, { SingleSendMailRequest } from "@alicloud/dm20151123";
-import { $OpenApiUtil } from "@alicloud/openapi-core";
-import { IntegrationsService } from "./integrations.service";
+import Dm20151123, { SingleSendMailRequest } from '@alicloud/dm20151123';
+import { $OpenApiUtil } from '@alicloud/openapi-core';
+import { Injectable, Logger } from '@nestjs/common';
+import { IntegrationsService } from './integrations.service';
 
-const SLUG = "aliyun-directmail";
+const SLUG = 'aliyun-directmail';
 
 export interface SendMailOptions {
   to: string;
@@ -24,23 +24,22 @@ export class AliyunDmService {
   }
 
   async sendMail(options: SendMailOptions): Promise<void> {
-    const accessKeyId = await this.integrations.resolveSecret(SLUG, "accessKeyId");
-    const accessKeySecret = await this.integrations.resolveSecret(SLUG, "accessKeySecret");
-    const accountName = await this.integrations.resolveConfig(SLUG, "accountName");
+    const accessKeyId = await this.integrations.resolveSecret(SLUG, 'accessKeyId');
+    const accessKeySecret = await this.integrations.resolveSecret(SLUG, 'accessKeySecret');
+    const accountName = await this.integrations.resolveConfig(SLUG, 'accountName');
     const fromAlias =
-      (await this.integrations.resolveConfig(SLUG, "fromAlias"))?.trim() || "拓之迹官网";
-    const region =
-      (await this.integrations.resolveConfig(SLUG, "region"))?.trim() || "cn-hangzhou";
+      (await this.integrations.resolveConfig(SLUG, 'fromAlias'))?.trim() || '拓之迹官网';
+    const region = (await this.integrations.resolveConfig(SLUG, 'region'))?.trim() || 'cn-hangzhou';
 
     if (!accessKeyId || !accessKeySecret || !accountName) {
-      throw new Error("阿里云邮件推送未完整配置");
+      throw new Error('阿里云邮件推送未完整配置');
     }
 
     const client = new Dm20151123(
       new $OpenApiUtil.Config({
         accessKeyId,
         accessKeySecret,
-        endpoint: "dm.aliyuncs.com",
+        endpoint: 'dm.aliyuncs.com',
         regionId: region,
       }),
     );

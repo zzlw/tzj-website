@@ -1,32 +1,32 @@
-import Link from "next/link";
-import { MediaImage as Image } from "@/components/MediaImage";
-import { ArrowRight } from "lucide-react";
-import { Container } from "@/components/ui";
+import { ArrowRight } from 'lucide-react';
+import Link from 'next/link';
+import { MediaImage as Image } from '@/components/MediaImage';
+import { Container } from '@/components/ui';
 
 const CARDS = [
   {
-    title: "固定训练塔",
-    desc: "标准塔型与深度定制，最坚固耐用的固定式训练塔",
-    href: "/fixed-tower",
-    image: "/media/fixed-tower-hero.jpg",
+    title: '固定训练塔',
+    desc: '标准塔型与深度定制，最坚固耐用的固定式训练塔',
+    href: '/fixed-tower',
+    image: '/media/fixed-tower-hero.jpg',
   },
   {
-    title: "模块化训练塔",
-    desc: "全镀锌钢框架，开放式平面，可堆叠扩展",
-    href: "/modular-tower",
-    image: "/media/modular-hero.jpg",
+    title: '模块化训练塔',
+    desc: '全镀锌钢框架，开放式平面，可堆叠扩展',
+    href: '/modular-tower',
+    image: '/media/modular-hero.jpg',
   },
   {
-    title: "燃烧室",
-    desc: "互锁隔热衬里系统，耐高温、低维护",
-    href: "/burn-rooms",
-    image: "/media/burn-room.webp",
+    title: '燃烧室',
+    desc: '互锁隔热衬里系统，耐高温、低维护',
+    href: '/burn-rooms',
+    image: '/media/burn-room.webp',
   },
   {
-    title: "训练配件与道具",
-    desc: "热与烟、逃生、搜救、破拆、危化品等全场景道具",
-    href: "/accessories",
-    image: "/media/tactical.jpg",
+    title: '训练配件与道具',
+    desc: '热与烟、逃生、搜救、破拆、危化品等全场景道具',
+    href: '/accessories',
+    image: '/media/tactical.jpg',
   },
 ];
 

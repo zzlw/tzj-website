@@ -1,24 +1,24 @@
-import { execFile } from "node:child_process";
-import * as fs from "node:fs/promises";
-import * as os from "node:os";
-import * as path from "node:path";
-import { promisify } from "node:util";
-import { Injectable, Logger } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
-import type { SiteMediaSettings, WatermarkLayout, WatermarkPosition } from "@tzj/types";
-import sharp from "sharp";
-import { SettingsService } from "../settings/settings.service";
-import { S3Service } from "../storage/s3.service";
+import { execFile } from 'node:child_process';
+import * as fs from 'node:fs/promises';
+import * as os from 'node:os';
+import * as path from 'node:path';
+import { promisify } from 'node:util';
+import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import type { SiteMediaSettings, WatermarkLayout, WatermarkPosition } from '@tzj/types';
+import sharp from 'sharp';
+import { SettingsService } from '../settings/settings.service';
+import { S3Service } from '../storage/s3.service';
 
 const execFileAsync = promisify(execFile);
 
-const SKIP_IMAGE_MIME = new Set(["image/svg+xml", "image/gif"]);
+const SKIP_IMAGE_MIME = new Set(['image/svg+xml', 'image/gif']);
 
 /** 中文优先字体栈（librsvg / macOS / Windows 常见字体） */
 const FONT_STACK =
   '"PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC", sans-serif';
 
-type WatermarkConfig = SiteMediaSettings["watermark"];
+type WatermarkConfig = SiteMediaSettings['watermark'];
 
 export interface ProcessedMedia {
   buffer: Buffer;
@@ -38,27 +38,21 @@ export class WatermarkService {
     private readonly config: ConfigService,
   ) {}
 
-  async processUpload(
-    buffer: Buffer,
-    mimeType: string,
-    folder: string,
-  ): Promise<ProcessedMedia> {
+  async processUpload(buffer: Buffer, mimeType: string, folder: string): Promise<ProcessedMedia> {
     const config = (await this.settings.getSiteMediaSettings()).watermark;
     if (!this.shouldProcess(config, mimeType, folder)) {
       return { buffer, mimeType };
     }
 
     try {
-      if (mimeType.startsWith("image/")) {
+      if (mimeType.startsWith('image/')) {
         return await this.processImage(buffer, mimeType, config);
       }
-      if (mimeType.startsWith("video/")) {
+      if (mimeType.startsWith('video/')) {
         return await this.processVideo(buffer, mimeType, config);
       }
     } catch (err) {
-      this.logger.warn(
-        `水印处理失败，已回退为原文件 (${mimeType}): ${(err as Error).message}`,
-      );
+      this.logger.warn(`水印处理失败，已回退为原文件 (${mimeType}): ${(err as Error).message}`);
     }
 
     return { buffer, mimeType };
@@ -66,11 +60,11 @@ export class WatermarkService {
 
   private shouldProcess(config: WatermarkConfig, mimeType: string, folder: string) {
     if (!config.enabled) return false;
-    if (!config.applyToFolders.includes(folder as "uploads" | "cms")) return false;
-    if (mimeType.startsWith("image/")) {
+    if (!config.applyToFolders.includes(folder as 'uploads' | 'cms')) return false;
+    if (mimeType.startsWith('image/')) {
       return config.applyToImages && !SKIP_IMAGE_MIME.has(mimeType);
     }
-    if (mimeType.startsWith("video/")) {
+    if (mimeType.startsWith('video/')) {
       return config.applyToVideos;
     }
     return false;
@@ -81,7 +75,7 @@ export class WatermarkService {
     mimeType: string,
     config: WatermarkConfig,
   ): Promise<ProcessedMedia> {
-    const base = sharp(buffer, { failOn: "none" });
+    const base = sharp(buffer, { failOn: 'none' });
     const metadata = await base.metadata();
     const width = metadata.width ?? 0;
     const height = metadata.height ?? 0;
@@ -95,13 +89,12 @@ export class WatermarkService {
       .composite([{ input: overlay, left: 0, top: 0 }])
       .toBuffer({ resolveWithObject: true });
 
-    const outMime =
-      mimeType === "image/png" || mimeType === "image/webp" ? mimeType : "image/jpeg";
+    const outMime = mimeType === 'image/png' || mimeType === 'image/webp' ? mimeType : 'image/jpeg';
 
     const encoded =
-      outMime === "image/png"
+      outMime === 'image/png'
         ? await sharp(output.data).png().toBuffer()
-        : outMime === "image/webp"
+        : outMime === 'image/webp'
           ? await sharp(output.data).webp({ quality: 90 }).toBuffer()
           : await sharp(output.data).jpeg({ quality: 90 }).toBuffer();
 
@@ -119,11 +112,11 @@ export class WatermarkService {
     height: number,
   ): Promise<Buffer> {
     switch (config.layout) {
-      case "tile":
+      case 'tile':
         return this.buildTiledOverlay(config, width, height);
-      case "center":
+      case 'center':
         return this.buildCenterOverlay(config, width, height);
-      case "corner":
+      case 'corner':
       default:
         return this.buildCornerOverlay(config, width, height);
     }
@@ -135,7 +128,7 @@ export class WatermarkService {
     height: number,
   ): Promise<Buffer> {
     const wmWidth = Math.max(32, Math.round(width * config.scale));
-    const stamp = await this.buildStamp(config, wmWidth, "corner");
+    const stamp = await this.buildStamp(config, wmWidth, 'corner');
     const stampMeta = await sharp(stamp).metadata();
     const wmW = stampMeta.width ?? wmWidth;
     const wmH = stampMeta.height ?? 0;
@@ -161,7 +154,7 @@ export class WatermarkService {
     height: number,
   ): Promise<Buffer> {
     const wmWidth = Math.max(48, Math.round(Math.min(width, height) * config.scale * 1.6));
-    const stamp = await this.buildStamp(config, wmWidth, "center");
+    const stamp = await this.buildStamp(config, wmWidth, 'center');
     const stampMeta = await sharp(stamp).metadata();
     const wmW = stampMeta.width ?? wmWidth;
     const wmH = stampMeta.height ?? 0;
@@ -191,7 +184,7 @@ export class WatermarkService {
     width: number,
     height: number,
   ): Promise<Buffer> {
-    if (config.mode === "text") {
+    if (config.mode === 'text') {
       return this.buildTiledTextSvgOverlay(config, width, height);
     }
     return this.buildTiledImageOverlay(config, width, height);
@@ -202,11 +195,8 @@ export class WatermarkService {
     width: number,
     height: number,
   ): Promise<Buffer> {
-    const text = config.text.trim() || "Watermark";
-    const fontSize = Math.max(
-      14,
-      Math.min(36, Math.round(width * config.scale * 0.12)),
-    );
+    const text = config.text.trim() || 'Watermark';
+    const fontSize = Math.max(14, Math.min(36, Math.round(width * config.scale * 0.12)));
     const charW = text.length <= 6 ? 1.05 : 0.92;
     const cellW = Math.round(text.length * fontSize * charW * config.tileSpacing);
     const cellH = Math.round(fontSize * 2.8 * config.tileSpacing);
@@ -229,7 +219,7 @@ export class WatermarkService {
     height: number,
   ): Promise<Buffer> {
     const stampW = Math.max(32, Math.round(width * config.scale * 0.35));
-    const stamp = await this.buildStamp(config, stampW, "tile");
+    const stamp = await this.buildStamp(config, stampW, 'tile');
     const meta = await sharp(stamp).metadata();
     const lw = meta.width ?? stampW;
     const lh = meta.height ?? stampW;
@@ -286,19 +276,18 @@ export class WatermarkService {
     targetWidth: number,
     variant: WatermarkLayout,
   ): Promise<Buffer> {
-    if (config.mode === "image" && config.imageKey) {
+    if (config.mode === 'image' && config.imageKey) {
       const logoBuffer = await this.s3.getObjectBuffer(config.imageKey);
       const resized = await sharp(logoBuffer)
         .resize({ width: targetWidth, withoutEnlargement: true })
         .ensureAlpha()
         .png()
         .toBuffer();
-      const opacity =
-        variant === "tile" ? Math.min(config.opacity, 0.2) : config.opacity;
+      const opacity = variant === 'tile' ? Math.min(config.opacity, 0.2) : config.opacity;
       return applyOpacity(resized, opacity);
     }
 
-    const text = config.text.trim() || "Watermark";
+    const text = config.text.trim() || 'Watermark';
     const fontSize = computeFontSize(text, targetWidth, variant);
     const svg = buildTextStampSvg(text, targetWidth, fontSize, config.opacity, variant);
     return sharp(Buffer.from(svg)).png().toBuffer();
@@ -310,22 +299,22 @@ export class WatermarkService {
     config: WatermarkConfig,
   ): Promise<ProcessedMedia> {
     if (!(await this.checkFfmpeg())) {
-      this.logger.warn("未检测到 ffmpeg，已跳过视频水印");
+      this.logger.warn('未检测到 ffmpeg，已跳过视频水印');
       return { buffer, mimeType };
     }
 
-    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "tzj-wm-"));
-    const ext = mimeType.split("/")[1]?.split(";")[0]?.split("+")[0] || "mp4";
+    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'tzj-wm-'));
+    const ext = mimeType.split('/')[1]?.split(';')[0]?.split('+')[0] || 'mp4';
     const inputPath = path.join(tmpDir, `input.${ext}`);
     const outputPath = path.join(tmpDir, `output.${ext}`);
-    const wmPath = path.join(tmpDir, "watermark.png");
-    const probePath = path.join(tmpDir, "probe.png");
+    const wmPath = path.join(tmpDir, 'watermark.png');
+    const probePath = path.join(tmpDir, 'probe.png');
 
     try {
       await fs.writeFile(inputPath, buffer);
       await fs.writeFile(probePath, buffer);
 
-      const probe = await sharp(probePath, { failOn: "none" }).metadata();
+      const probe = await sharp(probePath, { failOn: 'none' }).metadata();
       const vw = probe.width ?? 1280;
       const vh = probe.height ?? 720;
 
@@ -333,7 +322,7 @@ export class WatermarkService {
       await fs.writeFile(wmPath, overlay);
 
       let filter: string;
-      if (config.layout === "tile" || config.layout === "center") {
+      if (config.layout === 'tile' || config.layout === 'center') {
         filter = `[1:v]scale=${vw}:${vh}[wm];[0:v][wm]overlay=0:0`;
       } else {
         const overlayPos = ffmpegOverlayExpr(config.position);
@@ -341,20 +330,20 @@ export class WatermarkService {
       }
 
       await execFileAsync(
-        this.config.get<string>("FFMPEG_PATH", "ffmpeg"),
+        this.config.get<string>('FFMPEG_PATH', 'ffmpeg'),
         [
-          "-hide_banner",
-          "-loglevel",
-          "error",
-          "-i",
+          '-hide_banner',
+          '-loglevel',
+          'error',
+          '-i',
           inputPath,
-          "-i",
+          '-i',
           wmPath,
-          "-filter_complex",
+          '-filter_complex',
           filter,
-          "-codec:a",
-          "copy",
-          "-y",
+          '-codec:a',
+          'copy',
+          '-y',
           outputPath,
         ],
         { timeout: 300_000, maxBuffer: 20 * 1024 * 1024 },
@@ -370,7 +359,7 @@ export class WatermarkService {
   private async checkFfmpeg(): Promise<boolean> {
     if (this.ffmpegAvailable !== null) return this.ffmpegAvailable;
     try {
-      await execFileAsync(this.config.get<string>("FFMPEG_PATH", "ffmpeg"), ["-version"]);
+      await execFileAsync(this.config.get<string>('FFMPEG_PATH', 'ffmpeg'), ['-version']);
       this.ffmpegAvailable = true;
     } catch {
       this.ffmpegAvailable = false;
@@ -381,22 +370,22 @@ export class WatermarkService {
 
 function computeFontSize(text: string, targetWidth: number, variant: WatermarkLayout): number {
   const len = Math.max(text.length, 2);
-  if (variant === "center") {
-    return Math.max(20, Math.min(96, Math.round(targetWidth / len * 1.1)));
+  if (variant === 'center') {
+    return Math.max(20, Math.min(96, Math.round((targetWidth / len) * 1.1)));
   }
-  if (variant === "tile") {
-    return Math.max(12, Math.min(28, Math.round(targetWidth / len * 0.95)));
+  if (variant === 'tile') {
+    return Math.max(12, Math.min(28, Math.round((targetWidth / len) * 0.95)));
   }
-  return Math.max(16, Math.min(56, Math.round(targetWidth / len * 1.25)));
+  return Math.max(16, Math.min(56, Math.round((targetWidth / len) * 1.25)));
 }
 
 function escapeXml(text: string): string {
   return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
 }
 
 function buildTextStampSvg(
@@ -407,16 +396,16 @@ function buildTextStampSvg(
   variant: WatermarkLayout,
 ): string {
   const safe = escapeXml(text);
-  const height = Math.round(fontSize * (variant === "center" ? 1.35 : 1.55));
-  const weight = variant === "center" ? 600 : 500;
+  const height = Math.round(fontSize * (variant === 'center' ? 1.35 : 1.55));
+  const weight = variant === 'center' ? 600 : 500;
 
-  if (variant === "tile") {
+  if (variant === 'tile') {
     return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
   <text x="0" y="${fontSize}" font-size="${fontSize}" font-family='${FONT_STACK}' font-weight="${weight}" fill="#6b7280" fill-opacity="${opacity}">${safe}</text>
 </svg>`;
   }
 
-  if (variant === "center") {
+  if (variant === 'center') {
     return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
   <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="${fontSize}" font-family='${FONT_STACK}' font-weight="${weight}" fill="#ffffff" fill-opacity="${opacity * 0.85}" stroke="#000000" stroke-opacity="${opacity * 0.25}" stroke-width="1" paint-order="stroke">${safe}</text>
 </svg>`;
@@ -454,7 +443,10 @@ function buildTilePatternSvg(
 }
 
 async function applyOpacity(input: Buffer, opacity: number): Promise<Buffer> {
-  const { data, info } = await sharp(input).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const { data, info } = await sharp(input)
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
   for (let i = 3; i < data.length; i += 4) {
     data[i] = Math.round((data[i] ?? 255) * opacity);
   }
@@ -474,18 +466,18 @@ function computePlacement(
   margin: number,
 ): { left: number; top: number } {
   switch (position) {
-    case "top-left":
+    case 'top-left':
       return { left: margin, top: margin };
-    case "top-right":
+    case 'top-right':
       return { left: Math.max(margin, baseWidth - wmWidth - margin), top: margin };
-    case "bottom-left":
+    case 'bottom-left':
       return { left: margin, top: Math.max(margin, baseHeight - wmHeight - margin) };
-    case "center":
+    case 'center':
       return {
         left: Math.max(0, Math.round((baseWidth - wmWidth) / 2)),
         top: Math.max(0, Math.round((baseHeight - wmHeight) / 2)),
       };
-    case "bottom-right":
+    case 'bottom-right':
     default:
       return {
         left: Math.max(margin, baseWidth - wmWidth - margin),
@@ -497,15 +489,15 @@ function computePlacement(
 function ffmpegOverlayExpr(position: WatermarkPosition): string {
   const m = 12;
   switch (position) {
-    case "top-left":
+    case 'top-left':
       return `${m}:${m}`;
-    case "top-right":
+    case 'top-right':
       return `W-w-${m}:${m}`;
-    case "bottom-left":
+    case 'bottom-left':
       return `${m}:H-h-${m}`;
-    case "center":
+    case 'center':
       return `(W-w)/2:(H-h)/2`;
-    case "bottom-right":
+    case 'bottom-right':
     default:
       return `W-w-${m}:H-h-${m}`;
   }

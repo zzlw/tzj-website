@@ -1,16 +1,7 @@
-"use client";
+'use client';
 
 import {
-  Download,
-  ExternalLink,
-  File,
-  FileAudio,
-  FileText,
-  FileVideo,
-  Copy,
-  Check,
-} from "lucide-react";
-import {
+  AudioPlayer,
   Button,
   Dialog,
   DialogContent,
@@ -18,19 +9,28 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@tzj/ui";
-import type { MediaAsset } from "@/features/types";
+} from '@tzj/ui';
+import {
+  Check,
+  Copy,
+  Download,
+  ExternalLink,
+  File,
+  FileAudio,
+  FileText,
+  FileVideo,
+} from 'lucide-react';
+import type { MediaAsset } from '@/features/types';
 import {
   downloadMediaAsset,
   formatFileSize,
   getMediaKind,
-  openInNewTab,
   type MediaKind,
-} from "./media-utils";
-import { AudioPlayer } from "@tzj/ui";
+  openInNewTab,
+} from './media-utils';
 
 function PreviewBody({ asset, kind }: { asset: MediaAsset; kind: MediaKind }) {
-  if (kind === "video") {
+  if (kind === 'video') {
     return (
       <video
         key={asset.url}
@@ -44,7 +44,7 @@ function PreviewBody({ asset, kind }: { asset: MediaAsset; kind: MediaKind }) {
       </video>
     );
   }
-  if (kind === "audio") {
+  if (kind === 'audio') {
     return (
       <div className="flex w-full flex-col items-center gap-6 py-4">
         <div className="flex h-24 w-24 items-center justify-center rounded-full bg-muted">
@@ -54,7 +54,7 @@ function PreviewBody({ asset, kind }: { asset: MediaAsset; kind: MediaKind }) {
       </div>
     );
   }
-  const Icon = kind === "pdf" ? FileText : File;
+  const Icon = kind === 'pdf' ? FileText : File;
   return (
     <div className="flex flex-col items-center gap-4 py-10 text-center">
       <div className="flex h-24 w-24 items-center justify-center rounded-xl bg-muted">
@@ -77,8 +77,8 @@ export function MediaPreviewDialog({
   copied: boolean;
   onCopy: (url: string) => void;
 }) {
-  const kind = asset ? getMediaKind(asset.mimeType, asset.filename) : "file";
-  const showOpenInNewTab = kind !== "audio" && kind !== "video";
+  const kind = asset ? getMediaKind(asset.mimeType, asset.filename) : 'file';
+  const showOpenInNewTab = kind !== 'audio' && kind !== 'video';
 
   return (
     <Dialog open={asset !== null} onOpenChange={(open) => !open && onClose()}>
@@ -132,14 +132,8 @@ export function MediaPreviewDialog({
   );
 }
 
-export function MediaThumbnail({
-  asset,
-  kind,
-}: {
-  asset: MediaAsset;
-  kind: MediaKind;
-}) {
-  if (kind === "video") {
+export function MediaThumbnail({ asset, kind }: { asset: MediaAsset; kind: MediaKind }) {
+  if (kind === 'video') {
     return (
       <>
         <video
@@ -155,14 +149,11 @@ export function MediaThumbnail({
       </>
     );
   }
-  const Icon =
-    kind === "audio" ? FileAudio : kind === "pdf" ? FileText : File;
+  const Icon = kind === 'audio' ? FileAudio : kind === 'pdf' ? FileText : File;
   return (
     <div className="flex h-full flex-col items-center justify-center gap-2 px-2 text-muted-foreground">
       <Icon className="h-10 w-10 shrink-0 opacity-70" />
-      <span className="line-clamp-2 text-center text-[10px] leading-tight">
-        {asset.filename}
-      </span>
+      <span className="line-clamp-2 text-center text-[10px] leading-tight">{asset.filename}</span>
     </div>
   );
 }

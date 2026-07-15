@@ -1,5 +1,5 @@
-import type { NextResponse } from "next/server";
-import { API_BASE, COOKIE } from "./config";
+import type { NextResponse } from 'next/server';
+import { API_BASE, COOKIE } from './config';
 
 export type TokenPair = {
   accessToken: string;
@@ -18,10 +18,10 @@ export async function refreshAccessToken(
   inflightRefresh = (async () => {
     try {
       const res = await fetch(`${API_BASE}/auth/refresh`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refreshToken }),
-        cache: "no-store",
+        cache: 'no-store',
       });
       if (!res.ok) return null;
       const body = await res.json().catch(() => null);
@@ -40,19 +40,19 @@ export async function refreshAccessToken(
 }
 
 export function applyTokenCookies(res: NextResponse, tokens: TokenPair): void {
-  const secure = process.env.NODE_ENV === "production";
+  const secure = process.env.NODE_ENV === 'production';
   res.cookies.set(COOKIE.access, tokens.accessToken, {
     httpOnly: true,
     secure,
-    sameSite: "lax",
-    path: "/",
+    sameSite: 'lax',
+    path: '/',
     maxAge: 60 * 60,
   });
   res.cookies.set(COOKIE.refresh, tokens.refreshToken, {
     httpOnly: true,
     secure,
-    sameSite: "lax",
-    path: "/",
+    sameSite: 'lax',
+    path: '/',
     maxAge: 60 * 60 * 24 * 7,
   });
 }

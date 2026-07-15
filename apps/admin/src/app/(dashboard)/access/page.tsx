@@ -1,15 +1,5 @@
-"use client";
+'use client';
 
-import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import {
-  Check,
-  Loader2,
-  Pencil,
-  Plus,
-  Shield,
-  Trash2,
-} from "lucide-react";
 import {
   Alert,
   Badge,
@@ -20,25 +10,20 @@ import {
   CardHeader,
   CardTitle,
   ConfirmDialog,
+  cn,
   PageHeader,
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-  cn,
-} from "@tzj/ui";
-import {
-  useAccessOverview,
-  useCreateRole,
-  useRemoveRole,
-  useUpdateRole,
-} from "@/features/access";
-import { notifyError, notifySuccess } from "@/lib/notify";
-import type { PermissionGroup, RoleAccessItem } from "@/features/types";
-import {
-  RoleFormDialog,
-  type RoleFormValues,
-} from "@/components/access/RoleFormDialog";
+} from '@tzj/ui';
+import { Check, Loader2, Pencil, Plus, Shield, Trash2 } from 'lucide-react';
+import Link from 'next/link';
+import { useEffect, useMemo, useState } from 'react';
+import { RoleFormDialog, type RoleFormValues } from '@/components/access/RoleFormDialog';
+import { useAccessOverview, useCreateRole, useRemoveRole, useUpdateRole } from '@/features/access';
+import type { PermissionGroup, RoleAccessItem } from '@/features/types';
+import { notifyError, notifySuccess } from '@/lib/notify';
 
 function RolePermissionView({
   groups,
@@ -51,23 +36,18 @@ function RolePermissionView({
     <>
       {groups.map((group) => (
         <div key={group.id}>
-          <h3 className="mb-3 text-sm font-medium text-foreground">
-            {group.label}
-          </h3>
+          <h3 className="mb-3 text-sm font-medium text-foreground">{group.label}</h3>
           <div className="divide-y divide-border rounded-md border border-border">
             {group.permissions.map((perm) => {
               const granted = permissions.includes(perm.id);
               return (
-                <div
-                  key={perm.id}
-                  className="flex items-start gap-3 px-4 py-3"
-                >
+                <div key={perm.id} className="flex items-start gap-3 px-4 py-3">
                   <div
                     className={cn(
-                      "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border",
+                      'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border',
                       granted
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border bg-muted/30 text-transparent",
+                        ? 'border-primary bg-primary text-primary-foreground'
+                        : 'border-border bg-muted/30 text-transparent',
                     )}
                   >
                     <Check className="h-3 w-3" />
@@ -75,9 +55,7 @@ function RolePermissionView({
                   <div>
                     <p className="text-sm font-medium">{perm.label}</p>
                     {perm.description ? (
-                      <p className="text-xs text-muted-foreground">
-                        {perm.description}
-                      </p>
+                      <p className="text-xs text-muted-foreground">{perm.description}</p>
                     ) : null}
                   </div>
                 </div>
@@ -135,7 +113,7 @@ export default function AccessPage() {
       permissions: values.permissions,
     });
     if (created?.id) setSelectedRoleId(created.id);
-    notifySuccess("角色已创建");
+    notifySuccess('角色已创建');
   }
 
   async function handleEdit(values: RoleFormValues) {
@@ -149,7 +127,7 @@ export default function AccessPage() {
       },
     });
     setEditTarget(null);
-    notifySuccess("角色已更新");
+    notifySuccess('角色已更新');
   }
 
   async function handleDelete() {
@@ -158,9 +136,9 @@ export default function AccessPage() {
       await removeMut.mutateAsync(deleteTarget.id);
       if (selectedRoleId === deleteTarget.id) setSelectedRoleId(null);
       setDeleteTarget(null);
-      notifySuccess("角色已删除");
+      notifySuccess('角色已删除');
     } catch (e) {
-      notifyError(e, "删除失败");
+      notifyError(e, '删除失败');
       setDeleteTarget(null);
     }
   }
@@ -177,10 +155,8 @@ export default function AccessPage() {
         type="button"
         onClick={() => setSelectedRoleId(role.id)}
         className={cn(
-          "flex w-full cursor-pointer items-start gap-3 rounded-md px-3 py-2.5 text-left transition-colors",
-          selected?.id === role.id
-            ? "bg-accent text-accent-foreground"
-            : "hover:bg-muted/60",
+          'flex w-full cursor-pointer items-start gap-3 rounded-md px-3 py-2.5 text-left transition-colors',
+          selected?.id === role.id ? 'bg-accent text-accent-foreground' : 'hover:bg-muted/60',
         )}
       >
         <Shield className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
@@ -194,7 +170,7 @@ export default function AccessPage() {
             ) : null}
           </div>
           <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
-            {role.description || "—"}
+            {role.description || '—'}
           </p>
           <p className="mt-1 text-[10px] text-muted-foreground">
             {role.userCount} 个启用账号 · {role.slug}
@@ -228,7 +204,7 @@ export default function AccessPage() {
 
         {isError && (
           <Alert variant="destructive" icon="error" className="mb-4">
-            加载失败：{error instanceof Error ? error.message : "未知错误"}
+            加载失败：{error instanceof Error ? error.message : '未知错误'}
           </Alert>
         )}
 
@@ -270,22 +246,16 @@ export default function AccessPage() {
             <Card>
               <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
                 <div>
-                  <CardTitle className="text-base">
-                    {selected?.label ?? "—"} · 权限明细
-                  </CardTitle>
+                  <CardTitle className="text-base">{selected?.label ?? '—'} · 权限明细</CardTitle>
                   <CardDescription>
                     {selected?.system
-                      ? "系统预置角色，权限由平台定义，不可修改。"
-                      : "自定义角色。修改权限后，使用该角色的账号需重新登录生效。"}
+                      ? '系统预置角色，权限由平台定义，不可修改。'
+                      : '自定义角色。修改权限后，使用该角色的账号需重新登录生效。'}
                   </CardDescription>
                 </div>
                 {selected && !selected.system ? (
                   <div className="flex shrink-0 gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => openEdit(selected)}
-                    >
+                    <Button variant="outline" size="sm" onClick={() => openEdit(selected)}>
                       <Pencil className="mr-1.5 h-3.5 w-3.5" />
                       编辑
                     </Button>
@@ -315,10 +285,7 @@ export default function AccessPage() {
               </CardHeader>
               <CardContent className="space-y-6">
                 {selected ? (
-                  <RolePermissionView
-                    groups={groups}
-                    permissions={selected.permissions}
-                  />
+                  <RolePermissionView groups={groups} permissions={selected.permissions} />
                 ) : null}
               </CardContent>
             </Card>
@@ -350,9 +317,7 @@ export default function AccessPage() {
           onOpenChange={(open) => !open && setDeleteTarget(null)}
           title="删除角色"
           description={
-            deleteTarget
-              ? `确定删除「${deleteTarget.label}」？此操作不可撤销。`
-              : undefined
+            deleteTarget ? `确定删除「${deleteTarget.label}」？此操作不可撤销。` : undefined
           }
           confirmLabel="删除"
           onConfirm={handleDelete}

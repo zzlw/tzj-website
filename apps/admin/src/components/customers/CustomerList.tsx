@@ -1,0 +1,154 @@
+'use client';
+
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@tzj/ui';
+import { Hand, Undo2, UserPlus } from 'lucide-react';
+import { ResourceListView } from '@/components/crud/ResourceListView';
+import { useSession } from '@/components/session';
+import { customersConfig } from '@/features/resources/customers';
+import type { CustomerItem } from '@/features/types';
+import { api } from '@/lib/apiClient';
+import { notifyError, notifySuccess } from '@/lib/notify';
+
+type Agent = { id: string; username: string; nickname?: string | null };
+
+function agentLabel(a: Agent): string {
+  return a.nickname?.trim() || a.username;
+}
+
+export function CustomerList({ scope }: { scope: 'mine' | 'public' }) {
+  const qc = useQueryClient();
+  const { permissions } = useSession();
+  const canManage = permissions.includes('customers.manage') || permissions.includes('*');
+
+  const agentsQ = useQuery<Agent[]>({
+    queryKey: ['customers', 'agents'],
+    queryFn: () => api.query<Agent[]>('/customers/agents'),
+    enabled: scope === 'mine' && canManage,
+  });
+
+  function invalidate() {
+    qc.invalidateQueries({ queryKey: ['customers'] });
+  }
+
+  const claimMut = useMutation({
+    mutationFn: (id: string) => api.post(`/customers/${id}/claim`, {}),
+    onSuccess: () => {
+      notifySuccess('已认领到我的私海');
+      invalidate();
+    },
+    onError: (e) => notifyError(e, '认领失败'),
+  });
+
+  const releaseMut = useMutation({
+    mutationFn: (id: string) => api.post(`/customers/${id}/release`, {}),
+    onSuccess: () => {
+      notifySuccess('已退回公海');
+      invalidate();
+    },
+    onError: (e) => notifyError(e, '退回失败'),
+  });
+
+  const transferMut = useMutation({
+    mutationFn: ({ id, toUserId }: { id: string; toUserId: string }) =>
+      api.post(`/customers/${id}/transfer`, { toUserId }),
+    onSuccess: () => {
+      notifySuccess('已转移给其他坐席');
+      invalidate();
+    },
+    onError: (e) => notifyError(e, '转移失败'),
+  });
+
+  const rowActions = (row: CustomerItem) => {
+    if (!canManage) return null;
+
+    if (scope === 'public') {
+      return (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-emerald-600 hover:text-emerald-700"
+              disabled={claimMut.isPending}
+              onClick={() => claimMut.mutate(row.id)}
+            >
+              <Hand className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>认领到私海</TooltipContent>
+        </Tooltip>
+      );
+    }
+
+    // 我的客户：退回公海 + 转移
+    return (
+      <>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-destructive"
+              disabled={releaseMut.isPending}
+              onClick={() => releaseMut.mutate(row.id)}
+            >
+              <Undo2 className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>退回公海</TooltipContent>
+        </Tooltip>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              disabled={transferMut.isPending}
+            >
+              <UserPlus className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="max-h-64 overflow-auto">
+            <DropdownMenuLabel>转移给其他坐席</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {(agentsQ.data ?? [])
+              .filter((a) => a.id !== row.ownerId)
+              .map((a) => (
+                <DropdownMenuItem
+                  key={a.id}
+                  onClick={() => transferMut.mutate({ id: row.id, toUserId: a.id })}
+                >
+                  {agentLabel(a)}
+                </DropdownMenuItem>
+              ))}
+            {agentsQ.isLoading ? <DropdownMenuItem disabled>加载中…</DropdownMenuItem> : null}
+            {!agentsQ.isLoading && (agentsQ.data ?? []).length === 0 ? (
+              <DropdownMenuItem disabled>暂无可转移坐席</DropdownMenuItem>
+            ) : null}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </>
+    );
+  };
+
+  return (
+    <ResourceListView
+      config={customersConfig}
+      extraListParams={{ scope }}
+      rowActions={rowActions}
+      titleOverride={scope === 'mine' ? '我的客户' : '公海客户'}
+    />
+  );
+}

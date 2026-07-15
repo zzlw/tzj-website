@@ -1,26 +1,23 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from "react";
-import { useTranslations, useLocale } from "next-intl";
-import { Link, usePathname, useRouter } from "@/i18n/navigation";
-import { Search, Globe, Menu, X, ChevronRight, ChevronLeft } from "lucide-react";
-import { Container } from "@/components/ui";
-import {
-  buildNavItems,
-  UTILITY_LINK_KEYS,
-  type NavItem,
-} from "@/lib/navigation";
-import { PRODUCTS_HREF } from "@/lib/navigation-products";
-import { ProductMegaMenu, ProductMobileAccordion } from "@/components/layout/ProductMegaMenu";
-import { useLanguageSelector } from "@/components/i18n/LanguageSelector";
-import { useSearch } from "@/components/search/SearchProvider";
-import { useScrollHeaderHide } from "@/hooks/useScrollHeaderHide";
-import { cn } from "@/lib/utils";
-import { TopBar } from "@/components/layout/TopBar";
-import type { SocialChannelItem } from "@/components/contact/SocialChannelBar";
+import { ScrollArea } from '@tzj/ui';
+import { ChevronLeft, ChevronRight, Globe, Menu, Search, X } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import type { SocialChannelItem } from '@/components/contact/SocialChannelBar';
+import { useLanguageSelector } from '@/components/i18n/LanguageSelector';
+import { ProductMegaMenu, ProductMobileAccordion } from '@/components/layout/ProductMegaMenu';
+import { TopBar } from '@/components/layout/TopBar';
+import { useSearch } from '@/components/search/SearchProvider';
+import { Container } from '@/components/ui';
+import { useScrollHeaderHide } from '@/hooks/useScrollHeaderHide';
+import { Link, usePathname, useRouter } from '@/i18n/navigation';
+import { buildNavItems, type NavItem, UTILITY_LINK_KEYS } from '@/lib/navigation';
+import { PRODUCTS_HREF } from '@/lib/navigation-products';
+import { cn } from '@/lib/utils';
 
 // SSR 下退化为 useEffect，避免 useLayoutEffect 的服务端告警
-const useIsomorphicLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
+const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
 type NavItemLocal = NavItem;
 
@@ -51,16 +48,13 @@ export function Header({
   const router = useRouter();
   const pathname = usePathname();
   const locale = useLocale();
-  const tNav = useTranslations("nav");
-  const tHeader = useTranslations("header");
-  const tCommon = useTranslations("common");
+  const tNav = useTranslations('nav');
+  const tHeader = useTranslations('header');
+  const tCommon = useTranslations('common');
   const { open: openLanguageSelector } = useLanguageSelector();
   const { open: openSearch } = useSearch();
 
-  const navLabel = useCallback(
-    (key: string) => tNav(key as Parameters<typeof tNav>[0]),
-    [tNav],
-  );
+  const navLabel = useCallback((key: string) => tNav(key as Parameters<typeof tNav>[0]), [tNav]);
 
   const NAV_ITEMS = useMemo(() => buildNavItems(navLabel), [navLabel]);
   const UTILITY_LINKS = useMemo(
@@ -79,8 +73,8 @@ export function Header({
     let bestLen = -1;
     for (const item of NAV_ITEMS) {
       for (const href of collectHrefs(item)) {
-        if (href === "/") continue;
-        const base = href.split("#")[0]!;
+        if (href === '/') continue;
+        const base = href.split('#')[0]!;
         if ((pathname === base || pathname.startsWith(`${base}/`)) && base.length > bestLen) {
           bestLen = base.length;
           best = item.label;
@@ -98,11 +92,10 @@ export function Header({
   const current = path.length > 0 ? path[path.length - 1]! : null;
 
   const showProductMega =
-    menuOpen &&
-    (isProductsNav(path[0]) || (path.length === 0 && isProductsNav(activeSub)));
+    menuOpen && (isProductsNav(path[0]) || (path.length === 0 && isProductsNav(activeSub)));
 
-  const leftList = path.length > 0 ? path[0]!.children ?? [] : NAV_ITEMS;
-  const leftTitle = path.length > 0 ? path[0]!.label : tHeader("allMenu");
+  const leftList = path.length > 0 ? (path[0]!.children ?? []) : NAV_ITEMS;
+  const leftTitle = path.length > 0 ? path[0]!.label : tHeader('allMenu');
   const rightOpen = !showProductMega && !!activeSub && hasChildren(activeSub);
 
   const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -145,16 +138,16 @@ export function Header({
     const ro = new ResizeObserver(compute);
     ro.observe(area);
     // 字体加载完成后宽度会变，需重新测量
-    if (typeof document !== "undefined" && document.fonts?.ready) {
+    if (typeof document !== 'undefined' && document.fonts?.ready) {
       document.fonts.ready.then(compute).catch(() => {});
     }
     return () => ro.disconnect();
   }, []);
 
   useEffect(() => {
-    document.body.style.overflow = menuOpen ? "hidden" : "";
+    document.body.style.overflow = menuOpen ? 'hidden' : '';
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflow = '';
     };
   }, [menuOpen]);
 
@@ -199,10 +192,10 @@ export function Header({
   useEffect(() => {
     if (!menuOpen) return;
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
+      if (e.key === 'Escape') close();
     };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
   }, [menuOpen, close]);
 
   // Focus trap
@@ -212,7 +205,7 @@ export function Header({
     closeButtonRef.current?.focus();
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== "Tab" || !asideRef.current) return;
+      if (e.key !== 'Tab' || !asideRef.current) return;
       const focusable = Array.from(
         asideRef.current.querySelectorAll<HTMLElement>(FOCUSABLE),
       ).filter((el) => el.offsetParent !== null);
@@ -230,19 +223,19 @@ export function Header({
       }
     };
 
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
   }, [menuOpen]);
 
-  const backLabel = path.length >= 2 ? path[path.length - 2]!.label : "菜单";
-  const productMenuTitle = isProductsNav(path[0]) ? path[0]!.label : navLabel("products");
+  const backLabel = path.length >= 2 ? path[path.length - 2]!.label : '菜单';
+  const productMenuTitle = isProductsNav(path[0]) ? path[0]!.label : navLabel('products');
 
   return (
     <>
       <header
         className={cn(
-          "site-header fixed inset-x-0 top-0 z-50 bg-white",
-          scrolled && "shadow-[0_1px_0_rgba(0,0,0,0.08),0_8px_24px_-12px_rgba(0,0,0,0.18)]",
+          'site-header fixed inset-x-0 top-0 z-50 bg-white',
+          scrolled && 'shadow-[0_1px_0_rgba(0,0,0,0.08),0_8px_24px_-12px_rgba(0,0,0,0.18)]',
         )}
       >
         <TopBar
@@ -258,27 +251,30 @@ export function Header({
                 TZ
               </span>
               <span className="font-display text-xl font-extrabold tracking-tight text-neutral-900">
-                {tCommon("brandName")}
+                {tCommon('brandName')}
               </span>
             </Link>
 
             <div ref={navAreaRef} className="relative hidden min-w-0 flex-1 md:block">
-              <nav className="flex items-center justify-center gap-5 xl:gap-6" aria-label={tHeader("mainNav")}>
+              <nav
+                className="flex items-center justify-center gap-5 xl:gap-6"
+                aria-label={tHeader('mainNav')}
+              >
                 {NAV_ITEMS.slice(0, visibleCount).map((item) => {
                   const isActive = item.label === activeTopLabel;
                   return (
                     <button
                       key={item.label}
                       onClick={(e) => openTop(item, e.currentTarget)}
-                      aria-current={isActive ? "page" : undefined}
+                      aria-current={isActive ? 'page' : undefined}
                       className="group relative whitespace-nowrap font-display text-[15px] font-bold text-neutral-900 transition-colors hover:text-primary"
                       aria-expanded={menuOpen && path[0]?.label === item.label}
-                      aria-haspopup={hasChildren(item) ? "true" : undefined}
+                      aria-haspopup={hasChildren(item) ? 'true' : undefined}
                     >
                       {item.label}
                       <span
                         className={`absolute -bottom-1.5 left-0 right-0 h-0.5 origin-left bg-primary transition-transform duration-300 ${
-                          isActive ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
+                          isActive ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'
                         }`}
                       />
                     </button>
@@ -308,11 +304,11 @@ export function Header({
                 type="button"
                 onClick={openSearch}
                 className="hidden w-44 items-center border border-neutral-300 px-3 py-2 text-left transition-colors hover:border-neutral-900 focus-visible:border-neutral-900 focus-visible:outline-none md:flex xl:w-56"
-                aria-label={tHeader("searchAria")}
+                aria-label={tHeader('searchAria')}
               >
                 <Search className="mr-2 h-4 w-4 shrink-0 text-neutral-500" aria-hidden="true" />
                 <span className="w-full truncate text-sm text-neutral-500">
-                  {tHeader("searchPlaceholder")}
+                  {tHeader('searchPlaceholder')}
                 </span>
               </button>
 
@@ -320,7 +316,7 @@ export function Header({
                 type="button"
                 onClick={openSearch}
                 className="flex h-10 w-10 items-center justify-center text-neutral-900 transition-colors hover:text-primary md:hidden"
-                aria-label={tHeader("searchAria")}
+                aria-label={tHeader('searchAria')}
               >
                 <Search className="h-5 w-5" aria-hidden="true" />
               </button>
@@ -329,9 +325,9 @@ export function Header({
                 ref={menuButtonRef}
                 onClick={openRoot}
                 className={`h-10 w-10 items-center justify-center text-neutral-900 transition-colors hover:text-primary ${
-                  overflow ? "flex" : "hidden"
+                  overflow ? 'flex' : 'hidden'
                 }`}
-                aria-label={tHeader("openMenu")}
+                aria-label={tHeader('openMenu')}
                 aria-expanded={menuOpen}
                 aria-controls="mobile-nav"
               >
@@ -344,7 +340,7 @@ export function Header({
 
       <div
         className={`fixed inset-0 z-[55] bg-neutral-900/30 backdrop-blur-md transition-opacity duration-300 ${
-          menuOpen ? "opacity-100" : "pointer-events-none opacity-0"
+          menuOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
         }`}
         onClick={close}
         aria-hidden="true"
@@ -355,14 +351,14 @@ export function Header({
         id="mobile-nav"
         role="dialog"
         aria-modal="true"
-        aria-label={current ? current.label : tHeader("navMenu")}
+        aria-label={current ? current.label : tHeader('navMenu')}
         className={cn(
-          "fixed inset-y-0 left-0 z-[60] flex w-full transform flex-col overflow-hidden bg-white shadow-2xl transition-transform duration-300 ease-[cubic-bezier(.75,0,.35,1)] lg:inset-y-5 lg:left-5",
-          showProductMega ? "lg:w-[min(92vw,72rem)]" : "lg:w-auto",
+          'fixed inset-y-0 left-0 z-[60] flex w-full transform flex-col overflow-hidden bg-white shadow-2xl transition-transform duration-300 ease-[cubic-bezier(.75,0,.35,1)] lg:inset-y-5 lg:left-5',
+          showProductMega ? 'lg:w-[min(92vw,72rem)]' : 'lg:w-auto',
           !showProductMega && rightOpen
-            ? "lg:rounded-none lg:[clip-path:polygon(0_0,calc(100%_-_2.75rem)_0,100%_2.75rem,100%_100%,0_100%)]"
-            : "lg:rounded-[14px]",
-          menuOpen ? "translate-x-0" : "-translate-x-[120%]",
+            ? 'lg:rounded-none lg:[clip-path:polygon(0_0,calc(100%_-_2.75rem)_0,100%_2.75rem,100%_100%,0_100%)]'
+            : 'lg:rounded-[14px]',
+          menuOpen ? 'translate-x-0' : '-translate-x-[120%]',
         )}
       >
         {/* 移动端头部：仅承载返回按钮（大屏为双列 mega，无需返回，整行隐藏） */}
@@ -373,7 +369,8 @@ export function Header({
               className="inline-flex items-center gap-1.5 font-display text-sm font-bold text-neutral-700 transition-colors hover:text-primary"
             >
               <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-              {tHeader("back")}{backLabel}
+              {tHeader('back')}
+              {backLabel}
             </button>
           ) : null}
         </div>
@@ -384,12 +381,12 @@ export function Header({
           type="button"
           onClick={close}
           className={cn(
-            "rb-control-icon absolute z-20 right-4 top-4 lg:top-6",
+            'rb-control-icon absolute z-20 right-4 top-4 lg:top-6',
             showProductMega
-              ? "lg:right-6 lg:left-auto lg:translate-x-0"
-              : "lg:right-auto lg:left-[30rem] lg:-translate-x-[calc(100%+0.75rem)]",
+              ? 'lg:right-6 lg:left-auto lg:translate-x-0'
+              : 'lg:right-auto lg:left-[30rem] lg:-translate-x-[calc(100%+0.75rem)]',
           )}
-          aria-label={tHeader("closeMenu")}
+          aria-label={tHeader('closeMenu')}
         >
           <span className="rb-control-icon__icon" aria-hidden="true">
             <X className="h-4 w-4" strokeWidth={2.25} />
@@ -401,20 +398,22 @@ export function Header({
           {showProductMega ? (
             <ProductMegaMenu
               title={productMenuTitle}
-              browseAllLabel={navLabel("productBrowseAll")}
+              browseAllLabel={navLabel('productBrowseAll')}
               label={navLabel}
               onNavigate={close}
             />
           ) : (
             <>
-              <div className="rb-scroll min-h-0 w-[30rem] shrink-0 overflow-y-auto overscroll-contain px-8 pb-10 pt-6 lg:px-12 lg:pt-24">
-                <h2 className="mb-5 font-display text-2xl font-extrabold text-neutral-900">{leftTitle}</h2>
+              <ScrollArea className="min-h-0 w-[30rem] shrink-0 overscroll-contain px-8 pb-10 pt-6 lg:px-12 lg:pt-24">
+                <h2 className="mb-5 font-display text-2xl font-extrabold text-neutral-900">
+                  {leftTitle}
+                </h2>
                 <ul className="flex flex-col">
                   {leftList.map((item) => {
                     const expandable = hasChildren(item);
                     const active = activeSub?.label === item.label;
                     const rowClass = `flex w-full items-center justify-between py-5 text-left font-display text-[17px] font-bold transition-colors hover:text-primary ${
-                      active ? "text-primary" : "text-neutral-900"
+                      active ? 'text-primary' : 'text-neutral-900'
                     }`;
                     return (
                       <li
@@ -438,7 +437,7 @@ export function Header({
                           >
                             {item.label}
                             <ChevronRight
-                              className={`h-4 w-4 transition-colors ${active ? "text-primary" : "text-neutral-400"}`}
+                              className={`h-4 w-4 transition-colors ${active ? 'text-primary' : 'text-neutral-400'}`}
                               aria-hidden="true"
                             />
                           </button>
@@ -456,17 +455,17 @@ export function Header({
                     );
                   })}
                 </ul>
-              </div>
+              </ScrollArea>
 
               <div
                 className={`min-h-0 shrink-0 overflow-hidden bg-neutral-50 transition-[width] duration-300 ease-[cubic-bezier(.75,0,.35,1)] ${
-                  rightOpen ? "w-[30rem]" : "w-0"
+                  rightOpen ? 'w-[30rem]' : 'w-0'
                 }`}
                 aria-hidden={!rightOpen}
               >
-                <div
-                  className={`rb-scroll h-full w-[30rem] overflow-y-auto overscroll-contain px-8 pb-10 pt-6 transition-[transform,opacity] duration-300 ease-[cubic-bezier(.75,0,.35,1)] lg:px-12 lg:pt-24 ${
-                    rightOpen ? "translate-x-0 opacity-100" : "-translate-x-6 opacity-0"
+                <ScrollArea
+                  className={`h-full w-[30rem] overscroll-contain px-8 pb-10 pt-6 transition-[transform,opacity] duration-300 ease-[cubic-bezier(.75,0,.35,1)] lg:px-12 lg:pt-24 ${
+                    rightOpen ? 'translate-x-0 opacity-100' : '-translate-x-6 opacity-0'
                   }`}
                 >
                   {activeSub && hasChildren(activeSub) ? (
@@ -489,18 +488,18 @@ export function Header({
                       </ul>
                     </>
                   ) : null}
-                </div>
+                </ScrollArea>
               </div>
             </>
           )}
         </div>
 
         {/* ── 移动端：单列钻取（带返回） ── */}
-        <div className="rb-scroll flex-1 overflow-y-auto lg:hidden">
+        <ScrollArea className="flex-1 lg:hidden">
           {current && isProductsNav(current) ? (
             <ProductMobileAccordion
               title={current.label}
-              browseAllLabel={navLabel("productBrowseAll")}
+              browseAllLabel={navLabel('productBrowseAll')}
               label={navLabel}
               onNavigate={close}
             />
@@ -510,7 +509,7 @@ export function Header({
               <h2 className="py-6 font-display text-2xl font-extrabold text-neutral-900 border-b-0">
                 {current.label}
               </h2>
-              
+
               {/* 子菜单项列表 */}
               {current.children?.map((child, idx) => {
                 const isLastChild = idx === (current.children?.length ?? 0) - 1;
@@ -519,7 +518,7 @@ export function Header({
                     key={child.label}
                     onClick={() => drillInto(child)}
                     className={`flex items-center justify-between py-5 text-left transition-colors hover:text-primary ${
-                      !isLastChild ? "border-b border-neutral-200" : ""
+                      !isLastChild ? 'border-b border-neutral-200' : ''
                     }`}
                   >
                     <span className="font-display text-base font-medium text-neutral-800">
@@ -533,7 +532,7 @@ export function Header({
                     href={child.href}
                     onClick={close}
                     className={`py-5 font-display text-base font-medium text-neutral-800 transition-colors hover:text-primary ${
-                      !isLastChild ? "border-b border-neutral-200" : ""
+                      !isLastChild ? 'border-b border-neutral-200' : ''
                     }`}
                   >
                     {child.label}
@@ -543,7 +542,7 @@ export function Header({
             </nav>
           ) : (
             <div className="py-2">
-              <nav aria-label={tHeader("mainNav")}>
+              <nav aria-label={tHeader('mainNav')}>
                 {NAV_ITEMS.map((item) => (
                   <button
                     key={item.label}
@@ -554,7 +553,10 @@ export function Header({
                       {item.label}
                     </span>
                     {hasChildren(item) && (
-                      <ChevronRight className="h-5 w-5 text-neutral-900 group-hover:text-primary" aria-hidden="true" />
+                      <ChevronRight
+                        className="h-5 w-5 text-neutral-900 group-hover:text-primary"
+                        aria-hidden="true"
+                      />
                     )}
                   </button>
                 ))}
@@ -577,12 +579,12 @@ export function Header({
                   className="inline-flex w-fit items-center gap-1.5 text-sm text-secondary-text transition-colors hover:text-primary"
                 >
                   <Globe className="h-4 w-4" aria-hidden="true" />
-                  {tHeader("mobileLanguage")}
+                  {tHeader('mobileLanguage')}
                 </button>
               </div>
             </div>
           )}
-        </div>
+        </ScrollArea>
       </aside>
     </>
   );

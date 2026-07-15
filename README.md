@@ -48,6 +48,21 @@ pnpm dev
 - 后台: http://localhost:3002
 - API: http://localhost:4000/api/docs
 
+## 数据库（Prisma）
+
+schema 单一来源：`apps/api/prisma/schema.prisma`。任何变更都必须同步到数据库：
+
+```bash
+make dev          # 先确保 PostgreSQL 在跑（make dev 已包含依赖服务）
+make db-push      # 本地开发：把 schema 直接同步到数据库（快速，不含迁移历史）
+make db-migrate   # 生产/预发：应用 apps/api/prisma/migrations/ 下的迁移（幂等、可回滚）
+```
+
+- 生产部署由 `infra/docker/deploy.sh` 的 `run_migrate` 自动执行 `prisma migrate deploy`，
+  **因此任何 schema 变更都必须配套提交 `prisma/migrations/` 下的迁移文件**，否则 prod 不会生效。
+- 最近一次变更：`ChatMessage.content` 改为可空（支持仅附件、无文本的消息），
+  见迁移 `20260714000100_make_chatmessage_content_optional`。
+
 ## 部署
 
 ```bash

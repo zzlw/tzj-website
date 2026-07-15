@@ -1,15 +1,15 @@
-import { ExecutionContext, Injectable } from "@nestjs/common";
-import { Reflector } from "@nestjs/core";
-import { AuthGuard } from "@nestjs/passport";
-import { isObservable, lastValueFrom } from "rxjs";
-import { IS_PUBLIC_KEY } from "../decorators/public.decorator";
+import { ExecutionContext, Injectable } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { AuthGuard } from '@nestjs/passport';
+import { isObservable, lastValueFrom } from 'rxjs';
+import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 
 /**
  * 公开路由：有 JWT 则解析用户（后台预览/列表），无 JWT 或无效令牌仍放行。
  * 受保护路由：必须有效 JWT。
  */
 @Injectable()
-export class JwtAuthGuard extends AuthGuard("jwt") {
+export class JwtAuthGuard extends AuthGuard('jwt') {
   constructor(private readonly reflector: Reflector) {
     super();
   }

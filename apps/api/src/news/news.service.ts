@@ -1,35 +1,32 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { PrismaService } from "../prisma/prisma.service";
-import { Prisma } from "@prisma/client/index";
-import { CreateNewsDto, UpdateNewsDto } from "./dto/news.dto";
-import { ContentStatus } from "../common/enums/content-status.enum";
-import { sanitizeMarkdown } from "../common/utils/markdown";
-import { generateDocumentSummary } from "../common/utils/document-summary";
-import {
-  applyPublishedFilter,
-  assertPublishedOrStaff,
-} from "../common/utils/content-query";
-import { resolveContentAuthor } from "../common/utils/content-author";
-import { applyContentEditorMetadata } from "../common/utils/content-metadata";
+import { Injectable, NotFoundException } from '@nestjs/common';
+import type { Prisma } from '@prisma/client/index';
+import { ContentStatus } from '../common/enums/content-status.enum';
+import { resolveContentAuthor } from '../common/utils/content-author';
 import {
   CONTENT_ADMIN_USER_INCLUDE,
   stripInternalContentFields,
-} from "../common/utils/content-list";
+} from '../common/utils/content-list';
+import { applyContentEditorMetadata } from '../common/utils/content-metadata';
+import { applyPublishedFilter, assertPublishedOrStaff } from '../common/utils/content-query';
+import { generateDocumentSummary } from '../common/utils/document-summary';
 import {
   buildListOrderBy,
   DEFAULT_CONTENT_LIST_ORDER,
   parseListSort,
-} from "../common/utils/list-sort";
+} from '../common/utils/list-sort';
+import { sanitizeMarkdown } from '../common/utils/markdown';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateNewsDto, UpdateNewsDto } from './dto/news.dto';
 
 const LIST_SORT_FIELDS = [
-  "title",
-  "category",
-  "status",
-  "publishedAt",
-  "createdAt",
-  "updatedAt",
-  "createdById",
-  "lastOperatorId",
+  'title',
+  'category',
+  'status',
+  'publishedAt',
+  'createdAt',
+  'updatedAt',
+  'createdById',
+  'lastOperatorId',
 ] as const;
 
 interface FindAllParams {
@@ -47,15 +44,7 @@ export class NewsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll(params: FindAllParams) {
-    const {
-      page,
-      limit,
-      category,
-      search,
-      includeUnpublished = false,
-      sortBy,
-      sortOrder,
-    } = params;
+    const { page, limit, category, search, includeUnpublished = false, sortBy, sortOrder } = params;
     const skip = (page - 1) * limit;
 
     const where: Prisma.NewsWhereInput = {
@@ -64,8 +53,8 @@ export class NewsService {
     if (category) where.category = category;
     if (search) {
       where.OR = [
-        { title: { contains: search, mode: "insensitive" } },
-        { summary: { contains: search, mode: "insensitive" } },
+        { title: { contains: search, mode: 'insensitive' } },
+        { summary: { contains: search, mode: 'insensitive' } },
       ];
     }
 
@@ -91,9 +80,7 @@ export class NewsService {
     ]);
 
     return {
-      data: rawData.map((item) =>
-        stripInternalContentFields(item, includeUnpublished),
-      ),
+      data: rawData.map((item) => stripInternalContentFields(item, includeUnpublished)),
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     };
   }
@@ -134,10 +121,7 @@ export class NewsService {
     if (editorId) {
       data.author = await resolveContentAuthor(this.prisma, editorId);
     }
-    Object.assign(
-      data,
-      await applyContentEditorMetadata(this.prisma, editorId, dto.status),
-    );
+    Object.assign(data, await applyContentEditorMetadata(this.prisma, editorId, dto.status));
     return this.prisma.news.create({ data });
   }
 
@@ -158,11 +142,7 @@ export class NewsService {
       data.summary = generateDocumentSummary(contentToUse);
     }
     // 首次转为已发布且未设置发布时间时，自动记录发布时间
-    if (
-      dto.status === ContentStatus.PUBLISHED &&
-      !dto.publishedAt &&
-      !item.publishedAt
-    ) {
+    if (dto.status === ContentStatus.PUBLISHED && !dto.publishedAt && !item.publishedAt) {
       data.publishedAt = new Date();
     }
     if (editorId) {
@@ -170,12 +150,7 @@ export class NewsService {
     }
     Object.assign(
       data,
-      await applyContentEditorMetadata(
-        this.prisma,
-        editorId,
-        dto.status ?? item.status,
-        item,
-      ),
+      await applyContentEditorMetadata(this.prisma, editorId, dto.status ?? item.status, item),
     );
     return this.prisma.news.update({ where: { id }, data });
   }

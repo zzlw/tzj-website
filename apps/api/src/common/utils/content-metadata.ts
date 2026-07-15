@@ -1,6 +1,6 @@
-import type { PrismaService } from "../../prisma/prisma.service";
-import { ContentStatus } from "../enums/content-status.enum";
-import { resolveContentAuthor } from "./content-author";
+import { PrismaService } from '../../prisma/prisma.service';
+import { ContentStatus } from '../enums/content-status.enum';
+import { resolveContentAuthor } from './content-author';
 
 export interface ContentMetaExisting {
   status?: string;

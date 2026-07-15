@@ -1,12 +1,10 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.0.6/schema.json",
-  "organizeImports": {
-    "enabled": true
-  },
+  "$schema": "https://biomejs.dev/schemas/2.5.1/schema.json",
+  "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true,
+      "preset": "recommended",
       "correctness": {
         "noUnusedVariables": "warn",
         "noUnusedImports": "error",
@@ -54,7 +52,7 @@
   },
   "overrides": [
     {
-      "include": ["apps/api/**"],
+      "includes": ["**/apps/api/**"],
       "javascript": {
         "parser": {
           "unsafeParameterDecoratorsEnabled": true
@@ -69,7 +67,7 @@
       }
     },
     {
-      "include": ["*.test.ts", "*.spec.ts"],
+      "includes": ["**/*.test.ts", "**/*.spec.ts"],
       "linter": {
         "rules": {
           "suspicious": {
@@ -80,13 +78,15 @@
     }
   ],
   "files": {
-    "ignore": [
-      "node_modules",
-      "dist",
-      ".next",
-      ".turbo",
-      "coverage",
-      "pnpm-lock.yaml"
+    "includes": [
+      "**",
+      "!**/node_modules",
+      "!**/dist",
+      "!**/.next",
+      "!**/.turbo",
+      "!**/coverage",
+      "!**/pnpm-lock.yaml",
+      "!**/next-env.d.ts"
     ]
   }
 }

@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import type { MouseEvent, ReactNode } from "react";
-import { badgeVariants } from "../badge";
-import { cn } from "../../lib/utils";
+import type { MouseEvent, ReactNode } from 'react';
+import { cn } from '../../lib/utils';
+import { badgeVariants } from '../badge';
 
 export interface TagChipProps {
   label: string;
@@ -25,9 +25,9 @@ export function TagChip({
   className,
 }: TagChipProps) {
   const classes = cn(
-    badgeVariants({ variant: active ? "default" : "outline" }),
-    "cursor-pointer gap-1 font-normal",
-    !active && "border-border/80 bg-background hover:border-primary/40 hover:bg-muted/60",
+    badgeVariants({ variant: active ? 'default' : 'outline' }),
+    'cursor-pointer gap-1 font-normal',
+    !active && 'border-border/80 bg-background hover:border-primary/40 hover:bg-muted/60',
     className,
   );
 
@@ -38,8 +38,8 @@ export function TagChip({
       {count != null ? (
         <span
           className={cn(
-            "ml-0.5 tabular-nums",
-            active ? "text-primary-foreground/80" : "text-muted-foreground",
+            'ml-0.5 tabular-nums',
+            active ? 'text-primary-foreground/80' : 'text-muted-foreground',
           )}
         >
           {count}

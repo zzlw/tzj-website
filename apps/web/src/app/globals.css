@@ -2,7 +2,6 @@
 @import "@tzj/ui/globals.css";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "overlayscrollbars/overlayscrollbars.css";
 
 /* Tailwind v4 默认只扫描本 app；显式纳入共享 UI 包源码，
    否则 Select/Dialog 等仅在 @tzj/ui 中使用的工具类不会被生成 */
@@ -24,8 +23,12 @@
   color-scheme: light;
 
   /* ── 字体（next/font 注入 --font-geist / --font-archivo，中文回退系统黑体） ── */
-  --font-sans: var(--font-geist), "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, -apple-system, sans-serif;
-  --font-display: var(--font-archivo), "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, -apple-system, sans-serif;
+  --font-sans:
+    var(--font-geist), "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, -apple-system,
+    sans-serif;
+  --font-display:
+    var(--font-archivo), "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, -apple-system,
+    sans-serif;
 
   /* ── 基础语义色（浅色） ── */
   --background: #ffffff;
@@ -81,7 +84,7 @@
     rgba(0, 0, 0, 0.95) 0%,
     rgba(0, 0, 0, 0.75) 28%,
     rgba(0, 0, 0, 0.45) 55%,
-    rgba(0, 0, 0, 0.20) 80%,
+    rgba(0, 0, 0, 0.2) 80%,
     rgba(0, 0, 0, 0.08) 100%
   );
 
@@ -165,12 +168,20 @@ html[data-header-hidden] .product-line-nav {
 }
 
 @keyframes vt-fade-out {
-  from { opacity: 1; }
-  to   { opacity: 0; }
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
 }
 @keyframes vt-fade-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /* 尊重用户偏好：关闭过渡动画 */
@@ -211,7 +222,12 @@ body[data-scroll-locked] {
 
 /* 标题统一使用展示字体（放入 base 层，确保 text-white 等工具类可覆盖默认色） */
 @layer base {
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: var(--font-display);
     font-weight: 700;
     letter-spacing: 0;
@@ -219,41 +235,20 @@ body[data-scroll-locked] {
   }
 }
 
-/* OverlayScrollbars — TZJ 工业浅色主题（锐利直角、中性灰、hover 品牌红） */
-.os-theme-tzj {
-  --os-size: 8px;
-  --os-padding-perpendicular: 2px;
-  --os-padding-axis: 4px;
-  --os-track-border-radius: 0;
-  --os-handle-border-radius: 0;
-  --os-track-bg: transparent;
-  --os-track-bg-hover: transparent;
-  --os-track-bg-active: transparent;
-  --os-handle-bg: color-mix(in srgb, var(--neutral-500) 88%, transparent);
-  --os-handle-bg-hover: var(--neutral-700);
-  --os-handle-bg-active: var(--primary);
-  --os-handle-min-size: 40px;
-  --os-handle-interactive-area-offset: 4px;
-}
-
-/* 局部滚动容器（抽屉/表格等）— 与全站滚动条视觉对齐的原生 thin 样式 */
-.rb-scroll {
+/* 横向滚动容器（产品中心吸顶导航等）— 与全站滚动条视觉对齐的细窄原生样式 */
+.rb-scroll-x {
   scrollbar-width: thin;
   scrollbar-color: var(--neutral-500) transparent;
 }
-.rb-scroll::-webkit-scrollbar {
-  width: 8px;
+.rb-scroll-x::-webkit-scrollbar {
   height: 8px;
 }
-.rb-scroll::-webkit-scrollbar-track {
+.rb-scroll-x::-webkit-scrollbar-track {
   background: transparent;
 }
-.rb-scroll::-webkit-scrollbar-thumb {
+.rb-scroll-x::-webkit-scrollbar-thumb {
   background: color-mix(in srgb, var(--neutral-500) 88%, transparent);
   border-radius: 0;
-}
-.rb-scroll::-webkit-scrollbar-thumb:hover {
-  background: var(--neutral-700);
 }
 
 /* 自定义清除按钮时隐藏 type=search 原生取消图标，避免双 X 重叠 */
@@ -330,14 +325,19 @@ body[data-scroll-locked] {
   --color-neutral-500: var(--neutral-500);
   --color-neutral-700: var(--neutral-700);
   --color-neutral-900: var(--neutral-900);
-  /* Rosenbauer 锐利边角 */
+  /* Rosenbauer 锐利边角（仅小刻度保持直角工业风） */
   --radius-sm: 2px;
   --radius-md: 2px;
   --radius-lg: 4px;
   --radius-xl: 4px;
   --radius-2xl: 6px;
-  --radius-3xl: 8px;
-  --radius-4xl: 10px;
+  /* 3xl 作「桥梁」：从锐利小圆角(2xl=6px)平滑过渡到 4xl 大圆角(32px)，
+     避免 8px→32px 的断崖；若需更锐利可改回 8px */
+  --radius-3xl: 1rem;
+  /* 4xl 及以上回归「大圆角」语义，与共享 @tzj/ui 令牌一致，让 token 名符合直觉 */
+  --radius-4xl: 2rem;
+  --radius-6xl: 3rem;
+  --radius-8xl: 4rem;
 }
 
 @layer base {
@@ -349,7 +349,23 @@ body[data-scroll-locked] {
   }
   html {
     @apply font-sans;
-    /* 全站使用 OverlayScrollbars overlay 滚动条，不再预留原生滚动条槽位 */
+    /* 全站主滚动条：原生 thin 样式（局部容器统一使用 @tzj/ui 的 <ScrollArea>） */
+    scrollbar-width: thin;
+    scrollbar-color: var(--neutral-500) transparent;
+  }
+  html::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  html::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  html::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--neutral-500) 80%, transparent);
+    border-radius: 9999px;
+  }
+  html::-webkit-scrollbar-thumb:hover {
+    background: var(--neutral-700);
   }
   /* Tailwind v4 取消了按钮默认的 pointer 手势，这里统一补回 */
   button:not(:disabled),
@@ -560,3 +576,55 @@ body[data-scroll-locked] {
 
 /* 标题在浅色背景上的默认色已由 h1-h6 规则给出，
    覆盖在媒体上的反白文字由组件用 text-white 处理 */
+
+/* 聊天气泡内 Markdown 渲染（Vditor.preview，chat 变体），
+   样式收敛，避免 article 级大间距，贴合气泡 */
+.chat-md-reset.vditor-reset {
+  color: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  word-break: break-word;
+}
+.chat-md-reset.vditor-reset > :first-child {
+  margin-top: 0;
+}
+.chat-md-reset.vditor-reset > :last-child {
+  margin-bottom: 0;
+}
+.chat-md-reset.vditor-reset p,
+.chat-md-reset.vditor-reset ul,
+.chat-md-reset.vditor-reset ol,
+.chat-md-reset.vditor-reset blockquote,
+.chat-md-reset.vditor-reset pre,
+.chat-md-reset.vditor-reset table,
+.chat-md-reset.vditor-reset h1,
+.chat-md-reset.vditor-reset h2,
+.chat-md-reset.vditor-reset h3,
+.chat-md-reset.vditor-reset h4 {
+  margin: 0.4rem 0;
+}
+.chat-md-reset.vditor-reset p:first-child,
+.chat-md-reset.vditor-reset ul:first-child,
+.chat-md-reset.vditor-reset ol:first-child,
+.chat-md-reset.vditor-reset blockquote:first-child,
+.chat-md-reset.vditor-reset pre:first-child {
+  margin-top: 0;
+}
+.chat-md-reset.vditor-reset :last-child {
+  margin-bottom: 0;
+}
+.chat-md-reset.vditor-reset img {
+  max-width: 100%;
+  border-radius: 0.5rem;
+  margin: 0.5rem 0;
+  cursor: zoom-in;
+}
+.chat-md-reset.vditor-reset pre {
+  background: rgba(127, 127, 127, 0.18);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+}
+.chat-md-reset.vditor-reset a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

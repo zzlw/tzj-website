@@ -1,10 +1,7 @@
-import { Injectable } from "@nestjs/common";
-import { PrismaService } from "../prisma/prisma.service";
-import { formatGeoLabel } from "../analytics/utils/geo-label";
-import {
-  type AnalyticsListParams,
-  paginateMeta,
-} from "../analytics/utils/analytics-list";
+import { Injectable } from '@nestjs/common';
+import { AnalyticsListParams, paginateMeta } from '../analytics/utils/analytics-list';
+import { formatGeoLabel } from '../analytics/utils/geo-label';
+import { PrismaService } from '../prisma/prisma.service';
 
 interface DateRange {
   from: Date;

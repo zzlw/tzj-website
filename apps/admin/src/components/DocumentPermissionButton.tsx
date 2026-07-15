@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { ShieldCheck } from "lucide-react";
-import { Button, Tooltip, TooltipContent, TooltipTrigger } from "@tzj/ui";
-import { DocumentPermissionDialog } from "@/components/DocumentPermissionDialog";
+import { Button, Tooltip, TooltipContent, TooltipTrigger } from '@tzj/ui';
+import { ShieldCheck } from 'lucide-react';
+import { useState } from 'react';
+import { DocumentPermissionDialog } from '@/components/DocumentPermissionDialog';
 
 export function DocumentPermissionButton({
   documentId,
@@ -18,12 +18,7 @@ export function DocumentPermissionButton({
     <>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => setOpen(true)}
-          >
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setOpen(true)}>
             <ShieldCheck className="h-4 w-4" />
           </Button>
         </TooltipTrigger>

@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from 'react';
 
 interface AnimatedStatProps {
   value: string;
@@ -10,8 +10,8 @@ interface AnimatedStatProps {
 
 function parseStatValue(raw: string): { num: number; prefix: string; suffix: string } {
   const match = raw.match(/^(\D*)(\d+)(.*)$/);
-  if (!match?.[2]) return { num: 0, prefix: "", suffix: raw };
-  return { num: Number.parseInt(match[2], 10), prefix: match[1] ?? "", suffix: match[3] ?? "" };
+  if (!match?.[2]) return { num: 0, prefix: '', suffix: raw };
+  return { num: Number.parseInt(match[2], 10), prefix: match[1] ?? '', suffix: match[3] ?? '' };
 }
 
 export function AnimatedStat({ value, label, duration = 1500 }: AnimatedStatProps) {

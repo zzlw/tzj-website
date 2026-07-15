@@ -1,23 +1,31 @@
-import { CalendarDays, MapPin, Eye, MessagesSquare, Handshake } from "lucide-react";
-import Link from "next/link";
-import { getTradeShows } from "@/lib/api";
-import { formatContentDate, tradeShowTypeLabel } from "@/lib/content-labels";
-import { buildListQuery, normalizePagination, parseContentListState, pickSummary } from "@/lib/content-list";
-import { getTradeShowTypeFilter } from "@/lib/i18n/content-filters";
-import { getTradeShowSortOptions } from "@/lib/i18n/sort-options";
-import { Container, PageHero, SectionHeading } from "@/components/ui";
-import { FeatureGrid, RelatedLinks, CtaBand } from "@/components/sections/blocks";
-import { StatBandI18n, ProcessBandI18n } from "@/components/sections/blocks-i18n";
-import { ContentListShell, ContentPaginationShell } from "@/components/content/ContentListShell";
-import { ContentPagination } from "@/components/content/ContentPagination";
-import { getTranslations } from "next-intl/server";
-import { createPageMetadata } from "@/lib/i18n/metadata";
+import { CalendarDays, Eye, Handshake, MapPin, MessagesSquare } from 'lucide-react';
+import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
+import { ContentListShell, ContentPaginationShell } from '@/components/content/ContentListShell';
+import { ContentPagination } from '@/components/content/ContentPagination';
+import { CtaBand, FeatureGrid, RelatedLinks } from '@/components/sections/blocks';
+import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
+import { Container, PageHero, SectionHeading } from '@/components/ui';
+import { getTradeShows } from '@/lib/api';
+import { formatContentDate, tradeShowTypeLabel } from '@/lib/content-labels';
+import {
+  buildListQuery,
+  normalizePagination,
+  parseContentListState,
+  pickSummary,
+} from '@/lib/content-list';
+import { getTradeShowTypeFilter } from '@/lib/i18n/content-filters';
+import { createPageMetadata } from '@/lib/i18n/metadata';
+import { getTradeShowSortOptions } from '@/lib/i18n/sort-options';
 
 const FEATURE_ICONS = [Eye, MessagesSquare, Handshake] as const;
-const RELATED_HREFS = ["/cases", "/resources/news", "/resources/design-center"];
+const RELATED_HREFS = ['/cases', '/resources/news', '/resources/design-center'];
 
 export async function generateMetadata() {
-  return createPageMetadata({ namespace: "pages.resourcesTradeShows", path: "/resources/trade-shows" });
+  return createPageMetadata({
+    namespace: 'pages.resourcesTradeShows',
+    path: '/resources/trade-shows',
+  });
 }
 
 type PageProps = {
@@ -25,11 +33,11 @@ type PageProps = {
 };
 
 export default async function TradeShowsPage({ searchParams }: PageProps) {
-  const t = await getTranslations("pages.resourcesTradeShows");
-  const tList = await getTranslations("content.list");
-  const tContent = await getTranslations("content");
-  const tCta = await getTranslations("cta");
-  const tBlocks = await getTranslations("blocks.relatedLinks");
+  const t = await getTranslations('pages.resourcesTradeShows');
+  const tList = await getTranslations('content.list');
+  const tContent = await getTranslations('content');
+  const tCta = await getTranslations('cta');
+  const tBlocks = await getTranslations('blocks.relatedLinks');
 
   const typeFilter = await getTradeShowTypeFilter();
   const sortOptions = await getTradeShowSortOptions();
@@ -37,37 +45,37 @@ export default async function TradeShowsPage({ searchParams }: PageProps) {
   const raw = await searchParams;
   const state = parseContentListState(raw, {
     limit: 8,
-    sortBy: "startDate",
-    sortOrder: "desc",
-    filterKey: "eventType",
+    sortBy: 'startDate',
+    sortOrder: 'desc',
+    filterKey: 'eventType',
   });
 
-  let items: Awaited<ReturnType<typeof getTradeShows>>["data"] = [];
+  let items: Awaited<ReturnType<typeof getTradeShows>>['data'] = [];
   let pagination = normalizePagination(undefined, state.page, state.limit);
 
   try {
-    const res = await getTradeShows(buildListQuery(state, "eventType"));
+    const res = await getTradeShows(buildListQuery(state, 'eventType'));
     items = res.data ?? [];
     pagination = normalizePagination(res.pagination, state.page, state.limit);
   } catch {
     /* empty */
   }
 
-  const featuresRaw = t.raw("features") as Array<{ title: string; desc: string }>;
+  const featuresRaw = t.raw('features') as Array<{ title: string; desc: string }>;
   const features = featuresRaw.map((item, i) => ({ ...item, icon: FEATURE_ICONS[i]! }));
-  const relatedLinks = t.raw("relatedLinks") as Array<{ label: string; desc: string }>;
+  const relatedLinks = t.raw('relatedLinks') as Array<{ label: string; desc: string }>;
 
   return (
     <div className="pb-20">
       <PageHero
-        eyebrow={t("hero.eyebrow")}
-        title={t("hero.title")}
-        description={t("hero.description")}
+        eyebrow={t('hero.eyebrow')}
+        title={t('hero.title')}
+        description={t('hero.description')}
       />
 
       <section>
         <Container className="py-16 lg:py-24">
-          <SectionHeading eyebrow={t("listSection.eyebrow")} title={t("listSection.title")} />
+          <SectionHeading eyebrow={t('listSection.eyebrow')} title={t('listSection.title')} />
 
           <div className="mt-8">
             <ContentListShell
@@ -79,7 +87,7 @@ export default async function TradeShowsPage({ searchParams }: PageProps) {
             >
               {items.length === 0 ? (
                 <p className="mt-8 border border-dashed border-neutral-300 py-16 text-center text-sm text-secondary-text">
-                  {tList("emptyTradeShows")}
+                  {tList('emptyTradeShows')}
                 </p>
               ) : (
                 <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -92,7 +100,7 @@ export default async function TradeShowsPage({ searchParams }: PageProps) {
                           </span>
                           {e.isFeatured ? (
                             <span className="bg-neutral-900 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
-                              {tContent("labels.featured")}
+                              {tContent('labels.featured')}
                             </span>
                           ) : null}
                         </div>
@@ -111,7 +119,8 @@ export default async function TradeShowsPage({ searchParams }: PageProps) {
                         </div>
                         {e.boothNumber ? (
                           <p className="mt-2 text-xs font-medium text-neutral-900">
-                            {tContent("labels.booth")}{e.boothNumber}
+                            {tContent('labels.booth')}
+                            {e.boothNumber}
                           </p>
                         ) : null}
                         <p className="mt-3 text-sm leading-relaxed text-secondary-text">
@@ -150,7 +159,7 @@ export default async function TradeShowsPage({ searchParams }: PageProps) {
               <ContentPaginationShell>
                 <ContentPagination
                   pagination={pagination}
-                  unit={tContent("pagination.units.events")}
+                  unit={tContent('pagination.units.events')}
                   pageSizeOptions={[8, 12, 24]}
                 />
               </ContentPaginationShell>
@@ -163,7 +172,10 @@ export default async function TradeShowsPage({ searchParams }: PageProps) {
 
       <section>
         <Container className="py-16 lg:py-24">
-          <SectionHeading eyebrow={t("whyVisitSection.eyebrow")} title={t("whyVisitSection.title")} />
+          <SectionHeading
+            eyebrow={t('whyVisitSection.eyebrow')}
+            title={t('whyVisitSection.title')}
+          />
           <div className="mt-10">
             <FeatureGrid items={features} columns={3} />
           </div>
@@ -171,13 +183,13 @@ export default async function TradeShowsPage({ searchParams }: PageProps) {
       </section>
 
       <RelatedLinks
-        title={tBlocks("titleDefault")}
-        learnMore={tBlocks("learnMore")}
-        eyebrow={tBlocks("eyebrow")}
+        title={tBlocks('titleDefault')}
+        learnMore={tBlocks('learnMore')}
+        eyebrow={tBlocks('eyebrow')}
         links={relatedLinks.map((l, i) => ({ ...l, href: RELATED_HREFS[i]! }))}
       />
 
-      <CtaBand title={t("cta.title")} primaryLabel={tCta("bookConsult")} />
+      <CtaBand title={t('cta.title')} primaryLabel={tCta('bookConsult')} />
     </div>
   );
 }

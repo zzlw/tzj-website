@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { Suspense } from "react";
-import { useSearchParams } from "next/navigation";
-import { DocumentListView } from "@/components/documents/DocumentListView";
-import { DocFolderSidebar } from "@/components/documents/DocFolderSidebar";
-import type { DocumentsResourceConfig } from "@/features/resources/documents";
+import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
+import { DocFolderSidebar } from '@/components/documents/DocFolderSidebar';
+import { DocumentListView } from '@/components/documents/DocumentListView';
+import type { DocumentsResourceConfig } from '@/features/resources/documents';
 
 export function DocumentsHub({
   config,
   staticListParams,
-  loadingLabel = "加载文档…",
+  loadingLabel = '加载文档…',
 }: {
   config: DocumentsResourceConfig;
   /** 固定列表参数（如 mine=1） */
@@ -31,8 +31,8 @@ function DocumentsHubContent({
   staticListParams?: Record<string, string>;
 }) {
   const sp = useSearchParams();
-  const folderId = sp.get("folder") ?? undefined;
-  const tag = sp.get("tag") ?? undefined;
+  const folderId = sp.get('folder') ?? undefined;
+  const tag = sp.get('tag') ?? undefined;
 
   return (
     <div className="flex flex-col gap-4 lg:flex-row lg:items-start">

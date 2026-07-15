@@ -1,4 +1,11 @@
-import type { CaseType, NewsCategory, BlogCategory, TradeShowType, PublishStatus, UserRole } from "../enums/index.js";
+import type {
+  BlogCategory,
+  CaseType,
+  NewsCategory,
+  PublishStatus,
+  TradeShowType,
+  UserRole,
+} from '../enums/index.js';
 
 /**
  * 基础实体接口
@@ -128,4 +135,27 @@ export interface User extends BaseEntity {
   role: UserRole;
   lastLoginAt: Date | null;
   isActive: boolean;
+}
+
+/**
+ * 客户管理实体（私海 / 公海线索池）
+ */
+export interface Customer extends BaseEntity {
+  name: string;
+  company: string | null;
+  title: string | null;
+  phone: string | null;
+  email: string | null;
+  customerType: string;
+  source: string | null;
+  level: string;
+  stage: string;
+  amount: number | null;
+  region: string | null;
+  address: string | null;
+  tags: string[];
+  notes: string | null;
+  ownerId: string | null;
+  lastContactAt: Date | null;
+  nextFollowAt: Date | null;
 }

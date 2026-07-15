@@ -10,74 +10,69 @@
 
 /// <reference types="multer" />
 
-import type { Request } from "express";
 import {
+  BadRequestException,
+  Body,
   Controller,
-  Post,
   Delete,
   Get,
-  Param,
-  Body,
-  UseInterceptors,
-  UploadedFile,
-  BadRequestException,
   HttpCode,
-} from "@nestjs/common";
-import { FileInterceptor } from "@nestjs/platform-express";
-import {
-  ApiTags,
-  ApiConsumes,
-  ApiBody,
-  ApiOperation,
-  ApiBearerAuth,
-} from "@nestjs/swagger";
-import { S3Service, type UploadResult } from "./s3.service";
-import { Public } from "../auth/decorators/public.decorator";
-import { Roles } from "../auth/decorators/roles.decorator";
-import { Role } from "../auth/roles";
+  Param,
+  Post,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
+import type { Request } from 'express';
+import { Public } from '../auth/decorators/public.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { Role } from '../auth/roles';
+import { S3Service } from './s3.service';
+import type { UploadResult } from './s3.service';
 
-@ApiTags("storage")
-@Controller("storage")
+@ApiTags('storage')
+@Controller('storage')
 export class StorageController {
   constructor(private readonly s3: S3Service) {}
 
   // ── 上传文件 ─────────────────────────────────────────────
   @Roles(Role.EDITOR, Role.ADMIN)
   @ApiBearerAuth()
-  @Post("upload")
+  @Post('upload')
   @UseInterceptors(
-    FileInterceptor("file", {
+    FileInterceptor('file', {
       limits: {
         fileSize: 10 * 1024 * 1024, // 10 MB
       },
     }),
   )
-  @ApiConsumes("multipart/form-data")
-  @ApiOperation({ summary: "上传文件到 S3/MinIO/OSS" })
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: '上传文件到 S3/MinIO/OSS' })
   @ApiBody({
     schema: {
-      type: "object",
+      type: 'object',
       properties: {
-        file: { type: "string", format: "binary" },
+        file: { type: 'string', format: 'binary' },
         directory: {
-          type: "string",
-          description: "子目录 (如 products, cases)",
-          default: "uploads",
+          type: 'string',
+          description: '子目录 (如 products, cases)',
+          default: 'uploads',
         },
       },
     },
   })
   async upload(
     @UploadedFile() file: Express.Multer.File,
-    @Body("directory") directory?: string,
+    @Body('directory') directory?: string,
   ): Promise<UploadResult> {
     if (!file) {
-      throw new BadRequestException("No file provided");
+      throw new BadRequestException('No file provided');
     }
 
-    const dir = directory || "uploads";
+    const dir = directory || 'uploads';
     const timestamp = Date.now();
-    const sanitized = file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const sanitized = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
     const key = `${dir}/${timestamp}-${sanitized}`;
 
     return this.s3.upload(file.buffer, key, file.mimetype);
@@ -86,29 +81,29 @@ export class StorageController {
   // ── 删除文件 ─────────────────────────────────────────────
   @Roles(Role.EDITOR, Role.ADMIN)
   @ApiBearerAuth()
-  @Delete("*key")
+  @Delete('*key')
   @HttpCode(204)
-  @ApiOperation({ summary: "删除存储的文件" })
-  async delete(@Param("key") key: string): Promise<void> {
+  @ApiOperation({ summary: '删除存储的文件' })
+  async delete(@Param('key') key: string): Promise<void> {
     await this.s3.delete(key);
   }
 
   // ── 获取公开 URL ─────────────────────────────────────────
   @Public()
-  @Get("url/*key")
-  @ApiOperation({ summary: "获取文件公开访问 URL" })
-  getUrl(@Param("key") key: string): { url: string } {
+  @Get('url/*key')
+  @ApiOperation({ summary: '获取文件公开访问 URL' })
+  getUrl(@Param('key') key: string): { url: string } {
     return { url: this.s3.getUrl(key) };
   }
 
   // ── 生成预签名 URL ───────────────────────────────────────
   @Roles(Role.EDITOR, Role.ADMIN)
   @ApiBearerAuth()
-  @Post("presigned")
-  @ApiOperation({ summary: "生成临时预签名访问 URL" })
+  @Post('presigned')
+  @ApiOperation({ summary: '生成临时预签名访问 URL' })
   async getPresignedUrl(
-    @Body("key") key: string,
-    @Body("expiresIn") expiresIn?: number,
+    @Body('key') key: string,
+    @Body('expiresIn') expiresIn?: number,
   ): Promise<{ url: string; expiresIn: number }> {
     const ttl = expiresIn || 3600;
     const url = await this.s3.getPresignedUrl(key, ttl);

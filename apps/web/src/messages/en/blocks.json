@@ -11,12 +11,30 @@
       "title": "From Concept to Completion, We Are With You",
       "description": "As an integrated supplier, we bring design, manufacturing, installation, and after-sales together — one point of contact, full accountability.",
       "steps": {
-        "survey": { "title": "Needs Assessment", "desc": "We review your site, training objectives, team size, and budget to define clear project goals." },
-        "design": { "title": "Solution Design", "desc": "Engineers and fire experts co-design layouts, props, and structures for realism and compliance." },
-        "manufacture": { "title": "Manufacturing", "desc": "Factory-built with quality control at every step for long-lasting components." },
-        "install": { "title": "On-Site Installation", "desc": "Professional turnkey installation from foundations through final handover." },
-        "training": { "title": "Training & Delivery", "desc": "User training and acceptance so your team can operate effectively from day one." },
-        "service": { "title": "After-Sales Support", "desc": "Long-term maintenance, parts supply, and compliance checks to protect your investment." }
+        "survey": {
+          "title": "Needs Assessment",
+          "desc": "We review your site, training objectives, team size, and budget to define clear project goals."
+        },
+        "design": {
+          "title": "Solution Design",
+          "desc": "Engineers and fire experts co-design layouts, props, and structures for realism and compliance."
+        },
+        "manufacture": {
+          "title": "Manufacturing",
+          "desc": "Factory-built with quality control at every step for long-lasting components."
+        },
+        "install": {
+          "title": "On-Site Installation",
+          "desc": "Professional turnkey installation from foundations through final handover."
+        },
+        "training": {
+          "title": "Training & Delivery",
+          "desc": "User training and acceptance so your team can operate effectively from day one."
+        },
+        "service": {
+          "title": "After-Sales Support",
+          "desc": "Long-term maintenance, parts supply, and compliance checks to protect your investment."
+        }
       }
     },
     "relatedLinks": {

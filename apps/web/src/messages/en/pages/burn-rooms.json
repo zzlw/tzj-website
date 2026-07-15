@@ -27,10 +27,26 @@
     }
   },
   "specs": [
-    { "prop": "Continuous operating temperature", "value": "~930°C", "why": "Over-engineered continuous rating provides a high safety margin for fire training" },
-    { "prop": "Structural heat transfer (1.5″ / 3″ air gap)", "value": "~168°C / 114°C", "why": "At ~540°C exposure, protects all structural surfaces per live-fire training standards" },
-    { "prop": "Impact strength", "value": "4,000 psi", "why": "Highest impact rating on the market (15″ frame span)" },
-    { "prop": "Surface hardness (Shore D)", "value": "80", "why": "Best long-term resistance to abrasion, scraping, and hose stream impact" }
+    {
+      "prop": "Continuous operating temperature",
+      "value": "~930°C",
+      "why": "Over-engineered continuous rating provides a high safety margin for fire training"
+    },
+    {
+      "prop": "Structural heat transfer (1.5″ / 3″ air gap)",
+      "value": "~168°C / 114°C",
+      "why": "At ~540°C exposure, protects all structural surfaces per live-fire training standards"
+    },
+    {
+      "prop": "Impact strength",
+      "value": "4,000 psi",
+      "why": "Highest impact rating on the market (15″ frame span)"
+    },
+    {
+      "prop": "Surface hardness (Shore D)",
+      "value": "80",
+      "why": "Best long-term resistance to abrasion, scraping, and hose stream impact"
+    }
   ],
   "linerFeatures": [
     "Highly durable, low-maintenance insulation",
@@ -54,9 +70,18 @@
     ]
   },
   "relatedLinks": [
-    { "label": "Interlocking Insulation Liner", "desc": "Technical specs and performance of calcium silicate interlocking liners." },
-    { "label": "Liner Comparison", "desc": "Full comparison of interlocking vs. traditional liners." },
-    { "label": "Annual Inspection Service", "desc": "Regular inspections to extend burn room service life." }
+    {
+      "label": "Interlocking Insulation Liner",
+      "desc": "Technical specs and performance of calcium silicate interlocking liners."
+    },
+    {
+      "label": "Liner Comparison",
+      "desc": "Full comparison of interlocking vs. traditional liners."
+    },
+    {
+      "label": "Annual Inspection Service",
+      "desc": "Regular inspections to extend burn room service life."
+    }
   ],
   "cta": {
     "title": "Choose the right liner for your burn room",

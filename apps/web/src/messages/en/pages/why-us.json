@@ -53,13 +53,7 @@
   "valuesSection": {
     "eyebrow": "Core Values"
   },
-  "values": [
-    "Safety",
-    "Quality",
-    "Integrity",
-    "Reliability",
-    "Collaboration"
-  ],
+  "values": ["Safety", "Quality", "Integrity", "Reliability", "Collaboration"],
   "productsSection": {
     "eyebrow": "Our Products",
     "title": "A product matrix covering the full training spectrum"

@@ -1,21 +1,15 @@
-import {
-  CallHandler,
-  ExecutionContext,
-  Injectable,
-  Logger,
-  NestInterceptor,
-} from "@nestjs/common";
-import { Observable } from "rxjs";
-import { tap } from "rxjs/operators";
-import type { Request } from "express";
-import { PrismaService } from "../../prisma/prisma.service";
-import type { AuthUser } from "../../auth/roles";
+import { CallHandler, ExecutionContext, Injectable, Logger, NestInterceptor } from '@nestjs/common';
+import type { Request } from 'express';
+import type { Observable } from 'rxjs';
+import { tap } from 'rxjs/operators';
+import type { AuthUser } from '../../auth/roles';
+import { PrismaService } from '../../prisma/prisma.service';
 
 const ACTION_BY_METHOD: Record<string, string> = {
-  POST: "create",
-  PUT: "update",
-  PATCH: "update",
-  DELETE: "delete",
+  POST: 'create',
+  PUT: 'update',
+  PATCH: 'update',
+  DELETE: 'delete',
 };
 
 /**
@@ -24,14 +18,12 @@ const ACTION_BY_METHOD: Record<string, string> = {
  */
 @Injectable()
 export class AuditInterceptor implements NestInterceptor {
-  private readonly logger = new Logger("Audit");
+  private readonly logger = new Logger('Audit');
 
   constructor(private readonly prisma: PrismaService) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
-    const req = context
-      .switchToHttp()
-      .getRequest<Request & { id?: string; user?: AuthUser }>();
+    const req = context.switchToHttp().getRequest<Request & { id?: string; user?: AuthUser }>();
 
     const action = ACTION_BY_METHOD[req.method];
     const user = req.user;
@@ -45,16 +37,14 @@ export class AuditInterceptor implements NestInterceptor {
 
     return next.handle().pipe(
       tap((result) => {
-        const resourceId =
-          (req.params?.id as string | undefined) ??
-          this.idFromResult(result);
+        const resourceId = (req.params?.id as string | undefined) ?? this.idFromResult(result);
         void this.write({
           userId: user.id,
           action,
           resource,
           resourceId,
           ip: req.ip,
-          userAgent: req.headers["user-agent"]?.slice(0, 512),
+          userAgent: req.headers['user-agent']?.slice(0, 512),
           traceId: req.id,
         });
       }),
@@ -62,18 +52,18 @@ export class AuditInterceptor implements NestInterceptor {
   }
 
   private idFromResult(result: unknown): string | undefined {
-    if (result && typeof result === "object" && "id" in result) {
+    if (result && typeof result === 'object' && 'id' in result) {
       const id = (result as { id?: unknown }).id;
-      return typeof id === "string" ? id : undefined;
+      return typeof id === 'string' ? id : undefined;
     }
     return undefined;
   }
 
   private resourceFromUrl(url: string): string {
-    const path = url.split("?")[0] ?? "";
-    const parts = path.split("/").filter(Boolean); // ["api","v1","products",":id"]
-    const idx = parts.indexOf("v1");
-    return idx >= 0 && parts[idx + 1] ? parts[idx + 1]! : "unknown";
+    const path = url.split('?')[0] ?? '';
+    const parts = path.split('/').filter(Boolean); // ["api","v1","products",":id"]
+    const idx = parts.indexOf('v1');
+    return idx >= 0 && parts[idx + 1] ? parts[idx + 1]! : 'unknown';
   }
 
   private async write(data: {

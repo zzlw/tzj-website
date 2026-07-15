@@ -26,46 +26,46 @@ export type ProductLineNavConfig = {
 /** 多子页产品 hub */
 export const PRODUCT_LINE_NAV_CONFIGS: ProductLineNavConfig[] = [
   {
-    basePath: "/fixed-tower",
-    lineId: "fixed-tower",
+    basePath: '/fixed-tower',
+    lineId: 'fixed-tower',
     tabs: [
-      { key: "fixedTowerOverview", href: "/fixed-tower", exact: true },
-      { key: "fixedTowerSeries", href: "/fixed-tower/series" },
-      { key: "fixedTowerCustom", href: "/fixed-tower/custom" },
+      { key: 'fixedTowerOverview', href: '/fixed-tower', exact: true },
+      { key: 'fixedTowerSeries', href: '/fixed-tower/series' },
+      { key: 'fixedTowerCustom', href: '/fixed-tower/custom' },
     ],
-    related: [{ key: "productLine03", href: "/fixed-tower/climbing-tower" }],
+    related: [{ key: 'productLine03', href: '/fixed-tower/climbing-tower' }],
   },
   {
-    basePath: "/modular-tower",
-    lineId: "modular-tower",
+    basePath: '/modular-tower',
+    lineId: 'modular-tower',
     tabs: [
-      { key: "modularTowerOverview", href: "/modular-tower", exact: true },
-      { key: "modularTowerSeries", href: "/modular-tower/series" },
-      { key: "modularTowerVsContainers", href: "/modular-tower/vs-containers" },
-      { key: "modularTowerCustom", href: "/modular-tower/custom" },
+      { key: 'modularTowerOverview', href: '/modular-tower', exact: true },
+      { key: 'modularTowerSeries', href: '/modular-tower/series' },
+      { key: 'modularTowerVsContainers', href: '/modular-tower/vs-containers' },
+      { key: 'modularTowerCustom', href: '/modular-tower/custom' },
     ],
   },
   {
-    basePath: "/burn-rooms",
-    lineId: "burn-rooms",
+    basePath: '/burn-rooms',
+    lineId: 'burn-rooms',
     tabs: [
-      { key: "burnRoomsOverview", href: "/burn-rooms", exact: true },
-      { key: "burnRoomsLiner", href: "/burn-rooms/liner" },
-      { key: "burnRoomsComparison", href: "/burn-rooms/comparison" },
+      { key: 'burnRoomsOverview', href: '/burn-rooms', exact: true },
+      { key: 'burnRoomsLiner', href: '/burn-rooms/liner' },
+      { key: 'burnRoomsComparison', href: '/burn-rooms/comparison' },
     ],
     related: [
-      { key: "productLine06", href: "/burn-rooms/cfbt" },
-      { key: "productLine07", href: "/burn-rooms/fire-simulation" },
+      { key: 'productLine06', href: '/burn-rooms/cfbt' },
+      { key: 'productLine07', href: '/burn-rooms/fire-simulation' },
     ],
   },
   {
-    basePath: "/accessories",
-    lineId: "accessories",
-    excludeExact: ["/accessories/maritime", "/accessories/tactical", "/accessories/hazmat"],
+    basePath: '/accessories',
+    lineId: 'accessories',
+    excludeExact: ['/accessories/maritime', '/accessories/tactical', '/accessories/hazmat'],
     tabs: [
-      { key: "accessoriesOverview", href: "/accessories", exact: true },
-      { key: "accessoriesFitness", href: "/accessories/fitness-equipment" },
-      { key: "accessoriesCompetition", href: "/accessories/competition" },
+      { key: 'accessoriesOverview', href: '/accessories', exact: true },
+      { key: 'accessoriesFitness', href: '/accessories/fitness-equipment' },
+      { key: 'accessoriesCompetition', href: '/accessories/competition' },
     ],
   },
 ];
@@ -73,69 +73,69 @@ export const PRODUCT_LINE_NAV_CONFIGS: ProductLineNavConfig[] = [
 /** 单页产品线 —— 仅展示产品线标识 + 关联合集 */
 export const PRODUCT_LINE_SINGLE_CONFIGS: ProductLineNavConfig[] = [
   {
-    basePath: "/fixed-tower/climbing-tower",
-    lineId: "climbing-tower",
-    tabs: [{ key: "productLine03", href: "/fixed-tower/climbing-tower", exact: true }],
+    basePath: '/fixed-tower/climbing-tower',
+    lineId: 'climbing-tower',
+    tabs: [{ key: 'productLine03', href: '/fixed-tower/climbing-tower', exact: true }],
     related: [
-      { key: "productLine01", href: "/fixed-tower" },
-      { key: "productLine02", href: "/modular-tower" },
+      { key: 'productLine01', href: '/fixed-tower' },
+      { key: 'productLine02', href: '/modular-tower' },
     ],
   },
   {
-    basePath: "/education-center",
-    lineId: "education-center",
-    tabs: [{ key: "productLine04", href: "/education-center", exact: true }],
+    basePath: '/education-center',
+    lineId: 'education-center',
+    tabs: [{ key: 'productLine04', href: '/education-center', exact: true }],
     related: [
-      { key: "productLine01", href: "/fixed-tower" },
-      { key: "productLine02", href: "/modular-tower" },
+      { key: 'productLine01', href: '/fixed-tower' },
+      { key: 'productLine02', href: '/modular-tower' },
     ],
   },
   {
-    basePath: "/accessories/maritime",
-    lineId: "maritime",
-    tabs: [{ key: "productLine08", href: "/accessories/maritime", exact: true }],
+    basePath: '/accessories/maritime',
+    lineId: 'maritime',
+    tabs: [{ key: 'productLine08', href: '/accessories/maritime', exact: true }],
     related: [
-      { key: "productLine09", href: "/accessories/tactical" },
-      { key: "productLine10", href: "/accessories/hazmat" },
+      { key: 'productLine09', href: '/accessories/tactical' },
+      { key: 'productLine10', href: '/accessories/hazmat' },
     ],
   },
   {
-    basePath: "/accessories/tactical",
-    lineId: "tactical",
-    tabs: [{ key: "productLine09", href: "/accessories/tactical", exact: true }],
+    basePath: '/accessories/tactical',
+    lineId: 'tactical',
+    tabs: [{ key: 'productLine09', href: '/accessories/tactical', exact: true }],
     related: [
-      { key: "productLine08", href: "/accessories/maritime" },
-      { key: "productLine10", href: "/accessories/hazmat" },
+      { key: 'productLine08', href: '/accessories/maritime' },
+      { key: 'productLine10', href: '/accessories/hazmat' },
     ],
   },
   {
-    basePath: "/accessories/hazmat",
-    lineId: "hazmat",
-    tabs: [{ key: "productLine10", href: "/accessories/hazmat", exact: true }],
+    basePath: '/accessories/hazmat',
+    lineId: 'hazmat',
+    tabs: [{ key: 'productLine10', href: '/accessories/hazmat', exact: true }],
     related: [
-      { key: "productLine08", href: "/accessories/maritime" },
-      { key: "productLine09", href: "/accessories/tactical" },
+      { key: 'productLine08', href: '/accessories/maritime' },
+      { key: 'productLine09', href: '/accessories/tactical' },
     ],
   },
   {
-    basePath: "/specialized-training/rope-rescue",
-    lineId: "rope-rescue",
-    tabs: [{ key: "productLine11", href: "/specialized-training/rope-rescue", exact: true }],
-    related: [{ key: "productLine12", href: "/specialized-training/psychological" }],
+    basePath: '/specialized-training/rope-rescue',
+    lineId: 'rope-rescue',
+    tabs: [{ key: 'productLine11', href: '/specialized-training/rope-rescue', exact: true }],
+    related: [{ key: 'productLine12', href: '/specialized-training/psychological' }],
   },
   {
-    basePath: "/specialized-training/psychological",
-    lineId: "psychological",
-    tabs: [{ key: "productLine12", href: "/specialized-training/psychological", exact: true }],
-    related: [{ key: "productLine11", href: "/specialized-training/rope-rescue" }],
+    basePath: '/specialized-training/psychological',
+    lineId: 'psychological',
+    tabs: [{ key: 'productLine12', href: '/specialized-training/psychological', exact: true }],
+    related: [{ key: 'productLine11', href: '/specialized-training/rope-rescue' }],
   },
 ];
 
 const ALL_CONFIGS = [...PRODUCT_LINE_SINGLE_CONFIGS, ...PRODUCT_LINE_NAV_CONFIGS];
 
 function normalizePath(pathname: string): string {
-  const path = pathname.split("#")[0]!.split("?")[0]!;
-  return path.length > 1 && path.endsWith("/") ? path.slice(0, -1) : path;
+  const path = pathname.split('#')[0]!.split('?')[0]!;
+  return path.length > 1 && path.endsWith('/') ? path.slice(0, -1) : path;
 }
 
 function matchesTab(pathname: string, tab: ProductLineNavTab): boolean {

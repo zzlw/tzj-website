@@ -1,4 +1,4 @@
-export type BlockIpDuration = "1h" | "24h" | "7d" | "30d" | "permanent";
+export type BlockIpDuration = '1h' | '24h' | '7d' | '30d' | 'permanent';
 
 export interface CreateBlockedIpDto {
   ip: string;
@@ -32,9 +32,9 @@ export interface AnalyticsIpTrafficRow {
 }
 
 export const BLOCK_IP_DURATION_LABELS: Record<BlockIpDuration, string> = {
-  "1h": "1 小时",
-  "24h": "24 小时",
-  "7d": "7 天",
-  "30d": "30 天",
-  permanent: "永久",
+  '1h': '1 小时',
+  '24h': '24 小时',
+  '7d': '7 天',
+  '30d': '30 天',
+  permanent: '永久',
 };

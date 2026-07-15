@@ -257,6 +257,9 @@ model User {
   blogsCreated          Blog[]      @relation("BlogCreatedBy")
   tradeShowsCreated     TradeShow[] @relation("TradeShowCreatedBy")
   contactsLastOperated  Contact[]   @relation("ContactLastOperator")
+  customersOwned        Customer[]  @relation("CustomerOwner")
+  customersLastOperated Customer[]  @relation("CustomerLastOperator")
+  customersCreated      Customer[]  @relation("CustomerCreatedBy")
   blockedIpsCreated     BlockedIp[] @relation("BlockedIpCreatedBy")
   integrationsUpdated Integration[] @relation("IntegrationUpdatedBy")
   docsCreated           InternalDocument[] @relation("DocCreatedBy")
@@ -362,7 +365,12 @@ model AuditLog {
 // ═══════════════════════════════════════════
 model PageView {
   id           String   @id @default(cuid())
+  // 持久匿名访客 ID（localStorage，跨会话归并同一浏览器访客）
+  visitorId    String?
+  // 单次会话 ID（sessionStorage，按会话聚合）
   sessionId    String
+  // 已识别身份 ID（提交询盘/登录后回写，用于跨设备归并）
+  userId       String?
   path         String
   title        String?
   referrer     String?
@@ -384,11 +392,42 @@ model PageView {
   @@index([createdAt])
   @@index([path, createdAt])
   @@index([sessionId])
+  @@index([visitorId])
+  @@index([userId])
   @@index([referrerHost, createdAt])
   @@index([isBot, createdAt])
   @@index([country, createdAt])
   @@index([ipHash, createdAt])
   @@map("page_views")
+}
+
+// ═══════════════════════════════════════════
+// 访客身份（identify 升级：匿名 → 已知）
+// 同一 visitorId 的多次会话在 B 端的「访客会话」中归并为一行
+// ═══════════════════════════════════════════
+model Visitor {
+  id           String    @id @default(cuid())
+  // 与 PageView.visitorId 对应（持久匿名 ID）
+  anonymousId  String    @unique
+  // 已识别身份（如询盘 ID / 登录用户 ID），用于跨设备归并
+  userId       String?
+  email        String?
+  name         String?
+  phone        String?
+  company      String?
+  // 额外画像（如来源页、UTM 等）
+  traits       Json?
+  firstSeenAt  DateTime  @default(now())
+  lastSeenAt   DateTime  @updatedAt
+  // 首次识别时间（提交询盘/identify 时写入）
+  identifiedAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([email])
+  @@index([identifiedAt])
+  @@map("visitors")
 }
 
 // ═══════════════════════════════════════════
@@ -584,4 +623,226 @@ model Integration {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@map("integrations")
+}
+
+// ═══════════════════════════════════════════
+// 客户管理（私海 / 公海线索池）
+// ═══════════════════════════════════════════
+// 私海 / 公海模型（业内 CRM 最佳实践）：
+//  - ownerId 为空 → 公海（未分配，任意坐席可认领）
+//  - ownerId 指向某坐席 → 私海（该坐席的「我的客户」）
+//  - 通过 claim / release / transfer 在公海与私海、坐席之间流转
+model Customer {
+  id          String   @id @default(cuid())
+  name        String // 联系人姓名
+  company     String? // 客户单位
+  title       String? // 联系人职务
+  phone       String?
+  email       String?
+  // 客户类型（对齐业务：应急救援训练装备的客群）
+  customerType String  @default("other") // fire|armed-police|military|scenic|school|enterprise|government|other
+  source      String? // website|exhibition|referral|cold-call|existing|other
+  level       String   @default("C") // A(重点)|B(普通)|C(潜在)
+  stage       String   @default("new") // new|following|intent|deal|lost
+  amount      Int? // 预估金额（元）
+  region      String?
+  address     String?
+  tags        String[] @default([])
+  notes       String?  @db.Text
+  chatRoomId  String?  @unique // 来源会话 roomId（幂等去重 + 溯源）
+
+  // 归属：空 = 公海；指向坐席 = 私海
+  ownerId           String?
+  owner             User?    @relation("CustomerOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+
+  lastContactAt     DateTime?
+  nextFollowAt      DateTime?
+
+  lastOperator      String?
+  lastOperatorId    String?
+  lastOperatorUser  User?    @relation("CustomerLastOperator", fields: [lastOperatorId], references: [id], onDelete: SetNull)
+  createdBy         String?
+  createdById       String?
+  createdByUser     User?    @relation("CustomerCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([ownerId])
+  @@index([stage])
+  @@index([level])
+  @@index([source])
+  @@index([customerType])
+  @@index([createdAt])
+  @@index([lastContactAt])
+  @@index([chatRoomId])
+  @@map("customers")
+}
+
+// ═══════════════════════════════════════════
+// 在线客服 — 聊天室
+// ═══════════════════════════════════════════
+model ChatRoom {
+  id                   String        @id @default(cuid())
+  roomId               String        @unique
+  clientEmail          String
+  clientName           String?
+  status               String        @default("waiting")
+  assignedAgentEmail   String?
+  lastActivity         DateTime      @default(now())
+  closedAt             DateTime?
+  closedBy             String?
+  tags                 String[]      @default([])
+  notes                String?
+  unreadCountForClient Int           @default(0)
+  unreadCountForAgent  Int           @default(0)
+  lastReadByClient     DateTime?
+  lastReadByAgent      DateTime?
+  // 自动归档：closed 超过保留期后由定时任务置为 archived（仍可在「已关闭」桶检索）
+  archivedAt           DateTime?
+  // 软删除：批量删除仅打标，列表查询过滤；物理删除走独立清理任务
+  deletedAt            DateTime?
+  // 关联客户：坐席在会话中将访客转为客户线索后写入
+  customerId           String?
+
+  // ── 访客画像（创建会话时由服务端 enrichment，字段对齐 PageView 模型）──
+  // 原始 IP 仅服务端持有，不向 C 端下发；B 端仅展示脱敏后的 ipMasked。
+  clientIp     String?
+  ipMasked     String?
+  country      String?
+  region       String?
+  city         String?
+  deviceType   String?
+  browser      String?
+  os           String?
+  referrer     String?
+  referrerHost String?
+  userAgent    String?
+  landingPath  String?
+  source       String? // UTM source / 渠道来源
+
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  messages             ChatMessage[]
+
+  @@index([status, lastActivity]) // 列表按 (status, lastActivity) 游标分页
+  @@index([deletedAt])
+  @@index([archivedAt])
+  @@index([customerId])
+  @@map("chat_rooms")
+}
+
+model ChatMessage {
+  id          String               @id @default(cuid())
+  messageId   String               @unique
+  content     String? // 允许仅含附件、无文本内容的消息
+  sender      String
+  senderEmail String?
+  timestamp   DateTime             @default(now())
+  isRead      Boolean              @default(false)
+
+  chatRoomId  String
+  room        ChatRoom             @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+
+  readReceipts MessageReadReceipt[]
+  attachments  ChatAttachment[]
+
+  @@index([chatRoomId])
+  @@map("chat_messages")
+}
+
+/// 聊天消息附件（归一化存储，便于生命周期清理与元数据展示）
+model ChatAttachment {
+  id          String      @id @default(cuid())
+  message     ChatMessage @relation(fields: [chatMessageId], references: [id], onDelete: Cascade)
+  chatMessageId String
+
+  key         String // S3/OSS 对象 key，如 chat/202607/ROOM-XXX/uuid-name.png
+  fileName    String
+  contentType String
+  size        Int
+
+  createdAt   DateTime    @default(now())
+
+  @@index([chatMessageId])
+  @@map("chat_attachments")
+}
+
+/// 预签名上传占位：用户拿 URL 直传后、消息尚未发出前的临时记录。
+/// 用于：① 发送时把元数据落库为 ChatAttachment；② 定时清理回收「上传了但未发送」的孤儿文件。
+model ChatPendingUpload {
+  id          String   @id @default(cuid())
+  roomId      String
+  senderEmail String
+  key         String   @unique
+  fileName    String
+  contentType String
+  size        Int
+  expiresAt   DateTime // 过期后由定时任务回收对应 S3 对象
+  createdAt   DateTime @default(now())
+
+  @@index([expiresAt])
+  @@map("chat_pending_uploads")
+}
+
+model MessageReadReceipt {
+  id        String      @id @default(cuid())
+  userEmail String
+  userType  String
+  readAt    DateTime    @default(now())
+
+  messageId String
+  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+  @@map("message_read_receipts")
+}
+
+// ═══════════════════════════════════════════
+// 在线客服 — 工单系统
+// ═══════════════════════════════════════════
+model Ticket {
+  id             String    @id @default(cuid())
+  ticketId       String    @unique
+  subject        String
+  message        String
+  category       String    @default("general-inquiry")
+  priority       String    @default("medium")
+  status         String    @default("open")
+  isAnonymous    Boolean   @default(false)
+  anonymousEmail String?
+  anonymousName  String?
+  assignedTo     String?
+  lastUpdated    DateTime  @default(now())
+  resolvedAt     DateTime?
+  isInternal     Boolean   @default(false)
+  tags           String[]  @default([])
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  comments       Comment[]
+
+  @@map("tickets")
+}
+
+model Comment {
+  id              String   @id @default(cuid())
+  message         String
+  author          String
+  isInternal      Boolean  @default(false)
+  isAnonymous     Boolean  @default(false)
+  userRole        String?
+  isSystemMessage Boolean  @default(false)
+  attachments     String[] @default([])
+  editedAt        DateTime?
+  editedBy        String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  ticketId        String
+  ticket          Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+  @@map("comments")
 }

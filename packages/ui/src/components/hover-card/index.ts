@@ -1,5 +1,5 @@
 export {
   HoverCard,
-  HoverCardTrigger,
   HoverCardContent,
-} from "./HoverCard";
+  HoverCardTrigger,
+} from './HoverCard';

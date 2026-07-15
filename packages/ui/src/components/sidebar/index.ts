@@ -23,4 +23,4 @@ export {
   SidebarSeparator,
   SidebarTrigger,
   useSidebar,
-} from "./Sidebar";
+} from './Sidebar';

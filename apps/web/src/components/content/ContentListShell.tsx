@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { Suspense, type ReactNode } from "react";
-import { Skeleton } from "@tzj/ui";
-import { ContentListToolbar, type ContentFilterDef } from "./ContentListToolbar";
-import type { SortPreset } from "@/lib/content-list";
+import { Skeleton } from '@tzj/ui';
+import { type ReactNode, Suspense } from 'react';
+import type { SortPreset } from '@/lib/content-list';
+import { type ContentFilterDef, ContentListToolbar } from './ContentListToolbar';
 
 function ToolbarFallback() {
   return <Skeleton className="h-[72px] w-full rounded-none" />;

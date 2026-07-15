@@ -20,9 +20,18 @@
   "specs": [
     { "item": "Material", "value": "Calcium-silicate thermal composite panels" },
     { "item": "Structure", "value": "Interlocking assembly; each panel independently replaceable" },
-    { "item": "Temperature rating", "value": "Withstands repeated Class A live-fire training temperatures" },
-    { "item": "Insulation", "value": "Significantly reduces steel back-face temperature; protects primary structure" },
-    { "item": "Maintenance", "value": "Local damage repaired by replacing individual panels—no full tear-out" },
+    {
+      "item": "Temperature rating",
+      "value": "Withstands repeated Class A live-fire training temperatures"
+    },
+    {
+      "item": "Insulation",
+      "value": "Significantly reduces steel back-face temperature; protects primary structure"
+    },
+    {
+      "item": "Maintenance",
+      "value": "Local damage repaired by replacing individual panels—no full tear-out"
+    },
     { "item": "Compatibility", "value": "For fixed towers and modular system burn rooms" }
   ],
   "featuresSection": {
@@ -53,9 +62,15 @@
     "Does not promote mold growth; does not absorb water"
   ],
   "relatedLinks": [
-    { "label": "Liner comparison", "desc": "Full comparison of interlocking vs. traditional liners." },
+    {
+      "label": "Liner comparison",
+      "desc": "Full comparison of interlocking vs. traditional liners."
+    },
     { "label": "Burn rooms overview", "desc": "Complete solutions for safe live-fire training." },
-    { "label": "Annual inspection service", "desc": "Regular inspections to extend burn room service life." }
+    {
+      "label": "Annual inspection service",
+      "desc": "Regular inspections to extend burn room service life."
+    }
   ],
   "cta": {
     "title": "Want to understand liner options?",

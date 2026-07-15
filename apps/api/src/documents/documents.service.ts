@@ -1,43 +1,38 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import { Prisma } from "@prisma/client/index";
-import { PrismaService } from "../prisma/prisma.service";
-import { ContentStatus } from "../common/enums/content-status.enum";
-import { sanitizeMarkdown } from "../common/utils/markdown";
-import { applyContentEditorMetadata } from "../common/utils/content-metadata";
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import type { Prisma } from '@prisma/client/index';
+import { ContentStatus } from '../common/enums/content-status.enum';
 import {
   CONTENT_ADMIN_USER_INCLUDE,
   stripInternalContentFields,
-} from "../common/utils/content-list";
-import {
-  buildListOrderBy,
-  parseListSort,
-  type OrderByEntry,
-} from "../common/utils/list-sort";
-import { CreateDocumentDto, UpdateDocumentDto } from "./dto/document.dto";
-import {
-  ensureUniqueDocumentSlug,
-  slugifyTitle,
-} from "../common/utils/slug";
-import { DocTagsService } from "./doc-tags.service";
-import { generateDocumentSummary } from "../common/utils/document-summary";
-import { DocumentPermissionsService } from "./document-permissions.service";
+} from '../common/utils/content-list';
+import { applyContentEditorMetadata } from '../common/utils/content-metadata';
+import { generateDocumentSummary } from '../common/utils/document-summary';
+import { buildListOrderBy, OrderByEntry, parseListSort } from '../common/utils/list-sort';
+import { sanitizeMarkdown } from '../common/utils/markdown';
+import { ensureUniqueDocumentSlug, slugifyTitle } from '../common/utils/slug';
+import { PrismaService } from '../prisma/prisma.service';
+import { DocTagsService } from './doc-tags.service';
+import { DocumentPermissionsService } from './document-permissions.service';
+import { CreateDocumentDto, UpdateDocumentDto } from './dto/document.dto';
 
 const LIST_SORT_FIELDS = [
-  "title",
-  "status",
-  "publishedAt",
-  "createdAt",
-  "updatedAt",
-  "viewCount",
-  "isPinned",
-  "createdById",
-  "lastOperatorId",
+  'title',
+  'status',
+  'publishedAt',
+  'createdAt',
+  'updatedAt',
+  'viewCount',
+  'isPinned',
+  'createdById',
+  'lastOperatorId',
 ] as const;
 
-const DEFAULT_ORDER: OrderByEntry[] = [
-  { isPinned: "desc" },
-  { updatedAt: "desc" },
-];
+const DEFAULT_ORDER: OrderByEntry[] = [{ isPinned: 'desc' }, { updatedAt: 'desc' }];
 
 /**
  * 计算文档的可见范围
@@ -48,19 +43,19 @@ const DEFAULT_ORDER: OrderByEntry[] = [
 function calculateVisibility(
   ownerId: string | null,
   permissions: Array<{ targetType: string; role: string }> = [],
-): "private" | "partial" | "public" {
+): 'private' | 'partial' | 'public' {
   // 如果有 public 权限，则是全局可见
-  const hasPublic = permissions.some((p) => p.targetType === "public");
-  if (hasPublic) return "public";
+  const hasPublic = permissions.some((p) => p.targetType === 'public');
+  if (hasPublic) return 'public';
 
   // 如果是个人文档（有 ownerId），且没有其他权限配置，则仅自己可见
-  if (ownerId && permissions.length === 0) return "private";
+  if (ownerId && permissions.length === 0) return 'private';
 
   // 如果有任何用户或角色权限，则是部分人可见
-  if (permissions.length > 0) return "partial";
+  if (permissions.length > 0) return 'partial';
 
   // 默认情况：组织文档无权限配置，视为私有
-  return "private";
+  return 'private';
 }
 
 interface FindAllParams {
@@ -98,7 +93,7 @@ export class DocumentsService {
     canManage: boolean,
   ) {
     if (item.ownerId && item.ownerId !== viewerId && !canManage) {
-      throw new NotFoundException("文档不存在");
+      throw new NotFoundException('文档不存在');
     }
   }
 
@@ -111,13 +106,13 @@ export class DocumentsService {
     const folder = await this.prisma.docFolder.findUnique({
       where: { id: folderId },
     });
-    if (!folder) throw new NotFoundException("文件夹不存在");
+    if (!folder) throw new NotFoundException('文件夹不存在');
     if (personal) {
       if (folder.ownerId !== userId) {
-        throw new BadRequestException("个人文档只能放入个人文件夹");
+        throw new BadRequestException('个人文档只能放入个人文件夹');
       }
     } else if (folder.ownerId !== null) {
-      throw new BadRequestException("内部文档只能放入组织文件夹");
+      throw new BadRequestException('内部文档只能放入组织文件夹');
     }
   }
 
@@ -130,9 +125,7 @@ export class DocumentsService {
   private async backfillMissingSummaries<
     T extends { id: string; summary: string | null; content: string | null },
   >(items: T[]): Promise<void> {
-    const pending = items.filter(
-      (item) => !item.summary?.trim() && item.content?.trim(),
-    );
+    const pending = items.filter((item) => !item.summary?.trim() && item.content?.trim());
     if (!pending.length) return;
 
     await Promise.all(
@@ -155,7 +148,7 @@ export class DocumentsService {
   ): Promise<
     Pick<
       Prisma.InternalDocumentUncheckedUpdateInput,
-      "createdById" | "createdBy" | "lastOperatorId" | "lastOperator"
+      'createdById' | 'createdBy' | 'lastOperatorId' | 'lastOperator'
     >
   > {
     const patch = await applyContentEditorMetadata(
@@ -202,14 +195,14 @@ export class DocumentsService {
       where.ownerId = null;
       if (!includeDrafts) {
         where.status = ContentStatus.PUBLISHED;
-      } else if (status === ContentStatus.PUBLISHED || status === "published") {
+      } else if (status === ContentStatus.PUBLISHED || status === 'published') {
         where.status = ContentStatus.PUBLISHED;
-      } else if (status === ContentStatus.DRAFT || status === "draft") {
+      } else if (status === ContentStatus.DRAFT || status === 'draft') {
         where.status = ContentStatus.DRAFT;
       }
     }
 
-    if (folderId === "__none__") {
+    if (folderId === '__none__') {
       where.folderId = null;
     } else if (folderId) {
       where.folderId = folderId;
@@ -221,8 +214,8 @@ export class DocumentsService {
       const q = search.trim();
       andFilters.push({
         OR: [
-          { title: { contains: q, mode: "insensitive" } },
-          { summary: { contains: q, mode: "insensitive" } },
+          { title: { contains: q, mode: 'insensitive' } },
+          { summary: { contains: q, mode: 'insensitive' } },
         ],
       });
     }
@@ -267,13 +260,10 @@ export class DocumentsService {
         const strippedItem = richInclude
           ? stripInternalContentFields(item, true)
           : { ...item, content: undefined };
-        
+
         // 计算可见范围
-        const visibility = calculateVisibility(
-          item.ownerId ?? null,
-          item.permissions ?? [],
-        );
-        
+        const visibility = calculateVisibility(item.ownerId ?? null, item.permissions ?? []);
+
         return {
           ...strippedItem,
           visibility,
@@ -295,11 +285,7 @@ export class DocumentsService {
     if (!item) throw new NotFoundException(`文档 "${idOrSlug}" 未找到`);
 
     // 使用权限服务检查访问权限
-    const accessInfo = await this.permissionsService.checkAccess(
-      item.id,
-      viewerId,
-      canManage,
-    );
+    const accessInfo = await this.permissionsService.checkAccess(item.id, viewerId, canManage);
 
     // 个人文档：只有所有者和管理员可访问
     const isPersonal = Boolean(item.ownerId);
@@ -317,9 +303,7 @@ export class DocumentsService {
 
     const draftPreview =
       item.status !== ContentStatus.PUBLISHED &&
-      (isPersonal
-        ? item.ownerId === viewerId || canManage
-        : includeDrafts);
+      (isPersonal ? item.ownerId === viewerId || canManage : includeDrafts);
     if (item.status === ContentStatus.PUBLISHED && !draftPreview) {
       await this.prisma.internalDocument.update({
         where: { id: item.id },
@@ -335,7 +319,7 @@ export class DocumentsService {
   async create(dto: CreateDocumentDto, editorId?: string) {
     const personal = Boolean(dto.personal);
     if (personal && !editorId) {
-      throw new BadRequestException("个人文档需要登录用户");
+      throw new BadRequestException('个人文档需要登录用户');
     }
 
     const title = dto.title.trim();
@@ -346,8 +330,7 @@ export class DocumentsService {
       await this.assertFolderScope(dto.folderId ?? null, personal, editorId);
     }
 
-    const content =
-      dto.content !== undefined ? sanitizeMarkdown(dto.content) : null;
+    const content = dto.content !== undefined ? sanitizeMarkdown(dto.content) : null;
 
     const data: Prisma.InternalDocumentUncheckedCreateInput = {
       title,
@@ -368,13 +351,7 @@ export class DocumentsService {
     }
 
     if (editorId) {
-      Object.assign(
-        data,
-        await this.applyDocumentEditorMetadata(
-          editorId,
-          data.status as string,
-        ),
-      );
+      Object.assign(data, await this.applyDocumentEditorMetadata(editorId, data.status as string));
     }
 
     const created = await this.prisma.internalDocument.create({ data });
@@ -395,27 +372,17 @@ export class DocumentsService {
     return created;
   }
 
-  async update(
-    id: string,
-    dto: UpdateDocumentDto,
-    editorId?: string,
-    canManage = false,
-  ) {
+  async update(id: string, dto: UpdateDocumentDto, editorId?: string, canManage = false) {
     const item = await this.prisma.internalDocument.findUnique({ where: { id } });
     if (!item) throw new NotFoundException(`文档 ID "${id}" 未找到`);
 
     // 使用权限服务检查编辑权限
-    const accessInfo = await this.permissionsService.checkAccess(
-      id,
-      editorId,
-      canManage,
-    );
+    const accessInfo = await this.permissionsService.checkAccess(id, editorId, canManage);
     if (!accessInfo.canEdit) {
-      throw new ForbiddenException("无权编辑此文档");
+      throw new ForbiddenException('无权编辑此文档');
     }
 
-    const contentChanged =
-      dto.content !== undefined && dto.content !== item.content;
+    const contentChanged = dto.content !== undefined && dto.content !== item.content;
     const titleChanged = dto.title !== undefined && dto.title !== item.title;
     if (contentChanged || titleChanged) {
       await this.prisma.internalDocumentRevision.create({
@@ -443,31 +410,20 @@ export class DocumentsService {
     if (dto.status !== undefined) data.status = dto.status;
     if (dto.folderId !== undefined) {
       if (editorId) {
-        await this.assertFolderScope(
-          dto.folderId,
-          Boolean(item.ownerId),
-          editorId,
-        );
+        await this.assertFolderScope(dto.folderId, Boolean(item.ownerId), editorId);
       }
       data.folderId = dto.folderId;
     }
 
     const nextStatus = dto.status ?? item.status;
-    if (
-      dto.status === ContentStatus.PUBLISHED &&
-      !dto.publishedAt &&
-      !item.publishedAt
-    ) {
+    if (dto.status === ContentStatus.PUBLISHED && !dto.publishedAt && !item.publishedAt) {
       data.publishedAt = new Date();
     } else if (dto.publishedAt) {
       data.publishedAt = new Date(dto.publishedAt);
     }
 
     if (editorId) {
-      Object.assign(
-        data,
-        await this.applyDocumentEditorMetadata(editorId, nextStatus, item),
-      );
+      Object.assign(data, await this.applyDocumentEditorMetadata(editorId, nextStatus, item));
     }
 
     const updated = await this.prisma.internalDocument.update({
@@ -476,8 +432,7 @@ export class DocumentsService {
       include: CONTENT_ADMIN_USER_INCLUDE,
     });
 
-    const tagList =
-      dto.tags !== undefined ? (dto.tags ?? []) : (item.tags ?? []);
+    const tagList = dto.tags !== undefined ? (dto.tags ?? []) : (item.tags ?? []);
     if (tagList.length || dto.tags !== undefined) {
       await this.docTagsService.ensureTags(
         tagList,
@@ -498,33 +453,25 @@ export class DocumentsService {
     if (!item) throw new NotFoundException(`文档 ID "${id}" 未找到`);
 
     // 使用权限服务检查删除权限（需要编辑权限）
-    const accessInfo = await this.permissionsService.checkAccess(
-      id,
-      viewerId,
-      canManage,
-    );
+    const accessInfo = await this.permissionsService.checkAccess(id, viewerId, canManage);
     if (!accessInfo.canEdit) {
-      throw new ForbiddenException("无权删除此文档");
+      throw new ForbiddenException('无权删除此文档');
     }
 
     await this.prisma.internalDocument.delete({ where: { id } });
     return { deleted: true };
   }
 
-  async listRevisions(
-    documentId: string,
-    viewerId?: string,
-    canManage = false,
-  ) {
+  async listRevisions(documentId: string, viewerId?: string, canManage = false) {
     const doc = await this.prisma.internalDocument.findUnique({
       where: { id: documentId },
     });
-    if (!doc) throw new NotFoundException("文档不存在");
+    if (!doc) throw new NotFoundException('文档不存在');
     this.assertDocumentAccess(doc, viewerId, canManage);
 
     const rows = await this.prisma.internalDocumentRevision.findMany({
       where: { documentId },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
       take: 50,
       include: {
         editor: {
@@ -556,17 +503,17 @@ export class DocumentsService {
     const doc = await this.prisma.internalDocument.findUnique({
       where: { id: documentId },
     });
-    if (!doc) throw new NotFoundException("文档不存在");
+    if (!doc) throw new NotFoundException('文档不存在');
     this.assertDocumentAccess(doc, editorId, canManage);
 
     const revision = await this.prisma.internalDocumentRevision.findFirst({
       where: { id: revisionId, documentId },
     });
-    if (!revision) throw new NotFoundException("版本不存在");
+    if (!revision) throw new NotFoundException('版本不存在');
 
     return this.update(
       documentId,
-      { title: revision.title, content: revision.content ?? "" },
+      { title: revision.title, content: revision.content ?? '' },
       editorId,
       canManage,
     );
@@ -577,11 +524,7 @@ export class DocumentsService {
   /**
    * 获取文档权限列表
    */
-  async getPermissions(
-    documentId: string,
-    userId: string | undefined,
-    canManage: boolean,
-  ) {
+  async getPermissions(documentId: string, userId: string | undefined, canManage: boolean) {
     return this.permissionsService.getPermissions(documentId, userId, canManage);
   }
 
@@ -594,12 +537,7 @@ export class DocumentsService {
     userId: string | undefined,
     canManage: boolean,
   ) {
-    return this.permissionsService.updatePermissions(
-      documentId,
-      permissions,
-      userId,
-      canManage,
-    );
+    return this.permissionsService.updatePermissions(documentId, permissions, userId, canManage);
   }
 
   /**
@@ -611,12 +549,7 @@ export class DocumentsService {
     userId: string | undefined,
     canManage: boolean,
   ) {
-    return this.permissionsService.addPermission(
-      documentId,
-      permission,
-      userId,
-      canManage,
-    );
+    return this.permissionsService.addPermission(documentId, permission, userId, canManage);
   }
 
   /**
@@ -628,12 +561,6 @@ export class DocumentsService {
     userId: string | undefined,
     canManage: boolean,
   ) {
-    return this.permissionsService.removePermission(
-      documentId,
-      permissionId,
-      userId,
-      canManage,
-    );
+    return this.permissionsService.removePermission(documentId, permissionId, userId, canManage);
   }
-
 }

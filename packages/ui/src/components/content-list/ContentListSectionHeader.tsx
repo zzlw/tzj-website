@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
-import { cn } from "../../lib/utils";
+import type { ReactNode } from 'react';
+import { cn } from '../../lib/utils';
 
 export interface ContentListSectionHeaderProps {
   title: string;
@@ -14,16 +14,9 @@ export function ContentListSectionHeader({
   className,
 }: ContentListSectionHeaderProps) {
   return (
-    <div
-      className={cn(
-        "flex items-center gap-2 bg-muted/40 px-5 py-2.5",
-        className,
-      )}
-    >
+    <div className={cn('flex items-center gap-2 bg-muted/40 px-5 py-2.5', className)}>
       {icon}
-      <span className="text-xs font-semibold tracking-wide text-muted-foreground">
-        {title}
-      </span>
+      <span className="text-xs font-semibold tracking-wide text-muted-foreground">{title}</span>
     </div>
   );
 }

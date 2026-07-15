@@ -1,10 +1,6 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from "@nestjs/common";
-import { PrismaService } from "../prisma/prisma.service";
-import { slugifyTitle } from "../common/utils/slug";
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { slugifyTitle } from '../common/utils/slug';
+import { PrismaService } from '../prisma/prisma.service';
 
 export interface DocFolderTreeNode {
   id: string;
@@ -24,32 +20,24 @@ export class DocFoldersService {
   async getTree(scope: DocFolderScope = { ownerId: null }): Promise<DocFolderTreeNode[]> {
     const rows = await this.prisma.docFolder.findMany({
       where: { ownerId: scope.ownerId },
-      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
     });
     return buildFolderTree(rows);
   }
 
-  async createPersonal(
-    userId: string,
-    dto: { name: string; parentId?: string | null },
-  ) {
+  async createPersonal(userId: string, dto: { name: string; parentId?: string | null }) {
     const name = dto.name.trim();
-    if (!name) throw new BadRequestException("文件夹名称不能为空");
+    if (!name) throw new BadRequestException('文件夹名称不能为空');
 
     if (dto.parentId) {
       const parent = await this.prisma.docFolder.findFirst({
         where: { id: dto.parentId, ownerId: userId },
       });
-      if (!parent) throw new NotFoundException("父文件夹不存在");
+      if (!parent) throw new NotFoundException('父文件夹不存在');
     }
 
     const baseSlug = slugifyTitle(name);
-    const slug = await ensureUniqueFolderSlug(
-      this.prisma,
-      userId,
-      dto.parentId ?? null,
-      baseSlug,
-    );
+    const slug = await ensureUniqueFolderSlug(this.prisma, userId, dto.parentId ?? null, baseSlug);
 
     return this.prisma.docFolder.create({
       data: {
@@ -63,20 +51,15 @@ export class DocFoldersService {
 
   async renamePersonal(userId: string, id: string, name: string) {
     const trimmed = name.trim();
-    if (!trimmed) throw new BadRequestException("文件夹名称不能为空");
+    if (!trimmed) throw new BadRequestException('文件夹名称不能为空');
 
     const existing = await this.prisma.docFolder.findFirst({
       where: { id, ownerId: userId },
     });
-    if (!existing) throw new NotFoundException("文件夹不存在");
+    if (!existing) throw new NotFoundException('文件夹不存在');
 
     const baseSlug = slugifyTitle(trimmed);
-    const slug = await ensureUniqueFolderSlug(
-      this.prisma,
-      userId,
-      existing.parentId,
-      baseSlug,
-    );
+    const slug = await ensureUniqueFolderSlug(this.prisma, userId, existing.parentId, baseSlug);
 
     return this.prisma.docFolder.update({
       where: { id },
@@ -88,11 +71,10 @@ export class DocFoldersService {
     const existing = await this.prisma.docFolder.findFirst({
       where: { id, ownerId: userId },
     });
-    if (!existing) throw new NotFoundException("文件夹不存在");
+    if (!existing) throw new NotFoundException('文件夹不存在');
     await this.prisma.docFolder.delete({ where: { id } });
     return { deleted: true };
   }
-
 }
 
 async function ensureUniqueFolderSlug(

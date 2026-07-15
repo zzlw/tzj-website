@@ -1,50 +1,50 @@
-import { getTranslations } from "next-intl/server";
-import { createPageMetadata } from "@/lib/i18n/metadata";
-import { Container, PageHero, SectionHeading } from "@/components/ui";
-import { RelatedLinks, CtaBand } from "@/components/sections/blocks";
-import { StatBandI18n, ProcessBandI18n } from "@/components/sections/blocks-i18n";
+import { getTranslations } from 'next-intl/server';
+import { CtaBand, RelatedLinks } from '@/components/sections/blocks';
+import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
+import { Container, PageHero, SectionHeading } from '@/components/ui';
+import { createPageMetadata } from '@/lib/i18n/metadata';
 
-const RELATED_HREFS = ["/burn-rooms/liner", "/burn-rooms", "/resources/inspections"];
+const RELATED_HREFS = ['/burn-rooms/liner', '/burn-rooms', '/resources/inspections'];
 
 export async function generateMetadata() {
-  return createPageMetadata({ namespace: "pages.burnRoomsComparison", path: "/burn-rooms/comparison" });
+  return createPageMetadata({
+    namespace: 'pages.burnRoomsComparison',
+    path: '/burn-rooms/comparison',
+  });
 }
 
 export default async function ComparisonPage() {
-  const t = await getTranslations("pages.burnRoomsComparison");
-  const tCta = await getTranslations("cta");
-  const tBlocks = await getTranslations("blocks.relatedLinks");
+  const t = await getTranslations('pages.burnRoomsComparison');
+  const tCta = await getTranslations('cta');
+  const tBlocks = await getTranslations('blocks.relatedLinks');
 
-  const rows = t.raw("rows") as Array<{ feature: string; interlock: string; traditional: string }>;
-  const steps = t.raw("steps") as Array<{ step: string; title: string; desc: string }>;
-  const relatedLinks = t.raw("relatedLinks") as Array<{ label: string; desc: string }>;
+  const rows = t.raw('rows') as Array<{ feature: string; interlock: string; traditional: string }>;
+  const steps = t.raw('steps') as Array<{ step: string; title: string; desc: string }>;
+  const relatedLinks = t.raw('relatedLinks') as Array<{ label: string; desc: string }>;
 
   return (
     <div className="pb-20">
       <PageHero
-        eyebrow={t("hero.eyebrow")}
-        title={t("hero.title")}
-        description={t("hero.description")}
+        eyebrow={t('hero.eyebrow')}
+        title={t('hero.title')}
+        description={t('hero.description')}
       />
 
       <section>
         <Container className="py-16 lg:py-24">
-          <SectionHeading
-            eyebrow={t("compareSection.eyebrow")}
-            title={t("compareSection.title")}
-          />
+          <SectionHeading eyebrow={t('compareSection.eyebrow')} title={t('compareSection.title')} />
           <div className="mt-10 overflow-x-auto">
             <table className="w-full min-w-[680px] border-collapse text-left">
               <thead>
                 <tr className="border-b-2 border-neutral-900">
                   <th className="p-4 text-sm font-bold uppercase tracking-wide text-neutral-900">
-                    {t("tableHeaders.feature")}
+                    {t('tableHeaders.feature')}
                   </th>
                   <th className="p-4 text-sm font-bold uppercase tracking-wide text-primary">
-                    {t("tableHeaders.interlock")}
+                    {t('tableHeaders.interlock')}
                   </th>
                   <th className="p-4 text-sm font-bold uppercase tracking-wide text-secondary-text">
-                    {t("tableHeaders.traditional")}
+                    {t('tableHeaders.traditional')}
                   </th>
                 </tr>
               </thead>
@@ -53,7 +53,9 @@ export default async function ComparisonPage() {
                   <tr key={r.feature} className="border-b border-neutral-300 align-top">
                     <td className="p-4 text-sm font-bold text-neutral-900">{r.feature}</td>
                     <td className="p-4 text-sm leading-relaxed text-neutral-900">{r.interlock}</td>
-                    <td className="p-4 text-sm leading-relaxed text-secondary-text">{r.traditional}</td>
+                    <td className="p-4 text-sm leading-relaxed text-secondary-text">
+                      {r.traditional}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -67,9 +69,9 @@ export default async function ComparisonPage() {
       <section className="bg-neutral-100">
         <Container className="py-16 lg:py-24">
           <SectionHeading
-            eyebrow={t("retrofitSection.eyebrow")}
-            title={t("retrofitSection.title")}
-            description={t("retrofitSection.description")}
+            eyebrow={t('retrofitSection.eyebrow')}
+            title={t('retrofitSection.title')}
+            description={t('retrofitSection.description')}
           />
           <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
             {steps.map((s) => (
@@ -84,16 +86,16 @@ export default async function ComparisonPage() {
       </section>
 
       <RelatedLinks
-        title={tBlocks("titleDefault")}
-        learnMore={tBlocks("learnMore")}
-        eyebrow={tBlocks("eyebrow")}
+        title={tBlocks('titleDefault')}
+        learnMore={tBlocks('learnMore')}
+        eyebrow={tBlocks('eyebrow')}
         links={relatedLinks.map((l, i) => ({ ...l, href: RELATED_HREFS[i]! }))}
       />
 
       <CtaBand
-        title={t("cta.title")}
-        primaryLabel={tCta("bookConsult")}
-        secondaryLabel={t("cta.secondaryLabel")}
+        title={t('cta.title')}
+        primaryLabel={tCta('bookConsult')}
+        secondaryLabel={t('cta.secondaryLabel')}
         secondaryHref="/burn-rooms/liner"
       />
     </div>

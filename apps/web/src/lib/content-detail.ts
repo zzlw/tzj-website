@@ -1,5 +1,5 @@
-import type { ApiResponse } from "@tzj/types";
-import { ApiError } from "./api";
+import type { ApiResponse } from '@tzj/types';
+import { ApiError } from './api';
 
 export async function fetchBySlug<T>(
   fetcher: (slug: string) => Promise<ApiResponse<T>>,
@@ -18,9 +18,9 @@ export function parseCaseSpecs(raw: unknown): { label: string; value: string }[]
   if (!Array.isArray(raw)) return [];
   return raw.filter(
     (item): item is { label: string; value: string } =>
-      typeof item === "object" &&
+      typeof item === 'object' &&
       item !== null &&
-      typeof (item as { label?: unknown }).label === "string" &&
-      typeof (item as { value?: unknown }).value === "string",
+      typeof (item as { label?: unknown }).label === 'string' &&
+      typeof (item as { value?: unknown }).value === 'string',
   );
 }

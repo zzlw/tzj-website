@@ -1,31 +1,12 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { ArrowRight, BarChart3 } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Skeleton,
-} from "@tzj/ui";
-import {
-  DonutChart,
-  HorizontalBarChart,
-  TrendChart,
-} from "@/components/analytics/AnalyticsCharts";
-import { deviceLabel, useAnalyticsOverview } from "@/features/analytics";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Skeleton } from '@tzj/ui';
+import { ArrowRight, BarChart3 } from 'lucide-react';
+import Link from 'next/link';
+import { DonutChart, HorizontalBarChart, TrendChart } from '@/components/analytics/AnalyticsCharts';
+import { deviceLabel, useAnalyticsOverview } from '@/features/analytics';
 
-function MiniStat({
-  label,
-  value,
-  loading,
-}: {
-  label: string;
-  value: number;
-  loading?: boolean;
-}) {
+function MiniStat({ label, value, loading }: { label: string; value: number; loading?: boolean }) {
   return (
     <div className="rounded-lg border border-border/80 bg-muted/20 px-3 py-2.5">
       <p className="text-xs text-muted-foreground">{label}</p>
@@ -33,7 +14,7 @@ function MiniStat({
         className="mt-0.5 min-h-7 text-xl font-semibold tabular-nums tracking-tight"
         aria-busy={loading}
       >
-        {loading ? <Skeleton className="h-7 w-16" /> : value.toLocaleString("zh-CN")}
+        {loading ? <Skeleton className="h-7 w-16" /> : value.toLocaleString('zh-CN')}
       </div>
     </div>
   );
@@ -61,9 +42,7 @@ export function DashboardAnalyticsPanel() {
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
             官网访客
           </CardTitle>
-          <CardDescription>
-            近 7 天访问趋势与热门页面（数据来自官网 C 端埋点）
-          </CardDescription>
+          <CardDescription>近 7 天访问趋势与热门页面（数据来自官网 C 端埋点）</CardDescription>
         </div>
         <Link
           href="/analytics"
@@ -75,26 +54,14 @@ export function DashboardAnalyticsPanel() {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <MiniStat
-            label="今日 PV"
-            value={data?.summary.pageViewsToday ?? 0}
-            loading={loading}
-          />
+          <MiniStat label="今日 PV" value={data?.summary.pageViewsToday ?? 0} loading={loading} />
           <MiniStat
             label="今日 UV"
             value={data?.summary.uniqueVisitorsToday ?? 0}
             loading={loading}
           />
-          <MiniStat
-            label="7 日 PV"
-            value={data?.summary.pageViews ?? 0}
-            loading={loading}
-          />
-          <MiniStat
-            label="7 日 UV"
-            value={data?.summary.uniqueVisitors ?? 0}
-            loading={loading}
-          />
+          <MiniStat label="7 日 PV" value={data?.summary.pageViews ?? 0} loading={loading} />
+          <MiniStat label="7 日 UV" value={data?.summary.uniqueVisitors ?? 0} loading={loading} />
         </div>
 
         <div className="grid gap-6 xl:grid-cols-5">

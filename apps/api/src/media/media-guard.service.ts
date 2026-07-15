@@ -1,20 +1,15 @@
-import { Injectable } from "@nestjs/common";
-import type { MediaAsset } from "@prisma/client";
-import { collectSiteStaticMediaPaths } from "./site-static-paths";
-import { PrismaService } from "../prisma/prisma.service";
+import { Injectable } from '@nestjs/common';
+import type { MediaAsset } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
+import { collectSiteStaticMediaPaths } from './site-static-paths';
 
 /** 站点同步静态资源目录，禁止普通上传写入。 */
-export const PROTECTED_MEDIA_FOLDERS = new Set(["content"]);
+export const PROTECTED_MEDIA_FOLDERS = new Set(['content']);
 
 /** 站点资源备份前缀（不可通过普通上传写入）。 */
-export const SITE_ARCHIVE_PREFIX = "content/_archive/";
+export const SITE_ARCHIVE_PREFIX = 'content/_archive/';
 
-export type MediaReferenceType =
-  | "case"
-  | "news"
-  | "blog"
-  | "tradeShow"
-  | "page";
+export type MediaReferenceType = 'case' | 'news' | 'blog' | 'tradeShow' | 'page';
 
 export interface MediaReference {
   type: MediaReferenceType;
@@ -44,15 +39,15 @@ export class MediaGuardService {
   }
 
   /** 素材在站点上可能出现的 Web 路径变体（/media/*、根目录资源等）。 */
-  webPathVariants(asset: Pick<MediaAsset, "key" | "url">): string[] {
+  webPathVariants(asset: Pick<MediaAsset, 'key' | 'url'>): string[] {
     const variants = new Set<string>();
     variants.add(asset.url);
     variants.add(asset.key);
 
-    if (asset.key.startsWith("content/")) {
-      const rest = asset.key.slice("content/".length);
+    if (asset.key.startsWith('content/')) {
+      const rest = asset.key.slice('content/'.length);
       variants.add(`/media/${rest}`);
-      if (!rest.includes("/")) {
+      if (!rest.includes('/')) {
         variants.add(`/${rest}`);
       }
     }
@@ -65,21 +60,21 @@ export class MediaGuardService {
   }
 
   /** 固定 key 的站点静态资源（content/hero.mp4 等，非带时间戳的上传）。 */
-  isStaticSiteAsset(asset: Pick<MediaAsset, "key" | "url">): boolean {
-    if (!asset.key.startsWith("content/")) return false;
-    const rest = asset.key.slice("content/".length);
-    if (!rest || rest.includes("/") || rest.startsWith("_archive")) return false;
+  isStaticSiteAsset(asset: Pick<MediaAsset, 'key' | 'url'>): boolean {
+    if (!asset.key.startsWith('content/')) return false;
+    const rest = asset.key.slice('content/'.length);
+    if (!rest || rest.includes('/') || rest.startsWith('_archive')) return false;
     const staticPaths = this.getStaticPaths();
     return staticPaths.has(`/media/${rest}`) || staticPaths.has(`/${rest}`);
   }
 
-  isInStaticManifest(asset: Pick<MediaAsset, "key" | "url" | "folder">): boolean {
+  isInStaticManifest(asset: Pick<MediaAsset, 'key' | 'url' | 'folder'>): boolean {
     return this.isStaticSiteAsset(asset);
   }
 
   private textReferencesAsset(
     text: string | null | undefined,
-    asset: Pick<MediaAsset, "key" | "url">,
+    asset: Pick<MediaAsset, 'key' | 'url'>,
   ): boolean {
     if (!text?.trim()) return false;
     const haystack = text;
@@ -89,15 +84,12 @@ export class MediaGuardService {
     return false;
   }
 
-  private arrayReferencesAsset(
-    values: string[],
-    asset: Pick<MediaAsset, "key" | "url">,
-  ): boolean {
+  private arrayReferencesAsset(values: string[], asset: Pick<MediaAsset, 'key' | 'url'>): boolean {
     return values.some((v) => this.textReferencesAsset(v, asset));
   }
 
   async findReferences(
-    asset: Pick<MediaAsset, "id" | "key" | "url" | "folder">,
+    asset: Pick<MediaAsset, 'id' | 'key' | 'url' | 'folder'>,
   ): Promise<MediaReference[]> {
     const refs: MediaReference[] = [];
 
@@ -145,63 +137,63 @@ export class MediaGuardService {
 
     for (const row of cases) {
       if (this.textReferencesAsset(row.coverImage, asset)) {
-        refs.push({ type: "case", id: row.id, title: row.title, field: "coverImage" });
+        refs.push({ type: 'case', id: row.id, title: row.title, field: 'coverImage' });
       }
       if (this.arrayReferencesAsset(row.images, asset)) {
-        refs.push({ type: "case", id: row.id, title: row.title, field: "images" });
+        refs.push({ type: 'case', id: row.id, title: row.title, field: 'images' });
       }
       if (this.textReferencesAsset(row.description, asset)) {
-        refs.push({ type: "case", id: row.id, title: row.title, field: "description" });
+        refs.push({ type: 'case', id: row.id, title: row.title, field: 'description' });
       }
     }
 
     for (const row of news) {
       if (this.textReferencesAsset(row.coverImage, asset)) {
-        refs.push({ type: "news", id: row.id, title: row.title, field: "coverImage" });
+        refs.push({ type: 'news', id: row.id, title: row.title, field: 'coverImage' });
       }
       if (this.arrayReferencesAsset(row.images, asset)) {
-        refs.push({ type: "news", id: row.id, title: row.title, field: "images" });
+        refs.push({ type: 'news', id: row.id, title: row.title, field: 'images' });
       }
       if (this.textReferencesAsset(row.content, asset)) {
-        refs.push({ type: "news", id: row.id, title: row.title, field: "content" });
+        refs.push({ type: 'news', id: row.id, title: row.title, field: 'content' });
       }
     }
 
     for (const row of blogs) {
       if (this.textReferencesAsset(row.coverImage, asset)) {
-        refs.push({ type: "blog", id: row.id, title: row.title, field: "coverImage" });
+        refs.push({ type: 'blog', id: row.id, title: row.title, field: 'coverImage' });
       }
       if (this.arrayReferencesAsset(row.images, asset)) {
-        refs.push({ type: "blog", id: row.id, title: row.title, field: "images" });
+        refs.push({ type: 'blog', id: row.id, title: row.title, field: 'images' });
       }
       if (this.textReferencesAsset(row.content, asset)) {
-        refs.push({ type: "blog", id: row.id, title: row.title, field: "content" });
+        refs.push({ type: 'blog', id: row.id, title: row.title, field: 'content' });
       }
     }
 
     for (const row of tradeShows) {
       if (this.textReferencesAsset(row.coverImage, asset)) {
         refs.push({
-          type: "tradeShow",
+          type: 'tradeShow',
           id: row.id,
           title: row.title,
-          field: "coverImage",
+          field: 'coverImage',
         });
       }
       if (this.arrayReferencesAsset(row.images, asset)) {
-        refs.push({ type: "tradeShow", id: row.id, title: row.title, field: "images" });
+        refs.push({ type: 'tradeShow', id: row.id, title: row.title, field: 'images' });
       }
       if (this.textReferencesAsset(row.content, asset)) {
-        refs.push({ type: "tradeShow", id: row.id, title: row.title, field: "content" });
+        refs.push({ type: 'tradeShow', id: row.id, title: row.title, field: 'content' });
       }
     }
 
     for (const row of pages) {
       if (this.textReferencesAsset(row.coverImage, asset)) {
-        refs.push({ type: "page", id: row.id, title: row.title, field: "coverImage" });
+        refs.push({ type: 'page', id: row.id, title: row.title, field: 'coverImage' });
       }
       if (this.textReferencesAsset(row.content, asset)) {
-        refs.push({ type: "page", id: row.id, title: row.title, field: "content" });
+        refs.push({ type: 'page', id: row.id, title: row.title, field: 'content' });
       }
     }
 
@@ -209,7 +201,7 @@ export class MediaGuardService {
   }
 
   async inspect(
-    asset: Pick<MediaAsset, "id" | "key" | "url" | "folder">,
+    asset: Pick<MediaAsset, 'id' | 'key' | 'url' | 'folder'>,
   ): Promise<MediaGuardReport> {
     const isSiteResource = this.isInStaticManifest(asset);
     const references = isSiteResource ? [] : await this.findReferences(asset);
@@ -223,9 +215,7 @@ export class MediaGuardService {
   }
 
   /** 批量 enrich 当前页素材（单次 CMS 扫描，避免 N+1）。 */
-  async enrichMany(
-    assets: MediaAsset[],
-  ): Promise<
+  async enrichMany(assets: MediaAsset[]): Promise<
     (MediaAsset & {
       isSiteResource: boolean;
       isProtected: boolean;
@@ -285,8 +275,8 @@ export class MediaGuardService {
   }
 
   private countReferencesInRows(
-    asset: Pick<MediaAsset, "key" | "url">,
-    rows: Awaited<ReturnType<MediaGuardService["loadCmsRowsForScan"]>>,
+    asset: Pick<MediaAsset, 'key' | 'url'>,
+    rows: Awaited<ReturnType<MediaGuardService['loadCmsRowsForScan']>>,
   ): number {
     let count = 0;
     for (const row of rows.cases) {

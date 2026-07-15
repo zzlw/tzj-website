@@ -1,11 +1,6 @@
-import {
-  Injectable,
-  NestInterceptor,
-  ExecutionContext,
-  CallHandler,
-} from "@nestjs/common";
-import { Observable } from "rxjs";
-import { map } from "rxjs/operators";
+import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
+import type { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 export interface ApiResponseFormat<T> {
   success: true;
@@ -15,15 +10,8 @@ export interface ApiResponseFormat<T> {
   timestamp: string;
 }
 
-function hasPagination(
-  value: unknown,
-): value is { data: unknown; pagination: unknown } {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "data" in value &&
-    "pagination" in value
-  );
+function hasPagination(value: unknown): value is { data: unknown; pagination: unknown } {
+  return typeof value === 'object' && value !== null && 'data' in value && 'pagination' in value;
 }
 
 /**
@@ -31,13 +19,8 @@ function hasPagination(
  * 若 service 返回 { data, pagination }（分页），自动上提 pagination。
  */
 @Injectable()
-export class TransformInterceptor<T>
-  implements NestInterceptor<T, ApiResponseFormat<T>>
-{
-  intercept(
-    context: ExecutionContext,
-    next: CallHandler,
-  ): Observable<ApiResponseFormat<T>> {
+export class TransformInterceptor<T> implements NestInterceptor<T, ApiResponseFormat<T>> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<ApiResponseFormat<T>> {
     const req = context.switchToHttp().getRequest();
     const traceId = req?.id as string | undefined;
 

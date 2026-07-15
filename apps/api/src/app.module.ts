@@ -1,42 +1,44 @@
-import { Module } from "@nestjs/common";
-import { ConfigModule, ConfigService } from "@nestjs/config";
-import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from "@nestjs/core";
-import { ScheduleModule } from "@nestjs/schedule";
-import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler";
-import { PrismaModule } from "./prisma/prisma.module";
-import { HealthModule } from "./health/health.module";
-import { CasesModule } from "./cases/cases.module";
-import { NewsModule } from "./news/news.module";
-import { BlogsModule } from "./blogs/blogs.module";
-import { TradeShowsModule } from "./trade-shows/trade-shows.module";
-import { PagesModule } from "./pages/pages.module";
-import { ContactModule } from "./contact/contact.module";
-import { StorageModule } from "./storage/storage.module";
-import { MediaModule } from "./media/media.module";
-import { PublishingModule } from "./publishing/publishing.module";
-import { AuthModule } from "./auth/auth.module";
-import { UsersModule } from "./users/users.module";
-import { AccessModule } from "./access/access.module";
-import { AuditModule } from "./audit/audit.module";
-import { AnalyticsModule } from "./analytics/analytics.module";
-import { SecurityModule } from "./security/security.module";
-import { SettingsModule } from "./settings/settings.module";
-import { IntegrationsModule } from "./integrations/integrations.module";
-import { NotificationModule } from "./notifications/notification.module";
-import { SystemModule } from "./system/system.module";
-import { DocumentsModule } from "./documents/documents.module";
-import { JwtAuthGuard } from "./auth/guards/jwt-auth.guard";
-import { RolesGuard } from "./auth/guards/roles.guard";
-import { TransformInterceptor } from "./common/interceptors/transform.interceptor";
-import { AuditInterceptor } from "./common/interceptors/audit.interceptor";
-import { AllExceptionsFilter } from "./common/filters/http-exception.filter";
-import { validateEnv } from "./config/env.validation";
+import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { AccessModule } from './access/access.module';
+import { AnalyticsModule } from './analytics/analytics.module';
+import { AuditModule } from './audit/audit.module';
+import { AuthModule } from './auth/auth.module';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { RolesGuard } from './auth/guards/roles.guard';
+import { BlogsModule } from './blogs/blogs.module';
+import { CasesModule } from './cases/cases.module';
+import { AllExceptionsFilter } from './common/filters/http-exception.filter';
+import { AuditInterceptor } from './common/interceptors/audit.interceptor';
+import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+import { validateEnv } from './config/env.validation';
+import { ContactModule } from './contact/contact.module';
+import { CustomersModule } from './customers/customers.module';
+import { DocumentsModule } from './documents/documents.module';
+import { HealthModule } from './health/health.module';
+import { IntegrationsModule } from './integrations/integrations.module';
+import { MediaModule } from './media/media.module';
+import { NewsModule } from './news/news.module';
+import { NotificationModule } from './notifications/notification.module';
+import { PagesModule } from './pages/pages.module';
+import { PrismaModule } from './prisma/prisma.module';
+import { PublishingModule } from './publishing/publishing.module';
+import { SecurityModule } from './security/security.module';
+import { SettingsModule } from './settings/settings.module';
+import { StorageModule } from './storage/storage.module';
+import { SupportModule } from './support/support.module';
+import { SystemModule } from './system/system.module';
+import { TradeShowsModule } from './trade-shows/trade-shows.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: [".env.local", ".env", "../../.env"],
+      envFilePath: ['.env.local', '.env', '../../.env'],
       validate: validateEnv,
     }),
     ThrottlerModule.forRootAsync({
@@ -44,8 +46,8 @@ import { validateEnv } from "./config/env.validation";
       useFactory: (config: ConfigService) => ({
         throttlers: [
           {
-            ttl: (config.get<number>("THROTTLE_TTL") ?? 60) * 1000,
-            limit: config.get<number>("THROTTLE_LIMIT") ?? 120,
+            ttl: (config.get<number>('THROTTLE_TTL') ?? 60) * 1000,
+            limit: config.get<number>('THROTTLE_LIMIT') ?? 120,
           },
         ],
       }),
@@ -60,6 +62,7 @@ import { validateEnv } from "./config/env.validation";
     TradeShowsModule,
     PagesModule,
     ContactModule,
+    CustomersModule,
     StorageModule,
     MediaModule,
     PublishingModule,
@@ -73,6 +76,7 @@ import { validateEnv } from "./config/env.validation";
     NotificationModule,
     SystemModule,
     DocumentsModule,
+    SupportModule,
   ],
   providers: [
     // 全局限流

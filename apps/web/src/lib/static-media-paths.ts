@@ -1,62 +1,62 @@
-import { blogPosts } from "./blog";
-import { caseStudies } from "./cases";
-import { newsItems } from "./news";
-import { PRODUCT_LINES } from "./product-catalog";
-import { SOLUTION_META } from "./solutions";
+import { blogPosts } from './blog';
+import { caseStudies } from './cases';
+import { newsItems } from './news';
+import { PRODUCT_LINES } from './product-catalog';
+import { SOLUTION_META } from './solutions';
 
 /** 页面 / i18n JSON 中引用、未纳入下方模块数据的路径。 */
 const EXTRA_SITE_MEDIA_PATHS = [
-  "/media/alarm-1st.png",
-  "/media/alarm-3rd.png",
-  "/media/alarm-5th.png",
-  "/media/alarm-highrise.jpg",
-  "/media/burn-room.mp4",
-  "/media/fixed-series.mp4",
-  "/media/fixed-tower-hero.jpg",
-  "/media/fixed-tower.mp4",
-  "/media/hero.mp4",
-  "/media/louisville-case.mp4",
-  "/media/maritime-jacksonville.jpg",
-  "/media/maritime-miami.jpg",
-  "/media/mission.mp4",
-  "/media/modular-d.png",
-  "/media/modular-m.jpg",
-  "/media/modular-o.png",
-  "/media/modular-tower.mp4",
-  "/media/modular-x.png",
-  "/media/tower-ocean-springs.jpg",
-  "/media/tower-prairieville.jpg",
-  "/media/whp-hero.mp4",
-  "/media/why.mp4",
-  "/og-default.jpg",
-  "/content/wechat.jpg",
-  "/content/douyin.jpg",
+  '/media/alarm-1st.png',
+  '/media/alarm-3rd.png',
+  '/media/alarm-5th.png',
+  '/media/alarm-highrise.jpg',
+  '/media/burn-room.mp4',
+  '/media/fixed-series.mp4',
+  '/media/fixed-tower-hero.jpg',
+  '/media/fixed-tower.mp4',
+  '/media/hero.mp4',
+  '/media/louisville-case.mp4',
+  '/media/maritime-jacksonville.jpg',
+  '/media/maritime-miami.jpg',
+  '/media/mission.mp4',
+  '/media/modular-d.png',
+  '/media/modular-m.jpg',
+  '/media/modular-o.png',
+  '/media/modular-tower.mp4',
+  '/media/modular-x.png',
+  '/media/tower-ocean-springs.jpg',
+  '/media/tower-prairieville.jpg',
+  '/media/whp-hero.mp4',
+  '/media/why.mp4',
+  '/og-default.jpg',
+  '/content/wechat.jpg',
+  '/content/douyin.jpg',
 ] as const;
 
 /** 展会种子默认封面（与 API TRADE_SHOW_COVERS 顺序对应）。 */
 export const TRADE_SHOW_COVERS = [
-  "/media/tower-wylie.jpg",
-  "/media/modular-hero.jpg",
-  "/media/burn-room.webp",
-  "/media/tactical.jpg",
+  '/media/tower-wylie.jpg',
+  '/media/modular-hero.jpg',
+  '/media/burn-room.webp',
+  '/media/tactical.jpg',
 ] as const;
 
 const SECTION_MEDIA_PATHS = [
-  "/media/hero.mp4",
-  "/media/fixed-tower-hero.jpg",
-  "/media/mission.mp4",
-  "/media/modular-construction.jpg",
+  '/media/hero.mp4',
+  '/media/fixed-tower-hero.jpg',
+  '/media/mission.mp4',
+  '/media/modular-construction.jpg',
 ] as const;
 
 const QUICK_LINK_IMAGES = [
-  "/media/fixed-tower-hero.jpg",
-  "/media/modular-hero.jpg",
-  "/media/burn-room.webp",
-  "/media/tactical.jpg",
+  '/media/fixed-tower-hero.jpg',
+  '/media/modular-hero.jpg',
+  '/media/burn-room.webp',
+  '/media/tactical.jpg',
 ] as const;
 
 export function isSiteStaticMediaPath(url: string): boolean {
-  return url.startsWith("/media/") || /^\/og-/.test(url) || url.startsWith("/content/");
+  return url.startsWith('/media/') || /^\/og-/.test(url) || url.startsWith('/content/');
 }
 
 /** 收集站点引用的全部静态媒体路径，供 MinIO 同步脚本使用。 */

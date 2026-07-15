@@ -1,35 +1,32 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { PrismaService } from "../prisma/prisma.service";
-import { Prisma } from "@prisma/client/index";
-import { CreateCaseDto, UpdateCaseDto } from "./dto/case.dto";
-import { sanitizeMarkdown } from "../common/utils/markdown";
-import { generateDocumentSummary } from "../common/utils/document-summary";
-import {
-  applyPublishedFilter,
-  assertPublishedOrStaff,
-} from "../common/utils/content-query";
-import { resolveContentAuthor } from "../common/utils/content-author";
-import { applyContentEditorMetadata } from "../common/utils/content-metadata";
+import { Injectable, NotFoundException } from '@nestjs/common';
+import type { Prisma } from '@prisma/client/index';
+import { resolveContentAuthor } from '../common/utils/content-author';
 import {
   CONTENT_ADMIN_USER_INCLUDE,
   stripInternalContentFields,
-} from "../common/utils/content-list";
+} from '../common/utils/content-list';
+import { applyContentEditorMetadata } from '../common/utils/content-metadata';
+import { applyPublishedFilter, assertPublishedOrStaff } from '../common/utils/content-query';
+import { generateDocumentSummary } from '../common/utils/document-summary';
 import {
   buildListOrderBy,
   DEFAULT_CONTENT_LIST_ORDER,
   parseListSort,
-} from "../common/utils/list-sort";
+} from '../common/utils/list-sort';
+import { sanitizeMarkdown } from '../common/utils/markdown';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateCaseDto, UpdateCaseDto } from './dto/case.dto';
 
 const LIST_SORT_FIELDS = [
-  "title",
-  "caseType",
-  "location",
-  "status",
-  "completionDate",
-  "createdAt",
-  "updatedAt",
-  "createdById",
-  "lastOperatorId",
+  'title',
+  'caseType',
+  'location',
+  'status',
+  'completionDate',
+  'createdAt',
+  'updatedAt',
+  'createdById',
+  'lastOperatorId',
 ] as const;
 
 interface FindAllParams {
@@ -47,15 +44,7 @@ export class CasesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll(params: FindAllParams) {
-    const {
-      page,
-      limit,
-      caseType,
-      search,
-      includeUnpublished = false,
-      sortBy,
-      sortOrder,
-    } = params;
+    const { page, limit, caseType, search, includeUnpublished = false, sortBy, sortOrder } = params;
     const skip = (page - 1) * limit;
 
     const where: Prisma.CaseWhereInput = {
@@ -64,8 +53,8 @@ export class CasesService {
     if (caseType) where.caseType = caseType;
     if (search) {
       where.OR = [
-        { title: { contains: search, mode: "insensitive" } },
-        { summary: { contains: search, mode: "insensitive" } },
+        { title: { contains: search, mode: 'insensitive' } },
+        { summary: { contains: search, mode: 'insensitive' } },
       ];
     }
 
@@ -91,9 +80,7 @@ export class CasesService {
     ]);
 
     return {
-      data: rawData.map((item) =>
-        stripInternalContentFields(item, includeUnpublished),
-      ),
+      data: rawData.map((item) => stripInternalContentFields(item, includeUnpublished)),
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     };
   }
@@ -120,8 +107,7 @@ export class CasesService {
     const { description, summary, ...rest } = dto;
     const sanitizedDescription = sanitizeMarkdown(description);
     // 如果未提供摘要，则根据正文自动生成
-    const finalSummary =
-      summary ?? generateDocumentSummary(sanitizedDescription);
+    const finalSummary = summary ?? generateDocumentSummary(sanitizedDescription);
     const data: Prisma.CaseCreateInput = {
       ...rest,
       summary: finalSummary,
@@ -130,10 +116,7 @@ export class CasesService {
     if (editorId) {
       data.author = await resolveContentAuthor(this.prisma, editorId);
     }
-    Object.assign(
-      data,
-      await applyContentEditorMetadata(this.prisma, editorId, dto.status),
-    );
+    Object.assign(data, await applyContentEditorMetadata(this.prisma, editorId, dto.status));
     return this.prisma.case.create({ data });
   }
 
@@ -157,12 +140,7 @@ export class CasesService {
     }
     Object.assign(
       data,
-      await applyContentEditorMetadata(
-        this.prisma,
-        editorId,
-        dto.status ?? item.status,
-        item,
-      ),
+      await applyContentEditorMetadata(this.prisma, editorId, dto.status ?? item.status, item),
     );
     return this.prisma.case.update({ where: { id }, data });
   }
