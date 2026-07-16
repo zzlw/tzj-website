@@ -15,11 +15,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
     const me = await apiFetch<{ permissions?: string[] }>('/auth/me');
     permissions = me.permissions ?? [];
   } catch (error) {
-    // 认证失败（token 被撤销等极端情况）→ 跳转登录
-    if (error instanceof Error && error.message.includes('401')) {
-      redirect('/login?reason=session_expired');
-    }
-    // API 临时不可达，使用 fallback：超级管理员拥有所有权限
+    // 注意：到此说明已通过上面的 session 校验（用户确实已登录），
+    // 此时 /auth/me 失败通常是 token 续期边界的瞬时问题（middleware 会在后续请求修正）。
+    // 切勿直接跳转登录，否则会出现「点一下会话就跳登录」的现象。
+    // 仅当确实无会话时才在上方 redirect；此处统一降级处理。
     console.warn('[Dashboard] Failed to fetch permissions from /auth/me:', error);
     if (session.role === 'admin') {
       permissions = ['*'];

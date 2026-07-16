@@ -25,8 +25,6 @@ import {
   Mic,
   Minimize2,
   Paperclip,
-  Power,
-  RefreshCw,
   Smile,
   SquarePen,
   X,
@@ -84,6 +82,7 @@ const I18N = {
     inputPlaceholder: '发消息…',
     closed: '本次会话已结束',
     closedHint: '如需进一步帮助，请重新发起咨询或拨打我们的电话。',
+    closedReopenHint: '本次会话已结束，回复即可重开',
     newChat: '开始新对话',
     today: '今天',
     yesterday: '昨天',
@@ -127,6 +126,7 @@ const I18N = {
     inputPlaceholder: '發訊息…',
     closed: '本次會話已結束',
     closedHint: '如需進一步協助，請重新發起諮詢或撥打我們的電話。',
+    closedReopenHint: '本次會話已結束，回覆即可重開',
     newChat: '開始新對話',
     today: '今天',
     yesterday: '昨天',
@@ -172,6 +172,7 @@ const I18N = {
     inputPlaceholder: 'Send a message…',
     closed: 'This conversation is closed',
     closedHint: 'Need more help? Start a new chat or give us a call.',
+    closedReopenHint: 'This conversation is closed — just reply to reopen it',
     newChat: 'Start new chat',
     today: 'Today',
     yesterday: 'Yesterday',
@@ -365,8 +366,19 @@ export function ChatWidget({
   const agentAvatarUrl = agentAvatarRaw ? resolveMediaUrl(agentAvatarRaw) : '';
   const greetingText = agentProfile?.greeting?.trim() || t.aiGreeting;
 
-  const { connected, agentsOnline, agentLastOnlineAt, on, off, joinRoom, sendMessage, markRead } =
-    useVisitorChat();
+  const {
+    connected,
+    agentsOnline,
+    agentLastOnlineAt,
+    on,
+    off,
+    joinRoom,
+    leaveRoom,
+    sendMessage,
+    markRead,
+    reportActive,
+    reportIdle,
+  } = useVisitorChat();
 
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -433,6 +445,18 @@ export function ChatWidget({
     openRef.current = open;
   }, [open]);
 
+  // 面板开关 → 诚实上报客户在线状态：
+  //  - 打开面板 = 正在看聊天 → reportActive（online）
+  //  - 关闭面板 = 离开聊天 → reportIdle（away）
+  // 使 B 端看到的「客户在线」真正反映「是否还在看聊天」，而非「网站是否开着」。
+  useEffect(() => {
+    if (open) {
+      reportActive();
+    } else {
+      reportIdle();
+    }
+  }, [open, reportActive, reportIdle]);
+
   const isClosed = room?.status === 'closed';
 
   const enterChat = useCallback(
@@ -450,7 +474,9 @@ export function ChatWidget({
           }),
         );
       } catch {}
-      if (r.status === 'active' || r.status === 'waiting') {
+      // 已关闭会话也加入房间：访客回复「重开」时需实时收到自己的消息回声与
+      // room-status-changed（状态切回进行中）；同时关闭事件也能即时触达。
+      if (r.status === 'active' || r.status === 'waiting' || r.status === 'closed') {
         joinRoom(r.roomId, r.clientEmail);
       }
     },
@@ -536,15 +562,44 @@ export function ChatWidget({
       }
     };
 
+    // 房间状态变更（坐席关闭 / 归档等）：实时同步到访客端，
+    // 使「本次会话已结束」面板即时出现（含禁用输入框 + 重新发起咨询入口），
+    // 而非要等刷新才看到关闭态 —— 否则客户会在已关闭会话里继续发消息却石沉大海。
+    const handleRoomStatusChanged = (data: {
+      roomId?: string;
+      status?: string;
+    }) => {
+      if (data.roomId !== roomIdRef.current) return;
+      if (data.status) {
+        setRoom((prev) => (prev ? { ...prev, status: data.status as ChatRoom['status'] } : prev));
+      }
+    };
+
+    // 发送失败（如会话已关闭，后端拒绝落库）：重新拉取房间，
+    // 让前端状态与服务端一致（已关闭则展示结束面板），避免消息无声丢失。
+    const handleError = (data?: { message?: string }) => {
+      const rid = roomIdRef.current;
+      if (!rid || !data || typeof data !== 'object' || !('message' in data)) return;
+      getRoom(rid)
+        .then((r) => {
+          if (r && r.roomId === roomIdRef.current) setRoom(r);
+        })
+        .catch(() => {});
+    };
+
     on('new-message', handleNewMessage);
     on('messages-read', handleMessagesRead);
     on('presence-changed', handlePresence);
+    on('room-status-changed', handleRoomStatusChanged);
+    on('error', handleError);
     return () => {
       off('new-message');
       off('messages-read');
       off('presence-changed');
+      off('room-status-changed');
+      off('error');
     };
-  }, [on, off, markRead]);
+  }, [on, off, markRead, getRoom]);
 
   // 标记已读
   useEffect(() => {
@@ -792,19 +847,24 @@ export function ChatWidget({
     e?.preventDefault();
     const content = (override ?? input).trim();
     const keys = staged.map((a) => a.key);
-    if ((!content && keys.length === 0) || isClosed) return;
+    if (!content && keys.length === 0) return;
     const attachments = staged;
     setInput('');
     setStaged([]);
     setEmojiOpen(false);
     setUploading(false);
     if (room) {
-      // 已有房间，正常发
+      // 已有房间：正常发（若是 closed 房间，后端按「回复即重开」把同一会话
+      // 切回进行中并广播 room-status-changed，输入框随之恢复可用）。
       if (connected) {
         sendMessage(room.roomId, content, room.clientEmail, keys);
       } else {
         void sendMessageHTTP(room.roomId, content, room.clientEmail, keys)
-          .then((r) => setMessages((r.messages ?? []).map(normalizeMessage)))
+          .then((r) => {
+            setMessages((r.messages ?? []).map(normalizeMessage));
+            // 离线兜底：重开场景下同步房间状态，避免输入框仍停留在关闭态
+            setRoom((prev) => (prev ? { ...prev, status: r.status } : prev));
+          })
           .catch(() => setError(t.failed));
       }
     } else {
@@ -865,7 +925,6 @@ export function ChatWidget({
 
   // 粘贴文件（截图 / 复制的文件）→ 直接进入上传链路；纯文本粘贴保持默认行为
   const handlePaste = (e: ClipboardEvent<HTMLTextAreaElement>) => {
-    if (isClosed) return;
     const items = e.clipboardData?.items;
     if (!items) return;
     const files: File[] = [];
@@ -884,6 +943,14 @@ export function ChatWidget({
   };
 
   const startNewChat = () => {
+    // 离开旧房间：让访客 socket 退出当前会话房间，网关据此广播 user-left 并
+    // 按「是否实际在房间」计算在线状态——旧会话即离线，新会话仍在线（互不影响）。
+    // 必须在清空 room 状态前用 roomIdRef 取到旧 roomId。
+    if (roomIdRef.current) {
+      try {
+        leaveRoom(roomIdRef.current);
+      } catch {}
+    }
     try {
       localStorage.removeItem(STORAGE_KEY);
     } catch {}
@@ -1150,27 +1217,22 @@ export function ChatWidget({
           </ImagePreviewProvider>
         </ScrollArea>
 
-        {isClosed ? (
-          <div className="bg-white px-4 py-5 text-center">
-            <div className="mx-auto mb-2.5 flex h-10 w-10 items-center justify-center rounded-full bg-zinc-100">
-              <Power className="h-4 w-4 text-zinc-500" />
-            </div>
-            <p className="text-sm font-medium text-zinc-700">{t.closed}</p>
-            <p className="mt-1 text-xs text-zinc-500">{t.closedHint}</p>
-            <Button
-              type="button"
-              onClick={startNewChat}
-              variant="outline"
-              size="sm"
-              className="mt-3 h-9 rounded-full border-zinc-200 px-4 text-xs font-medium text-zinc-700 hover:bg-white"
-            >
-              <RefreshCw className="mr-1.5 h-3 w-3" />
-              {t.newChat}
-            </Button>
+        {isClosed && (
+          <div className="border-t border-zinc-100 bg-zinc-50/70 px-4 py-2.5 text-center">
+            <p className="text-xs text-zinc-500">
+              {t.closedReopenHint}
+              <button
+                type="button"
+                onClick={startNewChat}
+                className="ml-1 font-medium text-zinc-700 underline-offset-2 transition hover:underline"
+              >
+                {t.newChat}
+              </button>
+            </p>
           </div>
-        ) : (
-          /* ── 输入区：Klipy 圆角无强边框 + 灰色 ↑ 发送钮 ── */
-          <form onSubmit={handleSend} className="bg-white p-3">
+        )}
+        {/* ── 输入区：已关闭会话仍可输入，访客回复即「重开」同一会话 ── */}
+        <form onSubmit={handleSend} className="bg-white p-3">
             <input
               ref={fileRef}
               type="file"
@@ -1247,15 +1309,14 @@ export function ChatWidget({
                 onPaste={handlePaste}
                 rows={1}
                 placeholder={t.inputPlaceholder}
-                disabled={isClosed}
-                className="block w-full min-h-0 resize-none border-0 bg-transparent shadow-none px-3.5 pt-2.5 pb-1 text-sm leading-relaxed text-zinc-900 [scrollbar-width:none] transition-colors placeholder:text-zinc-400 focus:ring-0 focus:outline-none focus-visible:ring-0 disabled:opacity-60"
+                className="block w-full min-h-0 resize-none border-0 bg-transparent shadow-none px-3.5 pt-2.5 pb-1 text-sm leading-relaxed text-zinc-900 [scrollbar-width:none] transition-colors placeholder:text-zinc-400 focus:ring-0 focus:outline-none focus-visible:ring-0"
               />
               <div className="flex items-center justify-between px-1.5 pb-1.5">
                 <div className="flex items-center gap-0.5">
                   <button
                     type="button"
                     aria-label={t.attach}
-                    disabled={isClosed || uploading}
+                    disabled={uploading}
                     onClick={() => fileRef.current?.click()}
                     className={cn(
                       'flex h-8 w-8 items-center justify-center rounded-full transition',
@@ -1319,12 +1380,12 @@ export function ChatWidget({
                   type="submit"
                   size="icon"
                   disabled={
-                    (!input.trim() && staged.length === 0) || isClosed || sending || uploading
+                    (!input.trim() && staged.length === 0) || sending || uploading
                   }
                   aria-label={t.send}
                   className={cn(
                     'h-8 w-8 shrink-0 rounded-full transition-all duration-200 active:scale-90',
-                    (input.trim() || staged.length > 0) && !isClosed && !sending && !uploading
+                    (input.trim() || staged.length > 0) && !sending && !uploading
                       ? 'bg-zinc-900 text-white shadow-sm hover:bg-zinc-800'
                       : 'bg-zinc-200 text-zinc-400 shadow-none',
                   )}
@@ -1334,7 +1395,6 @@ export function ChatWidget({
               </div>
             </div>
           </form>
-        )}
       </div>
     </>
   );

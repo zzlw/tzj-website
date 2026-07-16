@@ -28,6 +28,10 @@ export interface UseVisitorChatResult {
     attachments?: string[],
   ) => void;
   markRead: (roomId: string, userEmail: string) => void;
+  /** 主动报告「正在看聊天」：打开面板 / 切回前台 → 恢复 online */
+  reportActive: () => void;
+  /** 主动报告「离开聊天」：关闭面板 / 切到后台 → 置为 away */
+  reportIdle: () => void;
 }
 
 /**
@@ -97,24 +101,58 @@ export function useVisitorChat(): UseVisitorChatResult {
         if (socket.connected) socket.emit('heartbeat');
       }, 30_000);
 
-      // ── 空闲检测：标签页隐藏 → 报告 idle；切回 → 心跳恢复 online ──
+      // ── 空闲检测：标签页隐藏 → 报告 idle；切回 → 恢复 active(online) ──
       const handleVisibility = () => {
         if (document.hidden) {
           socket.emit('user-idle');
         } else if (socket.connected) {
-          socket.emit('heartbeat');
+          socket.emit('user-active');
         }
       };
       document.addEventListener('visibilitychange', handleVisibility);
 
+      // ── 页面彻底销毁（关闭标签页 / 离开站点）时主动上报离线 ──
+      // 仅靠 socket 自然断开不可靠：标签页关闭瞬间 websocket 关闭帧可能
+      // 来不及发出，导致服务端要等 ping 超时（~15s）才检测断线，叠加宽限
+      // 后 B 端长期显示「在线」。故在 pagehide/beforeunload（页面销毁前
+      // 可靠触发）显式发送 client-gone，服务端收到后立即将该客户置为 offline。
+      // 多标签页时其它 socket 仍在，不会误判；刷新时新连接会经 registerSocket
+      // 立即恢复 online，不会误判为长期离线。
+      const handlePageHide = () => {
+        try {
+          socket.emit('client-gone');
+        } catch {}
+        try {
+          // 关键：关闭/离开页面时彻底禁止自动重连。
+          // 否则页面卸载瞬间底层 WS 被浏览器粗暴切断，socket.io 因
+          // reconnection:true + reconnectionDelay:1000 会在约 1s 后重连，
+          // 经 registerSocket 把已 offline 的访客再次拉回 online
+          // —— 表现为「瞬间离线 1 秒左右，又变成在线」。
+          // 仅禁用本（即将销毁的）socket 所属 Manager 的重连；
+          // 新页面会创建全新 socket（重连默认开启），刷新仍可正常恢复在线。
+          socket.io?.reconnection?.(false);
+        } catch {}
+        try {
+          socket.disconnect();
+        } catch {}
+      };
+      window.addEventListener('pagehide', handlePageHide);
+      window.addEventListener('beforeunload', handlePageHide);
+
       return () => {
         clearInterval(heartbeatTimer);
         document.removeEventListener('visibilitychange', handleVisibility);
+        window.removeEventListener('pagehide', handlePageHide);
+        window.removeEventListener('beforeunload', handlePageHide);
       };
     })();
 
     return () => {
       cancelled = true;
+      // 断开前先诚实上报「离开聊天」，使 B 端状态在组件卸载（离开页面）时及时变为 away
+      try {
+        socketRef.current?.emit('user-idle');
+      } catch {}
       socket?.disconnect();
       socketRef.current = null;
       setConnected(false);
@@ -154,6 +192,14 @@ export function useVisitorChat(): UseVisitorChatResult {
     });
   }, []);
 
+  // 诚实上报客户在线状态：打开面板 / 切回前台 → online；关闭面板 / 切到后台 → away
+  const reportIdle = useCallback(() => {
+    socketRef.current?.emit('user-idle');
+  }, []);
+  const reportActive = useCallback(() => {
+    socketRef.current?.emit('user-active');
+  }, []);
+
   return {
     connected,
     agentsOnline,
@@ -165,5 +211,7 @@ export function useVisitorChat(): UseVisitorChatResult {
     leaveRoom,
     sendMessage,
     markRead,
+    reportActive,
+    reportIdle,
   };
 }

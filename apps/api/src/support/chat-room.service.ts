@@ -70,6 +70,8 @@ export interface ChatRoomResult {
   lastReadByAgent?: Date | string | null;
   createdAt: Date | string;
   updatedAt: Date | string;
+  /** 本次发送是否因「访客回复已关闭会话」而触发了重开（仅 client 发送回 closed 房间时为 true） */
+  reopened?: boolean;
 }
 
 /** 列表用的「最后一条消息」预览（不含完整消息体） */
@@ -600,9 +602,22 @@ export class ChatRoomService {
     if (!room) {
       throw new NotFoundException(`Chat room with ID ${roomId} not found`);
     }
-    if (room.status === 'closed') {
+
+    const isClosed = room.status === 'closed';
+    const isClientSender = dto.sender === 'client';
+
+    // 关闭即终态：坐席不能向已关闭会话追加消息（须走显式「重新打开」动作，
+    // 当前由前端引导坐席走「重新咨询」；后续可加显式重开按钮）。
+    // 但访客在已关闭会话中发送消息 = 行业惯例的「回复即重开」：
+    // 同一会话回到进行中（保留原负责人则延续原坐席上下文，否则回到待领取队列），
+    // 使 Intercom / Zendesk 式的「客户回复使已解决会话重新打开」生效，
+    // 而非静默失败，也不是只能另开新会话。
+    if (isClosed && !isClientSender) {
       throw new BadRequestException('Cannot send message to closed chat room');
     }
+
+    const reopened = isClosed && isClientSender;
+
     if (!dto.content && !dto.attachments?.length) {
       throw new BadRequestException('消息内容或附件至少提供一项');
     }
@@ -633,6 +648,12 @@ export class ChatRoomService {
 
     if (dto.sender === 'client') {
       updateData.unreadCountForAgent = { increment: 1 };
+      if (reopened) {
+        // 重开：原会话有负责人 → 恢复为 active（延续上下文）；
+        // 无负责人 → 回到 waiting 队列等待坐席领取。同时清空 closedAt。
+        updateData.status = room.assignedAgentEmail ? 'active' : 'waiting';
+        updateData.closedAt = null;
+      }
     } else if (dto.sender === 'agent') {
       updateData.unreadCountForClient = { increment: 1 };
       if (room.status === 'waiting') {
@@ -648,7 +669,8 @@ export class ChatRoomService {
       data: updateData,
     });
 
-    return this.getChatRoomById(roomId);
+    const result = await this.getChatRoomById(roomId);
+    return { ...result, reopened };
   }
 
   /* ==================== 已读 ==================== */

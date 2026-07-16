@@ -29,13 +29,6 @@ export async function getSession(): Promise<SessionUser | null> {
   };
 }
 
-async function refreshTokens(): Promise<{ accessToken: string; refreshToken: string } | null> {
-  const store = await cookies();
-  const refreshToken = store.get(COOKIE.refresh)?.value;
-  const { refreshAccessToken } = await import('./tokenRefresh');
-  return refreshAccessToken(refreshToken);
-}
-
 export interface Pagination {
   page: number;
   limit: number;
@@ -64,15 +57,11 @@ async function rawRequest(
 
   let res = await doFetch(token);
 
-  if (res.status === 401) {
-    const refreshed = await refreshTokens();
-    if (refreshed) {
-      token = refreshed.accessToken;
-      // 注意：Server Component 内无法写 cookie，轮换后的新 token 仅本次请求使用；
-      // 持久化由 middleware / route handler 负责。
-      res = await doFetch(token);
-    }
-  }
+  // 重要：此处不再用 refresh token 自动续期。
+  // 原因：Server Component（如 dashboard layout）内无法写 cookie，续期后的新 refresh token 无法持久化，
+  // 会导致 cookie 里的旧 refresh token 在后续请求中被重复使用，命中后端「刷新令牌复用」检测
+  // （auth.service.ts 会撤销该用户全部会话），表现为「点一下会话就跳登录」。
+  // 令牌续期统一由 proxy.ts 在网络边界完成（它能同时写回 cookie 与请求头）。
 
   if (!res.ok) {
     const errBody = await res.json().catch(() => ({}));

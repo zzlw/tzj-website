@@ -7,7 +7,7 @@ import type { ChatRoom, ChatRoomStatusKey, PresenceStatus } from '../types';
 import { LeadAction, VisitorInfoContent } from './VisitorInfoContent';
 
 const statusMeta: Record<ChatRoomStatusKey, { label: string; dot: string }> = {
-  waiting: { label: '等待中', dot: 'bg-amber-500' },
+  waiting: { label: '等待中', dot: 'bg-sky-500' },
   active: { label: '进行中', dot: 'bg-emerald-500' },
   closed: { label: '已关闭', dot: 'bg-zinc-400' },
   archived: { label: '已归档', dot: 'bg-zinc-300' },

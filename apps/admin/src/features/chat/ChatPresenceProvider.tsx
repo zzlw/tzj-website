@@ -62,6 +62,19 @@ export function ChatPresenceProvider({
     [socket],
   );
 
+  // 刷新后恢复坐席在线状态：后端 register-agent 时下发 my-presence
+  // （后端内存 presence 未因前端刷新丢失，宽限期内重连状态保持）
+  useEffect(() => {
+    const handleMyPresence = (payload: { status: PresenceStatus }) => {
+      // 用 setPresence 恢复：同步本地 agentStatus + 标记 hasEverBeenOnline（供 visibility 自动恢复）
+      setPresence(payload.status);
+    };
+    socket.on('my-presence', handleMyPresence);
+    return () => {
+      socket.off('my-presence');
+    };
+  }, [socket, setPresence]);
+
   // ── 空闲检测：鼠标/键盘静止 N 分钟 → 自动 away ──
   useEffect(() => {
     function resetIdleTimer() {

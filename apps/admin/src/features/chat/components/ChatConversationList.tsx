@@ -19,7 +19,9 @@ import { VirtualList } from './VirtualList';
 const ROW_HEIGHT = 84;
 
 const statusDot: Record<ChatRoomStatusKey, string> = {
-  waiting: 'bg-amber-500',
+  // 用天蓝区分「待处理」状态，避免与 presence 的 away(amber) 撞色，
+  // 否则待处理会话回退到状态色时会误读成「离开」。
+  waiting: 'bg-sky-500',
   active: 'bg-emerald-500',
   closed: 'bg-zinc-400',
   archived: 'bg-zinc-300',
@@ -37,7 +39,8 @@ const agentStatusMeta: Record<PresenceStatus, { label: string; dot: string }> = 
   offline: { label: '离线', dot: 'bg-zinc-400' },
 };
 
-const BUCKETS: { key: ChatRoomStatusKey | 'closed'; label: string }[] = [
+const BUCKETS: { key: BucketKey; label: string }[] = [
+  { key: 'all', label: '全部' },
   { key: 'waiting', label: '待处理' },
   { key: 'active', label: '进行中' },
   { key: 'closed', label: '已关闭' },
@@ -76,7 +79,7 @@ export interface BucketView {
   loaded: boolean;
 }
 
-export type BucketKey = 'waiting' | 'active' | 'closed';
+export type BucketKey = 'all' | 'waiting' | 'active' | 'closed';
 
 interface Props {
   buckets: Record<BucketKey, BucketView>;
@@ -125,6 +128,7 @@ export function ChatConversationList({
 
   const emptyHint = useMemo(() => {
     if (search.trim()) return '未找到匹配的会话';
+    if (activeBucket === 'all') return '暂无会话';
     if (activeBucket === 'waiting') return '暂无待处理会话';
     if (activeBucket === 'active') return '暂无进行中的会话';
     return '暂无已关闭的会话';

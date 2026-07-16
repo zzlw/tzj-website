@@ -84,23 +84,60 @@ export function useChatSocket(params: {
         if (socket.connected) socket.emit('heartbeat');
       }, 30_000);
 
-      // ── 空闲检测：标签页隐藏 → 报告 idle；切回 → 恢复 online ──
+      // ── 空闲检测：标签页隐藏 → 延迟报告 idle；切回 → 恢复 online ──
       // 仅当坐席曾显式点击过「在线」后才允许 visibility 自动恢复；
       // 首次加载默认 offline 时，切标签页不会误变 online。
+      // 关键修复：隐藏时不立即 emit user-idle，而是延迟 USER_IDLE_DELAY_MS 再发。
+      // 刷新 / 关闭标签页时页面会在延迟前卸载（定时器随之清除、连接已断），
+      // 不会污染服务端 presence，避免「刷新后坐席从在线变成离开」。
+      const USER_IDLE_DELAY_MS = 2000;
+      let idleDelayTimer: ReturnType<typeof setTimeout> | null = null;
       const handleVisibility = () => {
         if (document.hidden) {
-          socket.emit('user-idle');
-        } else if (socket.connected && hasEverBeenOnlineRef.current) {
-          if (!manualOfflineRef.current) {
+          if (idleDelayTimer) clearTimeout(idleDelayTimer);
+          idleDelayTimer = setTimeout(() => {
+            if (socket.connected) socket.emit('user-idle');
+          }, USER_IDLE_DELAY_MS);
+        } else {
+          if (idleDelayTimer) {
+            clearTimeout(idleDelayTimer);
+            idleDelayTimer = null;
+          }
+          if (socket.connected && hasEverBeenOnlineRef.current && !manualOfflineRef.current) {
             socket.emit('set-presence', { status: 'online' });
           }
         }
       };
       document.addEventListener('visibilitychange', handleVisibility);
 
+      // ── 页面销毁（关闭标签页 / 离开站点）时主动上报「离开」──
+      // 仅靠 socket 自然断开不可靠：标签页关闭瞬间 WS 关闭帧可能来不及发出，
+      // 导致服务端要等断线宽限 + ping 超时才能检测离线。故在 pagehide/beforeunload
+      // （页面销毁前可靠触发）显式发送 client-gone，服务端走「显式离开」快路径，
+      // 比 10s 断线宽限更快让 C 端反映「暂无坐席在线」。刷新时新连接会在
+      // CLIENT_GONE_GRACE_MS 窗口内重连并取消离线定时器，坐席不丢在线。
+      const handlePageHide = () => {
+        try {
+          if (socket.connected) socket.emit('client-gone');
+        } catch {}
+        try {
+          // 仅禁用本（即将销毁的）socket 所属 Manager 的重连；
+          // 新页面会创建全新 socket（重连默认开启），刷新仍可正常恢复。
+          socket.io?.reconnection?.(false);
+        } catch {}
+        try {
+          socket.disconnect();
+        } catch {}
+      };
+      window.addEventListener('pagehide', handlePageHide);
+      window.addEventListener('beforeunload', handlePageHide);
+
       return () => {
         clearInterval(heartbeatTimer);
+        if (idleDelayTimer) clearTimeout(idleDelayTimer);
         document.removeEventListener('visibilitychange', handleVisibility);
+        window.removeEventListener('pagehide', handlePageHide);
+        window.removeEventListener('beforeunload', handlePageHide);
       };
     })();
 
@@ -160,10 +197,13 @@ export function useChatSocket(params: {
 
   // 坐席切换自身在线状态：经 set-presence 上报后端，由网关更新内存 presence
   // 并广播聚合态，C 端访客即可看到坐席真实在线/离开/离线。
+  // 注意：online / away 都说明坐席曾处于活跃态，刷新后经 my-presence 回放时
+  // 一并置位 hasEverBeenOnlineRef，使「切回前台自动恢复 online」闸门在刷新后仍有效；
+  // 仅 offline（含手动离线 / 首次加载默认 offline）不置位，尊重「不自动上线」意图。
   const setPresence = useCallback(
     (status: 'online' | 'away' | 'offline') => {
       manualOfflineRef.current = status === 'offline';
-      if (status === 'online') hasEverBeenOnlineRef.current = true;
+      if (status !== 'offline') hasEverBeenOnlineRef.current = true;
       socketRef.current?.emit('set-presence', { status });
     },
     [userEmail, userType],
