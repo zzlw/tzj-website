@@ -11,7 +11,6 @@ import {
   getChatRoom,
   getChatRooms,
   getChatStats,
-  updateChatRoom,
 } from './api';
 import { useChatPresence } from './ChatPresenceProvider';
 import { ChatArea } from './components/ChatArea';
@@ -20,6 +19,7 @@ import {
   type BucketView,
   ChatConversationList,
 } from './components/ChatConversationList';
+import type { OnlineAgent } from './useChatSocket';
 import type { ChatMessage, ChatRoom, PresenceStatus } from './types';
 
 const QUICK_REPLIES = [
@@ -128,8 +128,18 @@ export function ChatMessenger() {
   const [selectMode, setSelectMode] = useState(false);
   const [selectedRoomIds, setSelectedRoomIds] = useState<Set<string>>(new Set());
   const [draft, setDraft] = useState('');
+  // 在线坐席花名册（P1 H3 转接目标）
+  const [onlineAgents, setOnlineAgents] = useState<OnlineAgent[]>([]);
+  // 当前访客是否正在输入（P1 H2）
+  const [clientTyping, setClientTyping] = useState(false);
+  // 未读聚合总数（P2 M1）
+  const [totalUnread, setTotalUnread] = useState(0);
+  const clientTypingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { socket } = useChatPresence();
+  // requestNotificationCounts 稳定引用，避免 socket 对象每次渲染新引用导致依赖数组重新执行
+  const reqNotifCountsRef = useRef(socket.requestNotificationCounts);
+  reqNotifCountsRef.current = socket.requestNotificationCounts;
 
   // 始终最新的快照，供 socket 回调 / fetch 读取
   const bucketsRef = useRef(buckets);
@@ -273,7 +283,7 @@ export function ChatMessenger() {
 
   const scheduleRefetchLive = useCallback(() => {
     if (refetchTimer.current) clearTimeout(refetchTimer.current);
-    refetchTimer.current = setTimeout(() => {
+    refetchTimer.current = setTimeout(async () => {
       // reset: false → 走 mergeRooms，保留 socket 已到达的本地消息
       // 避免「消息收到后立即消失」的竞态
       void fetchBucket('waiting', { reset: false });
@@ -281,6 +291,11 @@ export function ChatMessenger() {
       if (bucketsRef.current.closed.loaded) void fetchBucket('closed', { reset: false });
       if (bucketsRef.current.all.loaded) void fetchBucket('all', { reset: false });
       void fetchStats();
+      // REST 重取会通过 mergeRooms 覆盖 per-room unreadCountForAgent，
+      // 但 totalUnread 仅由 socket 事件设置。重取完成后重新请求计数，
+      // 确保「批量管理」旁的未读总数与 per-room 徽标一致。
+      await new Promise((r) => setTimeout(r, 300));
+      reqNotifCountsRef.current();
     }, 600);
   }, [fetchBucket, fetchStats]);
 
@@ -298,6 +313,9 @@ export function ChatMessenger() {
         initialLoaded.current = true;
         setLoading(false);
       }
+      // 初始加载 / 搜索后 REST 数据可能覆盖 socket 推送的 per-room 计数，
+      // 重新请求以确保 totalUnread 与 per-room 一致。
+      reqNotifCountsRef.current();
     }, 400);
     return () => clearTimeout(t);
   }, [search, fetchBucket, fetchStats]);
@@ -362,9 +380,47 @@ export function ChatMessenger() {
       if (isSelected && message.sender !== 'agent') {
         socket.markRead(room.roomId as string);
       }
-      // 打开中的会话：直接追加消息，保证实时感（无需等 refetch）
+      // 检查房间是否存在于任一桶；若不存在则构建最小 ChatRoom 并加入「全部」+ 对应状态桶，
+      // 解决新会话消息仅在切换到具体桶后才可见的问题（scheduleRefetchLive 有 600ms 延迟，
+      // 且依赖 all.loaded 条件，首次到达的新房间可能漏掉）。
       setBuckets((prev) => {
         const next = { ...prev };
+        const roomExists = (Object.keys(next) as BucketKey[]).some((k) =>
+          next[k].rooms.some((r) => r.roomId === room.roomId),
+        );
+
+        if (!roomExists && room.roomId) {
+          const status = (room.status ?? 'waiting') as ChatRoom['status'];
+          const target: BucketKey =
+            status === 'waiting' ? 'waiting' : status === 'active' ? 'active' : 'closed';
+          const newRoom: ChatRoom = {
+            roomId: room.roomId as string,
+            clientEmail: (room as Partial<ChatRoom>).clientEmail ?? '',
+            clientName: (room as Partial<ChatRoom>).clientName,
+            status,
+            assignedAgentEmail: room.assignedAgentEmail ?? undefined,
+            lastActivity:
+              (room.lastActivity as string) ?? message.timestamp ?? new Date().toISOString(),
+            unreadCountForClient: room.unreadCountForClient ?? 0,
+            unreadCountForAgent: isSelected ? 0 : (room.unreadCountForAgent ?? 1),
+            lastMessage: {
+              messageId: message.messageId,
+              content: message.content,
+              sender: message.sender,
+              senderEmail: message.senderEmail,
+              timestamp: message.timestamp ?? new Date().toISOString(),
+              attachmentCount: message.attachments?.length ?? 0,
+            },
+            messages: [message],
+          };
+          // 加入「全部」桶（置顶，按时间排序会在 refetch 后修正）
+          next.all = { ...next.all, rooms: [newRoom, ...next.all.rooms] };
+          // 加入对应状态桶
+          next[target] = { ...next[target], rooms: [newRoom, ...next[target].rooms] };
+          return next;
+        }
+
+        // 房间已存在：追加消息到所有包含该房间的桶
         (Object.keys(next) as BucketKey[]).forEach((k) => {
           next[k] = {
             ...next[k],
@@ -391,6 +447,8 @@ export function ChatMessenger() {
       status: string;
       assignedAgentEmail?: string;
       reopened?: boolean;
+      transferred?: boolean;
+      transferredBy?: string;
     }) => {
       const isSelected = payload.roomId === selectedIdRef.current;
       moveRoomToBucket(payload.roomId, payload.status as ChatRoom['status'], {
@@ -415,17 +473,32 @@ export function ChatMessenger() {
       ) {
         handleBucketChange(payload.status === 'active' ? 'active' : 'waiting');
       }
+      // 仅对「当前正在查看的会话」弹提示，避免无关会话误触发；
+      // 房间名优先从 buckets 快照按 roomId 精确查找，避免取错 selectedRoom。
+      const roomOfPayload =
+        (isSelected && selectedRoomRef.current) ||
+        Object.values(bucketsRef.current)
+          .flatMap((b) => b.rooms)
+          .find((r) => r.roomId === payload.roomId) ||
+        null;
+      const payloadName = roomOfPayload?.clientName || roomOfPayload?.clientEmail || '访客';
       // 访客重开已关闭会话：明确提示坐席，使其注意到「会话已重新打开、可继续回复」
       // （composer 已随 room.status 响应式恢复可输入，这里补一个显式信号）。
-      if (payload.reopened) {
-        const room = selectedRoomRef.current;
-        const name = room?.clientName || room?.clientEmail || '访客';
-        toast.info(`${name} 已重新打开会话，可继续回复`);
+      if (payload.reopened && isSelected) {
+        toast.info(`${payloadName} 已重新打开会话，可继续回复`);
+      }
+      // 会话被转接（由另一坐席发起，或自己转出）：提示接手方/转出方
+      if (payload.transferred && isSelected) {
+        toast.info(
+          payload.transferredBy && payload.transferredBy !== agentEmail
+            ? `「${payloadName}」的会话已转接给你`
+            : `已将「${payloadName}」转接给 ${payload.assignedAgentEmail ?? '其他坐席'}`,
+        );
       }
       scheduleRefetchLive();
       void fetchStats();
     },
-    [moveRoomToBucket, scheduleRefetchLive, fetchStats, handleBucketChange],
+    [moveRoomToBucket, scheduleRefetchLive, fetchStats, handleBucketChange, agentEmail],
   );
 
   const handleMessagesRead = useCallback(
@@ -446,10 +519,11 @@ export function ChatMessenger() {
               if (r.roomId !== roomId) return r;
               let messages = r.messages ?? [];
               if (messages.length > 0) {
-                // messageIds 为空表示「标记全部」：client 发 mark-messages-read 时不传 messageIds，
-                // 后端会标记所有对方消息已读，但推送的 messageIds 也为空，
-                // 因此这里按 userType 推断对方 sender，标记所有对方发的消息为已读。
-                const idSet = messageIds && messageIds.length > 0 ? new Set(messageIds) : null;
+                // 后端始终返回实际被标记的 messageIds（可能为空数组）。
+                // 空数组表示本次无需新回执，不应回退到「标记全部」。
+                const idSet = Array.isArray(messageIds)
+                  ? new Set(messageIds)
+                  : null;
                 const oppositeSender = userType === 'client' ? 'agent' : 'client';
                 const readAt =
                   (room?.lastReadByClient as string | undefined) ?? new Date().toISOString();
@@ -526,6 +600,81 @@ export function ChatMessenger() {
     });
   }, []);
 
+  /** 在线坐席花名册（P1 H3 转接目标列表） */
+  const handleAgentRoster = useCallback((payload: { agents: OnlineAgent[] }) => {
+    setOnlineAgents(payload.agents ?? []);
+  }, []);
+
+  /** 访客正在输入（P1 H2）：在其当前选中会话里显示「访客正在输入…」 */
+  const handleTyping = useCallback((payload: { roomId?: string; userType?: string }) => {
+    if (payload.userType !== 'client' || payload.roomId !== selectedIdRef.current) return;
+    setClientTyping(true);
+    if (clientTypingTimer.current) clearTimeout(clientTypingTimer.current);
+    clientTypingTimer.current = setTimeout(() => setClientTyping(false), 4000);
+  }, []);
+
+  const handleStopTyping = useCallback((payload: { roomId?: string; userType?: string }) => {
+    if (payload.userType !== 'client' || payload.roomId !== selectedIdRef.current) return;
+    setClientTyping(false);
+    if (clientTypingTimer.current) clearTimeout(clientTypingTimer.current);
+  }, []);
+
+  /** 未读聚合计数（P2 M1）：总量驱动顶栏徽标；roomCounts 全量刷新各会话未读徽标 */
+  const handleNotifCounts = useCallback(
+    (
+      payload: {
+        totalUnread?: number;
+        roomCounts?: Array<{ roomId: string; unreadCount: number }>;
+      },
+    ) => {
+      setTotalUnread(typeof payload.totalUnread === 'number' ? payload.totalUnread : 0);
+      if (payload.roomCounts) {
+        const byRoom = new Map(payload.roomCounts.map((r) => [r.roomId, r.unreadCount]));
+        setBuckets((prev) => {
+          const next = { ...prev };
+          (Object.keys(next) as BucketKey[]).forEach((k) => {
+              next[k] = {
+                ...next[k],
+                rooms: next[k].rooms.map((r) => {
+                  const count = byRoom.get(r.roomId);
+                  // 服务端返回所有房间（含 0），不在响应中的房间也重置为 0
+                  return count !== undefined
+                    ? { ...r, unreadCountForAgent: count }
+                    : r.unreadCountForAgent !== 0
+                      ? { ...r, unreadCountForAgent: 0 }
+                      : r;
+                }),
+              };
+          });
+          return next;
+        });
+      }
+    },
+    [],
+  );
+
+  /** 转接当前会话给某在线坐席（P1 H3） */
+  const handleTransfer = useCallback(
+    (toAgentEmail: string) => {
+      const room = selectedRoomRef.current;
+      if (!room) return;
+      socket.transferRoom(room.roomId, toAgentEmail);
+    },
+    [socket],
+  );
+
+  /** 草稿变化：同步本地态 + 上报「正在输入」（P1 H2，网关已节流） */
+  const handleDraftChange = useCallback(
+    (value: string) => {
+      setDraft(value);
+      const rid = selectedIdRef.current;
+      if (!rid) return;
+      if (value.trim()) socket.sendTyping(rid);
+      else socket.sendStopTyping(rid);
+    },
+    [socket],
+  );
+
   useEffect(() => {
     socket.on('room-list-updated', handleRoomList);
     socket.on('new-message', handleNewMessage);
@@ -533,6 +682,11 @@ export function ChatMessenger() {
     socket.on('messages-read', handleMessagesRead);
     socket.on('presence-changed', handlePresenceChanged);
     socket.on('user-left', handleUserLeft);
+    socket.on('agent-roster', handleAgentRoster);
+    socket.on('typing', handleTyping);
+    socket.on('stop-typing', handleStopTyping);
+    socket.on('notification-counts-updated', handleNotifCounts);
+    socket.on('notification-counts', handleNotifCounts);
     socket.on('error', () => {
       if (!initialLoaded.current) setLoading(false);
     });
@@ -543,7 +697,13 @@ export function ChatMessenger() {
       socket.off('messages-read');
       socket.off('presence-changed');
       socket.off('user-left');
+      socket.off('agent-roster');
+      socket.off('typing');
+      socket.off('stop-typing');
+      socket.off('notification-counts-updated');
+      socket.off('notification-counts');
       socket.off('error');
+      if (clientTypingTimer.current) clearTimeout(clientTypingTimer.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -553,6 +713,10 @@ export function ChatMessenger() {
     handleMessagesRead,
     handlePresenceChanged,
     handleUserLeft,
+    handleAgentRoster,
+    handleTyping,
+    handleStopTyping,
+    handleNotifCounts,
   ]);
 
   const selectedRoom = useMemo(() => {
@@ -571,6 +735,21 @@ export function ChatMessenger() {
   const handleSelect = useCallback(
     async (roomId: string) => {
       setSelectedId(roomId);
+      // 点开会话的瞬间，读取该会话当前的未读数，乐观地把「未读总数」即时扣减，
+      // 避免后端 notification-counts 推送延迟/被覆盖时，左侧徽标在打开会话后仍停留在旧值。
+      // 后端在收到 markRead 后会通过 notification-counts-updated 推送权威总数做二次校正，
+      // 二者口径一致（坐席端 totalUnread 统计全部 active/waiting 会话，
+      // 扣减仅针对本次打开的会话，不会误伤其它会话的真实未读）。
+      let roomUnread = 0;
+      const bucketsNow = bucketsRef.current;
+      for (const k of Object.keys(bucketsNow) as BucketKey[]) {
+        const found = bucketsNow[k].rooms.find((r) => r.roomId === roomId);
+        if (found) {
+          roomUnread = found.unreadCountForAgent ?? 0;
+          break;
+        }
+      }
+      if (roomUnread > 0) setTotalUnread((prev) => Math.max(0, prev - roomUnread));
       // 基于 window.location.search 构造，保留已有的 ?bucket= 等参数
       // （history.replaceState 写入的 URL 不一定同步到 next 的 searchParams）。
       const current = typeof window !== 'undefined' ? window.location.search : searchParams.toString();
@@ -795,18 +974,23 @@ export function ChatMessenger() {
         }}
         onSelectAllOnPage={selectAllOnPage}
         onBatchAction={handleBatchAction}
+        totalUnread={totalUnread}
       />
       {selectedRoom ? (
         <ChatArea
           key={selectedRoom.roomId}
           room={{ ...selectedRoom, messages: selectedRoom.messages ?? [] }}
           draft={draft}
-          onDraftChange={setDraft}
+          onDraftChange={handleDraftChange}
           onSend={handleSend}
           onClose={handleClose}
           quickReplies={QUICK_REPLIES}
           onQuickReply={handleQuickReply}
           onConverted={handleConverted}
+          onlineAgents={onlineAgents}
+          currentAgentEmail={agentEmail}
+          onTransfer={handleTransfer}
+          clientTyping={clientTyping}
         />
       ) : (
         <div className="border-border/40 bg-background/60 flex min-h-0 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed p-8 backdrop-blur lg:rounded-3xl">

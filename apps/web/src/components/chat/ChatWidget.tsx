@@ -42,6 +42,7 @@ import {
 import {
   collectVisitorContext,
   createRoom,
+  fetchVisitorToken,
   getRoom,
   presignChatAttachment,
   sendMessageHTTP,
@@ -101,6 +102,7 @@ const I18N = {
     moreMenu: '更多',
     downloadTranscript: '下载对话记录',
     comingSoon: '敬请期待',
+    typing: '对方正在输入…',
   },
   'zh-TW': {
     brand: '拓之跡客服',
@@ -145,6 +147,7 @@ const I18N = {
     moreMenu: '更多',
     downloadTranscript: '下載對話記錄',
     comingSoon: '敬請期待',
+    typing: '對方正在輸入…',
   },
   en: {
     brand: 'TZJ Support',
@@ -193,6 +196,7 @@ const I18N = {
     moreMenu: 'More',
     downloadTranscript: 'Download transcript',
     comingSoon: 'Coming soon',
+    typing: 'typing…',
   },
 } as const;
 
@@ -366,6 +370,8 @@ export function ChatWidget({
   const agentAvatarUrl = agentAvatarRaw ? resolveMediaUrl(agentAvatarRaw) : '';
   const greetingText = agentProfile?.greeting?.trim() || t.aiGreeting;
 
+  const [token, setToken] = useState<string | null>(null);
+
   const {
     connected,
     agentsOnline,
@@ -376,9 +382,11 @@ export function ChatWidget({
     leaveRoom,
     sendMessage,
     markRead,
+    sendTyping,
+    sendStopTyping,
     reportActive,
     reportIdle,
-  } = useVisitorChat();
+  } = useVisitorChat(token);
 
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -388,6 +396,14 @@ export function ChatWidget({
   const [error, setError] = useState('');
   const [sending, setSending] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  // 服务端未读聚合（P2 M1）：独立于本地 unreadCount（本地仅驱动气泡），
+  // 由 notification-counts(-updated) 驱动，刷新/重连后仍准确。
+  const [serverUnread, setServerUnread] = useState(0);
+  // 对方（坐席）正在输入指示（P1 H2）
+  const [agentTyping, setAgentTyping] = useState(false);
+  const agentTypingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 访客自身输入节流（P1 H2）：避免每个按键都发 socket，约 1.2s 一次
+  const typingEmitRef = useRef(0);
   const [showBubble, setShowBubble] = useState(false);
   const [bubbleDismissed, setBubbleDismissed] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
@@ -460,34 +476,41 @@ export function ChatWidget({
   const isClosed = room?.status === 'closed';
 
   const enterChat = useCallback(
-    (r: ChatRoom) => {
+    (r: ChatRoom, chatToken?: string) => {
       setRoom(r);
       setMessages((r.messages ?? []).map(normalizeMessage));
       roomIdRef.current = r.roomId;
       clientEmailRef.current = r.clientEmail;
-      try {
-        localStorage.setItem(
-          STORAGE_KEY,
-          JSON.stringify({
-            email: r.clientEmail,
-            roomId: r.roomId,
-          }),
-        );
-      } catch {}
+      if (chatToken) {
+        setToken(chatToken);
+        try {
+          localStorage.setItem(
+            STORAGE_KEY,
+            JSON.stringify({ email: r.clientEmail, roomId: r.roomId, token: chatToken }),
+          );
+        } catch {}
+      }
       // 已关闭会话也加入房间：访客回复「重开」时需实时收到自己的消息回声与
       // room-status-changed（状态切回进行中）；同时关闭事件也能即时触达。
       if (r.status === 'active' || r.status === 'waiting' || r.status === 'closed') {
-        joinRoom(r.roomId, r.clientEmail);
+        joinRoom(r.roomId);
       }
     },
     [joinRoom],
   );
 
-  // 恢复（只存 roomId，不再需要 email/name）
+  // 重连后自动重新加入当前房间（token 鉴权场景下确保实时收发不丢）
+  useEffect(() => {
+    if (connected && roomIdRef.current && token) {
+      joinRoom(roomIdRef.current);
+    }
+  }, [connected, token, joinRoom]);
+
+  // 恢复（从本地存储取 roomId + token；缺 token 则凭 roomId+email 重新换取）
   useEffect(() => {
     let active = true;
     (async () => {
-      let stored: { email?: string; roomId?: string } | null = null;
+      let stored: { email?: string; roomId?: string; token?: string } | null = null;
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (raw) stored = JSON.parse(raw);
@@ -495,7 +518,13 @@ export function ChatWidget({
       if (!stored?.roomId) return;
       try {
         const r = await getRoom(stored.roomId);
-        if (active && r) enterChat(r);
+        if (!active || !r) return;
+        if (stored.token) {
+          enterChat(r, stored.token);
+        } else if (stored.email) {
+          const t = await fetchVisitorToken(stored.roomId, stored.email);
+          enterChat(r, t.token);
+        }
       } catch {}
     })();
     return () => {
@@ -517,9 +546,10 @@ export function ChatWidget({
         setUnreadCount((n) => n + 1);
         if (!bubbleDismissedRef.current) setShowBubble(true);
       }
-      // 面板已打开 + 收到客服消息 → 实时上报「已读」，驱动 B 端已读回执刷新
-      if (openRef.current && msg.sender === 'agent' && clientEmailRef.current) {
-        markRead(rid, clientEmailRef.current);
+      // 面板已打开 + 页面可见 + 收到客服消息 → 实时上报「已读」，驱动 B 端已读回执刷新
+      // 切换桌面/标签页时 document.hidden=true，不标记已读（防止"假已读"）
+      if (openRef.current && msg.sender === 'agent' && clientEmailRef.current && !document.hidden) {
+        markRead(rid);
         setUnreadCount(0);
       }
     };
@@ -528,11 +558,14 @@ export function ChatWidget({
       userType?: string;
       roomId?: string;
       userEmail?: string;
+      messageIds?: string[];
     }) => {
       if (data.userType !== 'agent' || data.roomId !== roomIdRef.current) return;
+      const idSet = Array.isArray(data.messageIds) ? new Set(data.messageIds) : null;
       setMessages((prev) =>
         prev.map((m) => {
           if (m.sender !== 'client') return m;
+          if (idSet && !idSet.has(m.messageId)) return m;
           const hasAgent = (m.readBy ?? []).some((r) => r.userType === 'agent');
           if (hasAgent) return m;
           return {
@@ -565,10 +598,7 @@ export function ChatWidget({
     // 房间状态变更（坐席关闭 / 归档等）：实时同步到访客端，
     // 使「本次会话已结束」面板即时出现（含禁用输入框 + 重新发起咨询入口），
     // 而非要等刷新才看到关闭态 —— 否则客户会在已关闭会话里继续发消息却石沉大海。
-    const handleRoomStatusChanged = (data: {
-      roomId?: string;
-      status?: string;
-    }) => {
+    const handleRoomStatusChanged = (data: { roomId?: string; status?: string }) => {
       if (data.roomId !== roomIdRef.current) return;
       if (data.status) {
         setRoom((prev) => (prev ? { ...prev, status: data.status as ChatRoom['status'] } : prev));
@@ -587,26 +617,71 @@ export function ChatWidget({
         .catch(() => {});
     };
 
+    // 对方（坐席）正在输入（P1 H2）：显示「对方正在输入…」，4s 无新信号自动消失
+    const handleTyping = (data: { roomId?: string; userType?: string }) => {
+      if (data.userType !== 'agent' || data.roomId !== roomIdRef.current) return;
+      setAgentTyping(true);
+      if (agentTypingTimer.current) clearTimeout(agentTypingTimer.current);
+      agentTypingTimer.current = setTimeout(() => setAgentTyping(false), 4000);
+    };
+    const handleStopTyping = (data: { roomId?: string; userType?: string }) => {
+      if (data.userType !== 'agent' || data.roomId !== roomIdRef.current) return;
+      setAgentTyping(false);
+      if (agentTypingTimer.current) clearTimeout(agentTypingTimer.current);
+    };
+
+    // 未读聚合计数（P2 M1）：初始拉取 + 增量更新
+    const handleNotifCounts = (data: { totalUnread?: number }) => {
+      setServerUnread(typeof data.totalUnread === 'number' ? data.totalUnread : 0);
+    };
+
     on('new-message', handleNewMessage);
     on('messages-read', handleMessagesRead);
     on('presence-changed', handlePresence);
     on('room-status-changed', handleRoomStatusChanged);
+    on('typing', handleTyping);
+    on('stop-typing', handleStopTyping);
+    on('notification-counts-updated', handleNotifCounts);
+    on('notification-counts', handleNotifCounts);
     on('error', handleError);
     return () => {
       off('new-message');
       off('messages-read');
       off('presence-changed');
       off('room-status-changed');
+      off('typing');
+      off('stop-typing');
+      off('notification-counts-updated');
+      off('notification-counts');
       off('error');
+      if (agentTypingTimer.current) clearTimeout(agentTypingTimer.current);
     };
   }, [on, off, markRead, getRoom]);
 
-  // 标记已读
+  // 标记已读：延迟 2 秒 + 页面可见时才触发，避免「秒开秒关」或「切换桌面」也被标记为已读。
+  // 用户在面板停留超过 2 秒且页面可见才视为真正阅读；期间收到新客服消息仍会实时标记（handleNewMessage）。
   useEffect(() => {
-    if (open && room && !isClosed && connected) {
-      markRead(room.roomId, room.clientEmail);
-      setUnreadCount(0);
-    }
+    if (!open || !room || isClosed || !connected) return;
+    const timer = setTimeout(() => {
+      if (!document.hidden) {
+        markRead(room.roomId);
+        setUnreadCount(0);
+      }
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [open, room, isClosed, connected, markRead]);
+
+  // 页面从隐藏恢复可见时，自动标记当前会话已读（用户回来看了）
+  useEffect(() => {
+    if (!open || !room || isClosed || !connected) return;
+    const onVisibilityChange = () => {
+      if (!document.hidden) {
+        markRead(room.roomId);
+        setUnreadCount(0);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange);
   }, [open, room, isClosed, connected, markRead]);
 
   // 取 Radix ScrollArea 真正可滚动的 Viewport，避免 scrollIntoView 误把整页滚到底
@@ -765,7 +840,7 @@ export function ChatWidget({
         clientEmail: guestEmail,
         ...collectVisitorContext(),
       });
-      enterChat(created);
+      enterChat(created, created.token);
       return { roomId: created.roomId, email: created.clientEmail };
     } catch {
       setError(t.failed);
@@ -830,7 +905,7 @@ export function ChatWidget({
           clientEmail: guestEmail,
           ...collectVisitorContext(),
         });
-        enterChat(created);
+        enterChat(created, created.token);
         const keys = attachments.map((a) => a.key);
         const persisted = await sendMessageHTTP(created.roomId, content, guestEmail, keys);
         setMessages((persisted.messages ?? []).map(normalizeMessage));
@@ -857,7 +932,7 @@ export function ChatWidget({
       // 已有房间：正常发（若是 closed 房间，后端按「回复即重开」把同一会话
       // 切回进行中并广播 room-status-changed，输入框随之恢复可用）。
       if (connected) {
-        sendMessage(room.roomId, content, room.clientEmail, keys);
+        sendMessage(room.roomId, content, keys);
       } else {
         void sendMessageHTTP(room.roomId, content, room.clientEmail, keys)
           .then((r) => {
@@ -1085,12 +1160,9 @@ export function ChatWidget({
         )}
       >
         <MessageCircle className="h-6 w-6" strokeWidth={2} fill="white" />
-        {unreadCount > 0 && (
-          <span
-            aria-label={`${unreadCount} 条未读`}
-            className="absolute top-0 right-0 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#e3000f] px-1.5 text-[11px] font-semibold leading-none text-white shadow-md ring-2 ring-white"
-          >
-            {unreadCount > 99 ? '99+' : unreadCount}
+        {serverUnread > 0 && (
+          <span className="absolute top-0 right-0 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#e3000f] px-1.5 text-[11px] font-semibold leading-none text-white shadow-md ring-2 ring-white">
+            {serverUnread > 99 ? '99+' : serverUnread}
           </span>
         )}
       </button>
@@ -1231,170 +1303,201 @@ export function ChatWidget({
             </p>
           </div>
         )}
+        {/* 对方正在输入指示器（P1 H2） */}
+        {agentTyping && !isClosed && (
+          <div className="px-4 pb-1 pt-0.5" aria-live="polite">
+            <span className="inline-flex items-center gap-1.5 text-xs text-zinc-400">
+              <span className="flex gap-0.5">
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-400 [animation-delay:-0.2s]" />
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-400 [animation-delay:-0.1s]" />
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-400" />
+              </span>
+              {t.typing}
+            </span>
+          </div>
+        )}
         {/* ── 输入区：已关闭会话仍可输入，访客回复即「重开」同一会话 ── */}
         <form onSubmit={handleSend} className="bg-white p-3">
-            <input
-              ref={fileRef}
-              type="file"
-              multiple
-              accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain,application/zip"
-              className="hidden"
-              onChange={(e) => void handleFiles(e.target.files)}
-            />
-            <div className="rounded-3xl border border-zinc-200 bg-white transition-colors focus-within:border-zinc-800">
-              {staged.length > 0 && (
-                <ImagePreviewProvider>
-                  <div className="flex flex-wrap gap-2 px-3.5 pt-2.5">
-                    {staged.map((a) => {
-                      const isImage = a.contentType.startsWith('image/');
-                      // 图片：正方形缩略图，不显示文件名/大小；点击可灯箱预览
-                      if (isImage) {
-                        return (
-                          <div
-                            key={a.id}
-                            className="group relative rounded-xl border border-zinc-200 bg-zinc-50 p-1"
-                          >
-                            <ImagePreview src={a.url}>
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
-                                src={a.url}
-                                alt={a.fileName}
-                                className="aspect-square h-12 w-12 cursor-pointer rounded-md object-cover"
-                              />
-                            </ImagePreview>
-                            <button
-                              type="button"
-                              aria-label="移除附件"
-                              onClick={() => setStaged((prev) => prev.filter((x) => x.id !== a.id))}
-                              className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-zinc-700 text-white shadow-sm"
-                            >
-                              <X className="h-2.5 w-2.5" />
-                            </button>
-                          </div>
-                        );
-                      }
+          <input
+            ref={fileRef}
+            type="file"
+            multiple
+            accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain,application/zip"
+            className="hidden"
+            onChange={(e) => void handleFiles(e.target.files)}
+          />
+          <div className="rounded-3xl border border-zinc-200 bg-white transition-colors focus-within:border-zinc-800">
+            {staged.length > 0 && (
+              <ImagePreviewProvider>
+                <div className="flex flex-wrap gap-2 px-3.5 pt-2.5">
+                  {staged.map((a) => {
+                    const isImage = a.contentType.startsWith('image/');
+                    // 图片：正方形缩略图，不显示文件名/大小；点击可灯箱预览
+                    if (isImage) {
                       return (
                         <div
                           key={a.id}
-                          className="group relative flex max-w-[140px] items-center gap-2 rounded-xl border border-zinc-200 bg-zinc-50 p-1.5 pr-2.5"
+                          className="group relative rounded-xl border border-zinc-200 bg-zinc-50 p-1"
                         >
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-zinc-200 text-zinc-500">
-                            <FileIcon className="h-4 w-4" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-[11px] font-medium text-zinc-700">
-                              {a.fileName}
-                            </p>
-                            <p className="text-[10px] text-zinc-400">{formatBytes(a.size)}</p>
-                          </div>
+                          <ImagePreview src={a.url}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={a.url}
+                              alt={a.fileName}
+                              className="aspect-square h-12 w-12 cursor-pointer rounded-md object-cover"
+                            />
+                          </ImagePreview>
                           <button
                             type="button"
                             aria-label="移除附件"
                             onClick={() => setStaged((prev) => prev.filter((x) => x.id !== a.id))}
-                            className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-zinc-700 text-white opacity-0 transition group-hover:opacity-100"
+                            className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-zinc-700 text-white shadow-sm"
                           >
                             <X className="h-2.5 w-2.5" />
                           </button>
                         </div>
                       );
-                    })}
-                  </div>
-                </ImagePreviewProvider>
-              )}
+                    }
+                    return (
+                      <div
+                        key={a.id}
+                        className="group relative flex max-w-[140px] items-center gap-2 rounded-xl border border-zinc-200 bg-zinc-50 p-1.5 pr-2.5"
+                      >
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-zinc-200 text-zinc-500">
+                          <FileIcon className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-[11px] font-medium text-zinc-700">
+                            {a.fileName}
+                          </p>
+                          <p className="text-[10px] text-zinc-400">{formatBytes(a.size)}</p>
+                        </div>
+                        <button
+                          type="button"
+                          aria-label="移除附件"
+                          onClick={() => setStaged((prev) => prev.filter((x) => x.id !== a.id))}
+                          className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-zinc-700 text-white opacity-0 transition group-hover:opacity-100"
+                        >
+                          <X className="h-2.5 w-2.5" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </ImagePreviewProvider>
+            )}
               <Textarea
                 ref={inputRef}
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setInput(v);
+                  // 输入中指示（P1 H2）：节流约 1.2s 上报一次；清空时显式停止
+                  const rid = roomIdRef.current;
+                  if (rid && connected && !isClosed) {
+                    if (v.trim()) {
+                      const now = Date.now();
+                      if (now - typingEmitRef.current > 1200) {
+                        typingEmitRef.current = now;
+                        sendTyping(rid);
+                      }
+                    } else {
+                      sendStopTyping(rid);
+                    }
+                  }
+                }}
                 onKeyDown={handleKeyDown}
                 onPaste={handlePaste}
+                onBlur={() => {
+                  const rid = roomIdRef.current;
+                  if (rid && connected) sendStopTyping(rid);
+                }}
                 rows={1}
                 placeholder={t.inputPlaceholder}
                 className="block w-full min-h-0 resize-none border-0 bg-transparent shadow-none px-3.5 pt-2.5 pb-1 text-sm leading-relaxed text-zinc-900 [scrollbar-width:none] transition-colors placeholder:text-zinc-400 focus:ring-0 focus:outline-none focus-visible:ring-0"
               />
-              <div className="flex items-center justify-between px-1.5 pb-1.5">
-                <div className="flex items-center gap-0.5">
+            <div className="flex items-center justify-between px-1.5 pb-1.5">
+              <div className="flex items-center gap-0.5">
+                <button
+                  type="button"
+                  aria-label={t.attach}
+                  disabled={uploading}
+                  onClick={() => fileRef.current?.click()}
+                  className={cn(
+                    'flex h-8 w-8 items-center justify-center rounded-full transition',
+                    uploading
+                      ? 'text-zinc-300'
+                      : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600',
+                  )}
+                >
+                  {uploading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Paperclip className="h-4 w-4" />
+                  )}
+                </button>
+                <div className="relative">
                   <button
+                    ref={emojiBtnRef}
                     type="button"
-                    aria-label={t.attach}
-                    disabled={uploading}
-                    onClick={() => fileRef.current?.click()}
+                    aria-label={t.emoji}
+                    aria-expanded={emojiOpen}
+                    onClick={() => setEmojiOpen((v) => !v)}
                     className={cn(
                       'flex h-8 w-8 items-center justify-center rounded-full transition',
-                      uploading
-                        ? 'text-zinc-300'
+                      emojiOpen
+                        ? 'bg-zinc-100 text-zinc-900'
                         : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600',
                     )}
                   >
-                    {uploading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Paperclip className="h-4 w-4" />
-                    )}
+                    <Smile className="h-4 w-4" />
                   </button>
-                  <div className="relative">
-                    <button
-                      ref={emojiBtnRef}
-                      type="button"
-                      aria-label={t.emoji}
-                      aria-expanded={emojiOpen}
-                      onClick={() => setEmojiOpen((v) => !v)}
-                      className={cn(
-                        'flex h-8 w-8 items-center justify-center rounded-full transition',
-                        emojiOpen
-                          ? 'bg-zinc-100 text-zinc-900'
-                          : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600',
-                      )}
-                    >
-                      <Smile className="h-4 w-4" />
-                    </button>
-                    <EmojiPicker
-                      open={emojiOpen}
-                      onClose={() => setEmojiOpen(false)}
-                      onSelect={handleEmojiSelect}
-                      triggerRef={emojiBtnRef}
-                    />
-                  </div>
-                  {/* 暂时隐藏 GIF / 语音输入（功能未上线）；恢复时移除外层 hidden 即可 */}
-                  <div className="hidden">
-                    <button
-                      type="button"
-                      aria-label="GIF"
-                      title={t.comingSoon}
-                      disabled
-                      className="flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold text-zinc-400 transition hover:text-zinc-600 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      GIF
-                    </button>
-                    <button
-                      type="button"
-                      aria-label="语音"
-                      title={t.comingSoon}
-                      disabled
-                      className="flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 transition hover:text-zinc-600 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      <Mic className="h-4 w-4" />
-                    </button>
-                  </div>
+                  <EmojiPicker
+                    open={emojiOpen}
+                    onClose={() => setEmojiOpen(false)}
+                    onSelect={handleEmojiSelect}
+                    triggerRef={emojiBtnRef}
+                  />
                 </div>
-                <Button
-                  type="submit"
-                  size="icon"
-                  disabled={
-                    (!input.trim() && staged.length === 0) || sending || uploading
-                  }
-                  aria-label={t.send}
-                  className={cn(
-                    'h-8 w-8 shrink-0 rounded-full transition-all duration-200 active:scale-90',
-                    (input.trim() || staged.length > 0) && !sending && !uploading
-                      ? 'bg-zinc-900 text-white shadow-sm hover:bg-zinc-800'
-                      : 'bg-zinc-200 text-zinc-400 shadow-none',
-                  )}
-                >
-                  <ArrowUp className="h-4 w-4" strokeWidth={2.5} />
-                </Button>
+                {/* 暂时隐藏 GIF / 语音输入（功能未上线）；恢复时移除外层 hidden 即可 */}
+                <div className="hidden">
+                  <button
+                    type="button"
+                    aria-label="GIF"
+                    title={t.comingSoon}
+                    disabled
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-bold text-zinc-400 transition hover:text-zinc-600 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    GIF
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="语音"
+                    title={t.comingSoon}
+                    disabled
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 transition hover:text-zinc-600 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <Mic className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
+              <Button
+                type="submit"
+                size="icon"
+                disabled={(!input.trim() && staged.length === 0) || sending || uploading}
+                aria-label={t.send}
+                className={cn(
+                  'h-8 w-8 shrink-0 rounded-full transition-all duration-200 active:scale-90',
+                  (input.trim() || staged.length > 0) && !sending && !uploading
+                    ? 'bg-zinc-900 text-white shadow-sm hover:bg-zinc-800'
+                    : 'bg-zinc-200 text-zinc-400 shadow-none',
+                )}
+              >
+                <ArrowUp className="h-4 w-4" strokeWidth={2.5} />
+              </Button>
             </div>
-          </form>
+          </div>
+        </form>
       </div>
     </>
   );

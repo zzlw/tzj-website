@@ -28,7 +28,7 @@ export function getRecentRoom(clientEmail: string): Promise<RecentRoomData> {
   return request<RecentRoomData>(`/chat-rooms/client/${enc(clientEmail)}/recent`);
 }
 
-/** 新建会话（访客发起） */
+/** 新建会话（访客发起）；服务端一并返回 chat token（P0 C1，用于 socket 握手鉴权） */
 export function createRoom(body: {
   clientEmail: string;
   clientName?: string;
@@ -38,10 +38,21 @@ export function createRoom(body: {
   landingPath?: string;
   /** UTM source / 渠道来源 */
   source?: string;
-}): Promise<ChatRoom> {
-  return request<ChatRoom>(`/chat-rooms`, {
+}): Promise<ChatRoom & { token: string }> {
+  return request<ChatRoom & { token: string }>(`/chat-rooms`, {
     method: 'POST',
     body: JSON.stringify(body),
+  });
+}
+
+/** 访客重连换 token（P0 C1）：凭 roomId + clientEmail 换取短期 chat token */
+export function fetchVisitorToken(
+  roomId: string,
+  clientEmail: string,
+): Promise<{ token: string; roomId: string; clientEmail: string }> {
+  return request(`/chat-rooms/visitor-token`, {
+    method: 'POST',
+    body: JSON.stringify({ roomId, clientEmail }),
   });
 }
 

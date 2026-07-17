@@ -14,7 +14,14 @@ import {
 import type { Request } from 'express';
 import { Public } from '../auth/decorators/public.decorator';
 import { extractClientIp } from '../common/utils/client-ip';
+// biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
+import { ChatAuthService } from './chat-auth.service';
+// biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
 import { ChatRoomService } from './chat-room.service';
+// 注意：DTO 必须值导入（非 import type）。@Body()/@Query() 的校验依赖
+// emitDecoratorMetadata 在运行时解析出真实类（design:paramtypes）；import type 会被擦除，
+// 导致 NestJS 校验退化为 Object，所有字段被 forbidNonWhitelisted 判为「不应存在」。
+// biome-ignore lint/style/useImportType: NestJS 校验需要 DTO 作为运行期值（design:paramtypes）
 import {
   BatchChatRoomsDto,
   CreateChatRoomDto,
@@ -22,6 +29,7 @@ import {
   PresignAttachmentDto,
   SendMessageDto,
   UpdateChatRoomDto,
+  VisitorTokenDto,
 } from './dto/chat-room.dto';
 
 const errMsg = (e: unknown): string => (e instanceof Error ? e.message : String(e));
@@ -29,12 +37,15 @@ const errMsg = (e: unknown): string => (e instanceof Error ? e.message : String(
 @Public()
 @Controller('chat-rooms')
 export class ChatRoomController {
-  constructor(private readonly chatRoomService: ChatRoomService) {}
+  constructor(
+    private readonly chatRoomService: ChatRoomService,
+    private readonly chatAuth: ChatAuthService,
+  ) {}
 
   @Post()
   async createChatRoom(@Req() req: Request, @Body() createChatRoomDto: CreateChatRoomDto) {
     try {
-      return await this.chatRoomService.createChatRoom({
+      const room = await this.chatRoomService.createChatRoom({
         clientEmail: createChatRoomDto.clientEmail,
         clientName: createChatRoomDto.clientName,
         initialMessage: createChatRoomDto.initialMessage,
@@ -44,8 +55,53 @@ export class ChatRoomController {
         landingPath: createChatRoomDto.landingPath,
         source: createChatRoomDto.source,
       });
+      // 签发访客 chat token（P0 C1）：访客凭此令牌通过握手鉴权，身份由服务端推导，
+      // 杜绝客户端自报身份。前端存储该 token 用于 socket 连接与刷新重连。
+      const token = this.chatAuth.issueClientToken(room.roomId, room.clientEmail);
+      return { ...room, token };
     } catch (e) {
       throw new HttpException(errMsg(e), HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  /**
+   * 访客重连换 token（P0 C1）：凭 roomId + clientEmail（须匹配房间持有者）换取短期 chat token。
+   * 公开端点：访客无登录态，但必须证明其知道 roomId + 对应邮箱，否则无法冒领他人会话令牌。
+   */
+  @Post('visitor-token')
+  async visitorToken(@Body() dto: VisitorTokenDto) {
+    try {
+      const room = await this.chatRoomService.getChatRoomById(dto.roomId);
+      if (room.clientEmail !== dto.clientEmail) {
+        throw new HttpException('无权获取该会话令牌', HttpStatus.FORBIDDEN);
+      }
+      const token = this.chatAuth.issueClientToken(room.roomId, room.clientEmail);
+      return { token, roomId: room.roomId, clientEmail: room.clientEmail };
+    } catch (e) {
+      if (e instanceof HttpException) throw e;
+      throw new HttpException(errMsg(e), HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  /**
+   * 坐席 chat token 兑换（P0 C1）：用业务系统 access token 换取聊天作用域令牌。
+   * 公开端点——令牌合法性由服务端用 JWT_SECRET 校验（仅 type==='access' 可兑换），
+   * 坐席身份由此确立，无法被伪造。
+   */
+  @Public()
+  @Post('token')
+  async agentToken(@Req() req: Request) {
+    try {
+      const header = req.headers['authorization'];
+      if (!header || !header.startsWith('Bearer ')) {
+        throw new HttpException('缺少访问令牌', HttpStatus.UNAUTHORIZED);
+      }
+      const accessToken = header.slice('Bearer '.length).trim();
+      const result = this.chatAuth.exchangeAgentToken(accessToken);
+      return result;
+    } catch (e) {
+      if (e instanceof HttpException) throw e;
+      throw new HttpException(errMsg(e), HttpStatus.UNAUTHORIZED);
     }
   }
 

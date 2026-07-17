@@ -9,6 +9,10 @@
     // ── NestJS 必需 ──
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
+    // target 继承自 base 的 ES2022 会使 useDefineForClassFields 默认 true，
+    // 导致 class-validator 的 forbidNonWhitelisted 把已声明字段误判为未知属性而拒绝。
+    // NestJS 装饰器（DI / 校验元数据）依赖传统字段语义，必须显式关闭。
+    "useDefineForClassFields": false,
     "allowSyntheticDefaultImports": true,
     "removeComments": true,
     // ── 输出 ──

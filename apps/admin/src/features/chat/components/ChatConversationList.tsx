@@ -9,23 +9,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@tzj/ui';
-import { Archive, Check, CheckSquare, ChevronDown, Loader2, Search, Trash2, X } from 'lucide-react';
+import { Archive, Check, CheckSquare, ChevronDown, Loader2, Search, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { BatchChatRoomAction } from '../api';
 import { useChatPresence } from '../ChatPresenceProvider';
-import type { ChatRoom, ChatRoomStatusKey, PresenceStatus } from '../types';
+import type { ChatRoom, PresenceStatus } from '../types';
 import { VirtualList } from './VirtualList';
 
 const ROW_HEIGHT = 84;
-
-const statusDot: Record<ChatRoomStatusKey, string> = {
-  // 用天蓝区分「待处理」状态，避免与 presence 的 away(amber) 撞色，
-  // 否则待处理会话回退到状态色时会误读成「离开」。
-  waiting: 'bg-sky-500',
-  active: 'bg-emerald-500',
-  closed: 'bg-zinc-400',
-  archived: 'bg-zinc-300',
-};
 
 const presenceDot: Record<PresenceStatus, string> = {
   online: 'bg-emerald-500',
@@ -99,6 +90,8 @@ interface Props {
   onExitSelectMode: () => void;
   onSelectAllOnPage: () => void;
   onBatchAction: (action: BatchChatRoomAction) => void;
+  /** 未读聚合总数（P2 M1），用于顶栏总未读徽标 */
+  totalUnread?: number;
 }
 
 export function ChatConversationList({
@@ -119,6 +112,7 @@ export function ChatConversationList({
   onExitSelectMode,
   onSelectAllOnPage,
   onBatchAction,
+  totalUnread = 0,
 }: Props) {
   const view = buckets[activeBucket];
   const rooms = view.rooms;
@@ -145,7 +139,12 @@ export function ChatConversationList({
             {selectMode && selectedCount > 0 ? ` · 已选 ${selectedCount}` : ''}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
+          {totalUnread > 0 && (
+            <span className="bg-primary text-primary-foreground inline-flex min-h-[1.25rem] min-w-[1.25rem] items-center justify-center rounded-full px-1.5 text-[0.65rem] font-semibold">
+              {totalUnread > 99 ? '99+' : totalUnread}
+            </span>
+          )}
           {!selectMode ? (
             <button
               type="button"
@@ -335,7 +334,7 @@ export function ChatConversationList({
                 <span
                   className={cn(
                     'border-background absolute right-0 bottom-0 inline-flex h-3 w-3 rounded-full border-2',
-                    room.clientPresence ? presenceDot[room.clientPresence] : statusDot[room.status],
+                    presenceDot[room.clientPresence ?? 'offline'],
                   )}
                 />
               </div>

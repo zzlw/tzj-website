@@ -1,13 +1,6 @@
 'use client';
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import type { PresenceStatus } from './types';
 import { type UseChatSocketResult, useChatSocket } from './useChatSocket';
 
@@ -27,6 +20,9 @@ const IDLE_AWAY_MS = 5 * 60 * 1000;
 /**
  * 全局坐席在线状态与 socket 连接。
  * 挂载于 (dashboard) layout 层，确保切菜单时连接不断、坐席不会误变 offline。
+ *
+ * 安全（P0）：socket 连接使用 BFF 兑换的 chat token；token 每 10 分钟刷新一次，
+ * 并在鉴权失败（auth-error）时重新兑换，避免 15 分钟有效期过期后掉线。
  */
 export function useChatPresence(): ChatPresenceContextValue {
   const ctx = useContext(ChatPresenceContext);
@@ -43,12 +39,37 @@ export function ChatPresenceProvider({
   agentEmail: string;
   children: React.ReactNode;
 }) {
-  const socket = useChatSocket({ userEmail: agentEmail, userType: 'agent' });
+  const [token, setToken] = useState<string | null>(null);
+  const socket = useChatSocket({ token });
 
-  // 坐席默认离线，需显式切换在线（业内最佳实践）
+  const fetchToken = useCallback(async () => {
+    try {
+      const res = await fetch('/api/chat/token', { method: 'POST' });
+      if (res.ok) {
+        const data = (await res.json()) as { token: string };
+        setToken(data.token);
+      }
+    } catch {
+      // 网络/服务异常：保持现有 token（若有），下次重试
+    }
+  }, []);
+
+  // 首次拉取 + 每 10 分钟刷新（token 有效期 15 分钟，留出余量）
+  useEffect(() => {
+    void fetchToken();
+    const id = setInterval(() => void fetchToken(), 10 * 60 * 1000);
+    return () => clearInterval(id);
+  }, [fetchToken]);
+
+  // 鉴权失败 → 立即重新兑换 token 并触发重连
+  useEffect(() => {
+    const handler = () => void fetchToken();
+    socket.on('auth-error', handler);
+    return () => socket.off('auth-error');
+  }, [socket, fetchToken]);
+
   const [agentStatus, setAgentStatus] = useState<PresenceStatus>('offline');
 
-  // 记录当前 away 是否为自动空闲触发（用于探活恢复）
   const idleAwayRef = useRef(false);
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -56,17 +77,13 @@ export function ChatPresenceProvider({
     (status: PresenceStatus) => {
       setAgentStatus(status);
       socket.setPresence(status);
-      // 手动切换状态时清除自动空闲标记
       idleAwayRef.current = false;
     },
     [socket],
   );
 
-  // 刷新后恢复坐席在线状态：后端 register-agent 时下发 my-presence
-  // （后端内存 presence 未因前端刷新丢失，宽限期内重连状态保持）
   useEffect(() => {
     const handleMyPresence = (payload: { status: PresenceStatus }) => {
-      // 用 setPresence 恢复：同步本地 agentStatus + 标记 hasEverBeenOnline（供 visibility 自动恢复）
       setPresence(payload.status);
     };
     socket.on('my-presence', handleMyPresence);
@@ -75,12 +92,10 @@ export function ChatPresenceProvider({
     };
   }, [socket, setPresence]);
 
-  // ── 空闲检测：鼠标/键盘静止 N 分钟 → 自动 away ──
   useEffect(() => {
     function resetIdleTimer() {
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
       idleTimerRef.current = setTimeout(() => {
-        // 仅在坐席当前 online 时才自动置为 away
         if (socket.setPresence && !idleAwayRef.current) {
           setAgentStatus((prev) => {
             if (prev !== 'online') return prev;
@@ -93,7 +108,6 @@ export function ChatPresenceProvider({
     }
 
     function onActivity() {
-      // 自动空闲 → 恢复在线（手动 offline/away 不覆盖）
       if (idleAwayRef.current) {
         idleAwayRef.current = false;
         setAgentStatus('online');

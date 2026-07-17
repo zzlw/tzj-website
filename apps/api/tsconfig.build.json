@@ -3,7 +3,8 @@
   "compilerOptions": {
     "outDir": "./dist",
     "declaration": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "tsBuildInfoFile": "./tsconfig.build.tsbuildinfo"
   },
   "exclude": ["node_modules", "dist", "test", "**/*spec.ts"]
 }

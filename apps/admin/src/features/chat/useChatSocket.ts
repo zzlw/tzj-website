@@ -1,132 +1,223 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { Socket } from 'socket.io-client';
+import type { ChatMessage, ChatRoom, PresenceStatus } from './types';
 
 const SOCKET_URL = (process.env.NEXT_PUBLIC_CHAT_SOCKET_URL ?? 'http://localhost:4000').replace(
   /\/$/,
   '',
 );
 
-type ChatUserType = 'client' | 'agent';
+/** 在线坐席（供转接选择，P1 H3） */
+export interface OnlineAgent {
+  email: string;
+  status: PresenceStatus;
+}
+
+/** 通知计数聚合负载（P2 M1） */
+interface AgentNotificationCounts {
+  totalUnread: number;
+  roomCounts?: Array<{
+    roomId: string;
+    unreadCount: number;
+    clientEmail: string;
+    status: string;
+  }>;
+}
+
+/** 坐席端（/chat 命名空间）事件契约：事件名 → 负载类型，供 on/off 强类型分发 */
+type ChatAgentEventMap = {
+  'room-list-updated': { rooms?: ChatRoom[] };
+  'new-message': { message: ChatMessage; room: Partial<ChatRoom> };
+  'room-status-changed': {
+    roomId: string;
+    status: string;
+    assignedAgentEmail?: string;
+    reopened?: boolean;
+    transferred?: boolean;
+    transferredBy?: string;
+  };
+  'messages-read': {
+    roomId: string;
+    userType: 'client' | 'agent';
+    userEmail?: string;
+    messageIds?: string[];
+    room: Partial<ChatRoom>;
+  };
+  'presence-changed': {
+    userEmail: string;
+    userType: 'client' | 'agent';
+    status: 'online' | 'away' | 'offline';
+    roomId?: string;
+  };
+  /** 在线坐席花名册（P1 H3 转接目标） */
+  'agent-roster': { agents: OnlineAgent[] };
+  /** 访客正在输入（P1 H2） */
+  typing: { roomId?: string; userEmail?: string; userType?: string };
+  /** 访客停止输入（P1 H2） */
+  'stop-typing': { roomId?: string; userEmail?: string; userType?: string };
+  /** 通知计数聚合（P2 M1）：初始拉取 + 增量更新，形状一致 */
+  'notification-counts': AgentNotificationCounts;
+  'notification-counts-updated': AgentNotificationCounts;
+  'user-left': { roomId?: string; userEmail?: string };
+  error: unknown;
+  'auth-error': unknown;
+  'my-presence': { status: PresenceStatus };
+};
 
 export interface UseChatSocketResult {
   connected: boolean;
   /** 注册一次性/持续性事件监听 */
-  on: (event: string, cb: (...args: any[]) => void) => void;
-  off: (event: string) => void;
+  on: <K extends keyof ChatAgentEventMap>(
+    event: K,
+    cb: (payload: ChatAgentEventMap[K]) => void,
+  ) => void;
+  off: <K extends keyof ChatAgentEventMap>(event: K) => void;
   joinRoom: (roomId: string) => void;
   leaveRoom: (roomId: string) => void;
   sendMessage: (roomId: string, content: string, attachments?: string[]) => void;
   markRead: (roomId: string) => void;
   updateStatus: (roomId: string, status: string, assignedAgentEmail?: string) => void;
+  /** 转接会话给另一名坐席（P1 H3） */
+  transferRoom: (roomId: string, toAgentEmail: string) => void;
+  /** 标记「正在输入」（P1 H2） */
+  sendTyping: (roomId: string) => void;
+  /** 标记「停止输入」（P1 H2） */
+  sendStopTyping: (roomId: string) => void;
+  /** 主动拉取未读聚合计数（P2 M1） */
+  requestNotificationCounts: () => void;
   /** 切换坐席自身在线状态（在线/离开/离线），广播给访客端 */
   setPresence: (status: 'online' | 'away' | 'offline') => void;
 }
 
 /**
- * 对接 chat-support-service 的 Socket.io `/chat` 命名空间。
- * 连接成功后自动以 agent 身份注册，服务端随即推送 room-list-updated。
+ * 对接 chat-support-service 的 Socket.io `/chat` 命名空间（坐席端）。
+ *
+ * 安全（P0）：连接携带 BFF 兑换的 chat token（socket.handshake.auth.token），
+ * 坐席身份由网关从 token 推导，报文中不再携带 userEmail / sender。
  */
-export function useChatSocket(params: {
-  userEmail: string;
-  userType?: ChatUserType;
-}): UseChatSocketResult {
-  const { userEmail, userType = 'agent' } = params;
+export function useChatSocket(params: { token: string | null }): UseChatSocketResult {
+  const { token } = params;
 
-  const socketRef = useRef<any>(null);
-  const handlersRef = useRef<Record<string, (...args: any[]) => void>>({});
-  // 标记坐席是否「手动离线」，用于在切回前台时不把手动离线覆盖回在线
+  const socketRef = useRef<Socket | null>(null);
+  const handlersRef = useRef<Record<string, (...args: unknown[]) => void>>({});
+  const tokenRef = useRef<string | null>(token ?? null);
+  const authedTokenRef = useRef<string | null>(null);
   const manualOfflineRef = useRef(false);
-  // 标记坐席是否曾显式上线过：仅在曾上线后才允许 visibility 自动恢复 online
   const hasEverBeenOnlineRef = useRef(false);
   const [connected, setConnected] = useState(false);
 
-  const on = useCallback((event: string, cb: (...args: any[]) => void) => {
-    handlersRef.current[event] = cb;
-    socketRef.current?.on(event, cb);
-  }, []);
+  const on = useCallback(
+    <K extends keyof ChatAgentEventMap>(event: K, cb: (payload: ChatAgentEventMap[K]) => void) => {
+      handlersRef.current[event] = cb as unknown as (...args: unknown[]) => void;
+      socketRef.current?.on(event as string, cb as (...args: unknown[]) => void);
+    },
+    [],
+  );
 
-  const off = useCallback((event: string) => {
+  const off = useCallback(<K extends keyof ChatAgentEventMap>(event: K) => {
     delete handlersRef.current[event];
     socketRef.current?.off(event);
   }, []);
 
   useEffect(() => {
+    tokenRef.current = token ?? null;
+    const sock = socketRef.current;
+    if (token && token !== authedTokenRef.current && sock) {
+      authedTokenRef.current = token;
+      sock.auth = { token };
+      if (sock.connected) {
+        // 已连接 + token 变更 → 断开重连以携带新 token
+        sock.disconnect();
+        sock.connect();
+      } else if (!manualOfflineRef.current) {
+        // 未连接（如 auth-error 被服务端强制断开）→ 显式触发重连
+        sock.connect();
+      }
+    }
+  }, [token]);
+
+  useEffect(() => {
     let cancelled = false;
-    let socket: any;
+    let socket: Socket | null = null;
 
     (async () => {
       const { io } = await import('socket.io-client');
       if (cancelled) return;
-      socket = io(`${SOCKET_URL}/chat`, {
+      const sock = io(`${SOCKET_URL}/chat`, {
         transports: ['websocket', 'polling'],
+        auth: { token: tokenRef.current ?? undefined },
         reconnection: true,
         reconnectionAttempts: 5,
         reconnectionDelay: 1000,
         timeout: 20000,
       });
-      socketRef.current = socket;
+      socket = sock;
+      socketRef.current = sock;
+      if (tokenRef.current) authedTokenRef.current = tokenRef.current;
 
-      socket.on('connect', () => {
+      sock.on('connect', () => {
         setConnected(true);
-        socket.emit('register-agent', { userEmail });
+        sock.emit('register-agent');
+        // 刷新/重连后主动声明在线——pagehide 时 client-gone 已将服务端状态置为
+        // offline，仅靠 register-agent 返回的 my-presence 会延续 offline，
+        // 必须显式 set-presence: online 才能恢复坐席在线状态。
+        sock.emit('set-presence', { status: 'online' });
+        hasEverBeenOnlineRef.current = true;
+        // 连接即拉取未读聚合计数（P2 M1）
+        sock.emit('get-notification-counts');
       });
-      socket.on('disconnect', () => setConnected(false));
-      socket.on('connect_error', () => setConnected(false));
+      sock.on('disconnect', () => setConnected(false));
+      sock.on('connect_error', () => setConnected(false));
+      sock.on('auth-error', () => {
+        setConnected(false);
+        // 服务端 auth-error + disconnect(true) 会禁止 Socket.IO 自动重连。
+        // 延迟 1s 后显式重连，此时 Provider 已拉取到新 token 并更新了 sock.auth。
+        setTimeout(() => {
+          if (!sock.connected && !manualOfflineRef.current) {
+            sock.connect();
+          }
+        }, 1000);
+      });
 
-      // 注册在 connect 之前已声明的业务事件处理器
       Object.entries(handlersRef.current).forEach(([event, cb]) => {
-        socket.on(event, cb);
+        sock.on(event, cb);
       });
 
-      // ── 心跳：每 30s 发一次，服务端刷新 lastSeen ──
       const heartbeatTimer = setInterval(() => {
-        if (socket.connected) socket.emit('heartbeat');
+        if (sock.connected) sock.emit('heartbeat');
       }, 30_000);
 
-      // ── 空闲检测：标签页隐藏 → 延迟报告 idle；切回 → 恢复 online ──
-      // 仅当坐席曾显式点击过「在线」后才允许 visibility 自动恢复；
-      // 首次加载默认 offline 时，切标签页不会误变 online。
-      // 关键修复：隐藏时不立即 emit user-idle，而是延迟 USER_IDLE_DELAY_MS 再发。
-      // 刷新 / 关闭标签页时页面会在延迟前卸载（定时器随之清除、连接已断），
-      // 不会污染服务端 presence，避免「刷新后坐席从在线变成离开」。
       const USER_IDLE_DELAY_MS = 2000;
       let idleDelayTimer: ReturnType<typeof setTimeout> | null = null;
       const handleVisibility = () => {
         if (document.hidden) {
           if (idleDelayTimer) clearTimeout(idleDelayTimer);
           idleDelayTimer = setTimeout(() => {
-            if (socket.connected) socket.emit('user-idle');
+            if (sock.connected) sock.emit('user-idle');
           }, USER_IDLE_DELAY_MS);
         } else {
           if (idleDelayTimer) {
             clearTimeout(idleDelayTimer);
             idleDelayTimer = null;
           }
-          if (socket.connected && hasEverBeenOnlineRef.current && !manualOfflineRef.current) {
-            socket.emit('set-presence', { status: 'online' });
+          if (sock.connected && hasEverBeenOnlineRef.current && !manualOfflineRef.current) {
+            sock.emit('set-presence', { status: 'online' });
           }
         }
       };
       document.addEventListener('visibilitychange', handleVisibility);
 
-      // ── 页面销毁（关闭标签页 / 离开站点）时主动上报「离开」──
-      // 仅靠 socket 自然断开不可靠：标签页关闭瞬间 WS 关闭帧可能来不及发出，
-      // 导致服务端要等断线宽限 + ping 超时才能检测离线。故在 pagehide/beforeunload
-      // （页面销毁前可靠触发）显式发送 client-gone，服务端走「显式离开」快路径，
-      // 比 10s 断线宽限更快让 C 端反映「暂无坐席在线」。刷新时新连接会在
-      // CLIENT_GONE_GRACE_MS 窗口内重连并取消离线定时器，坐席不丢在线。
       const handlePageHide = () => {
         try {
-          if (socket.connected) socket.emit('client-gone');
+          if (sock.connected) sock.emit('client-gone');
         } catch {}
         try {
-          // 仅禁用本（即将销毁的）socket 所属 Manager 的重连；
-          // 新页面会创建全新 socket（重连默认开启），刷新仍可正常恢复。
-          socket.io?.reconnection?.(false);
+          sock.io?.reconnection?.(false);
         } catch {}
         try {
-          socket.disconnect();
+          sock.disconnect();
         } catch {}
       };
       window.addEventListener('pagehide', handlePageHide);
@@ -145,44 +236,30 @@ export function useChatSocket(params: {
       cancelled = true;
       socket?.disconnect();
       socketRef.current = null;
+      authedTokenRef.current = null;
       setConnected(false);
     };
-  }, [userEmail]);
+  }, []);
 
-  const joinRoom = useCallback(
-    (roomId: string) => {
-      socketRef.current?.emit('join-room', { roomId, userEmail, userType });
-    },
-    [userEmail, userType],
-  );
+  const joinRoom = useCallback((roomId: string) => {
+    socketRef.current?.emit('join-room', { roomId });
+  }, []);
 
   const leaveRoom = useCallback((roomId: string) => {
     socketRef.current?.emit('leave-room', { roomId });
   }, []);
 
-  const sendMessage = useCallback(
-    (roomId: string, content: string, attachments?: string[]) => {
-      socketRef.current?.emit('send-message', {
-        roomId,
-        content,
-        sender: userType,
-        senderEmail: userEmail,
-        attachments,
-      });
-    },
-    [userEmail, userType],
-  );
+  const sendMessage = useCallback((roomId: string, content: string, attachments?: string[]) => {
+    socketRef.current?.emit('send-message', {
+      roomId,
+      content,
+      attachments,
+    });
+  }, []);
 
-  const markRead = useCallback(
-    (roomId: string) => {
-      socketRef.current?.emit('mark-messages-read', {
-        roomId,
-        userEmail,
-        userType,
-      });
-    },
-    [userEmail, userType],
-  );
+  const markRead = useCallback((roomId: string) => {
+    socketRef.current?.emit('mark-messages-read', { roomId });
+  }, []);
 
   const updateStatus = useCallback(
     (roomId: string, status: string, assignedAgentEmail?: string) => {
@@ -195,19 +272,27 @@ export function useChatSocket(params: {
     [],
   );
 
-  // 坐席切换自身在线状态：经 set-presence 上报后端，由网关更新内存 presence
-  // 并广播聚合态，C 端访客即可看到坐席真实在线/离开/离线。
-  // 注意：online / away 都说明坐席曾处于活跃态，刷新后经 my-presence 回放时
-  // 一并置位 hasEverBeenOnlineRef，使「切回前台自动恢复 online」闸门在刷新后仍有效；
-  // 仅 offline（含手动离线 / 首次加载默认 offline）不置位，尊重「不自动上线」意图。
-  const setPresence = useCallback(
-    (status: 'online' | 'away' | 'offline') => {
-      manualOfflineRef.current = status === 'offline';
-      if (status !== 'offline') hasEverBeenOnlineRef.current = true;
-      socketRef.current?.emit('set-presence', { status });
-    },
-    [userEmail, userType],
-  );
+  const transferRoom = useCallback((roomId: string, toAgentEmail: string) => {
+    socketRef.current?.emit('transfer-room', { roomId, toAgentEmail });
+  }, []);
+
+  const sendTyping = useCallback((roomId: string) => {
+    socketRef.current?.emit('typing', { roomId });
+  }, []);
+
+  const sendStopTyping = useCallback((roomId: string) => {
+    socketRef.current?.emit('stop-typing', { roomId });
+  }, []);
+
+  const requestNotificationCounts = useCallback(() => {
+    socketRef.current?.emit('get-notification-counts');
+  }, []);
+
+  const setPresence = useCallback((status: 'online' | 'away' | 'offline') => {
+    manualOfflineRef.current = status === 'offline';
+    if (status !== 'offline') hasEverBeenOnlineRef.current = true;
+    socketRef.current?.emit('set-presence', { status });
+  }, []);
 
   return {
     connected,
@@ -218,6 +303,10 @@ export function useChatSocket(params: {
     sendMessage,
     markRead,
     updateStatus,
+    transferRoom,
+    sendTyping,
+    sendStopTyping,
+    requestNotificationCounts,
     setPresence,
   };
 }

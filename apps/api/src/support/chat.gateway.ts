@@ -1,8 +1,26 @@
-import { Logger } from '@nestjs/common';
+import { Inject, Logger } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
-import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import {
+  ConnectedSocket,
+  MessageBody,
+  type OnGatewayConnection,
+  type OnGatewayDisconnect,
+  SubscribeMessage,
+  WebSocketGateway,
+  WebSocketServer,
+} from '@nestjs/websockets';
+import { createAdapter } from '@socket.io/redis-adapter';
+import type { RedisClientType } from 'redis';
 import type { Server, Socket } from 'socket.io';
+// biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
+import { ChatAuthService } from './chat-auth.service';
+import type { ChatTokenPayload } from './chat-auth.service';
+// biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
+import { ChatPresenceStore } from './chat-presence.store';
+import type { PresenceStatus } from './chat-presence.store';
+// biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
 import { ChatRoomService } from './chat-room.service';
+import type { ChatRoomListItem, ChatRoomResult } from './chat-room.service';
 
 const ChatRoomStatus = {
   ACTIVE: 'active',
@@ -10,36 +28,42 @@ const ChatRoomStatus = {
   CLOSED: 'closed',
 } as const;
 
-/** 用户在线状态三态 */
-export type PresenceStatus = 'online' | 'away' | 'offline';
-
 /** 阈值（毫秒）：超过 AWAY_MS 无心跳 → away；超过 OFFLINE_MS → offline */
 const AWAY_MS = 60_000;
 const OFFLINE_MS = 90_000;
-/**
- * 断线宽限期（socket 真正 FIN/断开后延迟广播 offline）。
- * 仅作「网络微抖 / 重连瞬间」这类脏断兜底，故取较短值；
- * 刷新场景已由 client-gone 显式离开信号 + 重连取消定时器覆盖，无需长宽限。
- * 坐席与访客统一 10s：原 30s 会把「真走了」也拖慢，不符合即时可用性反馈。
- */
-const DISCONNECT_GRACE_MS = 10_000;
-const DISCONNECT_GRACE_MS_CLIENT = 10_000;
-/**
- * 显式离开（client-gone，页面 pagehide/beforeunload 主动上报）的宽限。
- * 比断线宽限更短：刷新时新连接会在该窗口内重连并取消定时器（坐席不丢在线）；
- * 真关闭则在该窗口后尽快置 offline，使 C 端秒级反映「暂无坐席在线」。
- * 坐席用更短值，因其重连不会自动拉回 online，需尽快让访客看到真实状态。
- */
-const CLIENT_GONE_GRACE_MS = 5_000;
+/** 重连宽限期：agent 在此时间内重连（如刷新页面）视为短暂中断，恢复在线状态 */
+const RECONNECT_GRACE_MS = 60_000;
 
-interface PresenceEntry {
-  userEmail: string;
-  userType: 'client' | 'agent';
-  status: PresenceStatus;
-  lastSeen: number;
-  sockets: Set<string>;
+/** 单条消息长度上限（P2 M2，与 ChatRoomService 保持一致） */
+const MAX_MESSAGE_LENGTH = 4000;
+/** 每 socket 每分钟最多发送消息数（P2 M2 限流） */
+const RATE_LIMIT_PER_MINUTE = 30;
+const RATE_WINDOW_MS = 60_000;
+/** 输入指示节流：同一 socket 同一房间每 1s 最多转发一次（P1 H2） */
+const TYPING_THROTTLE_MS = 1_000;
+
+interface SocketData {
+  auth?: ChatTokenPayload;
+  userKey?: string;
 }
 
+interface RateBucket {
+  count: number;
+  start: number;
+}
+
+/**
+ * 聊天网关（/chat 命名空间）。
+ *
+ * 安全模型（P0 C1/C2/C3）：
+ *  - 握手阶段校验 chat token（socket.handshake.auth.token），失败立即断开；
+ *  - 所有事件的「发送者身份 / 用户身份」一律从已校验的 token 推导，绝不信任客户端报文；
+ *  - 房间归属：client 只能加入 / 收发属于自己（room.clientEmail === token.email）的会话；
+ *    agent 须为已校验的坐席令牌，且只能执行坐席动作。
+ *
+ * 可靠性（P1 H1）：配置 REDIS_URL 时启用 Socket.IO Redis Adapter + Redis presence，
+ * 支持多实例 / 滚动发布；未配置则回退单实例内存模式。
+ */
 @WebSocketGateway({
   namespace: '/chat',
   cors: {
@@ -67,9 +91,6 @@ interface PresenceEntry {
       callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
-    // 缩短心跳探测：标签页关闭但 disconnect 包未及时送达时，
-    // 服务端也能更快（约 pingInterval+pingTimeout ≈ 15s）检测到死连接，
-    // 避免客户关闭标签页后长期显示「在线」。
     pingInterval: 5_000,
     pingTimeout: 10_000,
   },
@@ -80,270 +101,93 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   private readonly logger = new Logger(ChatGateway.name);
 
-  // socket.id → 用户信息（用于通过 socket 反查用户）
-  private connectedUsers = new Map<
-    string,
-    { socket: Socket; userEmail: string; userType: 'client' | 'agent' }
-  >();
+  // socket.id → 限流桶（P2 M2）
+  private rate = new Map<string, RateBucket>();
+  // 输入指示节流（P1 H2）：`${socketId}:${roomId}` → 上次转发时间戳
+  private typingLast = new Map<string, number>();
 
-  // `${userEmail}:${userType}` → presence（聚合多 socket，以用户为键）
-  private presence = new Map<string, PresenceEntry>();
 
-  // disconnect 宽限期定时器：key → timer
-  private offlineTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  constructor(
+    private readonly chatRoomService: ChatRoomService,
+    private readonly chatAuth: ChatAuthService,
+    private readonly presence: ChatPresenceStore,
+    @Inject('CHAT_REDIS')
+    private readonly redis: { pub: RedisClientType; sub: RedisClientType } | null,
+  ) {}
 
-  constructor(private readonly chatRoomService: ChatRoomService) {}
-
-  // ── 工具方法 ──────────────────────────────────────────────
-
-  private presenceKey(userEmail: string, userType: string) {
-    return `${userEmail}:${userType}`;
-  }
-
-  /** 登记 socket + 用户到 presence 系统 */
-  private registerSocket(socket: Socket, userEmail: string, userType: 'client' | 'agent') {
-    this.connectedUsers.set(socket.id, { socket, userEmail, userType });
-
-    const key = this.presenceKey(userEmail, userType);
-
-    // 取消该用户的 disconnect 离线宽限定时器（如果设置了）
-    const timer = this.offlineTimers.get(key);
-    if (timer) {
-      clearTimeout(timer);
-      this.offlineTimers.delete(key);
-    }
-
-    let entry = this.presence.get(key);
-    if (!entry) {
-      // 坐席初始状态为 offline，需显式切换为在线（业内最佳实践）
-      const initialStatus: PresenceStatus = userType === 'agent' ? 'offline' : 'online';
-      entry = {
-        userEmail,
-        userType,
-        status: initialStatus,
-        lastSeen: Date.now(),
-        sockets: new Set(),
-      };
-      this.presence.set(key, entry);
-    }
-    entry.sockets.add(socket.id);
-    entry.lastSeen = Date.now();
-
-    // 新 socket 接入不自动变更状态：坐席状态由显式 set-presence 驱动。
-    // 客户端仅在确为更低状态（offline）时才升级为 online，避免把已「离开」
-    // （away，如前端点了关闭聊天面板）的客户因重连 / 重进房间被粗暴拉回 online，
-    // 使 B 端看到的在线状态更诚实。
-    if (userType === 'client') {
-      if (entry.status === 'offline') {
-        this.updatePresence(key, 'online');
+  /** 配置 Redis Adapter（多实例消息广播）。 */
+  afterInit(server: Server) {
+    // 命名空间网关下，NestJS 传入的 `server` 实为 `Namespace`（其 `.adapter` 是
+    // 实例属性、不可调用），需取 root `Server`（Namespace.server）来设置 Adapter，
+    // 它会遍历所有命名空间重新初始化 adapter，使 /chat 命名空间生效。
+    const ioServer = (server as unknown as { server?: Server }).server ?? server;
+    if (this.redis?.pub && this.redis?.sub) {
+      try {
+        ioServer.adapter(createAdapter(this.redis.pub, this.redis.sub));
+        this.logger.log('Socket.IO Redis Adapter 已启用（多实例模式）');
+      } catch (error) {
+        this.logger.error(`Redis Adapter 启用失败，回退单实例：${(error as Error).message}`);
       }
     }
   }
 
-  /** 安排离线宽限：仅当尚无待执行定时器时才设置（避免被更长的断线宽限覆盖）。
-   *  刷新 / 重连会在窗口内经 registerSocket 取消该定时器，故不会误判离线。 */
-  private scheduleOffline(key: string, graceMs: number) {
-    if (this.offlineTimers.has(key)) return;
-    this.offlineTimers.set(
-      key,
-      setTimeout(() => {
-        this.offlineTimers.delete(key);
-        // 再次确认无 socket 残留（可能在宽限期内又断开 / 重连）
-        const latest = this.presence.get(key);
-        if (latest && latest.sockets.size === 0) {
-          this.updatePresence(key, 'offline');
-        }
-      }, graceMs),
-    );
-  }
-
-  /** 移除 socket；该用户无剩余 socket 时启动离线宽限期，避免 tab 刷新/网络闪断抖动 */
-  private unregisterSocket(socketId: string) {
-    const userInfo = this.connectedUsers.get(socketId);
-    this.connectedUsers.delete(socketId);
-    if (!userInfo) return null;
-
-    const key = this.presenceKey(userInfo.userEmail, userInfo.userType);
-    const entry = this.presence.get(key);
-    if (!entry) return userInfo;
-
-    entry.sockets.delete(socketId);
-    if (entry.sockets.size === 0) {
-      // 宽限期：延时再广播 offline。坐席/访客统一短宽限，仅吸收网络微抖；
-      // 刷新由 client-gone + 重连取消定时器覆盖，不会 online→offline→online 抖动。
-      const graceMs = entry.userType === 'agent' ? DISCONNECT_GRACE_MS : DISCONNECT_GRACE_MS_CLIENT;
-      this.scheduleOffline(key, graceMs);
-    }
-    return userInfo;
-  }
-
-  /** 更新 presence 状态，变化时广播给相关方 */
-  private updatePresence(key: string, newStatus: PresenceStatus) {
-    const entry = this.presence.get(key);
-    if (!entry) return;
-    if (entry.status === newStatus) return;
-
-    const oldStatus = entry.status;
-    entry.status = newStatus;
-    // online/away 均重置「最后活跃」计时起点：online 之后由 heartbeat 续命，
-    // away 不续命 → 超 OFFLINE_MS 后自然降级 offline（修复「离开页面却一直 away」卡死）。
-    if (newStatus === 'online' || newStatus === 'away') {
-      entry.lastSeen = Date.now();
-    }
-
-    this.logger.log(`Presence: ${entry.userEmail} (${entry.userType}) ${oldStatus} → ${newStatus}`);
-
-    // 1. 全局广播（覆盖 agent 刚连接还没 join room 的场景）
-    this.server.emit('presence-changed', {
-      userEmail: entry.userEmail,
-      userType: entry.userType,
-      status: newStatus,
-    });
-
-    // 坐席可用性变化 → 同步广播给所有端（访客需要诚实的「是否有人在线」状态）
-    if (entry.userType === 'agent') {
-      this.broadcastAgentAvailability();
-      this.broadcastAgentPresence();
-    }
-
-    // 2. 广播给该用户所在的所有 room
-    for (const socketId of entry.sockets) {
-      const info = this.connectedUsers.get(socketId);
-      if (!info) continue;
-      for (const room of info.socket.rooms) {
-        if (room !== info.socket.id) {
-          this.server.to(room).emit('presence-changed', {
-            userEmail: entry.userEmail,
-            userType: entry.userType,
-            status: newStatus,
-          });
-        }
-      }
-    }
-
-    // 客户端状态变化 → 刷新 agent 会话列表（列表项含 clientPresence）
-    if (entry.userType === 'client') {
-      void this.broadcastRoomListUpdate();
-    }
-  }
-
-  /** 判断某访客当前是否有 socket 实际处于该房间（用于按房间计算在线状态） */
-  private isUserInRoom(roomId: string, userEmail: string): boolean {
-    const key = this.presenceKey(userEmail, 'client');
-    const entry = this.presence.get(key);
-    if (!entry || entry.sockets.size === 0) return false;
-    for (const socketId of entry.sockets) {
-      const info = this.connectedUsers.get(socketId);
-      if (info && info.socket.rooms.has(roomId)) return true;
-    }
-    return false;
-  }
-
-  /** 给 rooms 数组注入 clientPresence 字段（按「访客是否实际在该房间」计算，
-   *  而非全局按 userEmail——访客离开旧会话（点「开始新会话」leave-room）后，
-   *  旧房间即离线，新房间仍在线，互不影响） */
-  private enrichRoomsWithPresence(rooms: any[]): any[] {
-    return rooms.map((room) => {
-      const key = this.presenceKey(room.clientEmail, 'client');
-      const entry = this.presence.get(key);
-      const inRoom = entry ? this.isUserInRoom(room.roomId, room.clientEmail) : false;
-      return {
-        ...room,
-        clientPresence: inRoom && entry ? entry.status : 'offline',
-      };
-    });
-  }
-
-  /** 查询某用户当前 presence */
-  getPresence(userEmail: string, userType: 'client' | 'agent'): PresenceStatus {
-    return this.presence.get(this.presenceKey(userEmail, userType))?.status ?? 'offline';
-  }
-
-  /** 聚合客服在线信息（面向 C 端单一「品牌客服」人设 + 多坐席细化）：
-   *  - status：有任一坐席 online → online；无 online 但存在 away → away；
-   *            全部 offline / 无坐席 → offline
-   *  - onlineCount / awayCount：分别统计在线 / 离开坐席数（多坐席时展示「N 位客服在线」）
-   *  - lastOnlineAt：所有坐席中最近一次活跃的时间戳，用于「最后在线时间」提示
-   *    （online 坐席即 now；offline 坐席保留其断线前的 lastSeen，≈最后在线时刻） */
-  getAggregateAgentPresenceInfo(): {
-    status: PresenceStatus;
-    onlineCount: number;
-    awayCount: number;
-    lastOnlineAt: number | null;
-  } {
-    let anyOnline = false;
-    let anyAway = false;
-    let onlineCount = 0;
-    let awayCount = 0;
-    let lastOnlineAt: number | null = null;
-    for (const entry of this.presence.values()) {
-      if (entry.userType !== 'agent') continue;
-      if (lastOnlineAt === null || entry.lastSeen > lastOnlineAt) {
-        lastOnlineAt = entry.lastSeen;
-      }
-      if (entry.status === 'online') {
-        anyOnline = true;
-        onlineCount++;
-      } else if (entry.status === 'away') {
-        anyAway = true;
-        awayCount++;
-      }
-    }
-    const status: PresenceStatus = anyOnline ? 'online' : anyAway ? 'away' : 'offline';
-    return { status, onlineCount, awayCount, lastOnlineAt };
-  }
-
-  /** 坐席在线数变化时，向所有已连接端广播（访客据此诚实呈现可用性、多坐席数与最后在线时刻） */
-  private broadcastAgentAvailability() {
-    const info = this.getAggregateAgentPresenceInfo();
-    this.server.emit('agents-online', {
-      online: info.onlineCount,
-      away: info.awayCount,
-      lastOnlineAt: info.lastOnlineAt,
-    });
-  }
-
-  /** 坐席状态变化 → 向所有端广播当前「聚合客服在线状态」，
-   *  使已连接的访客实时、准确地呈现在线/离开/离线（而非仅依赖状态变更事件）。 */
-  private broadcastAgentPresence() {
-    const info = this.getAggregateAgentPresenceInfo();
-    this.server.emit('presence-changed', {
-      userEmail: 'agent@tzj.com',
-      userType: 'agent',
-      status: info.status,
-      onlineCount: info.onlineCount,
-      awayCount: info.awayCount,
-      lastOnlineAt: info.lastOnlineAt,
-    });
-  }
-
-  // ── 生命周期 ──────────────────────────────────────────────
+  // ── 鉴权与身份 ───────────────────────────────────────
 
   async handleConnection(client: Socket) {
-    this.logger.log(`Client connected: ${client.id}`);
-    const agentInfo = this.getAggregateAgentPresenceInfo();
-    // 连接即下发当前坐席在线数，避免访客冷启动期间被误判为「有人在线」
-    client.emit('agents-online', {
-      online: agentInfo.onlineCount,
-      away: agentInfo.awayCount,
-      lastOnlineAt: agentInfo.lastOnlineAt,
-    });
-    // 同时下发当前「聚合客服在线状态」快照（含多坐席数与最后在线时刻）：
-    // 保证新访客首屏即呈现真实在线/离开/离线与多坐席细化，而非乐观默认。
+    const token =
+      (client.handshake.auth && (client.handshake.auth.token as string | undefined)) || undefined;
+    if (!token) {
+      client.emit('auth-error', { message: '缺少聊天令牌' });
+      client.disconnect(true);
+      return;
+    }
+
+    let payload: ChatTokenPayload;
+    try {
+      payload = this.chatAuth.verify(token);
+    } catch (error) {
+      client.emit('auth-error', { message: (error as Error).message });
+      client.disconnect(true);
+      return;
+    }
+
+    const data = client.data as SocketData;
+    data.auth = payload;
+    data.userKey = `${payload.email}:${payload.type}`;
+    this.logger.log(`Client connected: ${client.id} (${payload.type}:${payload.email})`);
+
+    await this.handleConnectPresence(client, data.userKey, payload);
+
+    // 连接即下发坐席可用性快照 + 聚合在线状态（避免冷启动被误判在线）
+    const avail = await this.agentAvailability();
+    client.emit('agents-online', avail);
     client.emit('presence-changed', {
       userEmail: 'agent@tzj.com',
       userType: 'agent',
-      status: agentInfo.status,
-      onlineCount: agentInfo.onlineCount,
-      awayCount: agentInfo.awayCount,
-      lastOnlineAt: agentInfo.lastOnlineAt,
+      status: await this.agentAggregateStatus(),
+      onlineCount: avail.online,
+      awayCount: avail.away,
+      lastOnlineAt: avail.lastOnlineAt,
     });
+
+    if (payload.type === 'agent') {
+      client.emit('my-presence', { status: await this.presence.getPresence(data.userKey) });
+      await this.sendRoomListToAgent(client, payload.email);
+      // 坐席需加入所有活跃房间才能接收实时 new-message 事件；
+      // socket 断开重连后房间成员资格丢失，必须每次连接都重新加入。
+      await this.joinAgentToActiveRooms(client);
+      // 推送在线坐席花名册（含 email + 状态），供转接选择
+      await this.broadcastAgentRoster();
+    }
   }
 
   async handleDisconnect(client: Socket) {
     this.logger.log(`Client disconnected: ${client.id}`);
-    const userInfo = this.unregisterSocket(client.id);
+    const data = client.data as SocketData;
+    const userKey = data.userKey;
+    if (!userKey) return;
 
+    // 离开其所处房间（socket.io 会自动移除，这里补充显式广播）
     const rooms = Array.from(client.rooms);
     rooms.forEach((room) => {
       if (room !== client.id) {
@@ -351,45 +195,208 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.server.to(room).emit('user-left', {
           socketId: client.id,
           roomId: room,
-          userEmail: userInfo?.userEmail,
-          userType: userInfo?.userType,
+          userEmail: data.auth?.email,
+          userType: data.auth?.type,
         });
       }
     });
+
+    const count = await this.presence.removeSocket(userKey, client.id);
+    if (count <= 0) {
+      await this.presence.setStatus(userKey, 'offline');
+      await this.broadcastPresenceFor(userKey);
+    }
   }
 
-  // ── 定时扫描：心跳超时 → away / offline ────────────────────
+  /** 取已校验身份；缺失则断开并返回 null。 */
+  private getAuth(client: Socket): ChatTokenPayload | null {
+    const auth = (client.data as SocketData).auth;
+    if (!auth) {
+      client.disconnect(true);
+      return null;
+    }
+    return auth;
+  }
+
+  /** 校验房间存在 + 归属：client 仅能访问自己的会话；agent 可访问任意会话。 */
+  private async roomOrError(
+    client: Socket,
+    roomId: string,
+    auth: ChatTokenPayload,
+  ): Promise<ChatRoomResult | null> {
+    let room: ChatRoomResult;
+    try {
+      room = await this.chatRoomService.getChatRoomById(roomId);
+    } catch {
+      client.emit('error', { message: '会话不存在' });
+      return null;
+    }
+    if (auth.type === 'client' && room.clientEmail !== auth.email) {
+      client.emit('error', { message: '无权访问该会话' });
+      return null;
+    }
+    return room;
+  }
+
+  // ── Presence（Redis / 内存） ─────────────────────────
+
+  /** 连接时登记 socket 并恢复/初始化在线状态（多实例安全：状态持久于 store）。 */
+  private async handleConnectPresence(
+    client: Socket,
+    userKey: string,
+    auth: ChatTokenPayload,
+  ): Promise<void> {
+    const prevCount = await this.presence.getSocketCount(userKey);
+    // 在 addSocket 更新 lastSeen 之前先读取，用于判断是否为“刚断开就重连”（如刷新页面）
+    const prevMeta = prevCount === 0 ? await this.presence.getMeta(userKey) : null;
+    await this.presence.addSocket(userKey, auth.email, auth.type, client.id);
+    if (prevCount === 0) {
+      const meta = await this.presence.getMeta(userKey);
+      let restored: 'online' | 'away' | 'offline';
+      if (meta?.status && meta.status !== 'offline') {
+        // 存储中仍为 online/away（多 socket 场景或断线宽限未过期）
+        restored = meta.status;
+      } else if (
+        auth.type === 'agent' &&
+        prevMeta?.status &&
+        prevMeta.status !== 'offline' &&
+        prevMeta.lastSeen &&
+        Date.now() - prevMeta.lastSeen < RECONNECT_GRACE_MS
+      ) {
+        // 坐席刚断开不久（如刷新页面）→ 视为短暂中断，恢复之前的在线状态
+        this.logger.log(
+          `Agent ${auth.email} reconnected within grace period, restoring ${prevMeta.status}`,
+        );
+        restored = prevMeta.status;
+      } else {
+        restored = auth.type === 'agent' ? 'offline' : 'online';
+      }
+      const changed = (meta?.status ?? 'offline') !== restored;
+      await this.presence.setStatus(userKey, restored);
+      if (changed) await this.broadcastPresenceFor(userKey);
+    }
+  }
+
+  /** 广播某用户的在线状态变化（含聚合坐席态），多实例经 Redis Adapter 自动扩散。 */
+  private async broadcastPresenceFor(userKey: string): Promise<void> {
+    const meta = await this.presence.getMeta(userKey);
+    if (!meta) return;
+    const status = await this.presence.getPresence(userKey);
+
+    this.server.emit('presence-changed', {
+      userEmail: meta.email,
+      userType: meta.userType,
+      status,
+    });
+
+    if (meta.userType === 'agent') {
+      const avail = await this.agentAvailability();
+      this.server.emit('agents-online', avail);
+      this.server.emit('presence-changed', {
+        userEmail: 'agent@tzj.com',
+        userType: 'agent',
+        status: await this.agentAggregateStatus(),
+        onlineCount: avail.online,
+        awayCount: avail.away,
+        lastOnlineAt: avail.lastOnlineAt,
+      });
+      // 坐席在线状态变化 → 同步在线花名册（供其他坐席转接选择）
+      await this.broadcastAgentRoster();
+    } else {
+      // 访客状态变化 → 刷新坐席端会话列表（列表含 clientPresence）
+      await this.broadcastRoomListUpdate();
+    }
+  }
+
+  private async setStatusAndBroadcast(userKey: string, newStatus: PresenceStatus): Promise<void> {
+    const meta = await this.presence.getMeta(userKey);
+    if (!meta || meta.status === newStatus) return;
+    await this.presence.setStatus(userKey, newStatus);
+    // online/away 刷新「最后活跃」计时起点
+    if (newStatus === 'online' || newStatus === 'away') {
+      await this.presence.setLastSeen(userKey, Date.now());
+    }
+    this.logger.log(`Presence: ${meta.email} (${meta.userType}) → ${newStatus}`);
+    await this.broadcastPresenceFor(userKey);
+  }
+
+  private async agentAvailability(): Promise<{
+    online: number;
+    away: number;
+    lastOnlineAt: number | null;
+  }> {
+    const agents = await this.presence.getAgentSummaries();
+    let online = 0;
+    let away = 0;
+    let lastOnlineAt: number | null = null;
+    for (const a of agents) {
+      if (lastOnlineAt === null || (a.lastSeen ?? 0) > lastOnlineAt)
+        lastOnlineAt = a.lastSeen ?? null;
+      if (a.status === 'online') online++;
+      else if (a.status === 'away') away++;
+    }
+    return { online, away, lastOnlineAt };
+  }
+
+  private async agentAggregateStatus(): Promise<PresenceStatus> {
+    const agents = await this.presence.getAgentSummaries();
+    let anyOnline = false;
+    let anyAway = false;
+    for (const a of agents) {
+      if (a.status === 'online') anyOnline = true;
+      else if (a.status === 'away') anyAway = true;
+    }
+    return anyOnline ? 'online' : anyAway ? 'away' : 'offline';
+  }
+
+  /** 给 rooms 注入 clientPresence（按访客全局在线状态，跨实例一致）。 */
+  private async enrichRoomsWithPresence(rooms: ChatRoomListItem[]): Promise<ChatRoomListItem[]> {
+    return Promise.all(
+      rooms.map(async (room) => {
+        const status = await this.presence.getPresence(`${room.clientEmail}:client`);
+        return { ...room, clientPresence: status };
+      }),
+    );
+  }
+
+  // ── 通知计数聚合（P2 M1） ─────────────────────────────
+
+  private notifKey(userType: 'client' | 'agent', email: string): string {
+    return userType === 'agent' ? 'agent' : `${email}:client`;
+  }
+
+  /** 始终从 DB 查询真实未读数，保证准确性（数据量小，查询开销可忽略）。 */
+  private async getCountsFor(
+    _key: string,
+    userType: 'client' | 'agent',
+    email: string,
+  ): Promise<{
+    totalUnread: number;
+    roomCounts: Array<{ roomId: string; unreadCount: number; clientEmail: string; status: string }>;
+  }> {
+    return this.chatRoomService.getNotificationCounts(
+      userType === 'agent' ? undefined : email,
+      userType,
+    );
+  }
+
+  // ── 定时扫描：心跳超时 → away / offline ────────────────
 
   @Interval(15_000)
-  scanPresence() {
+  async scanPresence() {
     const now = Date.now();
-    for (const [key, entry] of this.presence) {
-      if (entry.sockets.size === 0) {
-        // 断开后的 offline 交由 unregisterSocket 的宽限定时器负责，
-        // 避免刷新页面等短暂停顿被立即判离线（刷新后坐席丢失在线状态的根因）。
-        // 仅作兜底：无任何 pending 定时器且长期无活动时才强制 offline。
-        const timer = this.offlineTimers.get(key);
-        if (!timer && entry.status !== 'offline' && now - entry.lastSeen > OFFLINE_MS) {
-          this.updatePresence(key, 'offline');
-        }
-        continue;
-      }
-      const elapsed = now - entry.lastSeen;
+    const all = await this.presence.getAllSummaries();
+    for (const s of all) {
+      if (s.socketCount <= 0) continue;
+      const elapsed = now - (s.lastSeen || 0);
       if (elapsed > OFFLINE_MS) {
-        // 超时：online / away 均落 offline（修复 away 卡死、无法超时转 offline 的问题）
-        if (entry.status !== 'offline') {
-          this.updatePresence(key, 'offline');
-        }
+        if (s.status !== 'offline') await this.setStatusAndBroadcast(s.userKey, 'offline');
       } else if (elapsed > AWAY_MS) {
-        // 仅 online → away；away 状态保持，等待上面的超时分支落 offline
-        if (entry.status === 'online') {
-          this.updatePresence(key, 'away');
-        }
+        if (s.status === 'online') await this.setStatusAndBroadcast(s.userKey, 'away');
       }
     }
   }
 
-  // ── 定时维护：闲置关闭 + 超期归档（P2） ────────────────────
   @Interval(60_000)
   async runAutoMaintain() {
     try {
@@ -403,22 +410,21 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  // ── 事件处理 ──────────────────────────────────────────────
+  // ── 事件处理 ─────────────────────────────────────────
 
   @SubscribeMessage('register-agent')
-  async handleRegisterAgent(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() data: { userEmail: string },
-  ) {
+  async handleRegisterAgent(@ConnectedSocket() client: Socket) {
+    const auth = this.getAuth(client);
+    if (!auth || auth.type !== 'agent') {
+      client.emit('error', { message: '仅坐席可注册' });
+      return;
+    }
     try {
-      const { userEmail } = data;
-      this.logger.log(`Agent ${userEmail} registering for room list updates`);
-      this.registerSocket(client, userEmail, 'agent');
-      client.emit('agent-registered', { userEmail });
-      // 下发坐席当前 presence，供前端刷新后恢复在线状态
-      // （后端内存中的 presence 不因前端刷新丢失，宽限期内重连状态保持）
-      client.emit('my-presence', { status: this.getPresence(userEmail, 'agent') });
-      await this.sendRoomListToAgent(client, userEmail);
+      client.emit('agent-registered', { userEmail: auth.email });
+      client.emit('my-presence', {
+        status: await this.presence.getPresence(`${auth.email}:agent`),
+      });
+      await this.sendRoomListToAgent(client, auth.email);
     } catch (error) {
       this.logger.error('Error registering agent:', error);
       client.emit('error', { message: 'Failed to register agent' });
@@ -428,7 +434,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async sendRoomListToAgent(socket: Socket, userEmail: string) {
     try {
       const result = await this.chatRoomService.getChatRooms({});
-      const enriched = this.enrichRoomsWithPresence(result.rooms);
+      const enriched = await this.enrichRoomsWithPresence(result.rooms);
       this.logger.log(`Sending room list to agent ${userEmail}: ${enriched.length} rooms`);
       socket.emit('room-list-updated', { rooms: enriched });
     } catch (error) {
@@ -436,75 +442,64 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  @SubscribeMessage('join-room')
-  async handleJoinRoom(
-    @ConnectedSocket() client: Socket,
-    @MessageBody()
-    data: { roomId: string; userEmail: string; userType: 'client' | 'agent' },
-  ) {
+  /** 坐席连接/重连时，自动加入所有活跃房间，确保接收实时 new-message 事件。
+   *  Socket.IO 断开后房间成员资格丢失，必须每次连接都重新加入。 */
+  private async joinAgentToActiveRooms(socket: Socket): Promise<void> {
     try {
-      const { roomId, userEmail, userType } = data;
-      this.logger.log(`User ${userEmail} (${userType}) joining room ${roomId}`);
-      this.registerSocket(client, userEmail, userType);
-      await client.join(roomId);
-      client.to(roomId).emit('user-joined', { userEmail, userType });
-      client.emit('joined-room', { roomId, userEmail, userType });
-
-      // 把己方 presence 推给 room 内对方
-      const myPresence = this.getPresence(userEmail, userType);
-      client.to(roomId).emit('presence-changed', {
-        userEmail,
-        userType,
-        status: myPresence,
+      const result = await this.chatRoomService.getChatRooms({
+        status: 'active,waiting',
+        take: 100,
       });
+      let joined = 0;
+      for (const room of result.rooms) {
+        socket.join(room.roomId);
+        joined++;
+      }
+      this.logger.log(`Agent socket ${socket.id} joined ${joined} active rooms`);
+    } catch (error) {
+      this.logger.error('Error joining agent to active rooms:', error);
+    }
+  }
 
-      // 访客加入房间时，仅向本房间广播其当前 presence（携带 roomId），
-      // 使 B 端「打开的会话」视图即时切到在线；但不再全局广播——否则访客
-      // 「开始新会话」加入新房间时，会把已 leave 的旧房间也一并点亮为在线。
-      // 各房间的在线状态统一由 enrichRoomsWithPresence 按「访客是否实际在房间」
-      // 计算（离开旧房间即离线），列表刷新即正确呈现。
-      if (userType === 'client') {
-        client.to(roomId).emit('presence-changed', {
-          userEmail,
-          userType,
-          status: myPresence,
+  @SubscribeMessage('join-room')
+  async handleJoinRoom(@ConnectedSocket() client: Socket, @MessageBody() data: { roomId: string }) {
+    const auth = this.getAuth(client);
+    if (!auth) return;
+    const { roomId } = data;
+    if (!roomId) return;
+
+    const room = await this.roomOrError(client, roomId, auth);
+    if (!room) return;
+
+    await client.join(roomId);
+    client.to(roomId).emit('user-joined', { userEmail: auth.email, userType: auth.type });
+    client.emit('joined-room', { roomId, userEmail: auth.email, userType: auth.type });
+
+    const myStatus = await this.presence.getPresence(`${auth.email}:${auth.type}`);
+    client.to(roomId).emit('presence-changed', {
+      userEmail: auth.email,
+      userType: auth.type,
+      status: myStatus,
+      roomId,
+    });
+
+    if (auth.type === 'agent') {
+      // waiting → active 并认领；active/closed/archived 仅同步负责人，不静默复活已关闭会话
+      if (room.status === ChatRoomStatus.WAITING) {
+        await this.chatRoomService.updateChatRoom(roomId, {
+          status: ChatRoomStatus.ACTIVE,
+          assignedAgentEmail: auth.email,
+        });
+        this.server.to(roomId).emit('room-status-changed', {
           roomId,
+          status: 'active',
+          assignedAgentEmail: auth.email,
+        });
+      } else if (room.status) {
+        await this.chatRoomService.updateChatRoom(roomId, {
+          assignedAgentEmail: auth.email,
         });
       }
-
-      if (userType === 'agent') {
-        // 仅对「待处理(waiting)」会话做 领取→active 的状态迁移；
-        // 已关闭/已归档的会话被坐席选中、或刷新后自动重选时，保持原状态不变，
-        // 避免 join-room 把 closed 静默复活为 active —— 即「关闭后刷新又变回可聊」
-        // 这类与「关闭即终态」相悖的割裂行为。要继续此类会话须走显式「重新打开」。
-        let currentStatus: string | undefined;
-        try {
-          currentStatus = (await this.chatRoomService.getChatRoomById(roomId)).status;
-        } catch {
-          currentStatus = undefined;
-        }
-
-        if (currentStatus === ChatRoomStatus.WAITING) {
-          await this.chatRoomService.updateChatRoom(roomId, {
-            status: ChatRoomStatus.ACTIVE,
-            assignedAgentEmail: userEmail,
-          });
-          this.server.to(roomId).emit('room-status-changed', {
-            roomId,
-            status: 'active',
-            assignedAgentEmail: userEmail,
-          });
-        } else if (currentStatus) {
-          // active/closed/archived：仅同步负责人（closed/archived 状态保持不变），
-          // 不再下发 room-status-changed，避免前端把已关闭会话误判回进行中。
-          await this.chatRoomService.updateChatRoom(roomId, {
-            assignedAgentEmail: userEmail,
-          });
-        }
-      }
-    } catch (error) {
-      this.logger.error('Error joining room:', error);
-      client.emit('error', { message: 'Failed to join room' });
     }
   }
 
@@ -513,19 +508,19 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { roomId: string },
   ) {
+    const auth = this.getAuth(client);
+    if (!auth) return;
+    const { roomId } = data;
+    if (!roomId) return;
     try {
-      const { roomId } = data;
-      const userInfo = this.connectedUsers.get(client.id);
-      if (userInfo) {
-        this.logger.log(`User ${userInfo.userEmail} leaving room ${roomId}`);
-        await client.leave(roomId);
-        client.to(roomId).emit('user-left', {
-          roomId,
-          userEmail: userInfo.userEmail,
-          userType: userInfo.userType,
-        });
-        client.emit('left-room', { roomId });
-      }
+      this.logger.log(`User ${auth.email} leaving room ${roomId}`);
+      await client.leave(roomId);
+      client.to(roomId).emit('user-left', {
+        roomId,
+        userEmail: auth.email,
+        userType: auth.type,
+      });
+      client.emit('left-room', { roomId });
     } catch (error) {
       this.logger.error('Error leaving room:', error);
       client.emit('error', { message: 'Failed to leave room' });
@@ -535,33 +530,37 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('send-message')
   async handleSendMessage(
     @ConnectedSocket() client: Socket,
-    @MessageBody()
-    data: {
-      roomId: string;
-      content: string;
-      sender: 'client' | 'agent';
-      senderEmail: string;
-      attachments?: string[];
-    },
+    @MessageBody() data: { roomId: string; content?: string; attachments?: string[] },
   ) {
+    const auth = this.getAuth(client);
+    if (!auth) return;
+    const { roomId, content, attachments } = data;
+    if (!roomId) return;
+
+    // 限流（P2 M2）
+    if (this.rateLimited(client.id)) {
+      client.emit('error', { message: '发送过于频繁，请稍后再试' });
+      return;
+    }
+    if (content && content.length > MAX_MESSAGE_LENGTH) {
+      client.emit('error', { message: `消息过长，单条上限 ${MAX_MESSAGE_LENGTH} 字` });
+      return;
+    }
+
+    const room = await this.roomOrError(client, roomId, auth);
+    if (!room) return;
+
+    const userKey = `${auth.email}:${auth.type}`;
+    await this.presence.setLastSeen(userKey, Date.now());
+    if ((await this.presence.getPresence(userKey)) !== 'online') {
+      await this.setStatusAndBroadcast(userKey, 'online');
+    }
+
     try {
-      const { roomId, content, sender, senderEmail, attachments } = data;
-      this.logger.log(`Message from ${senderEmail} in room ${roomId}: ${content}`);
-
-      // 发消息也算活跃，刷新 lastSeen + 恢复 online
-      const key = this.presenceKey(senderEmail, sender);
-      const entry = this.presence.get(key);
-      if (entry) {
-        entry.lastSeen = Date.now();
-        if (entry.status !== 'online') {
-          this.updatePresence(key, 'online');
-        }
-      }
-
       const updatedRoom = await this.chatRoomService.sendMessage(roomId, {
         content,
-        sender,
-        senderEmail,
+        sender: auth.type,
+        senderEmail: auth.email,
         attachments,
       });
 
@@ -579,10 +578,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         },
       });
 
-      // 访客「回复即重开」：同一会话从 closed 回到 active/waiting，
-      // 广播状态变更，使访客与坐席两端 UI 即时切回进行中（输入框恢复可用）。
-      // reopened 标记让坐席端能区分「访客重新打开」与坐席侧的其它状态变更，
-      // 从而给出明确提示并把会话重新带入坐席视野。
       if (updatedRoom.reopened) {
         this.server.to(roomId).emit('room-status-changed', {
           roomId,
@@ -603,30 +598,34 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('mark-messages-read')
   async handleMarkMessagesRead(
     @ConnectedSocket() client: Socket,
-    @MessageBody()
-    data: {
-      roomId: string;
-      userEmail: string;
-      userType: 'client' | 'agent';
-      messageIds?: string[];
-    },
+    @MessageBody() data: { roomId: string; messageIds?: string[] },
   ) {
-    try {
-      const { roomId, userEmail, userType, messageIds } = data;
-      this.logger.log(`User ${userEmail} (${userType}) marking messages as read in room ${roomId}`);
+    const auth = this.getAuth(client);
+    if (!auth) return;
+    const { roomId, messageIds } = data;
+    if (!roomId) return;
 
+    const room = await this.roomOrError(client, roomId, auth);
+    if (!room) return;
+
+    try {
       const updatedRoom = await this.chatRoomService.markMessagesAsReadByUser(
         roomId,
-        userEmail,
-        userType,
+        auth.email,
+        auth.type,
         messageIds,
+      );
+
+      this.logger.log(
+        `[mark-read] ${auth.type}:${auth.email} room=${roomId.slice(0, 8)} ` +
+          `marked=${updatedRoom.markedMessageIds.length} ids=[${updatedRoom.markedMessageIds.slice(0, 3).join(',')}]`,
       );
 
       this.server.to(roomId).emit('messages-read', {
         roomId,
-        userEmail,
-        userType,
-        messageIds,
+        userEmail: auth.email,
+        userType: auth.type,
+        messageIds: updatedRoom.markedMessageIds,
         room: {
           roomId: updatedRoom.roomId,
           unreadCountForClient: updatedRoom.unreadCountForClient,
@@ -645,16 +644,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('get-notification-counts')
-  async handleGetNotificationCounts(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() data: { userEmail: string; userType: 'client' | 'agent' },
-  ) {
+  async handleGetNotificationCounts(@ConnectedSocket() client: Socket) {
+    const auth = this.getAuth(client);
+    if (!auth) return;
     try {
-      const { userEmail, userType } = data;
-      const counts = await this.chatRoomService.getNotificationCounts(userEmail, userType);
+      const counts = await this.getCountsFor(
+        this.notifKey(auth.type, auth.email),
+        auth.type,
+        auth.email,
+      );
       client.emit('notification-counts', {
-        userEmail,
-        userType,
+        userEmail: auth.email,
+        userType: auth.type,
         ...counts,
       });
     } catch (error) {
@@ -666,12 +667,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('reset-notification-count')
   async handleResetNotificationCount(
     @ConnectedSocket() client: Socket,
-    @MessageBody() data: { roomId: string; userType: 'client' | 'agent' },
+    @MessageBody() data: { roomId: string },
   ) {
+    const auth = this.getAuth(client);
+    if (!auth) return;
+    const { roomId } = data;
+    if (!roomId) return;
     try {
-      const { roomId, userType } = data;
-      await this.chatRoomService.resetNotificationCount(roomId, userType);
-      client.emit('notification-count-reset', { roomId, userType });
+      await this.chatRoomService.resetNotificationCount(roomId, auth.type);
+      client.emit('notification-count-reset', { roomId, userType: auth.type });
       await this.broadcastNotificationCounts();
     } catch (error) {
       this.logger.error('Error resetting notification count:', error);
@@ -682,28 +686,19 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('update-room-status')
   async handleUpdateRoomStatus(
     @ConnectedSocket() client: Socket,
-    @MessageBody()
-    data: { roomId: string; status: string; assignedAgentEmail?: string },
+    @MessageBody() data: { roomId: string; status: string; assignedAgentEmail?: string },
   ) {
+    const auth = this.getAuth(client);
+    if (!auth || auth.type !== 'agent') {
+      client.emit('error', { message: '仅坐席可更新会话状态' });
+      return;
+    }
+    const { roomId, status, assignedAgentEmail } = data;
+    if (!roomId || !status) return;
+
     try {
-      const { roomId, status, assignedAgentEmail } = data;
-      const userInfo = this.connectedUsers.get(client.id);
-
-      if (!userInfo || userInfo.userType !== 'agent') {
-        client.emit('error', { message: 'Only agents can update room status' });
-        return;
-      }
-
-      this.logger.log(`Agent ${userInfo.userEmail} updating room ${roomId} status to ${status}`);
-
-      // 「结束会话」：复用 closeChatRoom 写入「会话已关闭」系统消息（DB 幂等，避免重复），
-      // 并实时广播该系统消息，使坐席/访客两端无需刷新即可在对话流内看到「会话已关闭」标签。
       if (status === 'closed') {
-        const updated = await this.chatRoomService.closeChatRoom(
-          roomId,
-          userInfo.userEmail,
-          '会话已关闭',
-        );
+        const updated = await this.chatRoomService.closeChatRoom(roomId, auth.email, '会话已关闭');
         const systemMessage = updated.messages[updated.messages.length - 1];
         const roomPayload = {
           roomId: updated.roomId,
@@ -715,32 +710,24 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
           closedAt: updated.closedAt,
         };
         if (systemMessage) {
-          this.server.to(roomId).emit('new-message', {
-            message: systemMessage,
-            room: roomPayload,
-          });
+          this.server.to(roomId).emit('new-message', { message: systemMessage, room: roomPayload });
         }
         this.server.to(roomId).emit('room-status-changed', roomPayload);
         await this.broadcastRoomListUpdate();
         return;
       }
 
-      let chatRoomStatus: string;
-      switch (status) {
-        case 'active':
-          chatRoomStatus = ChatRoomStatus.ACTIVE;
-          break;
-        case 'waiting':
-          chatRoomStatus = ChatRoomStatus.WAITING;
-          break;
-        default:
-          chatRoomStatus = ChatRoomStatus.WAITING;
-      }
+      const chatRoomStatus =
+        status === 'active'
+          ? ChatRoomStatus.ACTIVE
+          : status === 'waiting'
+            ? ChatRoomStatus.WAITING
+            : ChatRoomStatus.WAITING;
 
-      const updateData: any = { status: chatRoomStatus };
-      if (assignedAgentEmail) {
-        updateData.assignedAgentEmail = assignedAgentEmail;
-      }
+      const updateData: { status: string; assignedAgentEmail?: string } = {
+        status: chatRoomStatus,
+      };
+      if (assignedAgentEmail) updateData.assignedAgentEmail = assignedAgentEmail;
 
       await this.chatRoomService.updateChatRoom(roomId, updateData);
 
@@ -757,172 +744,254 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
+  /** 转接（P1 H3）：坐席把会话重新分配给另一名坐席。 */
+  @SubscribeMessage('transfer-room')
+  async handleTransferRoom(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { roomId: string; toAgentEmail: string },
+  ) {
+    const auth = this.getAuth(client);
+    if (!auth || auth.type !== 'agent') {
+      client.emit('error', { message: '仅坐席可转接' });
+      return;
+    }
+    const { roomId, toAgentEmail } = data;
+    if (!roomId || !toAgentEmail) return;
+
+    const room = await this.roomOrError(client, roomId, auth);
+    if (!room) return;
+
+    try {
+      await this.chatRoomService.updateChatRoom(roomId, { assignedAgentEmail: toAgentEmail });
+      this.server.to(roomId).emit('room-status-changed', {
+        roomId,
+        status: room.status,
+        assignedAgentEmail: toAgentEmail,
+        transferred: true,
+        transferredBy: auth.email,
+      });
+      await this.broadcastRoomListUpdate();
+    } catch (error) {
+      this.logger.error('Error transferring room:', error);
+      client.emit('error', { message: 'Failed to transfer room' });
+    }
+  }
+
   @SubscribeMessage('get-room-info')
   async handleGetRoomInfo(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { roomId: string },
   ) {
-    try {
-      const { roomId } = data;
-      const room = await this.chatRoomService.getChatRoomById(roomId);
-      if (room) {
-        client.emit('room-info', room);
-      } else {
-        client.emit('error', { message: 'Room not found' });
-      }
-    } catch (error) {
-      this.logger.error('Error getting room info:', error);
-      client.emit('error', { message: 'Failed to get room info' });
-    }
+    const auth = this.getAuth(client);
+    if (!auth) return;
+    const { roomId } = data;
+    if (!roomId) return;
+    const room = await this.roomOrError(client, roomId, auth);
+    if (!room) return;
+    client.emit('room-info', room);
   }
 
-  // ── Presence 专用事件 ─────────────────────────────────────
+  // ── 输入指示器（P1 H2） ───────────────────────────────
 
-  /** 客户端心跳：每 30s 发一次，服务端刷新 lastSeen */
-  @SubscribeMessage('heartbeat')
-  handleHeartbeat(@ConnectedSocket() client: Socket) {
-    const userInfo = this.connectedUsers.get(client.id);
-    if (!userInfo) return;
+  @SubscribeMessage('typing')
+  async handleTyping(@ConnectedSocket() client: Socket, @MessageBody() data: { roomId: string }) {
+    const auth = this.getAuth(client);
+    if (!auth) return;
+    const { roomId } = data;
+    if (!roomId || !client.rooms.has(roomId)) return;
+    const room = await this.roomOrError(client, roomId, auth);
+    if (!room) return;
 
-    const key = this.presenceKey(userInfo.userEmail, userInfo.userType);
-    const entry = this.presence.get(key);
-    if (!entry) return;
+    const tk = `${client.id}:${roomId}`;
+    const now = Date.now();
+    const last = this.typingLast.get(tk) ?? 0;
+    if (now - last < TYPING_THROTTLE_MS) return;
+    this.typingLast.set(tk, now);
 
-    // 心跳只续命 online 状态；away/offline 不刷新 lastSeen，使其能按
-    // OFFLINE_MS 超时自然降级为 offline（修复 away 卡死、无法超时转 offline）。
-    // 状态切换仍统一由 set-presence 显式驱动。
-    if (entry.status === 'online') {
-      entry.lastSeen = Date.now();
-    }
-  }
-
-  /** 客户端主动报告 idle（标签页切到后台 / 关闭聊天面板 / 无操作） */
-  @SubscribeMessage('user-idle')
-  handleUserIdle(@ConnectedSocket() client: Socket) {
-    const userInfo = this.connectedUsers.get(client.id);
-    if (!userInfo) return;
-    const key = this.presenceKey(userInfo.userEmail, userInfo.userType);
-    this.updatePresence(key, 'away');
-  }
-
-  /** 客户端主动报告 active（打开聊天面板 / 切回前台）：恢复 online。
-   *  与 user-idle 成对，使 B 端看到的「客户是否还在看聊天」状态诚实，
-   *  而非简单地等于「网站标签页是否还开着」。可绕过 registerSocket 的
-   *  条件升级限制，显式把 away/offline 拉回 online。 */
-  @SubscribeMessage('user-active')
-  handleUserActive(@ConnectedSocket() client: Socket) {
-    const userInfo = this.connectedUsers.get(client.id);
-    if (!userInfo) return;
-    const key = this.presenceKey(userInfo.userEmail, userInfo.userType);
-    this.updatePresence(key, 'online');
-  }
-
-  /** 页面销毁（关闭标签页 / 离开站点）时主动上报「我离开了」。
-   *  与 disconnect 的宽限不同：这是客户端的明确信号，只要该用户没有其它
-   *  仍在连接的 socket（多标签页场景），即按「显式离开」快路径处理：
-   *   - 访客：重连会自动 offline→online，可立即置 offline，使 B 端尽快反映；
-   *   - 坐席：重连不会自动拉回 online，故用更短的 CLIENT_GONE_GRACE_MS 宽限——
-   *     刷新可在窗口内重连取消（不丢在线），真关闭则尽快 offline，避免 C 端
-   *     长时间看到「在线」假象。 */
-  @SubscribeMessage('client-gone')
-  handleClientGone(@ConnectedSocket() client: Socket) {
-    const userInfo = this.connectedUsers.get(client.id);
-    if (!userInfo) return;
-    const key = this.presenceKey(userInfo.userEmail, userInfo.userType);
-    const entry = this.presence.get(key);
-    if (!entry) return;
-    // 当前 socket 仍在集合内；size<=1 表示它是最后一个连接
-    if (entry.sockets.size <= 1) {
-      if (userInfo.userType === 'client') {
-        this.updatePresence(key, 'offline');
-        return;
-      }
-      this.scheduleOffline(key, CLIENT_GONE_GRACE_MS);
-    }
-  }
-
-  /** 查询某用户 presence */
-  @SubscribeMessage('get-presence')
-  handleGetPresence(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() data: { userEmail: string; userType: 'client' | 'agent' },
-  ) {
-    const status = this.getPresence(data.userEmail, data.userType);
-    client.emit('presence-changed', {
-      userEmail: data.userEmail,
-      userType: data.userType,
-      status,
+    client.to(roomId).emit('typing', {
+      roomId,
+      userEmail: auth.email,
+      userType: auth.type,
     });
   }
 
-  /** 坐席主动切换自身在线状态（在线/离开/离线）。
-   *  由 B 端状态切换器经 set-presence 上报；服务端据已连接 socket 的身份更新内存
-   *  presence 并广播聚合态，使 C 端访客实时、准确地看到真实在线/离线。
-   *  身份取自连接上下文，客户端无法伪造他人状态。 */
+  @SubscribeMessage('stop-typing')
+  async handleStopTyping(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { roomId: string },
+  ) {
+    const auth = this.getAuth(client);
+    if (!auth) return;
+    const { roomId } = data;
+    if (!roomId || !client.rooms.has(roomId)) return;
+    const room = await this.roomOrError(client, roomId, auth);
+    if (!room) return;
+    client.to(roomId).emit('stop-typing', {
+      roomId,
+      userEmail: auth.email,
+      userType: auth.type,
+    });
+  }
+
+  // ── Presence 专用事件 ─────────────────────────────────
+
+  @SubscribeMessage('heartbeat')
+  handleHeartbeat(@ConnectedSocket() client: Socket) {
+    const auth = this.getAuth(client);
+    if (!auth) return;
+    const userKey = `${auth.email}:${auth.type}`;
+    void this.presence.refreshSocket(userKey, client.id);
+    // 心跳只续命 online 状态
+    void (async () => {
+      if ((await this.presence.getPresence(userKey)) === 'online') {
+        await this.presence.setLastSeen(userKey, Date.now());
+      }
+    })();
+  }
+
+  @SubscribeMessage('user-idle')
+  handleUserIdle(@ConnectedSocket() client: Socket) {
+    const auth = this.getAuth(client);
+    if (!auth) return;
+    void this.setStatusAndBroadcast(`${auth.email}:${auth.type}`, 'away');
+  }
+
+  @SubscribeMessage('user-active')
+  handleUserActive(@ConnectedSocket() client: Socket) {
+    const auth = this.getAuth(client);
+    if (!auth) return;
+    void this.setStatusAndBroadcast(`${auth.email}:${auth.type}`, 'online');
+  }
+
+  @SubscribeMessage('client-gone')
+  handleClientGone(@ConnectedSocket() client: Socket) {
+    const auth = this.getAuth(client);
+    if (!auth) return;
+    const userKey = `${auth.email}:${auth.type}`;
+    void (async () => {
+      const count = await this.presence.removeSocket(userKey, client.id);
+      if (count <= 0) {
+        await this.presence.setStatus(userKey, 'offline');
+        await this.broadcastPresenceFor(userKey);
+      }
+    })();
+  }
+
+  @SubscribeMessage('get-presence')
+  handleGetPresence(@ConnectedSocket() client: Socket) {
+    const auth = this.getAuth(client);
+    if (!auth) return;
+    void (async () => {
+      const status = await this.presence.getPresence(`${auth.email}:${auth.type}`);
+      client.emit('presence-changed', {
+        userEmail: auth.email,
+        userType: auth.type,
+        status,
+      });
+    })();
+  }
+
   @SubscribeMessage('set-presence')
   handleSetPresence(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { status: PresenceStatus },
   ) {
-    const userInfo = this.connectedUsers.get(client.id);
-    if (!userInfo) return;
+    const auth = this.getAuth(client);
+    if (!auth) return;
     if (data?.status !== 'online' && data?.status !== 'away' && data?.status !== 'offline') {
       return;
     }
-    const key = this.presenceKey(userInfo.userEmail, userInfo.userType);
-    this.updatePresence(key, data.status);
+    void this.setStatusAndBroadcast(`${auth.email}:${auth.type}`, data.status);
   }
 
-  // ── 广播 ──────────────────────────────────────────────────
+  // ── 广播 ──────────────────────────────────────────────
 
   async broadcastRoomListUpdate() {
     try {
       const result = await this.chatRoomService.getChatRooms({});
-      const enriched = this.enrichRoomsWithPresence(result.rooms);
-      let agentCount = 0;
-      this.connectedUsers.forEach((userInfo) => {
-        if (userInfo.userType === 'agent') {
-          agentCount++;
-          userInfo.socket.emit('room-list-updated', { rooms: enriched });
+      const enriched = await this.enrichRoomsWithPresence(result.rooms);
+      const sockets = this.server?.sockets?.sockets;
+      if (!sockets) return;
+      for (const sock of sockets.values()) {
+        if (sock.data && (sock.data as SocketData).auth?.type === 'agent') {
+          sock.emit('room-list-updated', { rooms: enriched });
         }
-      });
-      this.logger.log(`Broadcasted room list update to ${agentCount} agents`);
+      }
     } catch (error) {
       this.logger.error('Error broadcasting room list update:', error);
     }
   }
 
+  /** 广播在线坐席花名册（仅给坐席端，供转接时选择目标；含 email + 状态，避免泄露给访客）。 */
+  private async broadcastAgentRoster(): Promise<void> {
+    try {
+      const agents = await this.presence.getAgentSummaries();
+      const payload = {
+        agents: agents.map((a) => ({ email: a.email, status: a.status })),
+      };
+      const sockets = this.server?.sockets?.sockets;
+      if (!sockets) return;
+      for (const sock of sockets.values()) {
+        if ((sock.data as SocketData).auth?.type === 'agent') {
+          sock.emit('agent-roster', payload);
+        }
+      }
+    } catch (error) {
+      this.logger.error('Error broadcasting agent roster:', error);
+    }
+  }
+
   async broadcastNotificationCounts() {
     try {
-      const uniqueUsers = new Map<string, { userEmail: string; userType: 'client' | 'agent' }>();
-      this.connectedUsers.forEach((userInfo) => {
-        const key = `${userInfo.userEmail}-${userInfo.userType}`;
-        uniqueUsers.set(key, {
-          userEmail: userInfo.userEmail,
-          userType: userInfo.userType,
-        });
-      });
+      const byUser = new Map<
+        string,
+        { email: string; type: 'client' | 'agent'; sockets: Socket[] }
+      >();
+      const sockets = this.server?.sockets?.sockets;
+      if (!sockets) return;
+      for (const sock of sockets.values()) {
+        const auth = (sock.data as SocketData).auth;
+        if (!auth) continue;
+        const key = this.notifKey(auth.type, auth.email);
+        let bucket = byUser.get(key);
+        if (!bucket) {
+          bucket = { email: auth.email, type: auth.type, sockets: [] };
+          byUser.set(key, bucket);
+        }
+        bucket.sockets.push(sock);
+      }
 
-      for (const [, userInfo] of uniqueUsers) {
-        const counts = await this.chatRoomService.getNotificationCounts(
-          userInfo.userEmail,
-          userInfo.userType,
+      for (const [key, info] of byUser) {
+        const counts = await this.getCountsFor(key, info.type, info.email);
+        const nonZero = counts.roomCounts.filter((r) => r.unreadCount > 0);
+        this.logger.log(
+          `[notif-counts] ${info.type}:${info.email} total=${counts.totalUnread} ` +
+            `rooms=${counts.roomCounts.length} nonZero=${nonZero.length} ` +
+            `[${nonZero.map((r) => `${r.roomId.slice(0, 8)}:${r.unreadCount}`).join(',')}]`,
         );
-        this.connectedUsers.forEach((connectedUser) => {
-          if (
-            connectedUser.userEmail === userInfo.userEmail &&
-            connectedUser.userType === userInfo.userType
-          ) {
-            connectedUser.socket.emit('notification-counts-updated', {
-              userEmail: userInfo.userEmail,
-              userType: userInfo.userType,
-              ...counts,
-            });
-          }
-        });
+        for (const s of info.sockets) {
+          s.emit('notification-counts-updated', {
+            userEmail: info.email,
+            userType: info.type,
+            ...counts,
+          });
+        }
       }
     } catch (error) {
       this.logger.error('Error broadcasting notification counts:', error);
     }
+  }
+
+  // ── 限流（P2 M2） ─────────────────────────────────────
+
+  private rateLimited(socketId: string): boolean {
+    const now = Date.now();
+    let bucket = this.rate.get(socketId);
+    if (!bucket || now - bucket.start > RATE_WINDOW_MS) {
+      bucket = { count: 0, start: now };
+      this.rate.set(socketId, bucket);
+    }
+    bucket.count += 1;
+    return bucket.count > RATE_LIMIT_PER_MINUTE;
   }
 }

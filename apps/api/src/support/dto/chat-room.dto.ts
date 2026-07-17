@@ -106,6 +106,28 @@ export class UpdateChatRoomDto {
   tags?: string[];
 }
 
+/** 访客重连换 token：凭 roomId + clientEmail（须匹配房间持有者）换取短期 chat token。 */
+export class VisitorTokenDto {
+  @IsNotEmpty()
+  @IsString()
+  roomId!: string;
+
+  @IsNotEmpty()
+  @IsEmail()
+  clientEmail!: string;
+}
+
+/** 转接：把会话重新分配给另一名坐席（仅坐席可操作）。 */
+export class TransferRoomDto {
+  @IsNotEmpty()
+  @IsString()
+  toAgentEmail!: string;
+
+  @IsOptional()
+  @IsString()
+  note?: string;
+}
+
 export class GetChatRoomsDto {
   // 状态过滤：单一值或逗号分隔多值（如 "closed,archived"）。
   // 省略则查所有未删除会话（不含 archived 由前端按需指定）。

@@ -3,6 +3,7 @@
 import { ImagePreviewProvider, ScrollArea } from '@tzj/ui';
 import { useCallback, useEffect, useRef } from 'react';
 import type { ChatRoom } from '../types';
+import type { OnlineAgent } from '../useChatSocket';
 import { ChatHeader } from './ChatHeader';
 import { ChatMessageBubble } from './ChatMessageBubble';
 import { ChatMessageComposer } from './ChatMessageComposer';
@@ -16,6 +17,14 @@ interface Props {
   quickReplies: string[];
   onQuickReply: (text: string) => void;
   onConverted?: (customerId: string) => void;
+  /** 在线坐席花名册（P1 H3 转接目标） */
+  onlineAgents?: OnlineAgent[];
+  /** 当前坐席邮箱（用于转接列表排除自身） */
+  currentAgentEmail?: string;
+  /** 转接回调（P1 H3） */
+  onTransfer?: (toAgentEmail: string) => void;
+  /** 访客是否正在输入（P1 H2） */
+  clientTyping?: boolean;
 }
 
 export function ChatArea({
@@ -27,6 +36,10 @@ export function ChatArea({
   quickReplies,
   onQuickReply,
   onConverted,
+  onlineAgents = [],
+  currentAgentEmail,
+  onTransfer,
+  clientTyping,
 }: Props) {
   // 真正可滚动的元素是 Radix ScrollArea 的 Viewport（带 data-radix-scroll-area-viewport）。
   // @tzj/ui 的 ScrollArea 没有透出 viewport ref，所以从内容 div 用 closest() 反向找到。
@@ -104,7 +117,14 @@ export function ChatArea({
         className="pointer-events-none absolute inset-0 -z-10 rounded-[inherit] bg-background/80 backdrop-blur"
         aria-hidden
       />
-      <ChatHeader room={room} onClose={onClose} onConverted={onConverted} />
+      <ChatHeader
+        room={room}
+        onClose={onClose}
+        onConverted={onConverted}
+        onlineAgents={onlineAgents}
+        currentAgentEmail={currentAgentEmail}
+        onTransfer={onTransfer}
+      />
 
       <ImagePreviewProvider>
         <ScrollArea type="always" className="min-h-0 flex-1">
@@ -117,6 +137,20 @@ export function ChatArea({
           </div>
         </ScrollArea>
       </ImagePreviewProvider>
+
+      {/* 访客正在输入指示器（P1 H2） */}
+      {clientTyping && room.status !== 'closed' && (
+        <div className="px-3 pb-1" aria-live="polite">
+          <span className="text-muted-foreground inline-flex items-center gap-1.5 text-xs">
+            <span className="flex gap-0.5">
+              <span className="bg-muted-foreground/60 h-1.5 w-1.5 animate-bounce rounded-full [animation-delay:-0.2s]" />
+              <span className="bg-muted-foreground/60 h-1.5 w-1.5 animate-bounce rounded-full [animation-delay:-0.1s]" />
+              <span className="bg-muted-foreground/60 h-1.5 w-1.5 animate-bounce rounded-full" />
+            </span>
+            访客正在输入…
+          </span>
+        </div>
+      )}
 
       <ChatMessageComposer
         draft={draft}

@@ -16,12 +16,26 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   api:
     image: ${IMAGE_REGISTRY}/tzj-api:${API_TAG:-${IMAGE_TAG:-latest}}
     restart: unless-stopped
     env_file: .env.prod
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     expose:
       - "4000"
@@ -94,3 +108,4 @@ services:
 volumes:
   pgdata:
   acme-data:
+  redisdata:
