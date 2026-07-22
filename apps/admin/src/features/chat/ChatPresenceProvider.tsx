@@ -92,6 +92,26 @@ export function ChatPresenceProvider({
     };
   }, [socket, setPresence]);
 
+  // 兜底：服务端在断线宽限期、scanPresence、set-presence 等路径会广播 presence-changed，
+  // 但旧实现只认 my-presence（连接时一次性下发）。刷新场景下新连接若在旧 socket 尚未
+  // 移除时建立，my-presence 可能返回旧 socket 的离线/away 状态而 presence-changed 被忽略，
+  // 导致「刷新后一直离线」。这里同时消费自身 userKey 的 presence-changed 以保证状态一致。
+  useEffect(() => {
+    const handlePresenceChanged = (payload: {
+      userEmail: string;
+      userType: 'client' | 'agent';
+      status: PresenceStatus;
+    }) => {
+      if (payload.userType === 'agent' && payload.userEmail === agentEmail) {
+        setAgentStatus(payload.status);
+      }
+    };
+    socket.on('presence-changed', handlePresenceChanged);
+    return () => {
+      socket.off('presence-changed');
+    };
+  }, [socket, agentEmail]);
+
   useEffect(() => {
     function resetIdleTimer() {
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current);

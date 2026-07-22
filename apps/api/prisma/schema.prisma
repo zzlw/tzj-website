@@ -242,6 +242,8 @@ model User {
   role      String   @default("editor") // admin | editor | viewer
   isActive  Boolean  @default(true)
   lastLoginAt DateTime?
+  failedLoginAttempts Int      @default(0)
+  lockedUntil         DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -330,6 +332,11 @@ model Session {
   ip           String?
   expiresAt    DateTime
   revokedAt    DateTime?
+  // 轮换宽限期（OAuth 2.0 安全 BCP / Auth0 最佳实践）：
+  // 轮换时记录继任会话 + 宽限截止时间，窗口内的「并发竞态复用」返回继任令牌，
+  // 而非误判为令牌盗用撤销全部会话（解决坐席被频繁强制登出的问题）。
+  rotatedToHash String?
+  graceUntil    DateTime?
   createdAt    DateTime @default(now())
   lastUsedAt   DateTime @default(now())
 
@@ -704,6 +711,8 @@ model ChatRoom {
   deletedAt            DateTime?
   // 关联客户：坐席在会话中将访客转为客户线索后写入
   customerId           String?
+  // 关联分析访客（Visitor.anonymousId / _tzj_vid），供 B 端按人查聊天历史
+  visitorId            String?
 
   // ── 访客画像（创建会话时由服务端 enrichment，字段对齐 PageView 模型）──
   // 原始 IP 仅服务端持有，不向 C 端下发；B 端仅展示脱敏后的 ipMasked。
@@ -730,6 +739,7 @@ model ChatRoom {
   @@index([deletedAt])
   @@index([archivedAt])
   @@index([customerId])
+  @@index([visitorId])
   @@map("chat_rooms")
 }
 

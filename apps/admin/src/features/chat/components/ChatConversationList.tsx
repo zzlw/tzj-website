@@ -3,13 +3,14 @@
 import {
   Avatar,
   AvatarFallback,
+  AvatarImage,
   cn,
   Input,
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@tzj/ui';
-import { Archive, Check, CheckSquare, ChevronDown, Loader2, Search, Trash2 } from 'lucide-react';
+import { Archive, Check, CheckSquare, ChevronDown, ChevronLeft, Eye, Loader2, Search, Trash2, UserCheck } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { BatchChatRoomAction } from '../api';
 import { useChatPresence } from '../ChatPresenceProvider';
@@ -30,6 +31,7 @@ const agentStatusMeta: Record<PresenceStatus, { label: string; dot: string }> = 
   offline: { label: '离线', dot: 'bg-zinc-400' },
 };
 
+/** 日常工作桶（LiveChat 模式：归档不作为平级 Tab，而是搜索行旁的独立图标入口） */
 const BUCKETS: { key: BucketKey; label: string }[] = [
   { key: 'all', label: '全部' },
   { key: 'waiting', label: '待处理' },
@@ -62,6 +64,34 @@ function timeOf(room: ChatRoom): string {
   }
 }
 
+/** 列表行归属坐席芯片（业内最佳实践：Intercom/Zendesk 列表行用与周围文本等重的
+    紧凑芯片——小字号 + 淡底色 + 区分自己/他人；完整账号资料卡在 ChatHeader hover 提供）。
+    不用 LastOperatorCell：其 button 触发器会与行 button 嵌套冲突，字号也超出列表上下文。 */
+function AssigneeChip({ room, currentAgentEmail }: { room: ChatRoom; currentAgentEmail?: string }) {
+  const isMine = !!currentAgentEmail && room.assignedAgentEmail === currentAgentEmail;
+  const user = room.assignedAgentUser;
+  // 显示名：昵称 > 邮箱本地段（username 即邮箱，裸邮箱太长不适合芯片）
+  const name = isMine
+    ? '我'
+    : user?.nickname?.trim() || (room.assignedAgentEmail ?? '').split('@')[0] || '坐席';
+  return (
+    <span
+      className={cn(
+        'inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[0.6rem] font-medium',
+        isMine ? 'bg-primary/10 text-primary' : 'bg-sky-500/10 text-sky-600',
+      )}
+      title={isMine ? undefined : room.assignedAgentEmail}
+    >
+      {user?.avatar ? (
+        <Avatar className="h-3.5 w-3.5">
+          <AvatarImage src={user.avatar} alt={name} />
+        </Avatar>
+      ) : null}
+      <span className="max-w-[5.5rem] truncate">{name}</span>
+    </span>
+  );
+}
+
 export interface BucketView {
   rooms: ChatRoom[];
   cursor: string | null;
@@ -70,7 +100,7 @@ export interface BucketView {
   loaded: boolean;
 }
 
-export type BucketKey = 'all' | 'waiting' | 'active' | 'closed';
+export type BucketKey = 'all' | 'waiting' | 'active' | 'closed' | 'archived';
 
 interface Props {
   buckets: Record<BucketKey, BucketView>;
@@ -92,6 +122,13 @@ interface Props {
   onBatchAction: (action: BatchChatRoomAction) => void;
   /** 未读聚合总数（P2 M1），用于顶栏总未读徽标 */
   totalUnread?: number;
+  /** 当前坐席邮箱（用于归属标签 + 仅我的筛选） */
+  currentAgentEmail?: string;
+  /** 「仅我的」筛选状态（由父组件通过 URL 持久化） */
+  mineOnly?: boolean;
+  onMineOnlyChange?: (v: boolean) => void;
+  /** 是否有删除权限（chat.delete），无权限时隐藏删除按钮 */
+  canDelete?: boolean;
 }
 
 export function ChatConversationList({
@@ -113,9 +150,16 @@ export function ChatConversationList({
   onSelectAllOnPage,
   onBatchAction,
   totalUnread = 0,
+  currentAgentEmail,
+  mineOnly = false,
+  onMineOnlyChange,
+  canDelete = false,
 }: Props) {
   const view = buckets[activeBucket];
-  const rooms = view.rooms;
+  const rooms = useMemo(
+    () => (mineOnly && currentAgentEmail ? view.rooms.filter((r) => r.assignedAgentEmail === currentAgentEmail) : view.rooms),
+    [view.rooms, mineOnly, currentAgentEmail],
+  );
   const selectedCount = selectedRoomIds.size;
   const [statusOpen, setStatusOpen] = useState(false);
   const { agentStatus, setPresence } = useChatPresence();
@@ -125,6 +169,7 @@ export function ChatConversationList({
     if (activeBucket === 'all') return '暂无会话';
     if (activeBucket === 'waiting') return '暂无待处理会话';
     if (activeBucket === 'active') return '暂无进行中的会话';
+    if (activeBucket === 'archived') return '暂无已归档的会话';
     return '暂无已关闭的会话';
   }, [search, activeBucket]);
 
@@ -235,60 +280,119 @@ export function ChatConversationList({
               <Archive className="h-3.5 w-3.5" />
               归档
             </button>
-            <button
-              type="button"
-              onClick={() => onBatchAction('delete')}
-              disabled={selectedCount === 0}
-              className="text-destructive flex items-center gap-1 rounded-md bg-background px-2.5 py-1 font-medium disabled:opacity-40"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              删除
-            </button>
+            {canDelete && (
+              <button
+                type="button"
+                onClick={() => onBatchAction('delete')}
+                disabled={selectedCount === 0}
+                className="text-destructive flex items-center gap-1 rounded-md bg-background px-2.5 py-1 font-medium disabled:opacity-40"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                删除
+              </button>
+            )}
           </div>
         </div>
       )}
 
-      {/* 状态分桶 tabs */}
-      <div className="flex items-center gap-1 rounded-xl bg-muted/50 p-1">
-        {BUCKETS.map((b) => {
-          const isActive = activeBucket === b.key;
-          return (
+      {activeBucket === 'archived' ? (
+        /* 归档视图（LiveChat Archive 模式）：冷存浏览态，隐藏日常 Tab/搜索，
+           提供显式返回路径；搜索仍生效（URL 持久化），有搜索词时提示结果已过滤 */
+        <div className="flex items-center gap-2 rounded-xl border border-border/40 bg-muted/30 px-3 py-2">
+          <button
+            type="button"
+            onClick={() => onBucketChange('all')}
+            className="text-muted-foreground flex items-center gap-0.5 text-xs font-medium transition hover:text-foreground"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+            返回
+          </button>
+          <span className="h-3 w-px bg-border/60" aria-hidden />
+          <Archive className="text-muted-foreground h-3.5 w-3.5" />
+          <span className="text-xs font-medium">已归档</span>
+          <span className="bg-muted text-muted-foreground rounded-full px-1.5 text-[0.65rem] font-semibold">
+            {bucketCounts.archived ?? 0}
+          </span>
+          {search.trim() && (
+            <span className="text-muted-foreground ml-auto text-[0.65rem]">已按搜索过滤</span>
+          )}
+        </div>
+      ) : (
+        <>
+          {/* 状态分桶 tabs（日常工作桶：全部/待处理/进行中/已关闭）
+              窄侧栏（~280px）下计数采用内联文本而非 pill 角标，确保 4 个 Tab 永不裁切 */}
+          <div className="flex items-center justify-between gap-1 rounded-xl bg-muted/50 p-1">
+            {BUCKETS.map((b) => {
+              const isActive = activeBucket === b.key;
+              return (
+                <button
+                  key={b.key}
+                  type="button"
+                  onClick={() => onBucketChange(b.key as BucketKey)}
+                  className={cn(
+                    'flex items-center justify-center gap-0.5 rounded-lg px-1 py-1.5 text-xs font-medium whitespace-nowrap transition',
+                    isActive
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground',
+                  )}
+                >
+                  {b.label}
+                  <span
+                    className={cn(
+                      'text-[0.6rem] font-semibold tabular-nums',
+                      isActive ? 'text-primary' : 'text-muted-foreground/70',
+                    )}
+                  >
+                    {bucketCounts[b.key as BucketKey] ?? 0}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* 搜索 + 筛选 + 归档入口 */}
+          <div className="flex items-center gap-2">
+            <div className="relative min-w-0 flex-1">
+              <Search className="text-muted-foreground/70 pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+              <Input
+                type="search"
+                value={search}
+                onChange={(e) => onSearch(e.target.value)}
+                placeholder="搜索访客或邮箱"
+                className="border-border/40 bg-background/60 w-full rounded-2xl pl-10 text-sm focus-visible:ring-primary/40 focus-visible:ring-2"
+              />
+            </div>
             <button
-              key={b.key}
               type="button"
-              onClick={() => onBucketChange(b.key as BucketKey)}
+              onClick={() => onMineOnlyChange?.(!mineOnly)}
               className={cn(
-                'flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium transition',
-                isActive
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground',
+                'flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1.5 text-[0.7rem] font-medium transition',
+                mineOnly
+                  ? 'border-primary/40 bg-primary/15 text-primary'
+                  : 'border-border/50 text-muted-foreground hover:bg-muted',
               )}
             >
-              {b.label}
-              <span
-                className={cn(
-                  'rounded-full px-1.5 text-[0.65rem] font-semibold',
-                  isActive ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground',
-                )}
-              >
-                {bucketCounts[b.key as BucketKey] ?? 0}
-              </span>
+              <UserCheck className="h-3 w-3" />
+              仅我的
             </button>
-          );
-        })}
-      </div>
-
-      {/* 搜索 */}
-      <div className="relative">
-        <Search className="text-muted-foreground/70 pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-        <Input
-          type="search"
-          value={search}
-          onChange={(e) => onSearch(e.target.value)}
-          placeholder="搜索访客或邮箱"
-          className="border-border/40 bg-background/60 w-full rounded-2xl pl-10 text-sm focus-visible:ring-primary/40 focus-visible:ring-2"
-        />
-      </div>
+            {/* 归档入口（LiveChat 模式：显式图标 + 独立计数，冷存降级展示） */}
+            <button
+              type="button"
+              onClick={() => onBucketChange('archived')}
+              title="已归档会话"
+              aria-label={`已归档会话 ${bucketCounts.archived ?? 0} 个`}
+              className="border-border/50 text-muted-foreground relative flex shrink-0 items-center justify-center rounded-full border p-1.5 transition hover:bg-muted"
+            >
+              <Archive className="h-3.5 w-3.5" />
+              {(bucketCounts.archived ?? 0) > 0 && (
+                <span className="bg-muted text-muted-foreground absolute -top-1 -right-1 inline-flex min-h-[0.875rem] min-w-[0.875rem] items-center justify-center rounded-full px-1 text-[0.55rem] font-semibold ring-2 ring-background">
+                  {bucketCounts.archived}
+                </span>
+              )}
+            </button>
+          </div>
+        </>
+      )}
 
       {/* 列表（虚拟滚动） */}
       <VirtualList
@@ -344,13 +448,39 @@ export function ChatConversationList({
                     <p className="truncate text-sm font-semibold">
                       {room.clientName || room.clientEmail}
                     </p>
-                    <p className="text-muted-foreground truncate text-xs">{room.clientEmail}</p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-muted-foreground min-w-0 flex-1 truncate text-xs">
+                        {room.clientEmail}
+                      </p>
+                      <span
+                        className={cn(
+                          'bg-emerald-500/10 text-emerald-600 inline-flex shrink-0 items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[0.6rem] font-medium transition-opacity',
+                          room.clientPanelOpen && room.clientPresence === 'online'
+                            ? 'opacity-100'
+                            : 'pointer-events-none opacity-0',
+                        )}
+                      >
+                        <Eye className="h-2.5 w-2.5" />
+                        正在查看对话
+                      </span>
+                    </div>
                   </div>
                   <span className="text-muted-foreground shrink-0 text-[0.65rem]">
                     {timeOf(room)}
                   </span>
                 </div>
-                <p className="text-muted-foreground line-clamp-1 text-xs">{previewOf(room)}</p>
+                <div className="flex items-center gap-1.5">
+                  {/* 归属坐席芯片：与预览文本等重的轻量标签，行本身是点击目标，
+                      不嵌套独立 hover 按钮；完整资料卡在 ChatHeader 提供 */}
+                  {room.assignedAgentEmail ? (
+                    <AssigneeChip room={room} currentAgentEmail={currentAgentEmail} />
+                  ) : room.status === 'waiting' ? (
+                    <span className="inline-flex shrink-0 items-center rounded-full bg-zinc-500/10 px-1.5 py-0.5 text-[0.6rem] font-medium text-zinc-500">
+                      未分配
+                    </span>
+                  ) : null}
+                  <p className="text-muted-foreground min-w-0 flex-1 truncate text-xs">{previewOf(room)}</p>
+                </div>
               </div>
               {unread > 0 && (
                 <span className="bg-primary text-primary-foreground ml-1 inline-flex min-h-[1.5rem] min-w-[1.5rem] items-center justify-center rounded-full text-[0.7rem] font-semibold shadow-lg">

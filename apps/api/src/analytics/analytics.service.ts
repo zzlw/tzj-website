@@ -1,13 +1,27 @@
 import { Injectable } from '@nestjs/common';
+// biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
 import { ConfigService } from '@nestjs/config';
 import { Prisma } from '@prisma/client/index';
 import type { Request } from 'express';
+// biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
 import { IntegrationsService } from '../integrations/integrations.service';
+// biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
 import { PrismaService } from '../prisma/prisma.service';
+// biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
 import { IpBanService } from '../security/ip-ban.service';
+// biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
 import { SettingsService } from '../settings/settings.service';
-import { CollectPageViewDto } from './dto/collect-pageview.dto';
-import { AnalyticsListParams, pageOrderClause, paginateMeta, referrerOrderClause, regionOrderClause } from './utils/analytics-list';
+import type { CollectPageViewDto } from './dto/collect-pageview.dto';
+// biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
+import { IpLocationService } from './ip-location.service';
+import {
+  type AnalyticsListParams,
+  pageOrderClause,
+  paginateMeta,
+  referrerOrderClause,
+  regionOrderClause,
+  visitorDetailOrderClause,
+} from './utils/analytics-list';
 import { extractClientIp, hashIp, maskIp, parseReferrerHost } from './utils/client-ip';
 import { lookupGeo } from './utils/geo-ip';
 import { formatGeoLabel, formatGeoSource } from './utils/geo-label';
@@ -56,6 +70,7 @@ export class AnalyticsService {
     private readonly settingsService: SettingsService,
     private readonly integrationsService: IntegrationsService,
     private readonly ipBanService: IpBanService,
+    private readonly ipLocation: IpLocationService,
   ) {}
 
   async collect(dto: CollectPageViewDto, req: Request) {
@@ -493,6 +508,103 @@ export class AnalyticsService {
         geoSource: formatGeoSource(row.geoSource),
         pageViews: Number(row.pageViews),
       })),
+      pagination: paginateMeta(page, limit, total),
+    };
+  }
+
+  /**
+   * 按 IP 聚合的「访客明细」统一列表（合并原地区/IP/来源三张表）。
+   * - 每行 = 一个访客 IP；地区、定位依据、流量来源作为该 IP 的属性聚合
+   * - 地区在「读取时重新解析」：优先用 IpLocationService（纯真库+在线补充）对原始 IP
+   *   重解析，历史数据也能显示更精确地区；GPS 采集的行沿用入库时的 GPS 地区
+   * - 缓存由 IpLocationService 负责，整页 IP 并行解析
+   */
+  async listVisitorDetails(params: AnalyticsListParams) {
+    const { page, limit, from, to, sortBy, sortOrder } = params;
+    const range = parseRange(from, to);
+    const skip = (page - 1) * limit;
+    const order = visitorDetailOrderClause(sortBy, sortOrder);
+
+    const [countRow, rows] = await Promise.all([
+      this.prisma.$queryRaw<Array<{ count: bigint }>>`
+        SELECT COUNT(*)::bigint AS count FROM (
+          SELECT "ipHash" FROM "page_views"
+          WHERE "isBot" = false
+            AND "ipHash" IS NOT NULL
+            AND "createdAt" >= ${range.from}
+            AND "createdAt" <= ${range.to}
+          GROUP BY "ipHash"
+        ) grouped
+      `,
+      this.prisma.$queryRaw<
+        Array<{
+          ipHash: string;
+          ip: string | null;
+          ipMasked: string | null;
+          country: string | null;
+          region: string | null;
+          city: string | null;
+          geoSource: string | null;
+          referrerHost: string | null;
+          pageViews: bigint;
+          uniqueVisitors: bigint;
+          lastSeenAt: Date;
+        }>
+      >`
+        WITH grouped AS (
+          SELECT
+            "ipHash",
+            (ARRAY_AGG(ip ORDER BY "createdAt" DESC) FILTER (WHERE ip IS NOT NULL))[1] AS ip,
+            (ARRAY_AGG("ipMasked" ORDER BY "createdAt" DESC) FILTER (WHERE "ipMasked" IS NOT NULL))[1] AS "ipMasked",
+            (ARRAY_AGG(country ORDER BY "createdAt" DESC) FILTER (WHERE country IS NOT NULL))[1] AS country,
+            (ARRAY_AGG(region ORDER BY "createdAt" DESC) FILTER (WHERE region IS NOT NULL))[1] AS region,
+            (ARRAY_AGG(city ORDER BY "createdAt" DESC) FILTER (WHERE city IS NOT NULL))[1] AS city,
+            (ARRAY_AGG("geoSource" ORDER BY "createdAt" DESC) FILTER (WHERE "geoSource" IS NOT NULL))[1] AS "geoSource",
+            (ARRAY_AGG("referrerHost" ORDER BY "createdAt" DESC) FILTER (WHERE "referrerHost" IS NOT NULL))[1] AS "referrerHost",
+            COUNT(*)::bigint AS "pageViews",
+            COUNT(DISTINCT "sessionId")::bigint AS "uniqueVisitors",
+            MAX("createdAt") AS "lastSeenAt"
+          FROM "page_views"
+          WHERE "isBot" = false
+            AND "ipHash" IS NOT NULL
+            AND "createdAt" >= ${range.from}
+            AND "createdAt" <= ${range.to}
+          GROUP BY "ipHash"
+        )
+        SELECT "ipHash", ip, "ipMasked", country, region, city, "geoSource", "referrerHost", "pageViews", "uniqueVisitors", "lastSeenAt"
+        FROM grouped
+        ORDER BY ${order}
+        LIMIT ${limit} OFFSET ${skip}
+      `,
+    ]);
+
+    const total = Number(countRow[0]?.count ?? 0);
+
+    const data = await Promise.all(
+      rows.map(async (row) => {
+        // GPS 采集的行地区更权威，沿用入库值；其余按 IP 读取时重解析（纯真库+在线补充）
+        const useGps = row.geoSource === 'gps';
+        const resolved = useGps ? null : await this.ipLocation.resolve(row.ip);
+        const region = resolved?.location
+          ? resolved.location
+          : formatGeoLabel({ country: row.country, region: row.region, city: row.city });
+        return {
+          id: row.ipHash,
+          ip: row.ip,
+          ipMasked: row.ipMasked,
+          region,
+          isp: resolved?.isp?.trim() ? resolved.isp.trim() : null,
+          geoSource: useGps ? 'GPS' : resolved ? 'IP' : formatGeoSource(row.geoSource),
+          referrerHost: row.referrerHost ?? '—',
+          pageViews: Number(row.pageViews),
+          uniqueVisitors: Number(row.uniqueVisitors),
+          lastSeenAt: row.lastSeenAt.toISOString(),
+        };
+      }),
+    );
+
+    return {
+      data,
       pagination: paginateMeta(page, limit, total),
     };
   }

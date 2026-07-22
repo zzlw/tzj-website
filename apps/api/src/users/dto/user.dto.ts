@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional, OmitType, PartialType } from '@nestjs/swagger';
-import { IsBoolean, IsEmail, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsBoolean, IsDateString, IsEmail, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsStrongPassword } from '../../common/validators/password.validator';
 
 export class CreateUserDto {
   @ApiProperty({ example: 'editor01' })
@@ -9,9 +10,7 @@ export class CreateUserDto {
   username!: string;
 
   @ApiProperty({ example: 'Editor@123456' })
-  @IsString()
-  @MinLength(8)
-  @MaxLength(128)
+  @IsStrongPassword()
   password!: string;
 
   @ApiPropertyOptional({ example: '张编辑' })
@@ -42,21 +41,27 @@ export class CreateUserDto {
 export class UpdateUserDto extends PartialType(OmitType(CreateUserDto, ['password'] as const)) {
   @ApiPropertyOptional()
   @IsOptional()
-  @IsString()
-  @MinLength(8)
-  @MaxLength(128)
+  @IsStrongPassword()
   password?: string;
 
   @ApiPropertyOptional({ description: '是否启用账号' })
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @ApiPropertyOptional({ description: '临时锁定截止时间（ISO 8601），传 null 解锁' })
+  @IsOptional()
+  @IsDateString()
+  lockedUntil?: string | null;
 }
 
 export class ResetUserPasswordDto {
   @ApiProperty()
-  @IsString()
-  @MinLength(8)
-  @MaxLength(128)
+  @IsStrongPassword()
   password!: string;
+
+  @ApiPropertyOptional({ description: '操作者当前密码（重置其他管理员密码时必填）' })
+  @IsOptional()
+  @IsString()
+  actorPassword?: string;
 }

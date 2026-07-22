@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEmail, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsStrongPassword } from '../../common/validators/password.validator';
 
 export class UpdateProfileDto {
   @ApiPropertyOptional()
@@ -29,8 +30,6 @@ export class ChangePasswordDto {
   currentPassword!: string;
 
   @ApiProperty()
-  @IsString()
-  @MinLength(8)
-  @MaxLength(128)
+  @IsStrongPassword()
   newPassword!: string;
 }

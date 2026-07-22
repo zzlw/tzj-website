@@ -118,6 +118,41 @@ export const PERMISSION_GROUPS: PermissionGroupDef[] = [
     ],
   },
   {
+    id: 'support',
+    label: '客服与工单',
+    permissions: [
+      {
+        id: 'chat.view',
+        label: '查看会话',
+        description: '查看实时会话列表与聊天记录',
+      },
+      {
+        id: 'chat.manage',
+        label: '管理会话',
+        description: '接入 / 回复 / 转接 / 关闭会话',
+      },
+      {
+        id: 'chat.delete',
+        label: '删除会话',
+        description: '软删除会话记录（含批量）',
+      },
+      {
+        id: 'tickets.view',
+        label: '查看工单',
+        description: '查看工单列表与详情',
+      },
+      {
+        id: 'tickets.manage',
+        label: '处理工单',
+        description: '回复 / 更新状态 / 添加评论',
+      },
+      {
+        id: 'tickets.delete',
+        label: '删除工单',
+      },
+    ],
+  },
+  {
     id: 'system',
     label: '系统管理',
     permissions: [
@@ -222,3 +257,12 @@ export function assertValidPermissions(permissions: string[]) {
     throw new Error(`无效权限: ${invalid.join(', ')}`);
   }
 }
+
+/**
+ * ❗ 权限定义与控制器对齐规范（防止同类问题再次发生）：
+ *
+ * 1. 新增业务模块时，必须在此文件的 PERMISSION_GROUPS 中定义对应权限组
+ * 2. 对应控制器必须使用 @RequirePermissions('xxx.yyy') 装饰器执行权限
+ * 3. 访客公开端点用 @Public()，管理端点绝不允许裸露（无装饰器）
+ * 4. CI 检查：所有非 @Public 控制器的写操作端点必须有 @RequirePermissions
+ */

@@ -13,9 +13,15 @@ import { Throttle } from '@nestjs/throttler';
 import type { Request } from 'express';
 import { Public } from '../auth/decorators/public.decorator';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
+// biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
 import { SecurityService } from '../security/security.service';
+// biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
 import { AnalyticsService } from './analytics.service';
+// 注意：DTO 必须值导入（非 import type）。@Body() 的校验依赖
+// emitDecoratorMetadata 在运行时解析出真实类（design:paramtypes）；import type 会被擦除。
+// biome-ignore lint/style/useImportType: NestJS 校验需要 DTO 作为运行期值（design:paramtypes）
 import { CollectPageViewDto } from './dto/collect-pageview.dto';
+// biome-ignore lint/style/useImportType: NestJS 校验需要 DTO 作为运行期值（design:paramtypes）
 import { IdentifyDto } from './dto/identify.dto';
 
 @ApiTags('analytics')
@@ -126,6 +132,30 @@ export class AnalyticsController {
     @Query('sortOrder') sortOrder?: string,
   ) {
     return this.analyticsService.listReferrers({
+      page,
+      limit,
+      from,
+      to,
+      sortBy,
+      sortOrder,
+    });
+  }
+
+  @RequirePermissions('analytics.view')
+  @ApiBearerAuth()
+  @Get('visitor-details')
+  @ApiOperation({ summary: '按 IP 聚合的访客明细（地区/IP/来源合并，读取时重解析地区）' })
+  @ApiQuery({ name: 'from', required: false, description: 'YYYY-MM-DD' })
+  @ApiQuery({ name: 'to', required: false, description: 'YYYY-MM-DD' })
+  listVisitorDetails(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string,
+  ) {
+    return this.analyticsService.listVisitorDetails({
       page,
       limit,
       from,

@@ -1,6 +1,5 @@
 'use client';
 
-import type { AnalyticsIpTrafficRow } from '@tzj/types';
 import {
   Card,
   CardContent,
@@ -14,10 +13,6 @@ import {
   PageHeader,
   Skeleton,
   TablePagination,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
 } from '@tzj/ui';
 import { ArrowRight, ShieldBan } from 'lucide-react';
 import Link from 'next/link';
@@ -28,18 +23,14 @@ import { CopyableIp } from '@/components/CopyableText';
 import { RichHint } from '@/components/RichHint';
 import {
   type AnalyticsPageRow,
-  type AnalyticsReferrerRow,
-  type AnalyticsRegionRow,
+  type AnalyticsVisitorDetailRow,
   DEFAULT_PAGE_SORT,
-  DEFAULT_REFERRER_SORT,
-  DEFAULT_REGION_SORT,
+  DEFAULT_VISITOR_DETAIL_SORT,
   deviceLabel,
   formatLastSeen,
-  useAnalyticsIpTraffic,
   useAnalyticsOverview,
   useAnalyticsPages,
-  useAnalyticsReferrers,
-  useAnalyticsRegions,
+  useAnalyticsVisitorDetails,
 } from '@/features/analytics';
 import { GPS_GEO_RESOLVE_NOTE } from '@/lib/analytics-geo-hints';
 
@@ -75,16 +66,11 @@ export default function AnalyticsPage() {
   const [pagesPageSize, setPagesPageSize] = useState(10);
   const [pagesSort, setPagesSort] = useState<DataTableSort | null>(DEFAULT_PAGE_SORT);
 
-  const [regionsPage, setRegionsPage] = useState(1);
-  const [regionsPageSize, setRegionsPageSize] = useState(10);
-  const [regionsSort, setRegionsSort] = useState<DataTableSort | null>(DEFAULT_REGION_SORT);
-
-  const [referrersPage, setReferrersPage] = useState(1);
-  const [referrersPageSize, setReferrersPageSize] = useState(10);
-  const [referrersSort, setReferrersSort] = useState<DataTableSort | null>(DEFAULT_REFERRER_SORT);
-
-  const [ipTrafficPage, setIpTrafficPage] = useState(1);
-  const [ipTrafficPageSize, setIpTrafficPageSize] = useState(10);
+  const [visitorDetailsPage, setVisitorDetailsPage] = useState(1);
+  const [visitorDetailsPageSize, setVisitorDetailsPageSize] = useState(10);
+  const [visitorDetailsSort, setVisitorDetailsSort] = useState<DataTableSort | null>(
+    DEFAULT_VISITOR_DETAIL_SORT,
+  );
 
   const dateParams = useMemo(
     () => ({
@@ -107,42 +93,20 @@ export default function AnalyticsPage() {
     [dateParams, pagesPage, pagesPageSize, pagesSort],
   );
 
-  const regionsParams = useMemo(
+  const visitorDetailsParams = useMemo(
     () => ({
       ...dateParams,
-      page: regionsPage,
-      limit: regionsPageSize,
-      sortBy: regionsSort?.column,
-      sortOrder: regionsSort?.order,
+      page: visitorDetailsPage,
+      limit: visitorDetailsPageSize,
+      sortBy: visitorDetailsSort?.column,
+      sortOrder: visitorDetailsSort?.order,
     }),
-    [dateParams, regionsPage, regionsPageSize, regionsSort],
-  );
-
-  const referrersParams = useMemo(
-    () => ({
-      ...dateParams,
-      page: referrersPage,
-      limit: referrersPageSize,
-      sortBy: referrersSort?.column,
-      sortOrder: referrersSort?.order,
-    }),
-    [dateParams, referrersPage, referrersPageSize, referrersSort],
-  );
-
-  const ipTrafficParams = useMemo(
-    () => ({
-      ...dateParams,
-      page: ipTrafficPage,
-      limit: ipTrafficPageSize,
-    }),
-    [dateParams, ipTrafficPage, ipTrafficPageSize],
+    [dateParams, visitorDetailsPage, visitorDetailsPageSize, visitorDetailsSort],
   );
 
   const { data, isLoading, isFetching } = useAnalyticsOverview(overviewParams);
   const pagesQuery = useAnalyticsPages(pagesParams);
-  const regionsQuery = useAnalyticsRegions(regionsParams);
-  const referrersQuery = useAnalyticsReferrers(referrersParams);
-  const ipTrafficQuery = useAnalyticsIpTraffic(ipTrafficParams);
+  const visitorDetailsQuery = useAnalyticsVisitorDetails(visitorDetailsParams);
 
   const overviewLoading = isLoading || isFetching;
 
@@ -177,7 +141,7 @@ export default function AnalyticsPage() {
     },
   ];
 
-  const ipTrafficColumns: DataTableColumn<AnalyticsIpTrafficRow>[] = [
+  const visitorDetailColumns: DataTableColumn<AnalyticsVisitorDetailRow>[] = [
     {
       key: 'ip',
       header: 'IP',
@@ -186,83 +150,46 @@ export default function AnalyticsPage() {
     {
       key: 'region',
       header: '地区',
-      cell: (r) => r.region || '—',
+      cell: (r) => (
+        <div className="min-w-0">
+          <span>{r.region || '—'}</span>
+          {r.isp ? (
+            <span className="block truncate text-xs text-muted-foreground">{r.isp}</span>
+          ) : null}
+        </div>
+      ),
+    },
+    {
+      key: 'geoSource',
+      header: '定位依据',
+      className: 'tabular-nums text-muted-foreground',
+      cell: (r) => r.geoSource,
+    },
+    {
+      key: 'referrerHost',
+      header: '流量来源',
+      className: 'max-w-[200px] truncate',
+      cell: (r) => r.referrerHost,
     },
     {
       key: 'pageViews',
       header: 'PV',
+      sortable: true,
       className: 'tabular-nums',
       cell: (r) => r.pageViews.toLocaleString('zh-CN'),
     },
     {
       key: 'uniqueVisitors',
       header: 'UV',
+      sortable: true,
       className: 'tabular-nums',
       cell: (r) => r.uniqueVisitors.toLocaleString('zh-CN'),
     },
     {
       key: 'lastSeenAt',
       header: '最近访问',
+      sortable: true,
       cell: (r) => formatLastSeen(r.lastSeenAt),
-    },
-  ];
-
-  const referrerColumns: DataTableColumn<AnalyticsReferrerRow>[] = [
-    {
-      key: 'referrerHost',
-      header: '来源域名',
-      sortable: true,
-      cell: (r) => r.referrerHost,
-    },
-    {
-      key: 'region',
-      header: '地区',
-      sortable: true,
-      cell: (r) => r.region,
-    },
-    {
-      key: 'geoSource',
-      header: '定位依据',
-      sortable: true,
-      className: 'tabular-nums text-muted-foreground',
-      cell: (r) => r.geoSource,
-    },
-    {
-      key: 'pageViews',
-      header: 'PV',
-      sortable: true,
-      className: 'tabular-nums',
-      cell: (r) => r.pageViews.toLocaleString('zh-CN'),
-    },
-  ];
-
-  const regionColumns: DataTableColumn<AnalyticsRegionRow>[] = [
-    {
-      key: 'region',
-      header: '地区',
-      sortable: true,
-      cell: (r) => r.region,
-    },
-    {
-      key: 'geoSource',
-      header: '定位依据',
-      sortable: true,
-      className: 'tabular-nums text-muted-foreground',
-      cell: (r) => r.geoSource,
-    },
-    {
-      key: 'pageViews',
-      header: 'PV',
-      sortable: true,
-      className: 'tabular-nums',
-      cell: (r) => r.pageViews.toLocaleString('zh-CN'),
-    },
-    {
-      key: 'uniqueVisitors',
-      header: 'UV',
-      sortable: true,
-      className: 'tabular-nums',
-      cell: (r) => r.uniqueVisitors.toLocaleString('zh-CN'),
     },
   ];
 
@@ -290,9 +217,7 @@ export default function AnalyticsPage() {
     setFrom(f);
     setTo(t);
     setPagesPage(1);
-    setRegionsPage(1);
-    setReferrersPage(1);
-    setIpTrafficPage(1);
+    setVisitorDetailsPage(1);
   }
 
   return (
@@ -456,98 +381,38 @@ export default function AnalyticsPage() {
       <Card className="mb-6 border-border/80 shadow-sm">
         <CardHeader>
           <CardTitle className="text-base">访客明细</CardTitle>
-          <CardDescription>按地区、IP 与流量来源三个维度查看访客分布。</CardDescription>
+          <CardDescription>
+            按 IP 聚合的访客明细，整合地区、定位依据与流量来源。地区采用纯真库为主、
+            在线服务为辅读取时重解析（国内可到省市区 + 运营商）；完整 IP
+            自本次升级后的新访问起记录， 更早数据可能仅显示脱敏地址。点击 IP 右侧图标可复制。
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="regions" className="w-full">
-            <TabsList className="mb-4">
-              <TabsTrigger value="regions">访客地区明细</TabsTrigger>
-              <TabsTrigger value="ip">访客 IP</TabsTrigger>
-              <TabsTrigger value="referrers">流量来源（Referrer）</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="regions" className="space-y-2">
-              <DataTable
-                columns={regionColumns}
-                rows={regionsQuery.data?.data ?? []}
-                loading={regionsQuery.isLoading || regionsQuery.isFetching}
-                emptyText="暂无地区数据"
-                sort={regionsSort}
-                defaultSort={DEFAULT_REGION_SORT}
-                onSortChange={(next) => {
-                  setRegionsPage(1);
-                  setRegionsSort(next);
-                }}
-              />
-              {regionsQuery.data?.pagination ? (
-                <TablePagination
-                  page={regionsPage}
-                  totalPages={regionsQuery.data.pagination.totalPages}
-                  total={regionsQuery.data.pagination.total}
-                  pageSize={regionsPageSize}
-                  onPageChange={setRegionsPage}
-                  onPageSizeChange={(size) => {
-                    setRegionsPageSize(size);
-                    setRegionsPage(1);
-                  }}
-                />
-              ) : null}
-            </TabsContent>
-
-            <TabsContent value="ip" className="space-y-2">
-              <p className="text-xs text-muted-foreground">
-                按 IP 聚合的访问明细。完整 IP
-                自本次升级后的新访问起记录；更早数据可能仅显示脱敏地址。点击 IP 右侧图标可复制。
-              </p>
-              <DataTable
-                columns={ipTrafficColumns}
-                rows={ipTrafficQuery.data?.data ?? []}
-                loading={ipTrafficQuery.isLoading || ipTrafficQuery.isFetching}
-                emptyText="暂无 IP 访问记录"
-              />
-              {ipTrafficQuery.data?.pagination ? (
-                <TablePagination
-                  page={ipTrafficPage}
-                  totalPages={ipTrafficQuery.data.pagination.totalPages}
-                  total={ipTrafficQuery.data.pagination.total}
-                  pageSize={ipTrafficPageSize}
-                  onPageChange={setIpTrafficPage}
-                  onPageSizeChange={(size) => {
-                    setIpTrafficPageSize(size);
-                    setIpTrafficPage(1);
-                  }}
-                />
-              ) : null}
-            </TabsContent>
-
-            <TabsContent value="referrers" className="space-y-2">
-              <DataTable
-                columns={referrerColumns}
-                rows={referrersQuery.data?.data ?? []}
-                loading={referrersQuery.isLoading || referrersQuery.isFetching}
-                emptyText="暂无外部来源（直接访问不记录 referrer）"
-                sort={referrersSort}
-                defaultSort={DEFAULT_REFERRER_SORT}
-                onSortChange={(next) => {
-                  setReferrersPage(1);
-                  setReferrersSort(next);
-                }}
-              />
-              {referrersQuery.data?.pagination ? (
-                <TablePagination
-                  page={referrersPage}
-                  totalPages={referrersQuery.data.pagination.totalPages}
-                  total={referrersQuery.data.pagination.total}
-                  pageSize={referrersPageSize}
-                  onPageChange={setReferrersPage}
-                  onPageSizeChange={(size) => {
-                    setReferrersPageSize(size);
-                    setReferrersPage(1);
-                  }}
-                />
-              ) : null}
-            </TabsContent>
-          </Tabs>
+        <CardContent className="space-y-2">
+          <DataTable
+            columns={visitorDetailColumns}
+            rows={visitorDetailsQuery.data?.data ?? []}
+            loading={visitorDetailsQuery.isLoading || visitorDetailsQuery.isFetching}
+            emptyText="暂无访客记录"
+            sort={visitorDetailsSort}
+            defaultSort={DEFAULT_VISITOR_DETAIL_SORT}
+            onSortChange={(next) => {
+              setVisitorDetailsPage(1);
+              setVisitorDetailsSort(next);
+            }}
+          />
+          {visitorDetailsQuery.data?.pagination ? (
+            <TablePagination
+              page={visitorDetailsPage}
+              totalPages={visitorDetailsQuery.data.pagination.totalPages}
+              total={visitorDetailsQuery.data.pagination.total}
+              pageSize={visitorDetailsPageSize}
+              onPageChange={setVisitorDetailsPage}
+              onPageSizeChange={(size) => {
+                setVisitorDetailsPageSize(size);
+                setVisitorDetailsPage(1);
+              }}
+            />
+          ) : null}
         </CardContent>
       </Card>
     </>

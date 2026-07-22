@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@tzj/ui';
-import { type RefObject, useEffect, useRef, useState } from 'react';
+import { type RefObject, useCallback, useEffect, useRef, useState } from 'react';
 
 interface EmojiCategory {
   key: string;
@@ -504,6 +504,7 @@ interface EmojiPickerProps {
 export function EmojiPicker({ open, onClose, onSelect, triggerRef }: EmojiPickerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
+  const [focusedIndex, setFocusedIndex] = useState(0);
 
   // 点击选择器或触发按钮之外的区域 → 关闭
   useEffect(() => {
@@ -518,6 +519,52 @@ export function EmojiPicker({ open, onClose, onSelect, triggerRef }: EmojiPicker
     return () => document.removeEventListener('mousedown', onDown);
   }, [open, onClose, triggerRef]);
 
+  // 切换分类时重置焦点索引
+  useEffect(() => {
+    setFocusedIndex(0);
+  }, [active]);
+
+  // 键盘导航支持
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      const current = CATEGORIES[active];
+      if (!current) return;
+      const cols = 7;
+      const total = current.emojis.length;
+
+      switch (e.key) {
+        case 'ArrowRight':
+          e.preventDefault();
+          setFocusedIndex((prev) => (prev + 1) % total);
+          break;
+        case 'ArrowLeft':
+          e.preventDefault();
+          setFocusedIndex((prev) => (prev - 1 + total) % total);
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          setFocusedIndex((prev) => Math.min(prev + cols, total - 1));
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          setFocusedIndex((prev) => Math.max(prev - cols, 0));
+          break;
+        case 'Enter':
+        case ' ':
+          e.preventDefault();
+          if (current.emojis[focusedIndex]) {
+            onSelect(current.emojis[focusedIndex]);
+          }
+          break;
+        case 'Escape':
+          e.preventDefault();
+          onClose();
+          break;
+      }
+    },
+    [active, focusedIndex, onSelect, onClose],
+  );
+
   if (!open) return null;
 
   const current = CATEGORIES[active];
@@ -528,18 +575,26 @@ export function EmojiPicker({ open, onClose, onSelect, triggerRef }: EmojiPicker
       ref={containerRef}
       role="dialog"
       aria-label="表情选择器"
+      onKeyDown={handleKeyDown}
       className="absolute bottom-full left-0 z-[70] mb-2 flex h-[340px] w-[320px] flex-col overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-2xl shadow-zinc-900/15 ring-1 ring-zinc-900/5"
     >
       <div className="flex-1 overflow-y-auto p-2">
         <div className="mb-2 px-1 text-[11px] font-medium text-zinc-400">{current.label}</div>
-        <div className="grid grid-cols-7 gap-1">
+        <div className="grid grid-cols-7 gap-1" role="grid" aria-label={current.label}>
           {current.emojis.map((emoji, i) => (
             <button
               key={`${current.key}-${i}`}
               type="button"
               onClick={() => onSelect(emoji)}
+              onFocus={() => setFocusedIndex(i)}
               aria-label={emoji}
-              className="group relative flex h-10 w-10 items-center justify-center rounded-lg transition-transform duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/50"
+              aria-selected={i === focusedIndex}
+              role="gridcell"
+              tabIndex={i === focusedIndex ? 0 : -1}
+              className={cn(
+                'group relative flex h-10 w-10 items-center justify-center rounded-lg transition-transform duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/50',
+                i === focusedIndex && 'ring-2 ring-blue-400/50',
+              )}
             >
               {/* 内层字形放大：用 transform 而非 font-size，避免重排；hover 抬起覆盖邻居 */}
               <span className="pointer-events-none relative block origin-center text-2xl leading-none transition-transform duration-150 ease-out group-hover:scale-[1.4] group-hover:z-10 group-active:scale-100">

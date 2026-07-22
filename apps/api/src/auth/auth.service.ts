@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { ConflictException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -32,18 +32,53 @@ export class AuthService {
 
   async login(username: string, password: string, meta: RequestMeta) {
     const user = await this.prisma.user.findUnique({ where: { username } });
+
+    // 账号锁定检查
+    if (user?.lockedUntil && user.lockedUntil.getTime() > Date.now()) {
+      const remainMin = Math.ceil((user.lockedUntil.getTime() - Date.now()) / 60_000);
+      await this.audit(user.id, 'login_locked', 'auth', user.id, meta);
+      throw new ForbiddenException(`账号已临时锁定，请 ${remainMin} 分钟后重试`);
+    }
+
     const ok = user && (await bcrypt.compare(password, user.password));
     if (!user || !ok || !user.isActive) {
+      // 登录失败审计
+      await this.audit(user?.id ?? null, 'login_failed', 'auth', user?.id ?? null, meta);
+
+      // 暴力破解防护：累计失败次数
+      if (user) {
+        const maxAttempts = this.config.get<number>('LOGIN_MAX_ATTEMPTS') ?? 5;
+        const lockDurationMin = this.config.get<number>('LOGIN_LOCK_DURATION_MIN') ?? 15;
+        const attempts = user.failedLoginAttempts + 1;
+
+        if (attempts >= maxAttempts) {
+          await this.prisma.user.update({
+            where: { id: user.id },
+            data: {
+              failedLoginAttempts: 0,
+              lockedUntil: new Date(Date.now() + lockDurationMin * 60_000),
+            },
+          });
+          this.logger.warn(`用户 ${user.username} 连续 ${attempts} 次登录失败，已锁定 ${lockDurationMin} 分钟`);
+        } else {
+          await this.prisma.user.update({
+            where: { id: user.id },
+            data: { failedLoginAttempts: attempts },
+          });
+        }
+      }
+
       // 统一模糊提示，避免用户名枚举
       throw new UnauthorizedException('用户名或密码错误');
     }
 
+    // 登录成功：重置失败计数
     const tokens = await this.issueTokens(user.id, user.username, user.role as Role);
     await this.persistSession(user.id, tokens.refreshToken, meta);
 
     await this.prisma.user.update({
       where: { id: user.id },
-      data: { lastLoginAt: new Date() },
+      data: { lastLoginAt: new Date(), failedLoginAttempts: 0, lockedUntil: null },
     });
     await this.audit(user.id, 'login', 'auth', user.id, meta);
 
@@ -66,13 +101,29 @@ export class AuthService {
     const tokenHash = this.hashToken(refreshToken);
     const session = await this.prisma.session.findUnique({ where: { tokenHash } });
     if (!session || session.revokedAt || session.expiresAt.getTime() < Date.now()) {
-      // 重放/复用检测：命中已撤销令牌时，撤销该用户全部会话
+      // 已撤销/过期令牌被再次使用。需区分两种场景（OAuth 2.0 安全 BCP / Auth0 轮换宽限期最佳实践）：
+      //  1) 合法并发竞态：刚轮换后的短窗口内，同一客户端的并发请求（中间件 + BFF 两套
+      //     刷新逻辑、多标签页、多设备）仍持有旧令牌。这是正常现象，返回继任令牌即可。
+      //  2) 过期令牌复用（宽限期外）：多标签页/多设备场景中，旧标签页或离线设备在重新
+      //     激活时携带已轮换的旧令牌请求刷新。这是正常用户行为，不应摧毁其他活跃会话。
+      //     仅拒绝本次请求（该标签页自行跳转登录），不影响其他会话。
+      //  安全说明：真正的令牌盗用场景中，攻击者拿到的是「当前有效」令牌（非已撤销令牌），
+      //  会走下方正常轮换路径而非此分支。因此此处无需撤销全部会话。
       if (session?.revokedAt) {
-        await this.prisma.session.updateMany({
-          where: { userId: session.userId, revokedAt: null },
-          data: { revokedAt: new Date() },
-        });
-        this.logger.warn(`检测到刷新令牌复用，已撤销用户 ${session.userId} 的所有会话`);
+        const graceActive =
+          session.graceUntil && session.graceUntil.getTime() > Date.now();
+        if (graceActive) {
+          const reused = await this.reuseWithinGrace(session, meta);
+          if (reused) return reused;
+          // 继任会话不可用（已过期/被撤销）→ 回落到正常失败路径（跳转登录，不撤销全部）
+        } else {
+          // 宽限期外的复用：仅记录安全日志，不撤销其他会话。
+          // 旧标签页/设备收到 401 后自行引导用户重新登录即可。
+          this.logger.warn(
+            `检测到刷新令牌复用（宽限期外），仅拒绝本次请求，未撤销其他会话。` +
+              ` 用户: ${session.userId}, 会话创建于: ${session.createdAt.toISOString()}`,
+          );
+        }
       }
       throw new UnauthorizedException('会话已失效，请重新登录');
     }
@@ -84,14 +135,58 @@ export class AuthService {
       throw new UnauthorizedException('账号不存在或已停用');
     }
 
-    // 轮换：撤销旧会话，签发新令牌与新会话
+    // 轮换：撤销旧会话（记录继任者 + 宽限截止时间），签发新令牌与新会话
+    const tokens = await this.issueTokens(user.id, user.username, user.role as Role);
+    const newHash = this.hashToken(tokens.refreshToken);
     await this.prisma.session.update({
       where: { id: session.id },
-      data: { revokedAt: new Date() },
+      data: {
+        revokedAt: new Date(),
+        rotatedToHash: newHash,
+        graceUntil: new Date(Date.now() + this.refreshGraceMs()),
+      },
     });
-    const tokens = await this.issueTokens(user.id, user.username, user.role as Role);
     await this.persistSession(user.id, tokens.refreshToken, meta);
     return tokens;
+  }
+
+  /**
+   * 轮换宽限期内的合法复用：返回一组有效令牌，而非撤销全部会话。
+   *
+   * 背景：前端存在两套独立刷新逻辑（中间件页面导航 + BFF API 代理），且多标签页/多设备
+   * 各自持有内存单飞锁、互不共享。access token 过期瞬间，多个请求可能并发携带同一
+   * refresh token 发起轮换：第一个成功轮换并撤销旧令牌，其余请求随即命中「已撤销」。
+   * 若一律按盗用处理撤销全部会话，坐席会被频繁强制登出。
+   *
+   * 策略：宽限期（默认 10s，可配 JWT_REFRESH_GRACE_SECONDS）内复用视为竞态——
+   * 签发一组新令牌并新建会话（不撤销任何现存会话），同时把旧会话的 rotatedToHash
+   * 指向新会话，保证后续复用总能找到可用继任者。宽限期外的复用才判定为盗用。
+   */
+  private async reuseWithinGrace(
+    session: { id: string; userId: string },
+    meta: RequestMeta,
+  ): Promise<TokenPair | null> {
+    const user = await this.prisma.user.findUnique({ where: { id: session.userId } });
+    if (!user || !user.isActive) return null;
+    const tokens = await this.issueTokens(user.id, user.username, user.role as Role);
+    await this.persistSession(user.id, tokens.refreshToken, meta);
+    await this.prisma.session.update({
+      where: { id: session.id },
+      data: {
+        rotatedToHash: this.hashToken(tokens.refreshToken),
+        graceUntil: new Date(Date.now() + this.refreshGraceMs()),
+      },
+    });
+    this.logger.log(
+      `用户 ${user.id} 在轮换宽限期内复用刷新令牌（并发竞态），已签发新令牌，未撤销会话`,
+    );
+    return tokens;
+  }
+
+  /** 轮换宽限期毫秒数（默认 10s，环境变量 JWT_REFRESH_GRACE_SECONDS 可配）。 */
+  private refreshGraceMs(): number {
+    const sec = this.config.get<number>('JWT_REFRESH_GRACE_SECONDS') ?? 10;
+    return sec * 1000;
   }
 
   async logout(refreshToken: string | undefined, meta: RequestMeta) {
@@ -249,5 +344,60 @@ export class AuthService {
     const unit = match[2] ?? 's';
     const map: Record<string, number> = { s: 1, m: 60, h: 3600, d: 86400 };
     return value * (map[unit] ?? 1);
+  }
+
+  // ── 会话管理 ─────────────────────────────────────────
+
+  /** 获取当前用户活跃会话列表 */
+  async getSessions(userId: string) {
+    const sessions = await this.prisma.session.findMany({
+      where: { userId, revokedAt: null, expiresAt: { gt: new Date() } },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        userAgent: true,
+        ip: true,
+        createdAt: true,
+        lastUsedAt: true,
+        expiresAt: true,
+      },
+    });
+    return sessions.map((s) => ({
+      id: s.id,
+      userAgent: s.userAgent,
+      ip: s.ip,
+      createdAt: s.createdAt.toISOString(),
+      lastUsedAt: s.lastUsedAt.toISOString(),
+      expiresAt: s.expiresAt.toISOString(),
+    }));
+  }
+
+  /** 撤销指定会话（仅限自己的） */
+  async revokeSession(userId: string, sessionId: string) {
+    const session = await this.prisma.session.findFirst({
+      where: { id: sessionId, userId, revokedAt: null },
+    });
+    if (!session) {
+      throw new UnauthorizedException('会话不存在或已失效');
+    }
+    await this.prisma.session.update({
+      where: { id: sessionId },
+      data: { revokedAt: new Date() },
+    });
+    return { success: true };
+  }
+
+  /** 撤销其他所有会话（保留当前会话） */
+  async revokeOtherSessions(userId: string, currentRefreshToken?: string) {
+    const currentTokenHash = currentRefreshToken ? this.hashToken(currentRefreshToken) : null;
+    await this.prisma.session.updateMany({
+      where: {
+        userId,
+        revokedAt: null,
+        ...(currentTokenHash ? { tokenHash: { not: currentTokenHash } } : {}),
+      },
+      data: { revokedAt: new Date() },
+    });
+    return { success: true };
   }
 }

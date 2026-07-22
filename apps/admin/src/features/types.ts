@@ -169,6 +169,7 @@ export interface UserItem extends BaseEntity {
   avatar?: string | null;
   role: string;
   isActive: boolean;
+  lockedUntil?: string | null;
   lastLoginAt?: string | null;
 }
 

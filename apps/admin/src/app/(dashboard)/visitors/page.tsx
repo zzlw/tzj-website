@@ -2,6 +2,7 @@
 
 import {
   Badge,
+  Button,
   Card,
   CardContent,
   CardDescription,
@@ -15,14 +16,16 @@ import {
   Skeleton,
   TablePagination,
 } from '@tzj/ui';
-import { Search } from 'lucide-react';
+import { MessagesSquare, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { useSession } from '@/components/session';
 import {
   type AnalyticsVisitorRow,
   deviceLabel,
   formatLastSeen,
   useAnalyticsVisitors,
 } from '@/features/analytics';
+import { VisitorProfileSheet } from '@/features/chat/components/VisitorProfileSheet';
 
 function IdentityCell({ row }: { row: AnalyticsVisitorRow }) {
   const name = row.name || row.email || row.phone || '匿名访客';
@@ -50,11 +53,15 @@ function IdentityCell({ row }: { row: AnalyticsVisitorRow }) {
 }
 
 export default function VisitorsPage() {
+  const { permissions } = useSession();
+  const canViewChat = permissions.includes('chat.view') || permissions.includes('*');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  // 访客档案抽屉：当前查看的访客
+  const [sheetVisitor, setSheetVisitor] = useState<AnalyticsVisitorRow | null>(null);
 
   const dateParams = useMemo(() => ({ from: from || undefined, to: to || undefined }), [from, to]);
 
@@ -111,6 +118,28 @@ export default function VisitorsPage() {
       className: 'whitespace-nowrap text-muted-foreground',
       cell: (r) => formatLastSeen(r.lastSeenAt),
     },
+    // 操作列：打开访客档案抽屉查看聊天记录（需 chat.view 权限，数据来自受保护的 chat-rooms 端点）
+    ...(canViewChat
+      ? [
+          {
+            key: 'actions' as const,
+            header: '操作',
+            className: 'w-[80px]',
+            cell: (r: AnalyticsVisitorRow) => (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-foreground h-7 gap-1 px-2 text-xs"
+                onClick={() => setSheetVisitor(r)}
+              >
+                <MessagesSquare className="h-3.5 w-3.5" />
+                查看对话
+              </Button>
+            ),
+          } satisfies DataTableColumn<AnalyticsVisitorRow>,
+        ]
+      : []),
   ];
 
   function resetFilters(f: string, t: string) {
@@ -123,7 +152,7 @@ export default function VisitorsPage() {
     <>
       <PageHeader
         title="访客会话"
-        description="同一访客的多次会话已归并为一行（依据持久匿名 ID 与已识别身份）。提交询盘/留资的访客会升级为「已识别」。"
+        description="同一访客的多次会话已归并为一行（依据持久匿名 ID 与已识别身份）。点击「查看对话」可按人查看其浏览与聊天记录。"
       />
 
       <Card className="mb-6 border-border/80 py-0 shadow-sm">
@@ -185,6 +214,15 @@ export default function VisitorsPage() {
           ) : null}
         </CardContent>
       </Card>
+
+      {/* 访客档案抽屉：按人下钻聊天历史（只读） */}
+      <VisitorProfileSheet
+        visitor={sheetVisitor}
+        open={!!sheetVisitor}
+        onOpenChange={(v) => {
+          if (!v) setSheetVisitor(null);
+        }}
+      />
     </>
   );
 }

@@ -22,8 +22,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from '../auth/decorators/public.decorator';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { Role } from '../auth/roles';
+import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
 import { FaviconService } from './favicon.service';
 import type { FaviconUploadResult } from './favicon.service';
 
@@ -43,7 +42,7 @@ export class FaviconController {
   constructor(private readonly faviconService: FaviconService) {}
 
   // ── 上传 favicon ───────────────────────────────────────────
-  @Roles(Role.ADMIN)
+  @RequirePermissions('settings.manage')
   @ApiBearerAuth()
   @Post('favicon')
   @UseInterceptors(
@@ -89,7 +88,7 @@ export class FaviconController {
   }
 
   // ── 删除 favicon ──────────────────────────────────────────
-  @Roles(Role.ADMIN)
+  @RequirePermissions('settings.manage')
   @ApiBearerAuth()
   @Delete('favicon')
   @HttpCode(204)

@@ -2,8 +2,6 @@ import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from '../auth/decorators/public.decorator';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { Role } from '../auth/roles';
 import { CreatePageDto, UpdatePageDto } from './dto/page.dto';
 import { PagesService } from './pages.service';
 
@@ -26,7 +24,7 @@ export class PagesController {
     return this.pagesService.findOne(slug);
   }
 
-  @Roles(Role.EDITOR, Role.ADMIN)
+  @RequirePermissions('content.create')
   @ApiBearerAuth()
   @Post()
   @ApiOperation({ summary: '创建页面' })
@@ -34,7 +32,7 @@ export class PagesController {
     return this.pagesService.create(dto);
   }
 
-  @Roles(Role.EDITOR, Role.ADMIN)
+  @RequirePermissions('content.edit')
   @ApiBearerAuth()
   @Put(':id')
   @ApiOperation({ summary: '更新页面' })

@@ -12,10 +12,17 @@ import {
   Label,
   PageHeader,
 } from '@tzj/ui';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Monitor, Smartphone, LogOut } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useSession } from '@/components/session';
-import { useChangePassword, useProfile, useUpdateProfile } from '@/features/account';
+import {
+  useChangePassword,
+  useProfile,
+  useRevokeOtherSessions,
+  useRevokeSession,
+  useSessions,
+  useUpdateProfile,
+} from '@/features/account';
 import { roleLabel } from '@/features/users';
 import { notifyError, notifySuccess } from '@/lib/notify';
 
@@ -161,8 +168,121 @@ export default function AccountSettingsPage() {
               </form>
             </CardContent>
           </Card>
+
+          <SessionsCard />
         </div>
       )}
     </div>
+  );
+}
+
+/** 活跃会话管理卡片 */
+function SessionsCard() {
+  const { data: sessions, isLoading } = useSessions();
+  const revokeSession = useRevokeSession();
+  const revokeOthers = useRevokeOtherSessions();
+
+  async function handleRevoke(id: string) {
+    try {
+      await revokeSession.mutateAsync(id);
+      notifySuccess('会话已撤销');
+    } catch (err) {
+      notifyError(err, '撤销失败');
+    }
+  }
+
+  async function handleRevokeOthers() {
+    try {
+      await revokeOthers.mutateAsync(undefined);
+      notifySuccess('其他会话已全部撤销');
+    } catch (err) {
+      notifyError(err, '操作失败');
+    }
+  }
+
+  function parseUA(ua: string | null): { icon: typeof Monitor; label: string } {
+    if (!ua) return { icon: Monitor, label: '未知设备' };
+    if (/mobile|android|iphone/i.test(ua)) return { icon: Smartphone, label: '移动设备' };
+    return { icon: Monitor, label: '桌面设备' };
+  }
+
+  function formatTime(iso: string): string {
+    return new Date(iso).toLocaleString('zh-CN', {
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0">
+        <div>
+          <CardTitle className="text-base">活跃会话</CardTitle>
+          <CardDescription>当前账号的登录设备，可撤销异常会话</CardDescription>
+        </div>
+        {sessions && sessions.length > 1 && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRevokeOthers}
+            disabled={revokeOthers.isPending}
+          >
+            <LogOut className="mr-1.5 h-3.5 w-3.5" />
+            退出其他会话
+          </Button>
+        )}
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="flex justify-center py-6 text-muted-foreground">
+            <Loader2 className="h-5 w-5 animate-spin" />
+          </div>
+        ) : sessions && sessions.length > 0 ? (
+          <div className="space-y-3">
+            {sessions.map((s, idx) => {
+              const { icon: Icon, label } = parseUA(s.userAgent);
+              return (
+                <div
+                  key={s.id}
+                  className="flex items-center justify-between rounded-md border border-border p-3"
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon className="h-5 w-5 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm font-medium">
+                        {label}
+                        {idx === 0 && (
+                          <span className="ml-2 rounded bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
+                            当前
+                          </span>
+                        )}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {s.ip ?? '未知 IP'} · {formatTime(s.createdAt)}
+                      </p>
+                    </div>
+                  </div>
+                  {idx !== 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => handleRevoke(s.id)}
+                      disabled={revokeSession.isPending}
+                    >
+                      撤销
+                    </Button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="py-4 text-center text-sm text-muted-foreground">无活跃会话</p>
+        )}
+      </CardContent>
+    </Card>
   );
 }

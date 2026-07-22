@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import type { Prisma } from '@prisma/client/index';
 import * as bcrypt from 'bcrypt';
@@ -47,6 +48,7 @@ export class UsersService {
           avatar: true,
           role: true,
           isActive: true,
+          lockedUntil: true,
           lastLoginAt: true,
           createdAt: true,
           updatedAt: true,
@@ -73,6 +75,7 @@ export class UsersService {
         avatar: true,
         role: true,
         isActive: true,
+        lockedUntil: true,
         lastLoginAt: true,
         createdAt: true,
         updatedAt: true,
@@ -144,6 +147,11 @@ export class UsersService {
       isActive: dto.isActive,
     };
 
+    // 临时锁定：传 ISO 日期字符串锁定，传 null 解锁
+    if (dto.lockedUntil !== undefined) {
+      data.lockedUntil = dto.lockedUntil === null ? null : new Date(dto.lockedUntil);
+    }
+
     if (dto.password) {
       data.password = await bcrypt.hash(dto.password, 12);
       await this.revokeSessions(id);
@@ -164,6 +172,7 @@ export class UsersService {
         phone: true,
         role: true,
         isActive: true,
+        lockedUntil: true,
         lastLoginAt: true,
         createdAt: true,
         updatedAt: true,
@@ -191,9 +200,26 @@ export class UsersService {
     return { success: true };
   }
 
-  async resetPassword(id: string, dto: ResetUserPasswordDto) {
+  async resetPassword(id: string, dto: ResetUserPasswordDto, actorId: string) {
+    if (id === actorId) {
+      throw new BadRequestException('不能重置自己的密码，请通过「修改密码」功能操作');
+    }
+
     const existing = await this.prisma.user.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException('用户不存在');
+
+    // 重置其他管理员密码时，需要验证操作者自己的当前密码
+    if (existing.role === Role.ADMIN) {
+      if (!dto.actorPassword) {
+        throw new BadRequestException('重置管理员密码需要提供您的当前密码');
+      }
+      const actor = await this.prisma.user.findUnique({ where: { id: actorId } });
+      if (!actor) throw new UnauthorizedException();
+      const ok = await bcrypt.compare(dto.actorPassword, actor.password);
+      if (!ok) {
+        throw new UnauthorizedException('您的当前密码不正确');
+      }
+    }
 
     await this.prisma.user.update({
       where: { id },

@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { Role } from '../auth/roles';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAccessRoleDto, UpdateAccessRoleDto } from './dto/role.dto';
@@ -14,9 +14,18 @@ import {
   slugifyRoleName,
 } from './permissions';
 
+/** 权限缓存 TTL（5 分钟），多实例部署时保证权限变更最终一致。 */
+const PERMISSION_CACHE_TTL_MS = 5 * 60 * 1000;
+
+interface CacheEntry {
+  perms: string[];
+  expireAt: number;
+}
+
 @Injectable()
 export class RolesService implements OnModuleInit {
-  private cache = new Map<string, string[]>();
+  private readonly logger = new Logger('RolesService');
+  private cache = new Map<string, CacheEntry>();
 
   constructor(private readonly prisma: PrismaService) {}
 
@@ -46,10 +55,20 @@ export class RolesService implements OnModuleInit {
       });
     }
 
-    await this.prisma.user.updateMany({
-      where: { role: { in: [...DEPRECATED_ROLE_SLUGS] } },
-      data: { role: Role.ADMIN },
+    // 废弃角色处理：停用相关账号（而非升级为 ADMIN），等待管理员手动处理
+    const deprecatedUsers = await this.prisma.user.findMany({
+      where: { role: { in: [...DEPRECATED_ROLE_SLUGS] }, isActive: true },
+      select: { id: true, username: true, role: true },
     });
+    if (deprecatedUsers.length > 0) {
+      await this.prisma.user.updateMany({
+        where: { role: { in: [...DEPRECATED_ROLE_SLUGS] } },
+        data: { isActive: false },
+      });
+      this.logger.warn(
+        `已停用 ${deprecatedUsers.length} 个使用废弃角色的账号: ${deprecatedUsers.map((u) => `${u.username}(${u.role})`).join(', ')}。请管理员手动为其分配新角色后重新启用。`,
+      );
+    }
 
     await this.prisma.accessRole.deleteMany({
       where: { slug: { in: [...DEPRECATED_ROLE_SLUGS] } },
@@ -64,18 +83,21 @@ export class RolesService implements OnModuleInit {
 
   async getPermissionsForSlug(slug: string): Promise<string[]> {
     const cached = this.cache.get(slug);
-    if (cached) return cached;
+    if (cached && cached.expireAt > Date.now()) return cached.perms;
+
+    // 过期则删除
+    if (cached) this.cache.delete(slug);
 
     const row = await this.prisma.accessRole.findUnique({ where: { slug } });
     if (row) {
       const perms = [...row.permissions];
-      this.cache.set(slug, perms);
+      this.cache.set(slug, { perms, expireAt: Date.now() + PERMISSION_CACHE_TTL_MS });
       return perms;
     }
 
     if (slug in ROLE_PERMISSIONS) {
       const perms = [...ROLE_PERMISSIONS[slug]!];
-      this.cache.set(slug, perms);
+      this.cache.set(slug, { perms, expireAt: Date.now() + PERMISSION_CACHE_TTL_MS });
       return perms;
     }
 

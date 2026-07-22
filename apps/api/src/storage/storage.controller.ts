@@ -26,8 +26,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { Public } from '../auth/decorators/public.decorator';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { Role } from '../auth/roles';
+import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
 import { S3Service } from './s3.service';
 import type { UploadResult } from './s3.service';
 
@@ -37,7 +36,7 @@ export class StorageController {
   constructor(private readonly s3: S3Service) {}
 
   // ── 上传文件 ─────────────────────────────────────────────
-  @Roles(Role.EDITOR, Role.ADMIN)
+  @RequirePermissions('media.upload')
   @ApiBearerAuth()
   @Post('upload')
   @UseInterceptors(
@@ -79,7 +78,7 @@ export class StorageController {
   }
 
   // ── 删除文件 ─────────────────────────────────────────────
-  @Roles(Role.EDITOR, Role.ADMIN)
+  @RequirePermissions('media.delete')
   @ApiBearerAuth()
   @Delete('*key')
   @HttpCode(204)
@@ -97,7 +96,7 @@ export class StorageController {
   }
 
   // ── 生成预签名 URL ───────────────────────────────────────
-  @Roles(Role.EDITOR, Role.ADMIN)
+  @RequirePermissions('media.upload')
   @ApiBearerAuth()
   @Post('presigned')
   @ApiOperation({ summary: '生成临时预签名访问 URL' })

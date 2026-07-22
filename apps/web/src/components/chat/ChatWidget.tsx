@@ -17,6 +17,7 @@ import {
   TooltipTrigger,
 } from '@tzj/ui';
 import {
+  ArrowDown,
   ArrowUp,
   File as FileIcon,
   Loader2,
@@ -42,6 +43,7 @@ import {
 import {
   collectVisitorContext,
   createRoom,
+  fetchAgentAvailability,
   fetchVisitorToken,
   getRoom,
   presignChatAttachment,
@@ -49,6 +51,7 @@ import {
 } from '@/features/chat/api';
 import type { ChatAttachment, ChatMessage, ChatRoom } from '@/features/chat/types';
 import { useVisitorChat } from '@/features/chat/useVisitorChat';
+import { resolveVisitorPresence } from '@/features/chat/presence';
 import { resolveMediaUrl } from '@/lib/media-url';
 import { ChatMarkdown } from './ChatMarkdown';
 import { EmojiPicker } from './EmojiPicker';
@@ -103,6 +106,8 @@ const I18N = {
     downloadTranscript: '下载对话记录',
     comingSoon: '敬请期待',
     typing: '对方正在输入…',
+    uploadFailed: '文件上传失败，请重试',
+    newMessages: '{n} 条新消息',
   },
   'zh-TW': {
     brand: '拓之跡客服',
@@ -148,6 +153,8 @@ const I18N = {
     downloadTranscript: '下載對話記錄',
     comingSoon: '敬請期待',
     typing: '對方正在輸入…',
+    uploadFailed: '檔案上傳失敗，請重試',
+    newMessages: '{n} 則新訊息',
   },
   en: {
     brand: 'TZJ Support',
@@ -197,6 +204,8 @@ const I18N = {
     downloadTranscript: 'Download transcript',
     comingSoon: 'Coming soon',
     typing: 'typing…',
+    uploadFailed: 'File upload failed, please try again',
+    newMessages: '{n} new messages',
   },
 } as const;
 
@@ -375,6 +384,7 @@ export function ChatWidget({
   const {
     connected,
     agentsOnline,
+    agentsAway,
     agentLastOnlineAt,
     on,
     off,
@@ -384,8 +394,9 @@ export function ChatWidget({
     markRead,
     sendTyping,
     sendStopTyping,
-    reportActive,
-    reportIdle,
+    reportPanelState,
+    setAgentsOnline,
+    setAgentsAway,
   } = useVisitorChat(token);
 
   const [open, setOpen] = useState(false);
@@ -401,9 +412,20 @@ export function ChatWidget({
   const [serverUnread, setServerUnread] = useState(0);
   // 对方（坐席）正在输入指示（P1 H2）
   const [agentTyping, setAgentTyping] = useState(false);
+  // 转接通知（业内最佳实践：访客看到“正在为您转接至 XXX”）
+  const [transferNotice, setTransferNotice] = useState<string | null>(null);
+  const transferNoticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const agentTypingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // 访客自身输入节流（P1 H2）：避免每个按键都发 socket，约 1.2s 一次
+  // 「↓ 新消息」浮动按钮计数（业内最佳实践 WhatsApp/Intercom/Telegram）：
+  // 用户翻历史时收到新消息 → 显示浮动按钮；点击或滚回底部 → 消失
+  const [newMsgCount, setNewMsgCount] = useState(0);
+  // 访客自身输入节流（P1 H2）：前沿 1.2s 一次 + 尾沿 800ms 确保最终文本必达
   const typingEmitRef = useRef(0);
+  const typingTrailRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 失焦延迟发送 stop-typing，避免点击表情/文件按钮时气泡闪烁
+  const blurTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 交互标记：点击表情/文件按钮时置 true，阻止 blur 发送 stop-typing
+  const interactingRef = useRef(false);
   const [showBubble, setShowBubble] = useState(false);
   const [bubbleDismissed, setBubbleDismissed] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
@@ -420,6 +442,42 @@ export function ChatWidget({
   // 是否已收到真实 presence 信号（用于区分「真实在线」与「乐观默认在线」）
   const [hasRealPresence, setHasRealPresence] = useState(false);
 
+  // 兜底 + 自愈：通过 REST 获取坐席可用性快照，并同步在线/离开计数与聚合态。
+  //  - mount 时立即拉取，避免 socket 尚未连接时显示错误的离线状态；
+  //  - 之后作为「自愈安全网」在窗口聚焦 / 定时触发（见下方 effect）：即便某次 socket
+  //    presence 推送丢失，也能在数秒内自动纠正，杜绝「有客服上线但访客侧不变、需刷新」。
+  const syncAvailability = useCallback(() => {
+    return fetchAgentAvailability()
+      .then((avail) => {
+        setAgentsOnline(avail.online);
+        setAgentsAway(avail.away);
+        setAgentPresence(avail.online > 0 ? 'online' : avail.away > 0 ? 'away' : 'offline');
+        setHasRealPresence(true);
+      })
+      .catch(() => {});
+  }, [setAgentsOnline, setAgentsAway]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void syncAvailability();
+    // 自愈安全网：窗口重新聚焦 / 标签页恢复可见时立即再同步（用户回到页面第一时间看到正确状态），
+    // 并每 25s 轮询一次兜底（业内最佳实践：实时推送为主 + 轻量对账轮询，防止漏事件导致状态僵死）。
+    const onFocus = () => {
+      if (!cancelled && !document.hidden) void syncAvailability();
+    };
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onFocus);
+    const timer = setInterval(() => {
+      if (!document.hidden) void syncAvailability();
+    }, 25_000);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onFocus);
+      clearInterval(timer);
+    };
+  }, [syncAvailability]);
+
   // 工作时间兜底：后端未推送离线时，非工作时间（按站点配置时区）前端自动判定离线
   const [outsideHours, setOutsideHours] = useState(false);
   useEffect(() => {
@@ -430,13 +488,70 @@ export function ChatWidget({
   //    避免「非工作时间但真人在线」被误判为离线，把真实在线的客服藏起来）。
   //  - 未收到信号（乐观兜底）→ 工作时间默认在线、非工作时间离线。
   const effectivePresence: AgentPresence = useMemo(() => {
+    // 团队可用性以 agents-online 计数为权威：该事件在 socket 建立时即无条件挂载，
+    // 由服务端按「持有存活 socket 的坐席」实时统计，是坐席上/下线最可靠的依据；
+    // REST 自愈轮询也写同一组计数。以此为主可杜绝「有客服上线但仅 presence-changed
+    // 事件未应用、访客侧不变、需刷新」。
+    //  - online>0 → 在线（坐席上线即时点亮，无需等 presence-changed 或刷新）；
+    //  - 已收到计数且 online=0 → away>0 视为离开、否则离线；
+    //  - 计数未知（-1，尚未收到任何信号）→ 回退到 presence-changed 明细 / 营业时间兜底。
+    if (agentsOnline > 0) return 'online';
+    if (agentsOnline === 0) return agentsAway > 0 ? 'away' : 'offline';
     if (hasRealPresence) return agentPresence;
     return outsideHours ? 'offline' : 'online';
-  }, [hasRealPresence, agentPresence, outsideHours]);
+  }, [agentsOnline, agentsAway, hasRealPresence, agentPresence, outsideHours]);
 
-  // 全站坐席可用性：服务端实时下发在线坐席数（-1 = 尚未收到信号，乐观视为有人值守）
-  // 即使处于工作时间，若整队坐席都不在线，也应诚实告知用户「暂无人值守」。
-  const noAgentOnline = connected && agentsOnline === 0;
+  // D：全站坐席可用性（是否「无人值守」）。
+  // 以团队聚合态为准：坐席断线时网关即时广播真实可用性快照（按存活 socket 统计），
+  // 访客立即看到「已离线」；再稳定 5s 才切换为「暂无坐席在线 · 留言」提示，
+  // 防御极短抖动（如坐席刷新页面 1-2s 内重连即恢复在线，不会看到无人值守提示）。
+  const [stableNoAgentOffline, setStableNoAgentOffline] = useState(false);
+  const offlineDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (offlineDebounceRef.current) {
+      clearTimeout(offlineDebounceRef.current);
+      offlineDebounceRef.current = null;
+    }
+    const isOffline = connected && effectivePresence === 'offline';
+    if (!isOffline) {
+      setStableNoAgentOffline(false);
+      return;
+    }
+    offlineDebounceRef.current = setTimeout(() => setStableNoAgentOffline(true), 5000);
+    return () => {
+      if (offlineDebounceRef.current) clearTimeout(offlineDebounceRef.current);
+    };
+  }, [connected, effectivePresence]);
+  const noAgentOnline = stableNoAgentOffline;
+
+  // E：对「离开中」也做显示防抖。坐席切桌面 / 切标签页会经 user-idle 瞬时置为 away，
+  // 但这是瞬时缺口，不应让访客立即看到「离开中 · 留言后我们会尽快回复」。
+  // 仅当 away 持续超过 AWAY_DISPLAY_GRACE_MS 才在访客侧降级为「离开中」，
+  // 与网关断线宽限（乐观保持在线）同一思路。
+  const AWAY_DISPLAY_GRACE_MS = 90_000;
+  const [stableAway, setStableAway] = useState(false);
+  const awayDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (awayDebounceRef.current) {
+      clearTimeout(awayDebounceRef.current);
+      awayDebounceRef.current = null;
+    }
+    const isAway = connected && effectivePresence === 'away';
+    if (!isAway) {
+      setStableAway(false);
+      return;
+    }
+    awayDebounceRef.current = setTimeout(() => setStableAway(true), AWAY_DISPLAY_GRACE_MS);
+    return () => {
+      if (awayDebounceRef.current) clearTimeout(awayDebounceRef.current);
+    };
+  }, [connected, effectivePresence]);
+
+  // 访客可见的最终档位：瞬时 away 仍呈现为 online，持续 away 才为 away。
+  const displayPresence: AgentPresence = resolveVisitorPresence({
+    status: effectivePresence,
+    stableAway,
+  });
 
   // SLA 提示：在线时给出「通常 X 分钟内回复」（X 来自站点设置 agentProfile.responseMinutes，
   // 缺省兜底为「通常几分钟内回复」）；离开/离线时给出「最后在线时间」。
@@ -452,7 +567,15 @@ export function ChatWidget({
 
   const roomIdRef = useRef<string | null>(null);
   const clientEmailRef = useRef<string | null>(null);
+  // 最近一次经 socket 发出但尚未确认的消息：若服务端回 ROOM_ARCHIVED（归档冷存终态），
+  // 据此把该消息承接到「新会话」，杜绝访客消息静默丢失（业内最佳实践 Zendesk/Intercom）。
+  const pendingOutgoingRef = useRef<{ content: string; attachments: ChatAttachment[] } | null>(null);
+  // restartWithMessage 在下方定义，用 ref 供 socket 事件回调运行时调用，避免闭包过期。
+  const restartWithMessageRef = useRef<
+    ((content: string, attachments: ChatAttachment[]) => void) | null
+  >(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const chatContentRef = useRef<HTMLDivElement>(null);
   const atBottomRef = useRef(true);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -461,17 +584,12 @@ export function ChatWidget({
     openRef.current = open;
   }, [open]);
 
-  // 面板开关 → 诚实上报客户在线状态：
-  //  - 打开面板 = 正在看聊天 → reportActive（online）
-  //  - 关闭面板 = 离开聊天 → reportIdle（away）
-  // 使 B 端看到的「客户在线」真正反映「是否还在看聊天」，而非「网站是否开着」。
+  // 面板开关 → 仅作为 engagement 信号上报（B 端显示「正在查看对话」）。
+  // 按业内最佳实践，访客的在线/离开态不再随面板开关翻转，而只由「socket 连接 +
+  // 标签页可见 + 是否长时间无操作」决定（见 useVisitorChat 的 visibilitychange 处理）。
   useEffect(() => {
-    if (open) {
-      reportActive();
-    } else {
-      reportIdle();
-    }
-  }, [open, reportActive, reportIdle]);
+    reportPanelState(open);
+  }, [open, reportPanelState]);
 
   const isClosed = room?.status === 'closed';
 
@@ -515,10 +633,18 @@ export function ChatWidget({
         const raw = localStorage.getItem(STORAGE_KEY);
         if (raw) stored = JSON.parse(raw);
       } catch {}
-      if (!stored?.roomId) return;
+      if (!stored?.roomId || !stored?.email) return;
       try {
-        const r = await getRoom(stored.roomId);
+        const r = await getRoom(stored.roomId, stored.email);
         if (!active || !r) return;
+        // 归档会话是冷存终态（业内最佳实践 Zendesk/LiveChat）：访客回来时不恢复归档会话，
+        // 清空本地存储，让访客自然进入「开始新对话」状态；服务端亦拒绝向归档会话发消息。
+        if (r.status === 'archived') {
+          try {
+            localStorage.removeItem(STORAGE_KEY);
+          } catch {}
+          return;
+        }
         if (stored.token) {
           enterChat(r, stored.token);
         } else if (stored.email) {
@@ -538,6 +664,8 @@ export function ChatWidget({
       const msg = data?.message;
       const rid = data?.room?.roomId;
       if (!msg || rid !== roomIdRef.current) return;
+      // 自己的消息成功回声 → 落库确认，清除待重发标记（避免后续无关错误误触发重发）。
+      if (msg.sender === 'client') pendingOutgoingRef.current = null;
       setMessages((prev) =>
         prev.some((m) => m.messageId === msg.messageId) ? prev : [...prev, normalizeMessage(msg)],
       );
@@ -605,12 +733,32 @@ export function ChatWidget({
       }
     };
 
-    // 发送失败（如会话已关闭，后端拒绝落库）：重新拉取房间，
-    // 让前端状态与服务端一致（已关闭则展示结束面板），避免消息无声丢失。
-    const handleError = (data?: { message?: string }) => {
+    // 发送失败：
+    //  - ROOM_ARCHIVED（会话已归档冷存）：把刚才那条消息承接到「新会话」发出，
+    //    B 端队列据此重开新对话，杜绝访客消息石沉大海（业内最佳实践 Zendesk/Intercom）。
+    //  - 其它错误（如会话已关闭，后端拒绝落库）：重新拉取房间，让前端状态与服务端一致
+    //    （已关闭则展示结束面板），避免消息无声丢失。
+    const handleError = (data?: { message?: string; code?: string; roomId?: string }) => {
       const rid = roomIdRef.current;
-      if (!rid || !data || typeof data !== 'object' || !('message' in data)) return;
-      getRoom(rid)
+      const email = clientEmailRef.current;
+      if (!data || typeof data !== 'object') return;
+      if (data.code === 'ROOM_ARCHIVED') {
+        const pending = pendingOutgoingRef.current;
+        pendingOutgoingRef.current = null;
+        if (pending) {
+          restartWithMessageRef.current?.(pending.content, pending.attachments);
+        } else if (rid && email) {
+          // 无待发内容（如附件已入库）：同步房间状态，让前端进入归档→新对话引导态。
+          getRoom(rid, email)
+            .then((r) => {
+              if (r && r.roomId === roomIdRef.current) setRoom(r);
+            })
+            .catch(() => {});
+        }
+        return;
+      }
+      if (!rid || !email || !('message' in data)) return;
+      getRoom(rid, email)
         .then((r) => {
           if (r && r.roomId === roomIdRef.current) setRoom(r);
         })
@@ -635,10 +783,19 @@ export function ChatWidget({
       setServerUnread(typeof data.totalUnread === 'number' ? data.totalUnread : 0);
     };
 
+    // 转接通知（业内最佳实践：访客看到“正在为您转接至 XXX”，8s 后自动消失）
+    const handleTransferNotice = (data: { roomId?: string; toAgentName?: string }) => {
+      if (data.roomId !== roomIdRef.current) return;
+      setTransferNotice(data.toAgentName || null);
+      if (transferNoticeTimer.current) clearTimeout(transferNoticeTimer.current);
+      transferNoticeTimer.current = setTimeout(() => setTransferNotice(null), 8000);
+    };
+
     on('new-message', handleNewMessage);
     on('messages-read', handleMessagesRead);
     on('presence-changed', handlePresence);
     on('room-status-changed', handleRoomStatusChanged);
+    on('room-transfer-notice', handleTransferNotice);
     on('typing', handleTyping);
     on('stop-typing', handleStopTyping);
     on('notification-counts-updated', handleNotifCounts);
@@ -649,12 +806,14 @@ export function ChatWidget({
       off('messages-read');
       off('presence-changed');
       off('room-status-changed');
+      off('room-transfer-notice');
       off('typing');
       off('stop-typing');
       off('notification-counts-updated');
       off('notification-counts');
       off('error');
       if (agentTypingTimer.current) clearTimeout(agentTypingTimer.current);
+      if (transferNoticeTimer.current) clearTimeout(transferNoticeTimer.current);
     };
   }, [on, off, markRead, getRoom]);
 
@@ -684,6 +843,44 @@ export function ChatWidget({
     return () => document.removeEventListener('visibilitychange', onVisibilityChange);
   }, [open, room, isClosed, connected, markRead]);
 
+  // 安全网（push+pull 双模型）：定时 HTTP 同步当前会话消息。
+  // socket 推送保证实时性，HTTP 拉取保证正确性——丢失的 new-message 回声
+  // （自己发的消息不显示、客服消息延迟）在 5s 内自愈。
+  const roomIdForSync = room?.roomId ?? null;
+  useEffect(() => {
+    if (!roomIdForSync) return;
+    const rid = roomIdForSync;
+    const syncMessages = () => {
+      const email = clientEmailRef.current;
+      if (!email) return;
+      getRoom(rid, email)
+        .then((r) => {
+          if (r.roomId !== roomIdRef.current) return;
+          setMessages((prev) => {
+            const serverMsgs = r.messages ?? [];
+            // 快路径：本地消息数 >= 服务端 → 无新增，跳过
+            if (prev.length >= serverMsgs.length) return prev;
+            const map = new Map<string, ChatMessage>();
+            for (const m of prev) map.set(m.messageId, m);
+            for (const m of serverMsgs) map.set(m.messageId, normalizeMessage(m));
+            return Array.from(map.values()).sort(
+              (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+            );
+          });
+        })
+        .catch(() => {});
+    };
+    const timer = setInterval(syncMessages, 5000);
+    const onVis = () => {
+      if (!document.hidden) syncMessages();
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVis);
+    };
+  }, [roomIdForSync, getRoom]);
+
   // 取 Radix ScrollArea 真正可滚动的 Viewport，避免 scrollIntoView 误把整页滚到底
   const getChatViewport = useCallback((): HTMLElement | null => {
     const root = scrollAreaRef.current;
@@ -701,30 +898,85 @@ export function ChatWidget({
   );
 
   // 跟踪用户是否已在底部：阅读历史时不被“拽”到底部
+  // 阈值 150px（业内最佳实践 Intercom/WhatsApp Web），避免微小布局抖动误判为「不在底部」
+  // 依赖 open：确保面板打开后重新绑定监听（首次渲染时 viewport 可能尚未挂载）
   useEffect(() => {
+    if (!open) return;
     const vp = getChatViewport();
     if (!vp) return;
     const onScroll = () => {
       const distance = vp.scrollHeight - vp.scrollTop - vp.clientHeight;
-      atBottomRef.current = distance < 48;
+      atBottomRef.current = distance < 150;
+      // 用户滚回底部 → 清除「新消息」计数（业内最佳实践）
+      if (atBottomRef.current) setNewMsgCount(0);
     };
     vp.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
     return () => vp.removeEventListener('scroll', onScroll);
-  }, [getChatViewport]);
+  }, [getChatViewport, open]);
 
   // 打开面板：立即跳到底部（instant，不产生整页平滑滚动的诡异动画）
   useEffect(() => {
     if (!open) return;
     atBottomRef.current = true;
+    setNewMsgCount(0);
     scrollToBottom('auto');
   }, [open, scrollToBottom]);
 
-  // 新消息到达：仅当用户已在底部时才平滑跟进，否则保留其阅读位置
+  // 心跳：输入框有未发送内容（文字或附件）时，每 3s 补发 typing 事件，
+  // 确保 B 端始终显示预览气泡（业内最佳实践 LiveChat/Intercom：未发送前始终可见）
+  useEffect(() => {
+    if (!open || !connected || isClosed) return;
+    if (!input.trim() && staged.length === 0) return;
+    const id = setInterval(() => {
+      const rid = roomIdRef.current;
+      if (rid) sendTyping(rid, input || undefined);
+    }, 3000);
+    return () => clearInterval(id);
+  }, [open, connected, isClosed, input, staged, sendTyping]);
+
+  // 新消息到达（业内最佳实践 Intercom/WhatsApp Web/Telegram）：
+  // - 访客自己发送的消息：永远 instant 滚底 + 清除新消息计数
+  // - 客服消息 + 用户贴底：平滑滚底
+  // - 客服消息 + 用户翻历史：不滚动，累加「新消息」计数 → 显示浮动按钮
+  const prevMsgCountRef = useRef(0);
   useEffect(() => {
     if (!open) return;
-    if (atBottomRef.current) scrollToBottom('smooth');
+    const count = messages.length;
+    const isNew = count > prevMsgCountRef.current;
+    prevMsgCountRef.current = count;
+    if (!isNew) return;
+    const lastMsg = messages[count - 1];
+    const isOwnMessage = lastMsg?.sender === 'client';
+    if (isOwnMessage) {
+      // 自己的消息：永远滚底 + 清除计数
+      setNewMsgCount(0);
+      const r1 = requestAnimationFrame(() => {
+        requestAnimationFrame(() => scrollToBottom('auto'));
+      });
+      return () => cancelAnimationFrame(r1);
+    }
+    // 客服消息：贴底则滚，否则累加「新消息」计数
+    if (atBottomRef.current) {
+      const r1 = requestAnimationFrame(() => {
+        requestAnimationFrame(() => scrollToBottom('smooth'));
+      });
+      return () => cancelAnimationFrame(r1);
+    }
+    setNewMsgCount((n) => n + 1);
   }, [messages, open, scrollToBottom]);
+
+  // 内容高度异步变化（typing indicator 出现/消失、图片加载、Markdown 重排等）→
+  // 若用户贴底则重新滚到底，修复「对方正在输入」指示器被 viewport 底部裁剪的问题。
+  useEffect(() => {
+    const content = chatContentRef.current;
+    if (!content || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => {
+      if (atBottomRef.current) scrollToBottom('auto');
+    });
+    ro.observe(content);
+    return () => ro.disconnect();
+  }, [scrollToBottom]);
 
   // 打开面板时聚焦输入框（preventScroll 避免聚焦触发整页滚动）
   useEffect(() => {
@@ -740,10 +992,10 @@ export function ChatWidget({
   //  - 在线：使用站点配置/默认的招呼语
   const greetingContent = useMemo(() => {
     if (noAgentOnline) return t.noAgentHint;
-    if (effectivePresence === 'offline') return t.offlineHint;
-    if (effectivePresence === 'away') return t.presenceAway;
+    if (displayPresence === 'offline') return t.offlineHint;
+    if (displayPresence === 'away') return t.presenceAway;
     return greetingText;
-  }, [noAgentOnline, effectivePresence, greetingText, t]);
+  }, [noAgentOnline, displayPresence, greetingText, t]);
 
   // 构造客服首条招呼消息（不写入后端，只在本地展示，模拟 Intercom 体验）
   const aiGreetingMessage: ChatMessage = useMemo(
@@ -777,11 +1029,11 @@ export function ChatWidget({
     }
     // 在线且有坐席 → 常规邀请；无人值守/离线/离开 → 改为离线邀请语，
     // 避免在无人响应时仍写「有什么可以帮您」
-    if (effectivePresence === 'online' && !noAgentOnline) return t.launcherInvite;
+    if (displayPresence === 'online' && !noAgentOnline) return t.launcherInvite;
     return noAgentOnline ? t.noAgentInvite : t.launcherInviteOffline;
   }, [
     displayMessages,
-    effectivePresence,
+    displayPresence,
     noAgentOnline,
     t.launcherInvite,
     t.launcherInviteOffline,
@@ -883,14 +1135,17 @@ export function ChatWidget({
           }),
         );
         setStaged((prev) => [...prev, ...uploaded]);
+        // 附件上传完成后补发 typing 事件，保持 B 端气泡可见（即使输入框无文字）
+        const rid = roomIdRef.current;
+        if (rid && connected) sendTyping(rid, inputRef.current?.value || undefined);
       } catch {
-        setError('文件上传失败，请重试');
+        setError(t.uploadFailed);
       } finally {
         setUploading(false);
         if (fileRef.current) fileRef.current.value = '';
       }
     },
-    [ensureRoom, t.failed],
+    [ensureRoom, t.failed, connected, sendTyping],
   );
 
   // 发送第一条消息（无房间时先建房，再走 HTTP 落库，支持附件）
@@ -918,44 +1173,83 @@ export function ChatWidget({
     [sending, enterChat, t.failed],
   );
 
-  const handleSend = (e?: React.SyntheticEvent<HTMLFormElement>, override?: string) => {
-    e?.preventDefault();
-    const content = (override ?? input).trim();
-    const keys = staged.map((a) => a.key);
-    if (!content && keys.length === 0) return;
-    const attachments = staged;
-    setInput('');
-    setStaged([]);
-    setEmojiOpen(false);
-    setUploading(false);
-    if (room) {
-      // 已有房间：正常发（若是 closed 房间，后端按「回复即重开」把同一会话
-      // 切回进行中并广播 room-status-changed，输入框随之恢复可用）。
-      if (connected) {
-        sendMessage(room.roomId, content, keys);
-      } else {
-        void sendMessageHTTP(room.roomId, content, room.clientEmail, keys)
-          .then((r) => {
-            setMessages((r.messages ?? []).map(normalizeMessage));
-            // 离线兜底：重开场景下同步房间状态，避免输入框仍停留在关闭态
-            setRoom((prev) => (prev ? { ...prev, status: r.status } : prev));
-          })
-          .catch(() => setError(t.failed));
+  // 承接一条消息开启「新会话」：用于访客向「已归档」会话发消息的场景。
+  // 归档=冷存终态（业内最佳实践 Zendesk/Intercom）：不向归档会话追加消息，而是离开旧房间、
+  // 清空本地存储后建新房 + 发送本条消息，B 端队列据此重开新对话，杜绝消息石沉大海。
+  const restartWithMessage = useCallback(
+    (content: string, attachments: ChatAttachment[]) => {
+      // 离开归档旧房间：让 B 端按房间成员关系把旧会话的访客判定为离线。
+      if (roomIdRef.current) {
+        try {
+          leaveRoom(roomIdRef.current);
+        } catch {}
       }
-    } else {
-      // 首次发送 → 建房 + 发送（含附件）
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch {}
+      roomIdRef.current = null;
+      clientEmailRef.current = null;
+      setRoom(null);
+      setMessages([]);
       void sendFirstMessage(content, attachments);
-    }
-  };
+    },
+    [leaveRoom, sendFirstMessage],
+  );
+
+  // 同步 restartWithMessage 到 ref，供 socket 'error'（ROOM_ARCHIVED）回调运行时调用。
+  useEffect(() => {
+    restartWithMessageRef.current = restartWithMessage;
+  }, [restartWithMessage]);
+
+  const handleSend = useCallback(
+    (e?: React.SyntheticEvent<HTMLFormElement>, override?: string) => {
+      e?.preventDefault();
+      const content = (override ?? input).trim();
+      const keys = staged.map((a) => a.key);
+      if (!content && keys.length === 0) return;
+      const attachments = staged;
+      setInput('');
+      setStaged([]);
+      setEmojiOpen(false);
+      setUploading(false);
+      if (room) {
+        // 归档会话（冷存终态）：不原地追加，承接本条消息开启「新会话」（B 端重开新对话）。
+        if (room.status === 'archived') {
+          restartWithMessage(content, attachments);
+          return;
+        }
+        // 已有房间：正常发（若是 closed 房间，后端按「回复即重开」把同一会话
+        // 切回进行中并广播 room-status-changed，输入框随之恢复可用）。
+        if (connected) {
+          // 记住本条：若服务端回 ROOM_ARCHIVED（状态在发送瞬间恰被归档），据此承接到新会话。
+          pendingOutgoingRef.current = { content, attachments };
+          sendMessage(room.roomId, content, keys);
+        } else {
+          void sendMessageHTTP(room.roomId, content, room.clientEmail, keys)
+            .then((r) => {
+              setMessages((r.messages ?? []).map(normalizeMessage));
+              // 离线兖底：重开场景下同步房间状态，避免输入框仍停留在关闭态
+              setRoom((prev) => (prev ? { ...prev, status: r.status } : prev));
+            })
+            .catch(() => setError(t.failed));
+        }
+      } else {
+        // 首次发送 → 建房 + 发送（含附件）
+        void sendFirstMessage(content, attachments);
+      }
+    },
+    [input, staged, room, connected, sendMessage, sendFirstMessage, restartWithMessage, t.failed],
+  );
 
   // 在光标处插入 emoji（无焦点时追加到末尾），并恢复焦点与光标位置
   const insertEmoji = useCallback(
     (emoji: string) => {
       const ta = inputRef.current;
+      let next: string;
       if (ta) {
         const start = ta.selectionStart ?? input.length;
         const end = ta.selectionEnd ?? input.length;
-        const next = input.slice(0, start) + emoji + input.slice(end);
+        next = input.slice(0, start) + emoji + input.slice(end);
         setInput(next);
         requestAnimationFrame(() => {
           ta.focus();
@@ -963,11 +1257,15 @@ export function ChatWidget({
           ta.setSelectionRange(pos, pos);
         });
       } else {
-        setInput((prev) => prev + emoji);
+        next = input + emoji;
+        setInput(next);
       }
       setEmojiOpen(false);
+      // 程序化插入不触发 onChange，手动补发 typing 事件保持 B 端气泡可见
+      const rid = roomIdRef.current;
+      if (rid && connected && next.trim()) sendTyping(rid, next);
     },
-    [input],
+    [input, connected, sendTyping],
   );
 
   // 选择 emoji：输入框为空时直接发送该 emoji；否则插入到光标处
@@ -1018,8 +1316,10 @@ export function ChatWidget({
   };
 
   const startNewChat = () => {
-    // 离开旧房间：让访客 socket 退出当前会话房间，网关据此广播 user-left 并
-    // 按「是否实际在房间」计算在线状态——旧会话即离线，新会话仍在线（互不影响）。
+    // 离开旧房间：让访客 socket 退出当前会话房间（socket.io room），
+    // 网关据此广播 user-left，并按「房间成员关系」将该旧会话的访客判定为离线 → B 端旧会话立即显示离线。
+    // 注意：离开房间不改变访客的「全局在线状态」（socket 仍在线，只是不再在该会话房间内），
+    // 新会话（发出首条消息时生成新身份并加入新房间）会显示在线。双方均以房间成员关系为准，刷新亦一致。
     // 必须在清空 room 状态前用 roomIdRef 取到旧 roomId。
     if (roomIdRef.current) {
       try {
@@ -1041,14 +1341,23 @@ export function ChatWidget({
   //  - 在线单坐席：在线客服 · 通常 X 分钟内回复
   //  - 离开/离线：附「最后在线时间」
   const presenceLabel = !connected
-    ? t.subtitle
+    ? // 尚未连接：若已知有坐席在线，按工作时间区分文案（非工作时间显示「在线但回复稍慢」，
+      // 与连接后的权威分支保持一致）；非营业且未知坐席数时不乐观声称在线，
+      // 避免与灰点 + 下班留言相互矛盾（连接后收到 agents-online 会立即纠正）。
+      agentsOnline > 0
+      ? outsideHours
+        ? t.presenceOutsideOnline
+        : `${t.onlineAgent} · ${slaOnline}`
+      : outsideHours
+        ? t.presenceOffline
+        : t.subtitle
     : noAgentOnline
       ? t.presenceNoAgent
-      : effectivePresence === 'offline'
+      : displayPresence === 'offline'
         ? lastOnlineText
           ? `${t.presenceOffline} · ${t.lastOnline}${lastOnlineText}`
           : t.presenceOffline
-        : effectivePresence === 'away'
+        : displayPresence === 'away'
           ? lastOnlineText
             ? `${t.presenceAway} · ${t.lastOnline}${lastOnlineText}`
             : t.presenceAway
@@ -1062,13 +1371,13 @@ export function ChatWidget({
   // 「营业中但无坐席」（open but unmanned）；gray=真正离线/非工作时间无人。
   // 这样「营业中无人值守」与「已下班」被清晰区分，不会让用户误以为门店关闭。
   const availability: 'online' | 'away' | 'offline' = useMemo(() => {
-    if (effectivePresence === 'online') {
+    if (displayPresence === 'online') {
       return noAgentOnline ? 'away' : 'online';
     }
-    if (effectivePresence === 'away') return 'away';
+    if (displayPresence === 'away') return 'away';
     // offline：营业中但无坐席（无人在岗）→ amber；真正下班无人 → gray
     return noAgentOnline && !outsideHours ? 'away' : 'offline';
-  }, [effectivePresence, noAgentOnline, outsideHours]);
+  }, [displayPresence, noAgentOnline, outsideHours]);
 
   // 头像状态圆点配色（业内最佳实践：常驻于头像，一眼可见可用状态）
   const presenceDotClass =
@@ -1133,9 +1442,9 @@ export function ChatWidget({
                   <span
                     className={cn(
                       'h-1.5 w-1.5 shrink-0 rounded-full',
-                      effectivePresence === 'online'
+                      displayPresence === 'online'
                         ? 'bg-emerald-500'
-                        : effectivePresence === 'away'
+                        : displayPresence === 'away'
                           ? 'bg-amber-400'
                           : 'bg-zinc-300',
                     )}
@@ -1264,10 +1573,13 @@ export function ChatWidget({
           </TooltipProvider>
         </div>
 
-        {/* ── 聊天区（Klipy 极简：纯白底，无气泡背景） ── */}
-        <ScrollArea ref={scrollAreaRef} className="min-h-0 flex-1 bg-white">
+        {/* ── 聊天区（Klipy 极简：纯白底，无气泡背景）+「↓ 新消息」浮动按钮
+            业内最佳实践（WhatsApp/Telegram/Intercom）：pill 锚定在消息视口底缘，
+            浮于消息内容之上，与输入区高度完全解耦 ── */}
+        <div className="relative min-h-0 flex-1">
+        <ScrollArea ref={scrollAreaRef} className="h-full bg-white [&>[data-radix-scroll-area-viewport]]:overscroll-contain">
           <ImagePreviewProvider>
-            <div className="flex min-h-full flex-col gap-4 px-4 py-4">
+            <div ref={chatContentRef} className="flex min-h-full flex-col gap-4 overflow-x-hidden px-4 py-4">
               {displayMessages.length === 0 ? (
                 <div className="m-auto flex w-full max-w-[300px] flex-col items-center py-8 text-center">
                   <p className="whitespace-pre-line text-sm leading-relaxed text-zinc-700">
@@ -1284,10 +1596,46 @@ export function ChatWidget({
                 />
               )}
               {error && <p className="mx-auto mt-1 text-xs text-red-600">{error}</p>}
+              {/* 转接通知（业内最佳实践 Intercom/Zendesk：访客看到“正在为您转接至 XXX”） */}
+              {transferNotice && (
+                <div className="flex justify-center" aria-live="polite">
+                  <span className="rounded-full bg-zinc-800/90 px-4 py-1.5 text-xs font-medium text-white shadow-sm">
+                    正在为您转接至 {transferNotice}，请稍候…
+                  </span>
+                </div>
+              )}
+              {/* 对方正在输入指示器（P1 H2）—— 放在滚动区内部（业内最佳实践 Intercom/Zendesk），
+                  避免占用外部布局空间导致消息列表高度跳变、遮挡最后一条消息、干扰滚底判断 */}
+              {agentTyping && !isClosed && (
+                <div className="flex items-start" aria-live="polite">
+                  <div className="inline-flex items-center gap-1 rounded-2xl bg-zinc-100 px-4 py-3">
+                    <span className="h-2 w-2 animate-bounce rounded-full bg-zinc-400 [animation-delay:-0.3s]" />
+                    <span className="h-2 w-2 animate-bounce rounded-full bg-zinc-400 [animation-delay:-0.15s]" />
+                    <span className="h-2 w-2 animate-bounce rounded-full bg-zinc-400" />
+                  </div>
+                </div>
+              )}
               <div className="h-px shrink-0" />
             </div>
           </ImagePreviewProvider>
         </ScrollArea>
+
+        {/* 「↓ 新消息」浮动按钮：用户翻历史时收到新消息 → 显示；
+            点击或滚回底部 → 消失 */}
+        {newMsgCount > 0 && (
+          <button
+            type="button"
+            onClick={() => {
+              scrollToBottom('smooth');
+              setNewMsgCount(0);
+            }}
+            className="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-zinc-800 px-3.5 py-1.5 text-xs font-medium text-white shadow-lg shadow-zinc-900/20 transition-all hover:bg-zinc-700 hover:shadow-xl active:scale-95"
+          >
+            <ArrowDown className="h-3.5 w-3.5" />
+            {t.newMessages.replace('{n}', String(newMsgCount))}
+          </button>
+        )}
+        </div>
 
         {isClosed && (
           <div className="border-t border-zinc-100 bg-zinc-50/70 px-4 py-2.5 text-center">
@@ -1301,19 +1649,6 @@ export function ChatWidget({
                 {t.newChat}
               </button>
             </p>
-          </div>
-        )}
-        {/* 对方正在输入指示器（P1 H2） */}
-        {agentTyping && !isClosed && (
-          <div className="px-4 pb-1 pt-0.5" aria-live="polite">
-            <span className="inline-flex items-center gap-1.5 text-xs text-zinc-400">
-              <span className="flex gap-0.5">
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-400 [animation-delay:-0.2s]" />
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-400 [animation-delay:-0.1s]" />
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-400" />
-              </span>
-              {t.typing}
-            </span>
           </div>
         )}
         {/* ── 输入区：已关闭会话仍可输入，访客回复即「重开」同一会话 ── */}
@@ -1392,16 +1727,26 @@ export function ChatWidget({
                 onChange={(e) => {
                   const v = e.target.value;
                   setInput(v);
-                  // 输入中指示（P1 H2）：节流约 1.2s 上报一次；清空时显式停止
+                  // 输入中指示（P1 H2）：前沿节流 1.2s + 尾沿 800ms 确保最终文本必达
                   const rid = roomIdRef.current;
                   if (rid && connected && !isClosed) {
                     if (v.trim()) {
                       const now = Date.now();
                       if (now - typingEmitRef.current > 1200) {
+                        // 前沿：立即发送（首次按键 / 超过节流窗口）
                         typingEmitRef.current = now;
-                        sendTyping(rid);
+                        if (typingTrailRef.current) clearTimeout(typingTrailRef.current);
+                        sendTyping(rid, v);
+                      } else {
+                        // 尾沿：用户停止输入 800ms 后补发最终文本，修复截断问题
+                        if (typingTrailRef.current) clearTimeout(typingTrailRef.current);
+                        typingTrailRef.current = setTimeout(() => {
+                          typingEmitRef.current = Date.now();
+                          sendTyping(rid, v);
+                        }, 800);
                       }
                     } else {
+                      if (typingTrailRef.current) clearTimeout(typingTrailRef.current);
                       sendStopTyping(rid);
                     }
                   }
@@ -1409,8 +1754,20 @@ export function ChatWidget({
                 onKeyDown={handleKeyDown}
                 onPaste={handlePaste}
                 onBlur={() => {
+                  if (typingTrailRef.current) clearTimeout(typingTrailRef.current);
+                  if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
+                  // 点击表情/文件按钮导致的短暂失焦 → 不发 stop-typing
+                  if (interactingRef.current) return;
+                  // 有未发送内容（文字/附件）→ 心跳维持，不需 stop-typing
+                  const v = inputRef.current?.value ?? '';
+                  if (v.trim() || staged.length > 0) return;
+                  // 真正离开且无内容 → 立即停止
                   const rid = roomIdRef.current;
                   if (rid && connected) sendStopTyping(rid);
+                }}
+                onFocus={() => {
+                  if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
+                  interactingRef.current = false;
                 }}
                 rows={1}
                 placeholder={t.inputPlaceholder}
@@ -1422,6 +1779,7 @@ export function ChatWidget({
                   type="button"
                   aria-label={t.attach}
                   disabled={uploading}
+                  onMouseDown={() => { interactingRef.current = true; }}
                   onClick={() => fileRef.current?.click()}
                   className={cn(
                     'flex h-8 w-8 items-center justify-center rounded-full transition',
@@ -1442,6 +1800,7 @@ export function ChatWidget({
                     type="button"
                     aria-label={t.emoji}
                     aria-expanded={emojiOpen}
+                    onMouseDown={() => { interactingRef.current = true; }}
                     onClick={() => setEmojiOpen((v) => !v)}
                     className={cn(
                       'flex h-8 w-8 items-center justify-center rounded-full transition',
@@ -1583,6 +1942,17 @@ function MessageBubble({
   locale: string;
   t: TI18N;
 }) {
+  // 系统消息（转接/分配等）：居中、弱化，与 admin 端保持一致
+  if (message.sender === 'system') {
+    return (
+      <div className="animate-in fade-in flex justify-center py-1 duration-200 ease-out">
+        <span className="rounded-full bg-zinc-100 px-3 py-1 text-[0.7rem] leading-relaxed text-zinc-500">
+          {message.content}
+        </span>
+      </div>
+    );
+  }
+
   const isAgent = message.sender === 'agent';
   // 纯 emoji 消息：放大 3 倍渲染（text-sm≈14px → text-5xl≈42px）
   const bigEmoji = !!message.content && isEmojiOnlyMessage(message.content);

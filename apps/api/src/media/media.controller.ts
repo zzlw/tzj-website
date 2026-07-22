@@ -16,9 +16,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
-import { Roles } from '../auth/decorators/roles.decorator';
 import type { AuthUser } from '../auth/roles';
-import { Role } from '../auth/roles';
 import { S3Service } from '../storage/s3.service';
 import { PresignDto, RegisterMediaDto } from './dto/media.dto';
 import { MediaService } from './media.service';
@@ -26,13 +24,13 @@ import { MediaService } from './media.service';
 @ApiTags('media')
 @ApiBearerAuth()
 @Controller('media')
-@Roles(Role.EDITOR, Role.ADMIN)
 export class MediaController {
   constructor(
     private readonly media: MediaService,
     private readonly s3: S3Service,
   ) {}
 
+  @RequirePermissions('media.view')
   @Get()
   @ApiOperation({ summary: '媒体库列表（分页）' })
   findAll(
@@ -57,6 +55,7 @@ export class MediaController {
     });
   }
 
+  @RequirePermissions('media.upload')
   @Post('upload')
   @UseInterceptors(
     // 需容纳视频/音频等大文件，与 Admin 端 Markdown 编辑器的上限保持一致
@@ -82,6 +81,7 @@ export class MediaController {
     return this.media.uploadAndRegister(file, folder, user?.id);
   }
 
+  @RequirePermissions('media.upload')
   @Post('presign')
   @ApiOperation({ summary: '生成预签名直传 URL（需存储桶 CORS 支持）' })
   async presign(@Body() dto: PresignDto) {
@@ -90,6 +90,7 @@ export class MediaController {
     return { uploadUrl, key, publicUrl: this.s3.getUrl(key) };
   }
 
+  @RequirePermissions('media.upload')
   @Post()
   @ApiOperation({ summary: '直传完成后登记素材记录' })
   register(@Body() dto: RegisterMediaDto, @CurrentUser() user: AuthUser) {

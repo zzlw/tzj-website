@@ -11,6 +11,8 @@ interface Props {
   onSend: () => void;
   contactName?: string;
   disabled?: boolean;
+  /** 禁用态提示文案（closed=已结束 / archived=已归档） */
+  disabledHint?: string;
   quickReplies?: string[];
   onQuickReply?: (text: string) => void;
 }
@@ -21,6 +23,7 @@ export function ChatMessageComposer({
   onSend,
   contactName,
   disabled,
+  disabledHint = '会话已结束，无法继续发送',
   quickReplies = [],
   onQuickReply,
 }: Props) {
@@ -66,7 +69,7 @@ export function ChatMessageComposer({
         <div className="min-w-0 flex-1">
           {disabled ? (
             <div className="text-muted-foreground rounded-xl border border-dashed border-border/60 bg-muted/40 px-3 py-3 text-sm">
-              会话已结束，无法继续发送
+              {disabledHint}
             </div>
           ) : (
             <div

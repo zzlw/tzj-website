@@ -1,7 +1,8 @@
 'use client';
 
 import { ImagePreviewProvider, ScrollArea } from '@tzj/ui';
-import { useCallback, useEffect, useRef } from 'react';
+import { ArrowDown } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ChatRoom } from '../types';
 import type { OnlineAgent } from '../useChatSocket';
 import { ChatHeader } from './ChatHeader';
@@ -21,10 +22,12 @@ interface Props {
   onlineAgents?: OnlineAgent[];
   /** 当前坐席邮箱（用于转接列表排除自身） */
   currentAgentEmail?: string;
-  /** 转接回调（P1 H3） */
-  onTransfer?: (toAgentEmail: string) => void;
+  /** 转接回调（P1 H3，含备注） */
+  onTransfer?: (toAgentEmail: string, note?: string) => void;
   /** 访客是否正在输入（P1 H2） */
   clientTyping?: boolean;
+  /** 访客实时输入内容预览（业内最佳实践 LiveChat/Tawk.to） */
+  clientTypingText?: string;
 }
 
 export function ChatArea({
@@ -40,6 +43,7 @@ export function ChatArea({
   currentAgentEmail,
   onTransfer,
   clientTyping,
+  clientTypingText,
 }: Props) {
   // 真正可滚动的元素是 Radix ScrollArea 的 Viewport（带 data-radix-scroll-area-viewport）。
   // @tzj/ui 的 ScrollArea 没有透出 viewport ref，所以从内容 div 用 closest() 反向找到。
@@ -58,6 +62,8 @@ export function ChatArea({
   // 是否「贴底」：用户主动向上翻看历史时为 false，避免新消息把他强行拽回底部；
   // 贴底时才自动跟随最新消息。初始/切换会话默认贴底。
   const pinnedRef = useRef(true);
+  // 「↓ 新消息」浮动按钮计数（业内最佳实践 WhatsApp/Intercom/Telegram）
+  const [newMsgCount, setNewMsgCount] = useState(0);
   // 待执行的 rAF 句柄，卸载/依赖变化时取消，避免泄漏与竞态
   const rafRef = useRef<number | null>(null);
 
@@ -66,6 +72,10 @@ export function ChatArea({
     if (!el) return;
     el.scrollTo({ top: el.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
   }, []);
+
+  // 「仅查看」：会话已有负责人且不是当前坐席——与服务端 send-message 归属校验一致，
+  // 非负责人只能只读查看，不能直接对客回复（避免双人抢答）。
+  const notMyRoom = !!room.assignedAgentEmail && room.assignedAgentEmail !== currentAgentEmail;
 
   useEffect(() => {
     switchedAtRef.current = Date.now();
@@ -78,25 +88,42 @@ export function ChatArea({
     if (!el) return;
     const onScroll = () => {
       const gap = el.scrollHeight - el.scrollTop - el.clientHeight;
-      pinnedRef.current = gap < 120;
+      pinnedRef.current = gap < 150;
+      // 用户滚回底部 → 清除「新消息」计数
+      if (pinnedRef.current) setNewMsgCount(0);
     };
     el.addEventListener('scroll', onScroll, { passive: true });
     return () => el.removeEventListener('scroll', onScroll);
   }, [room.roomId]);
 
-  // messages 变化（收/发消息）→ 若贴底则滚到底。
+  // messages 变化（收/发消息）→ 若贴底则滚到底；否则累加「新消息」计数。
   // 用双 rAF 等新气泡完成布局后再测 scrollHeight，避免按旧高度滚动只到半路。
+  const prevMsgLenRef = useRef(0);
   useEffect(() => {
     const isInitialLoad = Date.now() - switchedAtRef.current < 1000;
-    if (!isInitialLoad && !pinnedRef.current) return;
-    const r1 = requestAnimationFrame(() => {
-      const r2 = requestAnimationFrame(() => scrollToBottom(!isInitialLoad));
-      rafRef.current = r2;
-    });
-    rafRef.current = r1;
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    };
+    const msgLen = room.messages?.length ?? 0;
+    const isNew = msgLen > prevMsgLenRef.current;
+    prevMsgLenRef.current = msgLen;
+    if (isInitialLoad) {
+      // 初始加载：直接滚底
+      const r1 = requestAnimationFrame(() => {
+        const r2 = requestAnimationFrame(() => scrollToBottom(false));
+        rafRef.current = r2;
+      });
+      rafRef.current = r1;
+      return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+    }
+    if (!isNew) return;
+    if (pinnedRef.current) {
+      const r1 = requestAnimationFrame(() => {
+        const r2 = requestAnimationFrame(() => scrollToBottom(true));
+        rafRef.current = r2;
+      });
+      rafRef.current = r1;
+      return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+    }
+    // 用户翻历史时收到新消息 → 累加「新消息」计数
+    setNewMsgCount((n) => n + 1);
   }, [room.roomId, room.messages, scrollToBottom]);
 
   // 内容高度异步变化（图片加载、Markdown 重排等）→ 若贴底则重新滚到底，
@@ -126,31 +153,61 @@ export function ChatArea({
         onTransfer={onTransfer}
       />
 
-      <ImagePreviewProvider>
-        <ScrollArea type="always" className="min-h-0 flex-1">
-          <div ref={setContentRef} className="space-y-3 pb-3 pr-3 sm:space-y-4">
-            {room.messages?.length === 0 ? (
-              <p className="text-muted-foreground py-10 text-center text-sm">尚未有消息</p>
-            ) : (
-              (room.messages ?? []).map((m) => <ChatMessageBubble key={m.messageId} message={m} />)
-            )}
-          </div>
-        </ScrollArea>
-      </ImagePreviewProvider>
+     {/* 消息滚动区 + 「↓ 新消息」浮动按钮
+          业内最佳实践（WhatsApp/Telegram/Intercom）：pill 锚定在消息视口底缘，
+          浮于消息内容之上，与 composer 高度完全解耦。 */}
+      <div className="relative min-h-0 flex-1">
+        <ImagePreviewProvider>
+          <ScrollArea type="always" className="h-full [&>[data-radix-scroll-area-viewport]]:overscroll-contain">
+            <div ref={setContentRef} className="space-y-3 overflow-x-hidden pb-3 pr-3 sm:space-y-4">
+              {room.messages?.length === 0 ? (
+                <p className="text-muted-foreground py-10 text-center text-sm">尚未有消息</p>
+              ) : (
+                (room.messages ?? []).map((m) => <ChatMessageBubble key={m.messageId} message={m} />)
+              )}
+              {/* 访客正在输入指示器（业内最佳实践 LiveChat/Tawk.to）
+                  有预览文本 → 「草稿消息」气泡（淡化+斜体 = 未发送语义）+ 底部小圆点
+                  无预览文本 → 标准圆点气泡（Intercom 风格） */}
+              {clientTyping && room.status !== 'closed' && room.status !== 'archived' && (
+                <div className="flex flex-col items-start" aria-live="polite">
+                  {clientTypingText ? (
+                    <div className="bg-muted/50 max-w-[80%] rounded-2xl px-3.5 py-2.5">
+                      <p className="text-muted-foreground text-sm italic leading-relaxed break-words whitespace-pre-wrap">{clientTypingText}</p>
+                      <span className="mt-1.5 flex items-center justify-end gap-[3px]">
+                        <span className="bg-muted-foreground/40 h-1 w-1 animate-bounce rounded-full [animation-delay:-0.2s]" />
+                        <span className="bg-muted-foreground/40 h-1 w-1 animate-bounce rounded-full [animation-delay:-0.1s]" />
+                        <span className="bg-muted-foreground/40 h-1 w-1 animate-bounce rounded-full" />
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="bg-muted/50 inline-flex items-center gap-1 rounded-2xl px-4 py-3">
+                      <span className="bg-muted-foreground/50 h-2 w-2 animate-bounce rounded-full [animation-delay:-0.3s]" />
+                      <span className="bg-muted-foreground/50 h-2 w-2 animate-bounce rounded-full [animation-delay:-0.15s]" />
+                      <span className="bg-muted-foreground/50 h-2 w-2 animate-bounce rounded-full" />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        </ImagePreviewProvider>
 
-      {/* 访客正在输入指示器（P1 H2） */}
-      {clientTyping && room.status !== 'closed' && (
-        <div className="px-3 pb-1" aria-live="polite">
-          <span className="text-muted-foreground inline-flex items-center gap-1.5 text-xs">
-            <span className="flex gap-0.5">
-              <span className="bg-muted-foreground/60 h-1.5 w-1.5 animate-bounce rounded-full [animation-delay:-0.2s]" />
-              <span className="bg-muted-foreground/60 h-1.5 w-1.5 animate-bounce rounded-full [animation-delay:-0.1s]" />
-              <span className="bg-muted-foreground/60 h-1.5 w-1.5 animate-bounce rounded-full" />
-            </span>
-            访客正在输入…
-          </span>
-        </div>
-      )}
+        {/* 「↓ N 条新消息」pill：用户翻阅历史时收到新消息才出现，
+            点击 → 平滑滚底 + 清零；手动滚回底部也会自动消失 */}
+        {newMsgCount > 0 && (
+          <button
+            type="button"
+            onClick={() => {
+              scrollToBottom(true);
+              setNewMsgCount(0);
+            }}
+            className="bg-primary text-primary-foreground shadow-lg absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium transition-all hover:opacity-90 hover:shadow-xl active:scale-95"
+          >
+            <ArrowDown className="h-3.5 w-3.5" />
+            {newMsgCount} 条新消息
+          </button>
+        )}
+      </div>
 
       <ChatMessageComposer
         draft={draft}
@@ -159,7 +216,14 @@ export function ChatArea({
         contactName={room.clientName || room.clientEmail}
         quickReplies={quickReplies}
         onQuickReply={onQuickReply}
-        disabled={room.status === 'closed'}
+        disabled={room.status === 'closed' || room.status === 'archived' || notMyRoom}
+        disabledHint={
+          room.status === 'archived'
+            ? '会话已归档，无法继续发送'
+            : notMyRoom
+              ? '该会话由其他坐席负责 · 仅查看，如需回复请先转接或认领'
+              : undefined
+        }
       />
     </div>
   );

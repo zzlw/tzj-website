@@ -64,6 +64,23 @@ export interface AnalyticsReferrerRow {
   pageViews: number;
 }
 
+/**
+ * 按 IP 聚合的访客明细行（合并地区/IP/来源三维度）。
+ * region 为读取时重解析的精确地址；isp 为运营商（纯真库，可空）。
+ */
+export interface AnalyticsVisitorDetailRow {
+  id: string;
+  ip: string | null;
+  ipMasked: string | null;
+  region: string;
+  isp: string | null;
+  geoSource: string;
+  referrerHost: string;
+  pageViews: number;
+  uniqueVisitors: number;
+  lastSeenAt: string;
+}
+
 export interface AnalyticsVisitorRow {
   id: string;
   visitorId: string;
@@ -125,6 +142,14 @@ export function useAnalyticsIpTraffic(params?: Params) {
   });
 }
 
+export function useAnalyticsVisitorDetails(params?: Params) {
+  return useQuery<ListResult<AnalyticsVisitorDetailRow>>({
+    queryKey: ['analytics', 'visitor-details', params ?? {}],
+    queryFn: () => api.list<AnalyticsVisitorDetailRow>('analytics/visitor-details', params),
+    placeholderData: (prev) => prev,
+  });
+}
+
 export function useAnalyticsVisitors(params?: Params) {
   return useQuery<ListResult<AnalyticsVisitorRow>>({
     queryKey: ['analytics', 'visitors', params ?? {}],
@@ -164,3 +189,4 @@ export function formatShortDate(v: string): string {
 export const DEFAULT_PAGE_SORT = { column: 'pageViews', order: 'desc' as const };
 export const DEFAULT_REGION_SORT = { column: 'pageViews', order: 'desc' as const };
 export const DEFAULT_REFERRER_SORT = { column: 'pageViews', order: 'desc' as const };
+export const DEFAULT_VISITOR_DETAIL_SORT = { column: 'pageViews', order: 'desc' as const };

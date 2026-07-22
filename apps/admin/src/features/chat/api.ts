@@ -1,9 +1,11 @@
+import { BASE_PATH } from '@/lib/config';
 import type { ChatRoom, ChatRoomStats, ChatRoomsResponseData } from './types';
 
-const API_URL = (process.env.NEXT_PUBLIC_CHAT_API_URL ?? 'http://localhost:4000/api/v1').replace(
-  /\/$/,
-  '',
-);
+// 走 Next.js BFF 代理（/api/bff/[...path]）：服务端读取 httpOnly access cookie
+// 并附加 Authorization header，401 时自动刷新令牌。
+// 此前直连 API（NEXT_PUBLIC_CHAT_API_URL）不带鉴权 → 所有受保护端点 401 静默失败
+// → 刷新后历史消息拉不回来。
+const API_URL = `${BASE_PATH}/api/bff`;
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
@@ -31,6 +33,8 @@ export interface GetChatRoomsParams {
   /** 游标分页：上一页 nextCursor；首屏留空 */
   cursor?: string;
   take?: number;
+  /** 按分析访客 ID 筛选（访客档案抽屉用） */
+  visitorId?: string;
 }
 
 export function getChatRooms(params: GetChatRoomsParams = {}): Promise<ChatRoomsResponseData> {
@@ -41,6 +45,7 @@ export function getChatRooms(params: GetChatRoomsParams = {}): Promise<ChatRooms
   if (params.search) qs.set('search', params.search);
   if (params.cursor) qs.set('cursor', params.cursor);
   if (params.take) qs.set('take', String(params.take));
+  if (params.visitorId) qs.set('visitorId', params.visitorId);
   const query = qs.toString();
   return request<ChatRoomsResponseData>(`/chat-rooms${query ? `?${query}` : ''}`);
 }

@@ -1,3 +1,5 @@
+import type { ContentOperatorUser } from '@/features/types';
+
 export type ChatMessageSender = 'client' | 'agent' | 'system';
 
 /** 用户在线状态（服务端 presence 系统推送） */
@@ -49,6 +51,8 @@ export interface ChatRoom {
   clientName?: string;
   status: ChatRoomStatusKey;
   assignedAgentEmail?: string;
+  /** 负责人账号信息（后端随列表/详情返回，供 hover 资料卡展示） */
+  assignedAgentUser?: ContentOperatorUser | null;
   /** 完整消息体：仅在「打开会话」时由 getChatRoom 拉取并填充（列表项可缺省） */
   messages?: ChatMessage[];
   /** 列表预览：最后一条消息（来自后端 lastMessage 字段） */
@@ -78,6 +82,8 @@ export interface ChatRoom {
   source?: string;
   /** 访客当前在线状态（由服务端 presence 系统注入） */
   clientPresence?: PresenceStatus;
+  /** 访客是否当前打开了聊天面板（独立 engagement 信号，不影响在线态） */
+  clientPanelOpen?: boolean;
   /** 已转化客户 ID（坐席将访客转为客户线索后写入） */
   customerId?: string;
 }

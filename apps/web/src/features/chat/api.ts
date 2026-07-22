@@ -1,3 +1,4 @@
+import { getVisitorId } from '@/lib/analytics';
 import type { ChatRoom, RecentRoomData } from './types';
 
 const API_URL = (process.env.NEXT_PUBLIC_CHAT_API_URL ?? 'http://localhost:4000/api/v1').replace(
@@ -15,7 +16,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     cache: 'no-store',
   });
   if (!res.ok) {
-    throw new Error(`聊天服务请求失败 (${res.status})`);
+    throw new Error(`Chat service request failed (${res.status})`);
   }
   const json = (await res.json()) as { data?: T; success?: boolean };
   return json.data as T;
@@ -38,6 +39,8 @@ export function createRoom(body: {
   landingPath?: string;
   /** UTM source / 渠道来源 */
   source?: string;
+  /** 分析访客 ID（_tzj_vid），用于 B 端按人查聊天历史 */
+  visitorId?: string;
 }): Promise<ChatRoom & { token: string }> {
   return request<ChatRoom & { token: string }>(`/chat-rooms`, {
     method: 'POST',
@@ -62,6 +65,7 @@ export function collectVisitorContext(): {
   referrer: string;
   landingPath: string;
   source?: string;
+  visitorId?: string;
 } {
   if (typeof window === 'undefined') {
     return { userAgent: '', referrer: '', landingPath: '/' };
@@ -73,12 +77,15 @@ export function collectVisitorContext(): {
     referrer: document.referrer || '',
     landingPath: window.location.pathname,
     source: utm || undefined,
+    // 关联分析访客身份，供 B 端「访客会话」页按人下钻聊天记录
+    visitorId: getVisitorId() || undefined,
   };
 }
 
-/** 获取单个会话（含消息） */
-export function getRoom(roomId: string): Promise<ChatRoom> {
-  return request<ChatRoom>(`/chat-rooms/${enc(roomId)}`);
+/** 获取单个会话（含消息）——走访客专属公开端点，凭 clientEmail 校验归属。
+ * 此前复用管理端 GET :roomId（需 chat.view 权限）→ 匿名 401 静默失败。 */
+export function getRoom(roomId: string, clientEmail: string): Promise<ChatRoom> {
+  return request<ChatRoom>(`/chat-rooms/client/${enc(clientEmail)}/rooms/${enc(roomId)}`);
 }
 
 /** 获取附件预签名上传 URL（浏览器直传 S3/OSS） */
@@ -126,4 +133,15 @@ export function markReadHTTP(roomId: string, userEmail: string): Promise<ChatRoo
     method: 'PUT',
     body: JSON.stringify({ userEmail, userType: 'client' }),
   });
+}
+
+/** 坐席可用性（公开端点，无需 token）：访客端 mount 时立即获取在线状态 */
+export interface AgentAvailability {
+  online: number;
+  away: number;
+  lastOnlineAt: number | null;
+}
+
+export function fetchAgentAvailability(): Promise<AgentAvailability> {
+  return request<AgentAvailability>('/chat-rooms/agent-availability');
 }

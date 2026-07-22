@@ -14,8 +14,7 @@ import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger'
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { AuthUser, Role } from '../auth/roles';
+import type { AuthUser } from '../auth/roles';
 import { CreateNewsDto, UpdateNewsDto } from './dto/news.dto';
 import { NewsService } from './news.service';
 
@@ -64,7 +63,7 @@ export class NewsController {
     return this.newsService.findOne(slug, !!user);
   }
 
-  @Roles(Role.EDITOR, Role.ADMIN)
+  @RequirePermissions('content.create')
   @ApiBearerAuth()
   @Post()
   @ApiOperation({ summary: '创建新闻' })
@@ -72,7 +71,7 @@ export class NewsController {
     return this.newsService.create(dto, user.id);
   }
 
-  @Roles(Role.EDITOR, Role.ADMIN)
+  @RequirePermissions('content.edit')
   @ApiBearerAuth()
   @Put(':id')
   @ApiOperation({ summary: '更新新闻' })

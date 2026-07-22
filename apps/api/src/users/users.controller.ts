@@ -65,7 +65,11 @@ export class UsersController {
 
   @Post(':id/reset-password')
   @ApiOperation({ summary: '重置账号密码' })
-  resetPassword(@Param('id') id: string, @Body() dto: ResetUserPasswordDto) {
-    return this.usersService.resetPassword(id, dto);
+  resetPassword(
+    @Param('id') id: string,
+    @Body() dto: ResetUserPasswordDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.usersService.resetPassword(id, dto, user.id);
   }
 }

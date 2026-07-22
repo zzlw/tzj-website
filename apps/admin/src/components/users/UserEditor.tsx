@@ -47,6 +47,7 @@ export function UserEditor({ id }: { id?: string }) {
       phone: item.phone ?? '',
       role: item.role,
       isActive: item.isActive,
+      lockedUntil: item.lockedUntil ?? '',
       password: '',
     };
   }, [isEdit, item]);
@@ -57,6 +58,12 @@ export function UserEditor({ id }: { id?: string }) {
     if (!payload.email) payload.email = undefined;
     if (!payload.nickname) payload.nickname = undefined;
     if (!payload.phone) payload.phone = undefined;
+    // 临时锁定：空值转为 null（解锁），非空保留 ISO 日期字符串
+    if (isEdit) {
+      payload.lockedUntil = payload.lockedUntil || null;
+    } else {
+      delete payload.lockedUntil;
+    }
 
     try {
       if (isEdit && item) {

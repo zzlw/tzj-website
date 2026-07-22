@@ -3,6 +3,7 @@ import type { Prisma } from '@prisma/client/index';
 import { lookupGeo } from '../analytics/utils/geo-ip';
 import { parseUserAgent } from '../analytics/utils/ua-parser';
 import { maskIp, parseReferrerHost } from '../common/utils/client-ip';
+import { LAST_OPERATOR_USER_SELECT, mapOperatorUser } from '../common/utils/content-list';
 // biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
 import { PrismaService } from '../prisma/prisma.service';
 // biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
@@ -67,6 +68,8 @@ export interface ChatRoomResult {
   clientName?: string | null;
   status: string;
   assignedAgentEmail?: string | null;
+  /** 负责人账号信息（供 B 端 hover 资料卡展示，复用 content 模块 OperatorUser 结构） */
+  assignedAgentUser?: ReturnType<typeof mapOperatorUser>;
   messages: ChatRoomMessage[];
   lastActivity: Date | string;
   closedAt?: Date | string | null;
@@ -101,6 +104,8 @@ export interface ChatRoomListItem {
   clientName?: string | null;
   status: string;
   assignedAgentEmail?: string | null;
+  /** 负责人账号信息（供 B 端 hover 资料卡展示） */
+  assignedAgentUser?: ReturnType<typeof mapOperatorUser>;
   lastActivity: Date | string;
   closedAt?: Date | string | null;
   closedBy?: string | null;
@@ -128,6 +133,8 @@ export interface ChatRoomListItem {
   landingPath?: string | null;
   /** 访客当前在线状态（由网关注入，列表展示实时圆点） */
   clientPresence?: 'online' | 'away' | 'offline';
+  /** 访客是否当前打开了聊天面板（独立 engagement 信号，不影响在线态） */
+  clientPanelOpen?: boolean;
   /** 已转化客户 ID（坐席将访客转为客户线索后写入） */
   customerId?: string | null;
 }
@@ -288,7 +295,10 @@ export class ChatRoomService {
   }
 
   /** 列表项映射：仅含最后一条消息预览 + 消息总数，绝不携带完整消息体 */
-  private mapRoomSlim(raw: RawRoomSlim): ChatRoomListItem {
+  private mapRoomSlim(
+    raw: RawRoomSlim,
+    agentUserMap?: Map<string, Parameters<typeof mapOperatorUser>[0]>,
+  ): ChatRoomListItem {
     const last = raw.messages?.[0] ?? null;
     return {
       id: raw.id,
@@ -297,6 +307,9 @@ export class ChatRoomService {
       clientName: raw.clientName,
       status: raw.status,
       assignedAgentEmail: raw.assignedAgentEmail,
+      assignedAgentUser: raw.assignedAgentEmail
+        ? mapOperatorUser(agentUserMap?.get(raw.assignedAgentEmail.toLowerCase()))
+        : undefined,
       lastActivity: raw.lastActivity,
       closedAt: raw.closedAt,
       closedBy: raw.closedBy,
@@ -482,6 +495,7 @@ export class ChatRoomService {
     referrer?: string;
     landingPath?: string;
     source?: string;
+    visitorId?: string;
   }): Promise<ChatRoomResult> {
     // 1. 自动关闭该访客已有的 active/waiting 会话（避免僵尸 live 会话）
     const existingActive = await this.prisma.chatRoom.findMany({
@@ -525,6 +539,7 @@ export class ChatRoomService {
       userAgent: ua ? ua.slice(0, 512) : null,
       landingPath: dto.landingPath ?? null,
       source: dto.source ?? null,
+      visitorId: dto.visitorId ?? null,
     };
 
     if (dto.initialMessage) {
@@ -562,21 +577,48 @@ export class ChatRoomService {
   }
 
   /**
-   * 选择「负载最低」的在线坐席作为路由目标（P1 H3）。
-   * 负载 = 该坐席当前 active/waiting 会话数；平局随机取其一。
-   * 无人在线 → 返回 null（交由 waiting 队列 + M3 离线通知）。
+   * 选择「负载最低」的可用坐席作为路由目标（P1 H3，多坐席最佳实践增强版）。
+   *
+   * 策略（参考 LiveChat / Intercom / Zendesk 业内实践）：
+   *  1. 优先选 status='online' 的坐席；无 online 时退而选 'away'（仍有活跃 socket，
+   *     可接收通知并响应——总比无人应答强，LiveChat/Intercom 均路由给 away 坐席）。
+   *  2. 过滤已达容量上限的坐席（AGENT_MAX_CONCURRENT_CHATS，默认 10）
+   *  3. 在未满坐席中选负载最低者；平局随机取其一（公平性）
+   *  4. 所有坐席均满或无连接 → 返回 null（会话留在 waiting 队列，待坐席空闲后接入）
    */
   async pickAvailableAgentEmail(): Promise<string | null> {
     const agents = await this.presence.getAgentSummaries();
-    const online = agents.filter((a) => a.status === 'online').map((a) => a.email);
-    if (online.length === 0) return null;
+    // 有活跃 socket 的坐席（排除 Redis 僵尸记录）：优先 online，无 online 时兜底 away
+    const withSocket = agents.filter((a) => a.socketCount > 0);
+    const online = withSocket.filter((a) => a.status === 'online').map((a) => a.email);
+    const away = withSocket.filter((a) => a.status === 'away').map((a) => a.email);
+    // 两级路由：online 优先；无 online 坐席时退而选 away（仍连接中，可即时收到通知）
+    const pool = online.length > 0 ? online : away;
+    if (pool.length === 0) {
+      // 诊断日志：定位「未分配」根因——是无坐席记录、无活跃 socket、还是状态不对
+      this.logger.warn(
+        `[路由] 无可用坐席！agentSummaries=${JSON.stringify(
+          agents.map((a) => ({ email: a.email, status: a.status, sockets: a.socketCount })),
+        )}`,
+      );
+      return null;
+    }
+
+    // 坐席并发容量上限（环境变量可配，默认 10）
+    const maxCapacity = Number.parseInt(process.env.AGENT_MAX_CONCURRENT_CHATS ?? '10', 10) || 10;
+    // 只统计「近期活跃」的会话（默认 24h 内有活动），历史遗留的未关闭会话不计入容量。
+    // 业内实践（LiveChat/Intercom）：并发上限针对的是正在进行的对话，非全部历史会话。
+    const activeWindowHours =
+      Number.parseInt(process.env.AGENT_ACTIVE_WINDOW_HOURS ?? '24', 10) || 24;
+    const activeSince = new Date(Date.now() - activeWindowHours * 3600_000);
 
     const groups = await this.prisma.chatRoom.groupBy({
       by: ['assignedAgentEmail'],
       where: {
-        assignedAgentEmail: { in: online },
+        assignedAgentEmail: { in: pool },
         status: { in: ['active', 'waiting'] },
         deletedAt: null,
+        lastActivity: { gte: activeSince },
       },
       _count: { _all: true },
     });
@@ -589,24 +631,90 @@ export class ChatRoomService {
         .map((g) => [g.assignedAgentEmail, g._count._all] as [string, number]),
     );
 
-    let best: string | null = online[0] ?? null;
-    let bestLoad = Number.POSITIVE_INFINITY;
-    for (const email of online) {
-      const loadN = load.get(email) ?? 0;
-      if (loadN < bestLoad) {
-        bestLoad = loadN;
-        best = email;
-      }
+    // 过滤已达容量上限的坐席
+    const eligible = pool.filter((email) => (load.get(email) ?? 0) < maxCapacity);
+    if (eligible.length === 0) {
+      this.logger.warn(
+        `所有可用坐席均已达到容量上限(${maxCapacity})，会话将留在 waiting 队列。` +
+          ` 负载: ${pool.map((e) => `${e}=${load.get(e) ?? 0}`).join(', ')}，活跃窗口: ${activeWindowHours}h`,
+      );
+      return null;
     }
-    return best;
+
+    // 在未满坐席中选负载最低者；平局随机取其一（公平性）
+    let bestLoad = Number.POSITIVE_INFINITY;
+    for (const email of eligible) {
+      const loadN = load.get(email) ?? 0;
+      if (loadN < bestLoad) bestLoad = loadN;
+    }
+    const candidates = eligible.filter((email) => (load.get(email) ?? 0) === bestLoad);
+    const picked = candidates[Math.floor(Math.random() * candidates.length)] ?? null;
+
+    if (picked) {
+      this.logger.log(
+        `路由分配: ${picked} (load=${bestLoad}/${maxCapacity}, eligible=${eligible.length}/${pool.length}, tier=${online.length > 0 ? 'online' : 'away-fallback'})`,
+      );
+    }
+    return picked;
   }
 
-  /** 把会话分配给负载最低的在线坐席，返回被指派的坐席邮箱（无人在线返回 null）。 */
+  /** 把会话分配给负载最低的可用坐席（优先 online，兜底 away），返回被指派的坐席邮箱（无可用坐席返回 null）。 */
   async assignAvailableAgent(roomId: string): Promise<string | null> {
     const target = await this.pickAvailableAgentEmail();
     if (!target) return null;
     await this.updateChatRoom(roomId, { status: 'active', assignedAgentEmail: target });
     return target;
+  }
+
+  /**
+   * 获取坐席花名册详情（nickname + 活跃会话数），供转接 UI 展示。
+   * 业内最佳实践（Zendesk/Intercom）：转接列表显示坐席姓名 + 当前工作量，辅助决策。
+   * 仅返回系统中真实存在的用户（按 email 或 username 匹配），过滤测试探针连接。
+   */
+  async getAgentRosterDetails(
+    emails: string[],
+  ): Promise<Map<string, { name: string | null; activeRoomCount: number }>> {
+    if (emails.length === 0) return new Map();
+    const [users, groups] = await Promise.all([
+      this.prisma.user.findMany({
+        where: {
+          isActive: true,
+          OR: [{ email: { in: emails } }, { username: { in: emails } }],
+        },
+        select: { email: true, nickname: true, username: true },
+      }),
+      this.prisma.chatRoom.groupBy({
+        by: ['assignedAgentEmail'],
+        where: {
+          assignedAgentEmail: { in: emails },
+          status: { in: ['active', 'waiting'] },
+          deletedAt: null,
+        },
+        _count: { _all: true },
+      }),
+    ]);
+    // 构建 email/username → 显示名 映射（一个用户可能通过 email 或 username 连接）
+    const nameMap = new Map<string, string | null>();
+    for (const u of users) {
+      const name = u.nickname || u.username || null;
+      if (u.email) nameMap.set(u.email, name);
+      nameMap.set(u.username, name);
+    }
+    const countMap = new Map(
+      groups
+        .filter((g): g is { assignedAgentEmail: string; _count: { _all: number } } => !!g.assignedAgentEmail)
+        .map((g) => [g.assignedAgentEmail, g._count._all] as [string, number]),
+    );
+    // 仅保留在 User 表中存在的坐席（过滤测试/探针连接）
+    const result = new Map<string, { name: string | null; activeRoomCount: number }>();
+    for (const email of emails) {
+      if (!nameMap.has(email)) continue; // 非系统用户，跳过
+      result.set(email, {
+        name: nameMap.get(email) ?? null,
+        activeRoomCount: countMap.get(email) ?? 0,
+      });
+    }
+    return result;
   }
 
   /* ==================== 查询单个 ==================== */
@@ -619,7 +727,18 @@ export class ChatRoomService {
     if (!room) {
       throw new NotFoundException(`Chat room with ID ${roomId} not found`);
     }
-    return this.mapRoom(room);
+    const result = this.mapRoom(room);
+    // 附带负责人账号信息（B 端 ChatHeader hover 资料卡用）
+    if (room.assignedAgentEmail) {
+      const agentUser = await this.prisma.user.findFirst({
+        where: {
+          OR: [{ email: room.assignedAgentEmail }, { username: room.assignedAgentEmail }],
+        },
+        select: LAST_OPERATOR_USER_SELECT,
+      });
+      result.assignedAgentUser = mapOperatorUser(agentUser) ?? undefined;
+    }
+    return result;
   }
 
   async getChatRoomByClientEmail(clientEmail: string): Promise<ChatRoomResult | null> {
@@ -671,6 +790,7 @@ export class ChatRoomService {
     search?: string;
     cursor?: string;
     take?: number;
+    visitorId?: string;
   }): Promise<{ rooms: ChatRoomListItem[]; nextCursor: string | null }> {
     const take = Math.min(Math.max(filters.take ?? 20, 1), 100);
     const statuses = filters.status
@@ -684,6 +804,7 @@ export class ChatRoomService {
     if (statuses && statuses.length) base.status = { in: statuses };
     if (filters.clientEmail) base.clientEmail = filters.clientEmail;
     if (filters.assignedAgentEmail) base.assignedAgentEmail = filters.assignedAgentEmail;
+    if (filters.visitorId) base.visitorId = filters.visitorId;
     if (filters.search && filters.search.trim()) {
       const q = filters.search.trim();
       base.OR = [{ clientName: { contains: q } }, { clientEmail: { contains: q } }];
@@ -742,8 +863,29 @@ export class ChatRoomService {
     const lastRow = pageRows.length ? pageRows[pageRows.length - 1] : undefined;
     const nextCursor = hasMore && lastRow ? encodeCursor(lastRow) : null;
 
+    // 批量查询负责人账号信息（B 端 hover 资料卡用），单次 IN 查询避免 N+1。
+    // 坐席以 username=邮箱 登录，User.email 可能为空，须 OR 双字段匹配
+    // （同 getAgentRosterDetails 的查找策略）。
+    const agentEmails = [
+      ...new Set(pageRows.map((r) => r.assignedAgentEmail).filter((e): e is string => !!e)),
+    ];
+    const agentUsers = agentEmails.length
+      ? await this.prisma.user.findMany({
+          where: {
+            OR: [{ email: { in: agentEmails } }, { username: { in: agentEmails } }],
+          },
+          select: LAST_OPERATOR_USER_SELECT,
+        })
+      : [];
+    // email 和 username 均作键，确保 assignedAgentEmail 无论命中哪个字段都能找到
+    const agentUserMap = new Map<string, (typeof agentUsers)[number]>();
+    for (const u of agentUsers) {
+      if (u.email) agentUserMap.set(u.email.toLowerCase(), u);
+      agentUserMap.set(u.username.toLowerCase(), u);
+    }
+
     return {
-      rooms: pageRows.map((r) => this.mapRoomSlim(r)),
+      rooms: pageRows.map((r) => this.mapRoomSlim(r, agentUserMap)),
       nextCursor,
     };
   }
@@ -754,7 +896,7 @@ export class ChatRoomService {
     roomId: string,
     dto: {
       content?: string;
-      sender: 'client' | 'agent';
+      sender: 'client' | 'agent' | 'system';
       senderEmail?: string;
       attachments?: string[];
     },
@@ -776,7 +918,18 @@ export class ChatRoomService {
     }
 
     const isClosed = room.status === 'closed';
+    const isArchived = room.status === 'archived';
     const isClientSender = dto.sender === 'client';
+    const isSystemSender = dto.sender === 'system';
+
+    // 归档即冷存终态（业内最佳实践 Zendesk/LiveChat/Freshchat）：归档会话是封存的历史快照，
+    // 访客新消息应「开启新会话」而非原地重开（归档语境已陈旧、原坐席上下文失效）。
+    // 服务端拒绝向归档会话发消息（可识别错误码 ROOM_ARCHIVED），杜绝消息石沉大海；
+    // C 端恢复流程检测到归档会话时清空本地存储、引导访客自然开启新对话。
+    // 系统消息不受此限制（内部流转兜底）。
+    if (isArchived && !isSystemSender) {
+      throw new BadRequestException({ code: 'ROOM_ARCHIVED', message: '会话已归档，请开启新对话' });
+    }
 
     // 关闭即终态：坐席不能向已关闭会话追加消息（须走显式「重新打开」动作，
     // 当前由前端引导坐席走「重新咨询」；后续可加显式重开按钮）。
@@ -784,7 +937,8 @@ export class ChatRoomService {
     // 同一会话回到进行中（保留原负责人则延续原坐席上下文，否则回到待领取队列），
     // 使 Intercom / Zendesk 式的「客户回复使已解决会话重新打开」生效，
     // 而非静默失败，也不是只能另开新会话。
-    if (isClosed && !isClientSender) {
+    // 系统消息（转接/分配/关闭通知）不受此限制。
+    if (isClosed && !isClientSender && !isSystemSender) {
       throw new BadRequestException('Cannot send message to closed chat room');
     }
 
@@ -828,6 +982,7 @@ export class ChatRoomService {
       lastActivity: new Date(),
     };
 
+    // 系统消息（转接/分配等）不触发状态变更和未读计数
     if (dto.sender === 'client') {
       updateData.unreadCountForAgent = { increment: 1 };
       if (reopened) {
@@ -857,7 +1012,7 @@ export class ChatRoomService {
     if (dto.sender === 'client') {
       try {
         const agents = await this.presence.getAgentSummaries();
-        const anyOnline = agents.some((a) => a.status === 'online');
+        const anyOnline = agents.some((a) => a.socketCount > 0 && a.status === 'online');
         if (!anyOnline) {
           void this.chatNotify.notifyOfflineMessage(roomId, room.clientEmail);
         }
@@ -888,66 +1043,92 @@ export class ChatRoomService {
     if (!room) {
       throw new NotFoundException(`Chat room with ID ${roomId} not found`);
     }
-
-    // 归属校验（P0 C2，REST 兜底路径）：访客只能操作自己的会话。
+  
+    // 归属校验（P0 C2，REST 兖底路径）：访客只能操作自己的会话。
     if (userType === 'client' && userEmail !== room.clientEmail) {
       throw new BadRequestException('无权操作该会话');
     }
-
+  
     const oppositeSender = userType === 'client' ? 'agent' : 'client';
-    let updatedCount = 0;
+    const now = new Date();
+    // 收集需要创建回执的消息 ID（内部 DB id）和公开 messageId
+    const receiptCreates: Array<{ messageId: string; userEmail: string; userType: 'client' | 'agent'; readAt: Date }> = [];
     const markedMessageIds: string[] = [];
-
+    // 双方都已读的消息 ID，需更新 isRead=true
+    const bothReadMessageIds: string[] = [];
+  
     for (const msg of room.messages) {
       const shouldMark = messageIds
         ? messageIds.includes(msg.messageId)
         : msg.sender === oppositeSender && !msg.readReceipts.some((r) => r.userEmail === userEmail);
-
-      if (shouldMark) {
-        if (!msg.readReceipts.some((r) => r.userEmail === userEmail)) {
-          await this.prisma.messageReadReceipt.create({
-            data: {
-              messageId: msg.id,
-              userEmail,
-              userType,
-              readAt: new Date(),
-            },
-          });
-          updatedCount++;
-          markedMessageIds.push(msg.messageId);
-        }
-
-        const hasOtherSide = msg.readReceipts.some((r) => r.userType !== userType);
-        if (hasOtherSide) {
-          await this.prisma.chatMessage.update({
-            where: { id: msg.id },
-            data: { isRead: true },
-          });
+  
+      if (shouldMark && !msg.readReceipts.some((r) => r.userEmail === userEmail)) {
+        receiptCreates.push({ messageId: msg.id, userEmail, userType, readAt: now });
+        markedMessageIds.push(msg.messageId);
+        // 对方已有回执 → 双方均已读，标记 isRead
+        if (msg.readReceipts.some((r) => r.userType !== userType)) {
+          bothReadMessageIds.push(msg.id);
         }
       }
     }
-
+  
+    // 批量创建回执（单次 DB 写入，替代逐条 create，大幅降低延迟）
+    if (receiptCreates.length > 0) {
+      await this.prisma.messageReadReceipt.createMany({
+        data: receiptCreates,
+        skipDuplicates: true,
+      });
+    }
+    // 批量更新双方已读标记
+    if (bothReadMessageIds.length > 0) {
+      await this.prisma.chatMessage.updateMany({
+        where: { id: { in: bothReadMessageIds } },
+        data: { isRead: true },
+      });
+    }
+  
+    const updatedCount = receiptCreates.length;
     const updateData: Prisma.ChatRoomUpdateInput = {};
     if (userType === 'client') {
-      // 原子递减，避免读取 stale 值导致并发竞态偏移
       if (updatedCount > 0) {
         updateData.unreadCountForClient = { decrement: updatedCount };
       }
-      updateData.lastReadByClient = new Date();
+      updateData.lastReadByClient = now;
     } else {
       if (updatedCount > 0) {
         updateData.unreadCountForAgent = { decrement: updatedCount };
       }
-      updateData.lastReadByAgent = new Date();
+      updateData.lastReadByAgent = now;
     }
-
-    await this.prisma.chatRoom.update({
+  
+    const updatedRoom = await this.prisma.chatRoom.update({
       where: { roomId },
       data: updateData,
     });
-
-    const result = await this.getChatRoomById(roomId);
-    return { ...result, markedMessageIds };
+  
+    // 轻量返回：网关仅需 roomId / unreadCounts / lastRead 字段，无需加载全量消息，
+    // 避免昂贵的 getChatRoomById 查询（包含所有消息 + 所有回执）。
+    return {
+      id: updatedRoom.id,
+      roomId: updatedRoom.roomId,
+      clientEmail: updatedRoom.clientEmail,
+      clientName: updatedRoom.clientName,
+      status: updatedRoom.status,
+      assignedAgentEmail: updatedRoom.assignedAgentEmail,
+      messages: [],
+      lastActivity: updatedRoom.lastActivity,
+      closedAt: updatedRoom.closedAt,
+      closedBy: updatedRoom.closedBy,
+      tags: updatedRoom.tags ?? [],
+      notes: updatedRoom.notes,
+      unreadCountForClient: Math.max(0, updatedRoom.unreadCountForClient),
+      unreadCountForAgent: Math.max(0, updatedRoom.unreadCountForAgent),
+      lastReadByClient: updatedRoom.lastReadByClient,
+      lastReadByAgent: updatedRoom.lastReadByAgent,
+      createdAt: updatedRoom.createdAt,
+      updatedAt: updatedRoom.updatedAt,
+      markedMessageIds,
+    };
   }
 
   async getUnreadCountForUser(
@@ -1218,7 +1399,13 @@ export class ChatRoomService {
     if (status === 'closed') data.closedAt = new Date();
     if (status === 'archived') data.archivedAt = new Date();
     const res = await this.prisma.chatRoom.updateMany({
-      where: { roomId: { in: roomIds }, deletedAt: null },
+      where: {
+        roomId: { in: roomIds },
+        deletedAt: null,
+        // 业内最佳实践：归档是「后解决」内务操作，仅允许已关闭会话（Zendesk/Intercom/Freshchat 共识）。
+        // 跳过关闭会绕过访客通知、坐席容量释放、审计消息等关键副作用。
+        ...(status === 'archived' ? { status: 'closed' } : {}),
+      },
       data,
     });
     return res.count;

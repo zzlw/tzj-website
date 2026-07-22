@@ -46,6 +46,11 @@ export class CreateChatRoomDto {
   @IsOptional()
   @IsString()
   source?: string;
+
+  /** 分析访客 ID（_tzj_vid），用于 B 端按人查聊天历史 */
+  @IsOptional()
+  @IsString()
+  visitorId?: string;
 }
 
 export class SendMessageDto {
@@ -159,6 +164,11 @@ export class GetChatRoomsDto {
   @Type(() => Number)
   @Min(1)
   take?: number;
+
+  /** 按分析访客 ID 筛选（访客档案抽屉用） */
+  @IsOptional()
+  @IsString()
+  visitorId?: string;
 }
 
 /** 批量操作（关闭 / 归档 / 软删除） */

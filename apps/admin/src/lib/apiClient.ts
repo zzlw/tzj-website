@@ -111,4 +111,10 @@ export const api = {
   /** GET 单资源或聚合接口（支持 query，如 analytics/overview） */
   query: <T>(path: string, params?: Params) =>
     request<T>(`/${path}${qs(params)}`).then((r) => r.data),
+  /** DELETE 路径式接口（如 /auth/sessions/:id） */
+  del: <T>(path: string, payload?: unknown) =>
+    request<T>(`${path.startsWith('/') ? path : `/${path}`}`, {
+      method: 'DELETE',
+      ...(payload ? { body: JSON.stringify(payload) } : {}),
+    }).then((r) => r.data),
 };

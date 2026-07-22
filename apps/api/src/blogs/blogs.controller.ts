@@ -14,8 +14,7 @@ import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger'
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { AuthUser, Role } from '../auth/roles';
+import type { AuthUser } from '../auth/roles';
 import { BlogsService } from './blogs.service';
 import { CreateBlogDto, UpdateBlogDto } from './dto/blog.dto';
 
@@ -64,7 +63,7 @@ export class BlogsController {
     return this.blogsService.findOne(slug, !!user);
   }
 
-  @Roles(Role.EDITOR, Role.ADMIN)
+  @RequirePermissions('content.create')
   @ApiBearerAuth()
   @Post()
   @ApiOperation({ summary: '创建博客' })
@@ -72,7 +71,7 @@ export class BlogsController {
     return this.blogsService.create(dto, user.id);
   }
 
-  @Roles(Role.EDITOR, Role.ADMIN)
+  @RequirePermissions('content.edit')
   @ApiBearerAuth()
   @Put(':id')
   @ApiOperation({ summary: '更新博客' })

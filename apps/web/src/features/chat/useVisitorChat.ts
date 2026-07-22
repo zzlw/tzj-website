@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Socket } from 'socket.io-client';
 import type { ChatMessage } from '@/features/chat/types';
 
@@ -21,6 +21,8 @@ type ChatVisitorEventMap = {
     status?: 'online' | 'away' | 'offline';
   };
   'room-status-changed': { roomId?: string; status?: string };
+  /** 转接通知（访客端收到）：会话被转接给其他坐席 */
+  'room-transfer-notice': { roomId?: string; toAgentName?: string; transferredBy?: string };
   /** 对方（坐席）正在输入（P1 H2） */
   typing: { roomId?: string; userEmail?: string; userType?: string };
   /** 对方（坐席）停止输入（P1 H2） */
@@ -55,15 +57,21 @@ export interface UseVisitorChatResult {
   sendMessage: (roomId: string, content: string, attachments?: string[]) => void;
   markRead: (roomId: string) => void;
   /** 标记「正在输入」（P1 H2），用于通知对方显示「正在输入…」 */
-  sendTyping: (roomId: string) => void;
+  sendTyping: (roomId: string, text?: string) => void;
   /** 标记「停止输入」（P1 H2） */
   sendStopTyping: (roomId: string) => void;
   /** 主动拉取未读聚合计数（P2 M1） */
   requestNotificationCounts: () => void;
-  /** 主动报告「正在看聊天」：打开面板 / 切回前台 → 恢复 online */
+  /** 主动报告「正在看网站」：切回前台可见 → 恢复 online（与聊天面板是否打开无关） */
   reportActive: () => void;
-  /** 主动报告「离开聊天」：关闭面板 / 切到后台 → 置为 away */
+  /** 主动报告「离开网站」：切到后台隐藏 → 置为 away（与聊天面板是否打开无关） */
   reportIdle: () => void;
+  /** 上报「聊天面板开关」：独立 engagement 信号，不影响 online/away（仅供 B 端「正在查看对话」提示） */
+  reportPanelState: (open: boolean) => void;
+  /** 外部覆写坐席在线数（REST 兜底场景） */
+  setAgentsOnline: (n: number) => void;
+  /** 外部覆写坐席离开数（REST 兜底 / 定时再同步场景） */
+  setAgentsAway: (n: number) => void;
 }
 
 /**
@@ -118,6 +126,8 @@ export function useVisitorChat(token: string | null): UseVisitorChatResult {
   useEffect(() => {
     let cancelled = false;
     let socket: Socket | null = null;
+    // 保存内部清理函数，确保 async IIFE 返回的资源清理逻辑能被执行
+    let innerCleanup: (() => void) | null = null;
 
     (async () => {
       const { io } = await import('socket.io-client');
@@ -196,7 +206,8 @@ export function useVisitorChat(token: string | null): UseVisitorChatResult {
       window.addEventListener('pagehide', handlePageHide);
       window.addEventListener('beforeunload', handlePageHide);
 
-      return () => {
+      // 保存内部清理函数，供外层 cleanup 调用
+      innerCleanup = () => {
         clearInterval(heartbeatTimer);
         document.removeEventListener('visibilitychange', handleVisibility);
         window.removeEventListener('pagehide', handlePageHide);
@@ -206,6 +217,8 @@ export function useVisitorChat(token: string | null): UseVisitorChatResult {
 
     return () => {
       cancelled = true;
+      // 执行内部清理：清除心跳定时器、移除事件监听器
+      innerCleanup?.();
       try {
         socketRef.current?.emit('user-idle');
       } catch {}
@@ -241,8 +254,8 @@ export function useVisitorChat(token: string | null): UseVisitorChatResult {
     });
   }, []);
 
-  const sendTyping = useCallback((roomId: string) => {
-    socketRef.current?.emit('typing', { roomId });
+  const sendTyping = useCallback((roomId: string, text?: string) => {
+    socketRef.current?.emit('typing', { roomId, text });
   }, []);
 
   const sendStopTyping = useCallback((roomId: string) => {
@@ -259,22 +272,35 @@ export function useVisitorChat(token: string | null): UseVisitorChatResult {
   const reportActive = useCallback(() => {
     socketRef.current?.emit('user-active');
   }, []);
+  const reportPanelState = useCallback((open: boolean) => {
+    // 面板开关仅作为 engagement 信号，不改变在线态（业内最佳实践：
+    // 在线/离开只看连接 + 标签页可见 + 是否长时间无操作）。
+    socketRef.current?.emit('chat-panel', { open });
+  }, []);
 
-  return {
-    connected,
-    agentsOnline,
-    agentsAway,
-    agentLastOnlineAt,
-    on,
-    off,
-    joinRoom,
-    leaveRoom,
-    sendMessage,
-    markRead,
-    sendTyping,
-    sendStopTyping,
-    requestNotificationCounts,
-    reportActive,
-    reportIdle,
-  };
+  return useMemo(
+    () => ({
+      connected,
+      agentsOnline,
+      agentsAway,
+      agentLastOnlineAt,
+      on,
+      off,
+      joinRoom,
+      leaveRoom,
+      sendMessage,
+      markRead,
+      sendTyping,
+      sendStopTyping,
+      requestNotificationCounts,
+      reportActive,
+      reportIdle,
+      reportPanelState,
+      setAgentsOnline,
+      setAgentsAway,
+    }),
+    // 函数均为 useCallback([]) 稳定引用；状态项为唯一变动项。
+    // 稳定化返回对象，避免消费方因「每次渲染新对象」而重装监听器。
+    [connected, agentsOnline, agentsAway, agentLastOnlineAt, on, off, joinRoom, leaveRoom, sendMessage, markRead, sendTyping, sendStopTyping, requestNotificationCounts, reportActive, reportIdle, reportPanelState, setAgentsOnline, setAgentsAway],
+  );
 }

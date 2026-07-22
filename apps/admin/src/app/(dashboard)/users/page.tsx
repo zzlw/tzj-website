@@ -21,6 +21,7 @@ import { ArrowLeft, Plus, Search, Trash2, UserCog } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
+import { useSession } from '@/components/session';
 import { type RoleOption, useRoleOptions } from '@/features/access';
 import { formatDate } from '@/features/constants';
 import { useList, useRemove } from '@/features/hooks';
@@ -74,6 +75,7 @@ const COLUMNS = (roleOptions: RoleOption[]): DataTableColumn<UserItem>[] => [
 ];
 
 export default function UsersPage() {
+  const { username: currentUsername } = useSession();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [searchInput, setSearchInput] = useState('');
@@ -187,15 +189,17 @@ export default function UsersPage() {
                 <UserCog className="h-4 w-4" />
               </Link>
             </Button>
-            <Button
-              size="icon"
-              variant="ghost"
-              className="h-8 w-8 text-destructive hover:text-destructive"
-              onClick={() => setDeleteTarget(r)}
-              aria-label="删除"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            {r.username !== currentUsername && (
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8 text-destructive hover:text-destructive"
+                onClick={() => setDeleteTarget(r)}
+                aria-label="删除"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         )}
       />

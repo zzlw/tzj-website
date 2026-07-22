@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { DashboardShell } from '@/components/DashboardShell';
 import { Providers } from '@/components/Providers';
@@ -27,6 +28,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const roleLabels: Record<string, string> = { admin: '超级管理员' };
 
+  // 侧边栏默认展开状态：服务端读取 cookie（SidebarProvider 切换时写入），
+  // 作为跨页导航后 URL 无 ?nav= 参数时的回退，保证刷新后仍保持收起/展开状态。
+  const cookieStore = await cookies();
+  const sidebarDefaultOpen = cookieStore.get('sidebar_state')?.value !== 'false';
+
   return (
     <Providers
       session={{
@@ -39,6 +45,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <DashboardShell
           username={session.username}
           roleLabel={roleLabels[session.role] ?? session.role}
+          defaultOpen={sidebarDefaultOpen}
         >
           {children}
         </DashboardShell>

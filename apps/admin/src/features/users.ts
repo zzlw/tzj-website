@@ -30,6 +30,7 @@ export const createUserSchema = baseSchema.extend({
 
 export const updateUserSchema = baseSchema.extend({
   password: z.string().min(8, '密码至少 8 位').max(128).optional().or(z.literal('')),
+  lockedUntil: z.string().optional().or(z.literal('')).or(z.null()),
 });
 
 export function buildUserCreateFields(roleOptions: RoleOption[]): FieldDef[] {
@@ -69,6 +70,13 @@ export function buildUserEditFields(roleOptions: RoleOption[]): FieldDef[] {
     { name: 'email', label: '邮箱', type: 'text', colSpan: 2 },
     { name: 'phone', label: '手机号', type: 'text' },
     {
+      name: 'lockedUntil',
+      label: '临时锁定至',
+      type: 'datetime',
+      help: '设置后该账号在指定时间前无法登录，留空则不锁定',
+      emptyAsNull: true,
+    },
+    {
       name: 'password',
       label: '新密码',
       type: 'text',
@@ -94,5 +102,6 @@ export const userEditDefaults = {
   phone: '',
   role: 'admin',
   isActive: true,
+  lockedUntil: '',
   password: '',
 };

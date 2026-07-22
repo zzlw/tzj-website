@@ -77,3 +77,20 @@ export function referrerOrderClause(sortBy?: string, sortOrder?: string): Prisma
       return dir === 'asc' ? Prisma.sql`"pageViews" ASC` : Prisma.sql`"pageViews" DESC`;
   }
 }
+
+/**
+ * 按 IP 聚合的访客明细排序。地区/来源为读取时重解析或代表值，DB 排序无意义，
+ * 故仅对 SQL 原生可聚合列（PV/UV/最近访问）开放排序。
+ */
+export function visitorDetailOrderClause(sortBy?: string, sortOrder?: string): Prisma.Sql {
+  const dir = parseSortOrder(sortOrder);
+  switch (sortBy) {
+    case 'uniqueVisitors':
+      return dir === 'asc' ? Prisma.sql`"uniqueVisitors" ASC` : Prisma.sql`"uniqueVisitors" DESC`;
+    case 'lastSeenAt':
+      return dir === 'asc' ? Prisma.sql`"lastSeenAt" ASC` : Prisma.sql`"lastSeenAt" DESC`;
+    case 'pageViews':
+    default:
+      return dir === 'asc' ? Prisma.sql`"pageViews" ASC` : Prisma.sql`"pageViews" DESC`;
+  }
+}

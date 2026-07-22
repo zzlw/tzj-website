@@ -1,4 +1,4 @@
-export type ChatMessageSender = 'client' | 'agent';
+export type ChatMessageSender = 'client' | 'agent' | 'system';
 
 /** 聊天消息附件（与后端 ChatAttachmentItem 对应） */
 export interface ChatAttachment {
@@ -27,7 +27,7 @@ export interface ChatMessage {
   }>;
 }
 
-export type ChatRoomStatusKey = 'active' | 'waiting' | 'closed';
+export type ChatRoomStatusKey = 'active' | 'waiting' | 'closed' | 'archived';
 
 export interface ChatRoom {
   roomId: string;

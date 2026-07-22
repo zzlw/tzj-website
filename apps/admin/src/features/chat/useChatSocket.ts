@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Socket } from 'socket.io-client';
 import type { ChatMessage, ChatRoom, PresenceStatus } from './types';
 
@@ -13,6 +13,10 @@ const SOCKET_URL = (process.env.NEXT_PUBLIC_CHAT_SOCKET_URL ?? 'http://localhost
 export interface OnlineAgent {
   email: string;
   status: PresenceStatus;
+  /** 坐席显示名（nickname / username，业内最佳实践：转接列表显示姓名而非 email） */
+  name?: string | null;
+  /** 当前活跃会话数（工作量指示，辅助转接决策） */
+  activeRoomCount?: number;
 }
 
 /** 通知计数聚合负载（P2 M1） */
@@ -53,14 +57,25 @@ type ChatAgentEventMap = {
   };
   /** 在线坐席花名册（P1 H3 转接目标） */
   'agent-roster': { agents: OnlineAgent[] };
-  /** 访客正在输入（P1 H2） */
-  typing: { roomId?: string; userEmail?: string; userType?: string };
+  /** 访客正在输入（P1 H2）：含实时输入内容预览 */
+  typing: { roomId?: string; userEmail?: string; userType?: string; text?: string };
   /** 访客停止输入（P1 H2） */
   'stop-typing': { roomId?: string; userEmail?: string; userType?: string };
   /** 通知计数聚合（P2 M1）：初始拉取 + 增量更新，形状一致 */
   'notification-counts': AgentNotificationCounts;
   'notification-counts-updated': AgentNotificationCounts;
   'user-left': { roomId?: string; userEmail?: string };
+  /** 转接通知（目标坐席收到）：会话被转接给你，含备注、访客信息和历史消息 */
+  'room-transferred-in': {
+    roomId: string;
+    clientEmail: string;
+    clientName?: string;
+    transferredBy: string;
+    note?: string | null;
+    status: string;
+    assignedAgentEmail?: string;
+    messages?: ChatMessage[];
+  };
   error: unknown;
   'auth-error': unknown;
   'my-presence': { status: PresenceStatus };
@@ -80,13 +95,15 @@ export interface UseChatSocketResult {
   markRead: (roomId: string) => void;
   updateStatus: (roomId: string, status: string, assignedAgentEmail?: string) => void;
   /** 转接会话给另一名坐席（P1 H3） */
-  transferRoom: (roomId: string, toAgentEmail: string) => void;
+  transferRoom: (roomId: string, toAgentEmail: string, note?: string) => void;
   /** 标记「正在输入」（P1 H2） */
   sendTyping: (roomId: string) => void;
   /** 标记「停止输入」（P1 H2） */
   sendStopTyping: (roomId: string) => void;
   /** 主动拉取未读聚合计数（P2 M1） */
   requestNotificationCounts: () => void;
+  /** 主动请求会话列表（切换菜单返回聊天页时，socket 已连接但需重新拉取） */
+  requestRoomList: () => void;
   /** 切换坐席自身在线状态（在线/离开/离线），广播给访客端 */
   setPresence: (status: 'online' | 'away' | 'offline') => void;
 }
@@ -272,8 +289,8 @@ export function useChatSocket(params: { token: string | null }): UseChatSocketRe
     [],
   );
 
-  const transferRoom = useCallback((roomId: string, toAgentEmail: string) => {
-    socketRef.current?.emit('transfer-room', { roomId, toAgentEmail });
+  const transferRoom = useCallback((roomId: string, toAgentEmail: string, note?: string) => {
+    socketRef.current?.emit('transfer-room', { roomId, toAgentEmail, note: note || undefined });
   }, []);
 
   const sendTyping = useCallback((roomId: string) => {
@@ -288,25 +305,36 @@ export function useChatSocket(params: { token: string | null }): UseChatSocketRe
     socketRef.current?.emit('get-notification-counts');
   }, []);
 
+  const requestRoomList = useCallback(() => {
+    socketRef.current?.emit('request-room-list');
+  }, []);
+
   const setPresence = useCallback((status: 'online' | 'away' | 'offline') => {
     manualOfflineRef.current = status === 'offline';
     if (status !== 'offline') hasEverBeenOnlineRef.current = true;
     socketRef.current?.emit('set-presence', { status });
   }, []);
 
-  return {
-    connected,
-    on,
-    off,
-    joinRoom,
-    leaveRoom,
-    sendMessage,
-    markRead,
-    updateStatus,
-    transferRoom,
-    sendTyping,
-    sendStopTyping,
-    requestNotificationCounts,
-    setPresence,
-  };
+  return useMemo(
+    () => ({
+      connected,
+      on,
+      off,
+      joinRoom,
+      leaveRoom,
+      sendMessage,
+      markRead,
+      updateStatus,
+      transferRoom,
+      sendTyping,
+      sendStopTyping,
+      requestNotificationCounts,
+      requestRoomList,
+      setPresence,
+    }),
+    // 所有函数均为 useCallback([]) 稳定引用；connected 是唯一变动项。
+    // 稳定化返回对象避免消费方 effect 依赖数组因「每次渲染新对象」而频繁重装监听器。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [connected, on, off, joinRoom, leaveRoom, sendMessage, markRead, updateStatus, transferRoom, sendTyping, sendStopTyping, requestNotificationCounts, requestRoomList, setPresence],
+  );
 }
