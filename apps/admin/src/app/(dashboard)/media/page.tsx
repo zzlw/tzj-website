@@ -32,6 +32,7 @@ import {
 import type { MediaAsset } from '@/features/types';
 import { ApiError } from '@/lib/apiClient';
 import { notifyError, notifySuccess } from '@/lib/notify';
+import { enumField, intField, stringField, useUrlState } from '@/lib/use-url-state';
 
 const TYPE_FILTERS = [
   { label: '全部', value: '' },
@@ -54,13 +55,17 @@ const VIEW_TABS = [
 type ViewTab = (typeof VIEW_TABS)[number]['value'];
 
 export default function MediaPage() {
-  const [view, setView] = useState<ViewTab>('library');
-  const [type, setType] = useState('');
-  const [folder, setFolder] = useState('');
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(24);
-  const [search, setSearch] = useState('');
-  const [searchInput, setSearchInput] = useState('');
+  const [urlState, setUrlState] = useUrlState({
+    view: enumField(['library', 'trash'] as const, 'library'),
+    type: enumField(['image', 'video', 'file'] as const, ''),
+    folder: enumField(['content', 'cms'] as const, ''),
+    page: intField(1, { min: 1 }),
+    pageSize: intField(24, { min: 1 }),
+    search: stringField(),
+  });
+  const { view, type, folder, page, pageSize } = urlState;
+  const search = urlState.search;
+  const [searchInput, setSearchInput] = useState(() => urlState.search || '');
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<MediaAsset | null>(null);
   const [purgeTarget, setPurgeTarget] = useState<MediaAsset | null>(null);
@@ -210,9 +215,7 @@ export default function MediaPage() {
       <Tabs
         value={view}
         onValueChange={(v) => {
-          setView(v as ViewTab);
-          setPage(1);
-          setType('');
+          setUrlState({ view: v as ViewTab, type: '', page: 1 });
         }}
         className="mb-4"
       >
@@ -230,8 +233,7 @@ export default function MediaPage() {
           <Tabs
             value={type}
             onValueChange={(v) => {
-              setType(v);
-              setPage(1);
+              setUrlState({ type: v as typeof type, page: 1 });
             }}
             className="mb-4"
           >
@@ -246,8 +248,7 @@ export default function MediaPage() {
           <Tabs
             value={folder}
             onValueChange={(v) => {
-              setFolder(v);
-              setPage(1);
+              setUrlState({ folder: v as typeof folder, page: 1 });
             }}
             className="mb-4"
           >
@@ -268,8 +269,7 @@ export default function MediaPage() {
             className="relative max-w-md"
             onSubmit={(e) => {
               e.preventDefault();
-              setPage(1);
-              setSearch(searchInput.trim());
+              setUrlState({ search: searchInput.trim(), page: 1 });
             }}
           >
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -286,8 +286,7 @@ export default function MediaPage() {
                 aria-label="清除搜索"
                 onClick={() => {
                   setSearchInput('');
-                  setSearch('');
-                  setPage(1);
+                  setUrlState({ search: '', page: 1 });
                 }}
               >
                 <X className="h-4 w-4" />
@@ -350,10 +349,9 @@ export default function MediaPage() {
           total={pagination.total}
           pageSize={pageSize}
           pageSizeOptions={[12, 24, 48, 96]}
-          onPageChange={setPage}
+          onPageChange={(p) => setUrlState({ page: p })}
           onPageSizeChange={(size) => {
-            setPageSize(size);
-            setPage(1);
+            setUrlState({ pageSize: size, page: 1 });
           }}
           unit="项"
         />

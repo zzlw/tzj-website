@@ -168,6 +168,8 @@ export function ChatMessenger() {
   activeBucketRef.current = activeBucket;
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // 搜索结果跳转：打开会话时需滚动定位并高亮的目标消息 id（无则常规滑到底）
+  const [highlightMessageId, setHighlightMessageId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [selectMode, setSelectMode] = useState(false);
@@ -1222,8 +1224,10 @@ export function ChatMessenger() {
   }, [selectedId]);
 
   const handleSelect = useCallback(
-    async (roomId: string) => {
+    async (roomId: string, messageId?: string) => {
       setSelectedId(roomId);
+      // 仅当从搜索命中片段点入时携带 messageId；常规点击清空，避免残留高亮目标
+      setHighlightMessageId(messageId ?? null);
       // 点开会话的瞬间，读取该会话当前的未读数，乐观地把「未读总数」即时扣减，
       // 避免后端 notification-counts 推送延迟/被覆盖时，左侧徽标在打开会话后仍停留在旧值。
       // 后端在收到 markRead 后会通过 notification-counts-updated 推送权威总数做二次校正，
@@ -1522,6 +1526,7 @@ export function ChatMessenger() {
           onTransfer={handleTransfer}
           clientTyping={clientTyping}
           clientTypingText={clientTypingText}
+          highlightMessageId={highlightMessageId}
         />
       ) : (
         <div className="border-border/40 bg-background/60 flex min-h-0 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed p-8 backdrop-blur lg:rounded-3xl">

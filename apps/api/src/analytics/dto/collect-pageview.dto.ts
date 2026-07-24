@@ -55,4 +55,40 @@ export class CollectPageViewDto {
   @Min(-180)
   @Max(180)
   longitude?: number;
+
+  @ApiPropertyOptional({ description: '营销来源 utm_source' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  utmSource?: string;
+
+  @ApiPropertyOptional({ description: '营销媒介 utm_medium' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  utmMedium?: string;
+
+  @ApiPropertyOptional({ description: '广告系列 utm_campaign' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  utmCampaign?: string;
+
+  @ApiPropertyOptional({ description: '广告内容 utm_content' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  utmContent?: string;
+
+  @ApiPropertyOptional({ description: '关键词 utm_term' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  utmTerm?: string;
+
+  @ApiPropertyOptional({ description: 'Google Ads 点击 ID' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(512)
+  gclid?: string;
 }

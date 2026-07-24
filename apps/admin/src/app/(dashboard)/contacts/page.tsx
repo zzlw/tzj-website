@@ -30,10 +30,12 @@ import { useMemo, useState } from 'react';
 import { Can } from '@/components/Can';
 import { LastOperatorCell } from '@/components/LastOperatorCell';
 import { formatDateTime } from '@/features/constants';
+import { ContactVisitorPanel } from '@/features/contacts/components/VisitorInsightPanel';
 import { useList, useRemove, useUpdate } from '@/features/hooks';
 import type { ContactItem } from '@/features/types';
 import { ApiError } from '@/lib/apiClient';
 import { notifyError, notifySuccess } from '@/lib/notify';
+import { enumField, intField, useUrlState } from '@/lib/use-url-state';
 
 const FILTERS = [
   { key: 'unread', label: '未读', params: { isRead: false } },
@@ -163,9 +165,12 @@ const CONTACT_COLUMNS: DataTableColumn<ContactItem>[] = [
 ];
 
 export default function ContactsPage() {
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [tab, setTab] = useState<'all' | 'unread' | 'unhandled'>('all');
+  const [urlState, setUrlState] = useUrlState({
+    page: intField(1, { min: 1 }),
+    pageSize: intField(10, { min: 1 }),
+    tab: enumField(['all', 'unread', 'unhandled'] as const, 'all'),
+  });
+  const { page, pageSize, tab } = urlState;
   const [detail, setDetail] = useState<ContactItem | null>(null);
   const [remark, setRemark] = useState('');
   const [handledDraft, setHandledDraft] = useState(false);
@@ -258,8 +263,7 @@ export default function ContactsPage() {
       <Tabs
         value={tab}
         onValueChange={(v) => {
-          setPage(1);
-          setTab(v as typeof tab);
+          setUrlState({ tab: v as typeof tab, page: 1 });
         }}
         className="mb-6"
       >
@@ -296,10 +300,9 @@ export default function ContactsPage() {
           totalPages={pagination.totalPages}
           total={pagination.total}
           pageSize={pageSize}
-          onPageChange={setPage}
+          onPageChange={(p) => setUrlState({ page: p })}
           onPageSizeChange={(size) => {
-            setPageSize(size);
-            setPage(1);
+            setUrlState({ pageSize: size, page: 1 });
           }}
         />
       )}
@@ -339,6 +342,7 @@ export default function ContactsPage() {
             <DetailRow label="来源" value={detail.source ?? '—'} />
             <DetailRow label="创建时间" value={formatDateTime(detail.createdAt)} />
             <DetailRow label="更新时间" value={formatDateTime(detail.updatedAt)} />
+            <ContactVisitorPanel contact={detail} />
             <div className="flex gap-3">
               <span className="w-16 shrink-0 text-muted-foreground">最后操作人</span>
               <LastOperatorCell

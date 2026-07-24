@@ -30,7 +30,6 @@ import {
   BookOpen,
   CalendarDays,
   ChevronsUpDown,
-  FileText,
   FileUser,
   Fingerprint,
   FolderOpen,
@@ -96,11 +95,11 @@ const NAV_GROUPS: Array<{
   {
     label: '运营',
     items: [
-      { label: '媒体库', href: '/media', icon: Images, perm: 'media.view' },
+      { label: '媒体库', href: '/media', icon: Images },
       { label: '询盘管理', href: '/contacts', icon: MessageSquare, perm: 'contacts.view' },
       { label: '在线客服', href: '/chat', icon: MessagesSquare, perm: 'chat.view' },
       { label: '访客分析', href: '/analytics', icon: BarChart3, perm: 'analytics.view' },
-      { label: '访客会话', href: '/visitors', icon: Fingerprint, perm: 'analytics.view' },
+      { label: '访客中心', href: '/visitors', icon: Fingerprint, perm: 'analytics.view' },
     ],
   },
   {

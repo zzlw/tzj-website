@@ -54,8 +54,27 @@ export class AnalyticsController {
   @ApiOperation({ summary: '访客分析概览（PV/UV、趋势、排行）' })
   @ApiQuery({ name: 'from', required: false, description: 'YYYY-MM-DD' })
   @ApiQuery({ name: 'to', required: false, description: 'YYYY-MM-DD' })
-  overview(@Query('from') from?: string, @Query('to') to?: string) {
-    return this.analyticsService.getOverview(from, to);
+  @ApiQuery({
+    name: 'granularity',
+    required: false,
+    description: '趋势粒度 hour|day|week|month（缺省/非法时后端按日期跨度自动选择）',
+  })
+  overview(
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('granularity') granularity?: string,
+  ) {
+    return this.analyticsService.getOverview(from, to, granularity);
+  }
+
+  @RequirePermissions('analytics.view')
+  @ApiBearerAuth()
+  @Get('sources')
+  @ApiOperation({ summary: '营销归因（渠道分组/广告系列/来源排行）' })
+  @ApiQuery({ name: 'from', required: false, description: 'YYYY-MM-DD' })
+  @ApiQuery({ name: 'to', required: false, description: 'YYYY-MM-DD' })
+  sources(@Query('from') from?: string, @Query('to') to?: string) {
+    return this.analyticsService.getSources(from, to);
   }
 
   @RequirePermissions('analytics.view')
@@ -64,15 +83,92 @@ export class AnalyticsController {
   @ApiOperation({ summary: '访客会话归并列表（同一访客多次会话合并为一行）' })
   @ApiQuery({ name: 'from', required: false, description: 'YYYY-MM-DD' })
   @ApiQuery({ name: 'to', required: false, description: 'YYYY-MM-DD' })
-  @ApiQuery({ name: 'q', required: false, description: '按姓名/邮箱/电话/公司模糊搜索' })
+  @ApiQuery({
+    name: 'q',
+    required: false,
+    description: '按姓名/邮箱/电话/公司/访客ID/地区模糊搜索',
+  })
+  @ApiQuery({
+    name: 'channel',
+    required: false,
+    description: '来源渠道（direct/organic/paid/social/email/referral/other）',
+  })
+  @ApiQuery({
+    name: 'deviceType',
+    required: false,
+    description: '设备类型（desktop/mobile/tablet）',
+  })
+  @ApiQuery({
+    name: 'identified',
+    required: false,
+    description: '身份状态（true=已识别 / false=匿名）',
+  })
+  @ApiQuery({ name: 'keyPage', required: false, description: '关键页触达（contact/case/any）' })
   listVisitors(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
     @Query('from') from?: string,
     @Query('to') to?: string,
     @Query('q') q?: string,
+    @Query('channel') channel?: string,
+    @Query('deviceType') deviceType?: string,
+    @Query('identified') identified?: string,
+    @Query('keyPage') keyPage?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string,
   ) {
-    return this.analyticsService.listVisitors({ page, limit, from, to, q });
+    return this.analyticsService.listVisitors({
+      page,
+      limit,
+      from,
+      to,
+      q,
+      channel,
+      deviceType,
+      identified,
+      keyPage,
+      sortBy,
+      sortOrder,
+    });
+  }
+
+  @RequirePermissions('analytics.view')
+  @ApiBearerAuth()
+  @Get('visitor-activity')
+  @ApiOperation({ summary: '单个访客的浏览行为时间线（按会话分组，读取现有 PageView）' })
+  @ApiQuery({ name: 'visitorId', required: true })
+  @ApiQuery({ name: 'from', required: false, description: 'YYYY-MM-DD' })
+  @ApiQuery({ name: 'to', required: false, description: 'YYYY-MM-DD' })
+  getVisitorActivity(
+    @Query('visitorId') visitorId: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    return this.analyticsService.getVisitorActivity(visitorId, { from, to });
+  }
+
+  @RequirePermissions('analytics.view')
+  @ApiBearerAuth()
+  @Get('ip-activity')
+  @ApiOperation({ summary: '单个 IP（ipHash）的浏览行为时间线（供访客明细下钻）' })
+  @ApiQuery({ name: 'ipHash', required: true })
+  @ApiQuery({ name: 'from', required: false, description: 'YYYY-MM-DD' })
+  @ApiQuery({ name: 'to', required: false, description: 'YYYY-MM-DD' })
+  getIpActivity(
+    @Query('ipHash') ipHash: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    return this.analyticsService.getIpVisitorActivity(ipHash, { from, to });
+  }
+
+  @RequirePermissions('analytics.view')
+  @ApiBearerAuth()
+  @Get('visitor-inquiries')
+  @ApiOperation({ summary: '按 visitorId 归并的询盘列表（供人物抽屉「询盘」tab）' })
+  @ApiQuery({ name: 'visitorId', required: true })
+  getVisitorInquiries(@Query('visitorId') visitorId: string) {
+    return this.analyticsService.getVisitorInquiries(visitorId);
   }
 
   @RequirePermissions('analytics.view')
@@ -147,11 +243,29 @@ export class AnalyticsController {
   @ApiOperation({ summary: '按 IP 聚合的访客明细（地区/IP/来源合并，读取时重解析地区）' })
   @ApiQuery({ name: 'from', required: false, description: 'YYYY-MM-DD' })
   @ApiQuery({ name: 'to', required: false, description: 'YYYY-MM-DD' })
+  @ApiQuery({
+    name: 'q',
+    required: false,
+    description: '按 IP/地区/城市/国家/浏览器/系统/引荐域名模糊搜索',
+  })
+  @ApiQuery({
+    name: 'channel',
+    required: false,
+    description: '来源渠道（direct/organic/paid/social/email/referral/other）',
+  })
+  @ApiQuery({
+    name: 'deviceType',
+    required: false,
+    description: '设备类型（desktop/mobile/tablet）',
+  })
   listVisitorDetails(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
     @Query('from') from?: string,
     @Query('to') to?: string,
+    @Query('q') q?: string,
+    @Query('channel') channel?: string,
+    @Query('deviceType') deviceType?: string,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: string,
   ) {
@@ -160,6 +274,9 @@ export class AnalyticsController {
       limit,
       from,
       to,
+      q,
+      channel,
+      deviceType,
       sortBy,
       sortOrder,
     });

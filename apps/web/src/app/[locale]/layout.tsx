@@ -73,6 +73,8 @@ export default async function LocaleLayout({ children, params }: Props) {
         <link rel="dns-prefetch" href="https://flagcdn.com" />
         {/* 提前拉取 Vditor 的 lute 解析引擎，缩短聊天 Markdown 预览初始化等待 */}
         <link rel="preload" as="script" href="/vditor-assets/dist/js/lute/lute.min.js" />
+        {/* 旧版浏览器检测与升级引导：ES5 自包含脚本，主包解析失败时仍能提示；defer 不阻塞渲染 */}
+        <script src="/browser-support.js" defer />
       </head>
       <body className="bg-background text-text antialiased">
         <NextIntlClientProvider messages={messages}>
@@ -97,6 +99,7 @@ export default async function LocaleLayout({ children, params }: Props) {
               <ChatWidget
                 businessHours={siteSettings.businessHours}
                 agentProfile={siteSettings.agentProfile}
+                chatPrompts={siteSettings.chatPrompts}
               />
               <HeaderShell />
               <ProductLineNav />

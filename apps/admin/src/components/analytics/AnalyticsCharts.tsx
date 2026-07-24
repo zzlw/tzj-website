@@ -18,7 +18,8 @@ import {
   YAxis,
 } from 'recharts';
 import type { AnalyticsOverview } from '@/features/analytics';
-import { formatShortDate } from '@/features/analytics';
+import { formatBucketLabel } from '@/features/analytics';
+import type { Granularity } from '@/lib/analytics-granularity';
 import {
   CHART_COLORS,
   CHART_GRID,
@@ -63,10 +64,12 @@ function ChartSkeleton({ height = 280 }: { height?: number }) {
 
 export function TrendChart({
   daily,
+  granularity,
   loading,
   height = 320,
 }: {
   daily: AnalyticsOverview['daily'];
+  granularity: Granularity;
   loading?: boolean;
   height?: number;
 }) {
@@ -85,7 +88,7 @@ export function TrendChart({
 
   const data = daily.map((d) => ({
     ...d,
-    label: formatShortDate(d.date),
+    label: formatBucketLabel(d.date, granularity),
   }));
 
   return (
@@ -120,7 +123,7 @@ export function TrendChart({
         />
         <Area
           yAxisId="left"
-          type="monotone"
+          type="linear"
           dataKey="pageViews"
           name="PV"
           stroke={CHART_PRIMARY}
@@ -131,7 +134,7 @@ export function TrendChart({
         />
         <Line
           yAxisId="left"
-          type="monotone"
+          type="linear"
           dataKey="uniqueVisitors"
           name="UV"
           stroke={CHART_SECONDARY}
@@ -149,7 +152,8 @@ export function DonutChart({
   loading,
   emptyText = '暂无数据',
 }: {
-  items: Array<{ name: string; value: number }>;
+  // color 可选：语义型分布（如兼容性 支持/不支持/未知）传固定色，否则按品牌色轮转。
+  items: Array<{ name: string; value: number; color?: string }>;
   loading?: boolean;
   emptyText?: string;
 }) {
@@ -182,7 +186,10 @@ export function DonutChart({
               strokeWidth={0}
             >
               {items.map((entry, index) => (
-                <Cell key={entry.name} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                <Cell
+                  key={entry.name}
+                  fill={entry.color ?? CHART_COLORS[index % CHART_COLORS.length]}
+                />
               ))}
             </Pie>
             <Tooltip content={<ChartTooltip />} />
@@ -194,7 +201,7 @@ export function DonutChart({
           <li key={item.name} className="flex items-center gap-2 text-sm">
             <span
               className="size-2.5 shrink-0 rounded-full"
-              style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }}
+              style={{ backgroundColor: item.color ?? CHART_COLORS[index % CHART_COLORS.length] }}
             />
             <span className="truncate">{item.name}</span>
             <span className="ml-auto shrink-0 tabular-nums text-muted-foreground">

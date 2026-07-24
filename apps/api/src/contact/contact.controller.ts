@@ -52,6 +52,14 @@ export class ContactController {
 
   @RequirePermissions('contacts.view', 'contacts.manage')
   @ApiBearerAuth()
+  @Get(':id/visitor-profile')
+  @ApiOperation({ summary: '询盘访客画像（IP 重解析地区 + 运营商 + 站内行为/营销归因）' })
+  getVisitorProfile(@Param('id') id: string) {
+    return this.contactService.getVisitorProfile(id);
+  }
+
+  @RequirePermissions('contacts.view', 'contacts.manage')
+  @ApiBearerAuth()
   @Get(':id')
   @ApiOperation({ summary: '获取联系信息详情' })
   findOne(@Param('id') id: string) {

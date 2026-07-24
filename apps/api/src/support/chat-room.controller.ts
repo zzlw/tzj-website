@@ -311,6 +311,19 @@ export class ChatRoomController {
 
   @RequirePermissions('chat.view')
   @ApiBearerAuth()
+  @Get(':roomId/visitor-profile')
+  @ApiOperation({ summary: '访客档案（IP 重解析地区 + 运营商 + 站内行为/营销归因）' })
+  async getVisitorProfile(@Param('roomId') roomId: string) {
+    try {
+      return await this.chatRoomService.getVisitorProfile(roomId);
+    } catch (e) {
+      if (e instanceof HttpException) throw e;
+      throw new HttpException(errMsg(e), HttpStatus.NOT_FOUND);
+    }
+  }
+
+  @RequirePermissions('chat.view')
+  @ApiBearerAuth()
   @Get(':roomId')
   @ApiOperation({ summary: '聊天室详情' })
   async getChatRoomById(@Param('roomId') roomId: string) {

@@ -28,6 +28,13 @@ import { Can } from '@/components/Can';
 import { useList, useRemove, useUpdate } from '@/features/hooks';
 import { WEB_BASE } from '@/lib/config';
 import { notifyError, notifySuccess } from '@/lib/notify';
+import {
+  intField,
+  sortField,
+  stringField,
+  type UrlFieldSpec,
+  useUrlState,
+} from '@/lib/use-url-state';
 import type { ResourceConfig } from './config';
 
 function perms<T>(config: ResourceConfig<T>, key: 'create' | 'edit' | 'publish') {
@@ -60,26 +67,48 @@ export function ResourceListView<T extends { id: string }>({
   /** 覆盖 PageHeader 标题（子页面复用同一 config 时区分，如「我的客户」/「公海客户」） */
   titleOverride?: string;
 }) {
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(defaultPageSize);
-  const [search, setSearch] = useState('');
-  const [searchInput, setSearchInput] = useState('');
-  const [filters, setFilters] = useState<Record<string, string>>({});
-  const [sort, setSort] = useState<DataTableSort | null>(config.defaultSort ?? null);
+  // 每个筛选器 key、page/pageSize/search/sort 都持久化到 URL query（默认值省略）。
+  const specs = useMemo(() => {
+    const s: Record<string, UrlFieldSpec<unknown>> = {
+      page: intField(1, { min: 1 }) as UrlFieldSpec<unknown>,
+      pageSize: intField(defaultPageSize, { min: 1 }) as UrlFieldSpec<unknown>,
+      search: stringField() as UrlFieldSpec<unknown>,
+      sort: sortField(config.defaultSort ?? null) as UrlFieldSpec<unknown>,
+    };
+    for (const flt of config.filters ?? []) {
+      const values = flt.options.map((o) => o.value);
+      s[flt.key] = {
+        default: '',
+        parse: (raw) => (raw && values.includes(raw) ? raw : ''),
+        serialize: (v) => (v ? String(v) : null),
+      };
+    }
+    return s;
+  }, [config.filters, config.defaultSort, defaultPageSize]);
+
+  const [urlState, setUrlState] = useUrlState(specs);
+  const page = urlState.page as number;
+  const pageSize = urlState.pageSize as number;
+  const sort = urlState.sort as DataTableSort | null;
+  const [searchInput, setSearchInput] = useState(() => (urlState.search as string) || '');
   const [deleteTarget, setDeleteTarget] = useState<T | null>(null);
 
-  const params = useMemo(
-    () => ({
+  const params = useMemo(() => {
+    const flt: Record<string, string> = {};
+    for (const f of config.filters ?? []) {
+      const v = urlState[f.key] as string | undefined;
+      if (v) flt[f.key] = v;
+    }
+    return {
       page,
       limit: pageSize,
-      search: search || undefined,
+      search: (urlState.search as string) || undefined,
       sortBy: sort?.column,
       sortOrder: sort?.order,
       ...extraListParams,
-      ...filters,
-    }),
-    [page, pageSize, search, filters, sort, extraListParams],
-  );
+      ...flt,
+    };
+  }, [urlState, page, pageSize, sort, config.filters, extraListParams]);
 
   const { data, isLoading, isError, error } = useList<T>(config.resource, params);
   const updateMut = useUpdate<T>(config.resource);
@@ -134,8 +163,7 @@ export function ResourceListView<T extends { id: string }>({
                 className="relative min-w-[220px] flex-1"
                 onSubmit={(e) => {
                   e.preventDefault();
-                  setPage(1);
-                  setSearch(searchInput.trim());
+                  setUrlState({ search: searchInput.trim(), page: 1 });
                 }}
               >
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -150,15 +178,9 @@ export function ResourceListView<T extends { id: string }>({
             {config.filters?.map((flt) => (
               <Select
                 key={flt.key}
-                value={filters[flt.key] ?? '__all__'}
+                value={(urlState[flt.key] as string) || '__all__'}
                 onValueChange={(v) => {
-                  setPage(1);
-                  setFilters((prev) => {
-                    const next = { ...prev };
-                    if (v && v !== '__all__') next[flt.key] = v;
-                    else delete next[flt.key];
-                    return next;
-                  });
+                  setUrlState({ [flt.key]: v && v !== '__all__' ? v : '', page: 1 });
                 }}
               >
                 <SelectTrigger className="h-9 w-[160px]">
@@ -191,8 +213,7 @@ export function ResourceListView<T extends { id: string }>({
         sort={sort}
         defaultSort={config.defaultSort}
         onSortChange={(next) => {
-          setPage(1);
-          setSort(next);
+          setUrlState({ sort: next, page: 1 });
         }}
         renderActions={(row) => (
           <div className="flex items-center justify-end gap-1">
@@ -288,10 +309,9 @@ export function ResourceListView<T extends { id: string }>({
           totalPages={pagination.totalPages}
           total={pagination.total}
           pageSize={pageSize}
-          onPageChange={setPage}
+          onPageChange={(p) => setUrlState({ page: p })}
           onPageSizeChange={(size) => {
-            setPageSize(size);
-            setPage(1);
+            setUrlState({ pageSize: size, page: 1 });
           }}
         />
       )}

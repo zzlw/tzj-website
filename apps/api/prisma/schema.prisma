@@ -193,6 +193,9 @@ model Contact {
   subject   String?
   message   String   @db.Text
   source    String?  // website | admin | api
+  // 提交时携带的持久匿名访客 ID（_tzj_vid，与埋点同源）：把询盘直接锚定到浏览轨迹，
+  // 无需依赖 identify 的 email/userId 拼接，转线索后供客户列表反查访客抽屉。
+  visitorId String?
   isRead    Boolean  @default(false)
   isHandled Boolean  @default(false)
   remark    String?  @db.Text
@@ -206,6 +209,7 @@ model Contact {
   @@index([isHandled])
   @@index([createdAt])
   @@index([lastOperatorId])
+  @@index([visitorId])
   @@map("contacts")
 }
 
@@ -391,8 +395,23 @@ model PageView {
   city         String?
   geoSource    String?
   deviceType   String?
+  deviceModel  String?
+  deviceVendor String?
   browser      String?
+  browserVersion String?
   os           String?
+  osVersion    String?
+  // 内嵌浏览器宿主 App（微信/抖音/微博…），独立浏览器为 null
+  clientApp    String?
+  // 营销归因（会话首触）：UTM 五参数 + Google Ads 点击 ID
+  utmSource    String?
+  utmMedium    String?
+  utmCampaign  String?
+  utmContent   String?
+  utmTerm      String?
+  gclid        String?
+  // 服务端计算的渠道分组：direct/organic/paid/social/email/referral/other
+  trafficSource String?
   isBot        Boolean  @default(false)
   createdAt    DateTime @default(now())
 
@@ -405,6 +424,8 @@ model PageView {
   @@index([isBot, createdAt])
   @@index([country, createdAt])
   @@index([ipHash, createdAt])
+  @@index([trafficSource, createdAt])
+  @@index([utmCampaign, createdAt])
   @@map("page_views")
 }
 
@@ -657,6 +678,7 @@ model Customer {
   tags        String[] @default([])
   notes       String?  @db.Text
   chatRoomId  String?  @unique // 来源会话 roomId（幂等去重 + 溯源）
+  contactId   String?  @unique // 来源询盘 ID（询盘转线索，幂等去重 + 溯源）
 
   // 归属：空 = 公海；指向坐席 = 私海
   ownerId           String?
@@ -683,6 +705,7 @@ model Customer {
   @@index([createdAt])
   @@index([lastContactAt])
   @@index([chatRoomId])
+  @@index([contactId])
   @@map("customers")
 }
 
@@ -722,8 +745,14 @@ model ChatRoom {
   region       String?
   city         String?
   deviceType   String?
+  deviceModel  String?
+  deviceVendor String?
   browser      String?
+  browserVersion String?
   os           String?
+  osVersion    String?
+  // 内嵌浏览器宿主 App（微信/抖音/微博…），独立浏览器为 null
+  clientApp    String?
   referrer     String?
   referrerHost String?
   userAgent    String?
@@ -759,6 +788,9 @@ model ChatMessage {
   attachments  ChatAttachment[]
 
   @@index([chatRoomId])
+  // pg_trgm GIN 索引：加速 content 的 ILIKE 子串检索与 similarity() 相关度排序（坐席端聊天正文搜索）。
+  // 依赖 pg_trgm 扩展（见 0_init 迁移中的 CREATE EXTENSION）；map 保持既有索引名以兼容历史库。
+  @@index([content(ops: raw("gin_trgm_ops"))], type: Gin, map: "chat_messages_content_trgm_idx")
   @@map("chat_messages")
 }
 

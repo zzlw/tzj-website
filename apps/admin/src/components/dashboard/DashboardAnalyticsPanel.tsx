@@ -66,7 +66,12 @@ export function DashboardAnalyticsPanel() {
 
         <div className="grid gap-6 xl:grid-cols-5">
           <div className="xl:col-span-3">
-            <TrendChart daily={data?.daily ?? []} loading={loading} height={240} />
+            <TrendChart
+              daily={data?.daily ?? []}
+              granularity={data?.granularity ?? 'day'}
+              loading={loading}
+              height={240}
+            />
           </div>
           <div className="space-y-6 xl:col-span-2">
             <div>

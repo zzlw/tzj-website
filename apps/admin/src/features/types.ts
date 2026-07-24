@@ -247,6 +247,8 @@ export interface CustomerItem extends BaseEntity {
   createdByUser?: ContentOperatorUser | null;
   lastOperator?: string | null;
   lastOperatorUser?: ContentOperatorUser | null;
+  /** 来源会话对应的匿名访客 ID（来自 ChatRoom.visitorId，可点击跳转访客抽屉）。 */
+  visitorId?: string | null;
 }
 
 export interface DocFolderTreeNode {

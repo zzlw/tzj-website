@@ -48,12 +48,32 @@ function isEmojiOnlyMessage(text: string, max = 3): boolean {
   return clusters.every((c) => /\p{Extended_Pictographic}/u.test(c) && !/\p{L}|\p{N}/u.test(c));
 }
 
-export function ChatMessageBubble({ message }: { message: ChatMessage }) {
+/** 搜索跳转命中时的瞬时高亮环形描边（抽出为无分支辅助函数，避免叠加组件认知复杂度） */
+function highlightRing(active?: boolean): string {
+  return active ? 'ring-2 ring-amber-400/80 ring-offset-2 ring-offset-background' : '';
+}
+
+export function ChatMessageBubble({
+  message,
+  highlighted,
+}: {
+  message: ChatMessage;
+  /** 搜索跳转命中时的瞬时高亮（环形描边） */
+  highlighted?: boolean;
+}) {
   // 系统消息：居中、弱化，不参与 normal flow 装修
   if (message.sender === 'system') {
     return (
-      <div className="animate-in fade-in flex justify-center py-1 duration-200 ease-out">
-        <span className="text-muted-foreground rounded-full bg-muted/60 px-3 py-1 text-[0.7rem] leading-relaxed">
+      <div
+        data-message-id={message.messageId}
+        className="animate-in fade-in flex justify-center py-1 duration-200 ease-out"
+      >
+        <span
+          className={cn(
+            'text-muted-foreground rounded-full bg-muted/60 px-3 py-1 text-[0.7rem] leading-relaxed transition-shadow duration-300',
+            highlightRing(highlighted),
+          )}
+        >
           {message.content}
         </span>
       </div>
@@ -68,6 +88,7 @@ export function ChatMessageBubble({ message }: { message: ChatMessage }) {
 
   return (
     <div
+      data-message-id={message.messageId}
       className={cn(
         // 仅用 fade-in，不用 slide-in-from-bottom：
         // transform 不影响 scrollHeight，会导致最后一条消息底部被裁切
@@ -77,10 +98,11 @@ export function ChatMessageBubble({ message }: { message: ChatMessage }) {
     >
       <div
         className={cn(
-          'max-w-[85%] rounded-2xl border px-3 py-2 text-sm sm:max-w-[80%] sm:rounded-3xl sm:px-4 sm:py-3',
+          'max-w-[85%] rounded-2xl border px-3 py-2 text-sm transition-shadow duration-300 sm:max-w-[80%] sm:rounded-3xl sm:px-4 sm:py-3',
           isAgent
             ? 'border-primary/40 bg-primary text-primary-foreground'
             : 'border-transparent bg-muted',
+          highlightRing(highlighted),
         )}
       >
         <p

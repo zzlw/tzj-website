@@ -1,3 +1,4 @@
+import type { ScreenWatermark, SitePublicSettings } from '@tzj/types';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { DashboardShell } from '@/components/DashboardShell';
@@ -28,6 +29,16 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const roleLabels: Record<string, string> = { admin: '超级管理员' };
 
+  // 后台防截图水印配置：经公开接口下发（所有登录用户可读），
+  // 失败则回退为关闭，不阻断后台渲染。
+  let watermark: ScreenWatermark | undefined;
+  try {
+    const site = await apiFetch<SitePublicSettings>('/settings/site/public');
+    watermark = site.screenWatermark;
+  } catch (error) {
+    console.warn('[Dashboard] Failed to load screen watermark settings:', error);
+  }
+
   // 侧边栏默认展开状态：服务端读取 cookie（SidebarProvider 切换时写入），
   // 作为跨页导航后 URL 无 ?nav= 参数时的回退，保证刷新后仍保持收起/展开状态。
   const cookieStore = await cookies();
@@ -46,6 +57,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           username={session.username}
           roleLabel={roleLabels[session.role] ?? session.role}
           defaultOpen={sidebarDefaultOpen}
+          watermark={watermark}
         >
           {children}
         </DashboardShell>

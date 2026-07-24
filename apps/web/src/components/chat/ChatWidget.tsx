@@ -1,6 +1,6 @@
 'use client';
 
-import type { AgentProfile, BusinessHours } from '@tzj/types';
+import type { AgentProfile, BusinessHours, ChatPrompts, LocalizedText } from '@tzj/types';
 import {
   Avatar,
   AvatarFallback,
@@ -49,9 +49,9 @@ import {
   presignChatAttachment,
   sendMessageHTTP,
 } from '@/features/chat/api';
+import { resolveVisitorPresence } from '@/features/chat/presence';
 import type { ChatAttachment, ChatMessage, ChatRoom } from '@/features/chat/types';
 import { useVisitorChat } from '@/features/chat/useVisitorChat';
-import { resolveVisitorPresence } from '@/features/chat/presence';
 import { resolveMediaUrl } from '@/lib/media-url';
 import { ChatMarkdown } from './ChatMarkdown';
 import { EmojiPicker } from './EmojiPicker';
@@ -365,9 +365,11 @@ function normalizeMessage(m: ChatMessage): ChatMessage {
 export function ChatWidget({
   businessHours,
   agentProfile,
+  chatPrompts,
 }: {
   businessHours?: BusinessHours;
   agentProfile?: AgentProfile;
+  chatPrompts?: ChatPrompts;
 }) {
   const locale = useLocale() as string;
   const t = I18N[(locale as LocaleKey) in I18N ? (locale as LocaleKey) : 'en'];
@@ -378,6 +380,11 @@ export function ChatWidget({
   const agentAvatarRaw = agentProfile?.avatar?.trim() || '';
   const agentAvatarUrl = agentAvatarRaw ? resolveMediaUrl(agentAvatarRaw) : '';
   const greetingText = agentProfile?.greeting?.trim() || t.aiGreeting;
+  // 自动提示语：优先用当前语言配置值，该语言留空时回退到本地 i18n 默认
+  const pickPrompt = (map: LocalizedText | undefined, fallback: string): string =>
+    map?.[locale as keyof LocalizedText]?.trim() || fallback;
+  const offlineHintText = pickPrompt(chatPrompts?.offlineMessage, t.offlineHint);
+  const noAgentHintText = pickPrompt(chatPrompts?.noAgentMessage, t.noAgentHint);
 
   const [token, setToken] = useState<string | null>(null);
 
@@ -569,7 +576,9 @@ export function ChatWidget({
   const clientEmailRef = useRef<string | null>(null);
   // 最近一次经 socket 发出但尚未确认的消息：若服务端回 ROOM_ARCHIVED（归档冷存终态），
   // 据此把该消息承接到「新会话」，杜绝访客消息静默丢失（业内最佳实践 Zendesk/Intercom）。
-  const pendingOutgoingRef = useRef<{ content: string; attachments: ChatAttachment[] } | null>(null);
+  const pendingOutgoingRef = useRef<{ content: string; attachments: ChatAttachment[] } | null>(
+    null,
+  );
   // restartWithMessage 在下方定义，用 ref 供 socket 事件回调运行时调用，避免闭包过期。
   const restartWithMessageRef = useRef<
     ((content: string, attachments: ChatAttachment[]) => void) | null
@@ -991,11 +1000,11 @@ export function ChatWidget({
   //  - 非工作时间/离开：给出对应时段的留言提示
   //  - 在线：使用站点配置/默认的招呼语
   const greetingContent = useMemo(() => {
-    if (noAgentOnline) return t.noAgentHint;
-    if (displayPresence === 'offline') return t.offlineHint;
+    if (noAgentOnline) return noAgentHintText;
+    if (displayPresence === 'offline') return offlineHintText;
     if (displayPresence === 'away') return t.presenceAway;
     return greetingText;
-  }, [noAgentOnline, displayPresence, greetingText, t]);
+  }, [noAgentOnline, displayPresence, greetingText, noAgentHintText, offlineHintText, t]);
 
   // 构造客服首条招呼消息（不写入后端，只在本地展示，模拟 Intercom 体验）
   const aiGreetingMessage: ChatMessage = useMemo(
@@ -1577,64 +1586,70 @@ export function ChatWidget({
             业内最佳实践（WhatsApp/Telegram/Intercom）：pill 锚定在消息视口底缘，
             浮于消息内容之上，与输入区高度完全解耦 ── */}
         <div className="relative min-h-0 flex-1">
-        <ScrollArea ref={scrollAreaRef} className="h-full bg-white [&>[data-radix-scroll-area-viewport]]:overscroll-contain">
-          <ImagePreviewProvider>
-            <div ref={chatContentRef} className="flex min-h-full flex-col gap-4 overflow-x-hidden px-4 py-4">
-              {displayMessages.length === 0 ? (
-                <div className="m-auto flex w-full max-w-[300px] flex-col items-center py-8 text-center">
-                  <p className="whitespace-pre-line text-sm leading-relaxed text-zinc-700">
-                    {t.welcome}
-                  </p>
-                </div>
-              ) : (
-                <DayGroupedMessages
-                  messages={displayMessages}
-                  locale={locale}
-                  t={t}
-                  agentName={agentName}
-                  agentTitle={agentTitle}
-                />
-              )}
-              {error && <p className="mx-auto mt-1 text-xs text-red-600">{error}</p>}
-              {/* 转接通知（业内最佳实践 Intercom/Zendesk：访客看到“正在为您转接至 XXX”） */}
-              {transferNotice && (
-                <div className="flex justify-center" aria-live="polite">
-                  <span className="rounded-full bg-zinc-800/90 px-4 py-1.5 text-xs font-medium text-white shadow-sm">
-                    正在为您转接至 {transferNotice}，请稍候…
-                  </span>
-                </div>
-              )}
-              {/* 对方正在输入指示器（P1 H2）—— 放在滚动区内部（业内最佳实践 Intercom/Zendesk），
-                  避免占用外部布局空间导致消息列表高度跳变、遮挡最后一条消息、干扰滚底判断 */}
-              {agentTyping && !isClosed && (
-                <div className="flex items-start" aria-live="polite">
-                  <div className="inline-flex items-center gap-1 rounded-2xl bg-zinc-100 px-4 py-3">
-                    <span className="h-2 w-2 animate-bounce rounded-full bg-zinc-400 [animation-delay:-0.3s]" />
-                    <span className="h-2 w-2 animate-bounce rounded-full bg-zinc-400 [animation-delay:-0.15s]" />
-                    <span className="h-2 w-2 animate-bounce rounded-full bg-zinc-400" />
-                  </div>
-                </div>
-              )}
-              <div className="h-px shrink-0" />
-            </div>
-          </ImagePreviewProvider>
-        </ScrollArea>
-
-        {/* 「↓ 新消息」浮动按钮：用户翻历史时收到新消息 → 显示；
-            点击或滚回底部 → 消失 */}
-        {newMsgCount > 0 && (
-          <button
-            type="button"
-            onClick={() => {
-              scrollToBottom('smooth');
-              setNewMsgCount(0);
-            }}
-            className="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-zinc-800 px-3.5 py-1.5 text-xs font-medium text-white shadow-lg shadow-zinc-900/20 transition-all hover:bg-zinc-700 hover:shadow-xl active:scale-95"
+          <ScrollArea
+            ref={scrollAreaRef}
+            className="h-full bg-white [&>[data-radix-scroll-area-viewport]]:overscroll-contain"
           >
-            <ArrowDown className="h-3.5 w-3.5" />
-            {t.newMessages.replace('{n}', String(newMsgCount))}
-          </button>
-        )}
+            <ImagePreviewProvider>
+              <div
+                ref={chatContentRef}
+                className="flex min-h-full flex-col gap-4 overflow-x-hidden px-4 py-4"
+              >
+                {displayMessages.length === 0 ? (
+                  <div className="m-auto flex w-full max-w-[300px] flex-col items-center py-8 text-center">
+                    <p className="whitespace-pre-line text-sm leading-relaxed text-zinc-700">
+                      {t.welcome}
+                    </p>
+                  </div>
+                ) : (
+                  <DayGroupedMessages
+                    messages={displayMessages}
+                    locale={locale}
+                    t={t}
+                    agentName={agentName}
+                    agentTitle={agentTitle}
+                  />
+                )}
+                {error && <p className="mx-auto mt-1 text-xs text-red-600">{error}</p>}
+                {/* 转接通知（业内最佳实践 Intercom/Zendesk：访客看到“正在为您转接至 XXX”） */}
+                {transferNotice && (
+                  <div className="flex justify-center" aria-live="polite">
+                    <span className="rounded-full bg-zinc-800/90 px-4 py-1.5 text-xs font-medium text-white shadow-sm">
+                      正在为您转接至 {transferNotice}，请稍候…
+                    </span>
+                  </div>
+                )}
+                {/* 对方正在输入指示器（P1 H2）—— 放在滚动区内部（业内最佳实践 Intercom/Zendesk），
+                  避免占用外部布局空间导致消息列表高度跳变、遮挡最后一条消息、干扰滚底判断 */}
+                {agentTyping && !isClosed && (
+                  <div className="flex items-start" aria-live="polite">
+                    <div className="inline-flex items-center gap-1 rounded-2xl bg-zinc-100 px-4 py-3">
+                      <span className="h-2 w-2 animate-bounce rounded-full bg-zinc-400 [animation-delay:-0.3s]" />
+                      <span className="h-2 w-2 animate-bounce rounded-full bg-zinc-400 [animation-delay:-0.15s]" />
+                      <span className="h-2 w-2 animate-bounce rounded-full bg-zinc-400" />
+                    </div>
+                  </div>
+                )}
+                <div className="h-px shrink-0" />
+              </div>
+            </ImagePreviewProvider>
+          </ScrollArea>
+
+          {/* 「↓ 新消息」浮动按钮：用户翻历史时收到新消息 → 显示；
+            点击或滚回底部 → 消失 */}
+          {newMsgCount > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                scrollToBottom('smooth');
+                setNewMsgCount(0);
+              }}
+              className="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-zinc-800 px-3.5 py-1.5 text-xs font-medium text-white shadow-lg shadow-zinc-900/20 transition-all hover:bg-zinc-700 hover:shadow-xl active:scale-95"
+            >
+              <ArrowDown className="h-3.5 w-3.5" />
+              {t.newMessages.replace('{n}', String(newMsgCount))}
+            </button>
+          )}
         </div>
 
         {isClosed && (
@@ -1721,65 +1736,67 @@ export function ChatWidget({
                 </div>
               </ImagePreviewProvider>
             )}
-              <Textarea
-                ref={inputRef}
-                value={input}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  setInput(v);
-                  // 输入中指示（P1 H2）：前沿节流 1.2s + 尾沿 800ms 确保最终文本必达
-                  const rid = roomIdRef.current;
-                  if (rid && connected && !isClosed) {
-                    if (v.trim()) {
-                      const now = Date.now();
-                      if (now - typingEmitRef.current > 1200) {
-                        // 前沿：立即发送（首次按键 / 超过节流窗口）
-                        typingEmitRef.current = now;
-                        if (typingTrailRef.current) clearTimeout(typingTrailRef.current);
-                        sendTyping(rid, v);
-                      } else {
-                        // 尾沿：用户停止输入 800ms 后补发最终文本，修复截断问题
-                        if (typingTrailRef.current) clearTimeout(typingTrailRef.current);
-                        typingTrailRef.current = setTimeout(() => {
-                          typingEmitRef.current = Date.now();
-                          sendTyping(rid, v);
-                        }, 800);
-                      }
-                    } else {
+            <Textarea
+              ref={inputRef}
+              value={input}
+              onChange={(e) => {
+                const v = e.target.value;
+                setInput(v);
+                // 输入中指示（P1 H2）：前沿节流 1.2s + 尾沿 800ms 确保最终文本必达
+                const rid = roomIdRef.current;
+                if (rid && connected && !isClosed) {
+                  if (v.trim()) {
+                    const now = Date.now();
+                    if (now - typingEmitRef.current > 1200) {
+                      // 前沿：立即发送（首次按键 / 超过节流窗口）
+                      typingEmitRef.current = now;
                       if (typingTrailRef.current) clearTimeout(typingTrailRef.current);
-                      sendStopTyping(rid);
+                      sendTyping(rid, v);
+                    } else {
+                      // 尾沿：用户停止输入 800ms 后补发最终文本，修复截断问题
+                      if (typingTrailRef.current) clearTimeout(typingTrailRef.current);
+                      typingTrailRef.current = setTimeout(() => {
+                        typingEmitRef.current = Date.now();
+                        sendTyping(rid, v);
+                      }, 800);
                     }
+                  } else {
+                    if (typingTrailRef.current) clearTimeout(typingTrailRef.current);
+                    sendStopTyping(rid);
                   }
-                }}
-                onKeyDown={handleKeyDown}
-                onPaste={handlePaste}
-                onBlur={() => {
-                  if (typingTrailRef.current) clearTimeout(typingTrailRef.current);
-                  if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
-                  // 点击表情/文件按钮导致的短暂失焦 → 不发 stop-typing
-                  if (interactingRef.current) return;
-                  // 有未发送内容（文字/附件）→ 心跳维持，不需 stop-typing
-                  const v = inputRef.current?.value ?? '';
-                  if (v.trim() || staged.length > 0) return;
-                  // 真正离开且无内容 → 立即停止
-                  const rid = roomIdRef.current;
-                  if (rid && connected) sendStopTyping(rid);
-                }}
-                onFocus={() => {
-                  if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
-                  interactingRef.current = false;
-                }}
-                rows={1}
-                placeholder={t.inputPlaceholder}
-                className="block w-full min-h-0 resize-none border-0 bg-transparent shadow-none px-3.5 pt-2.5 pb-1 text-sm leading-relaxed text-zinc-900 [scrollbar-width:none] transition-colors placeholder:text-zinc-400 focus:ring-0 focus:outline-none focus-visible:ring-0"
-              />
+                }
+              }}
+              onKeyDown={handleKeyDown}
+              onPaste={handlePaste}
+              onBlur={() => {
+                if (typingTrailRef.current) clearTimeout(typingTrailRef.current);
+                if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
+                // 点击表情/文件按钮导致的短暂失焦 → 不发 stop-typing
+                if (interactingRef.current) return;
+                // 有未发送内容（文字/附件）→ 心跳维持，不需 stop-typing
+                const v = inputRef.current?.value ?? '';
+                if (v.trim() || staged.length > 0) return;
+                // 真正离开且无内容 → 立即停止
+                const rid = roomIdRef.current;
+                if (rid && connected) sendStopTyping(rid);
+              }}
+              onFocus={() => {
+                if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
+                interactingRef.current = false;
+              }}
+              rows={1}
+              placeholder={t.inputPlaceholder}
+              className="block w-full min-h-0 resize-none border-0 bg-transparent shadow-none px-3.5 pt-2.5 pb-1 text-sm leading-relaxed text-zinc-900 [scrollbar-width:none] transition-colors placeholder:text-zinc-400 focus:ring-0 focus:outline-none focus-visible:ring-0"
+            />
             <div className="flex items-center justify-between px-1.5 pb-1.5">
               <div className="flex items-center gap-0.5">
                 <button
                   type="button"
                   aria-label={t.attach}
                   disabled={uploading}
-                  onMouseDown={() => { interactingRef.current = true; }}
+                  onMouseDown={() => {
+                    interactingRef.current = true;
+                  }}
                   onClick={() => fileRef.current?.click()}
                   className={cn(
                     'flex h-8 w-8 items-center justify-center rounded-full transition',
@@ -1800,7 +1817,9 @@ export function ChatWidget({
                     type="button"
                     aria-label={t.emoji}
                     aria-expanded={emojiOpen}
-                    onMouseDown={() => { interactingRef.current = true; }}
+                    onMouseDown={() => {
+                      interactingRef.current = true;
+                    }}
                     onClick={() => setEmojiOpen((v) => !v)}
                     className={cn(
                       'flex h-8 w-8 items-center justify-center rounded-full transition',

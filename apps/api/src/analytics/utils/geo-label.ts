@@ -1,5 +1,17 @@
 const regionNames = new Intl.DisplayNames(['zh-CN'], { type: 'region' });
 
+/**
+ * 将国家代码转中文名。Intl.DisplayNames.of 对结构非法的代码（非 ISO 3166 alpha-2 / UN M49）
+ * 会抛 RangeError；此处兜底为原值，避免单行脏 GeoIP 数据 500 掉整个分析接口。
+ */
+function safeRegionName(country: string): string {
+  try {
+    return regionNames.of(country.toUpperCase()) ?? country;
+  } catch {
+    return country;
+  }
+}
+
 export interface GeoParts {
   country?: string | null;
   region?: string | null;
@@ -12,7 +24,7 @@ export function formatGeoLabel(parts: GeoParts): string {
   if (country === 'LOCAL') return '本地网络';
   if (!country && !region && !city) return '未知';
 
-  const countryLabel = country ? (regionNames.of(country.toUpperCase()) ?? country) : null;
+  const countryLabel = country ? safeRegionName(country) : null;
 
   if (city?.trim()) {
     return countryLabel ? `${countryLabel} · ${city.trim()}` : city.trim();

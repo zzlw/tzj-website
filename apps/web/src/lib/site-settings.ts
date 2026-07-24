@@ -31,6 +31,14 @@ export function mergeSiteSettings(cms: SitePublicSettings): SitePublicSettings {
       ...DEFAULT_SITE_PUBLIC_SETTINGS.agentProfile,
       ...cms.agentProfile,
     },
+    chatPrompts: {
+      ...DEFAULT_SITE_PUBLIC_SETTINGS.chatPrompts,
+      ...cms.chatPrompts,
+    },
+    screenWatermark: {
+      ...DEFAULT_SITE_PUBLIC_SETTINGS.screenWatermark,
+      ...cms.screenWatermark,
+    },
   };
 }
 

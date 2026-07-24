@@ -5,6 +5,8 @@ const VISITOR_ID_KEY = '_tzj_vid';
 const VISITOR_ID_TTL_MS = 2 * 365 * 24 * 60 * 60 * 1000;
 const SESSION_ID_KEY = '_tzj_sid';
 const IDENTITY_KEY = '_tzj_identity';
+// 会话首触营销归因（sessionStorage，首次带参访问时锁定）
+const SESSION_ATTRIBUTION_KEY = '_tzj_attr';
 const GEO_MODE_CACHE_KEY = '_tzj_geo_mode';
 const GEO_MODE_CACHE_TTL_MS = 5 * 60 * 1000;
 const GEO_COORDS_CACHE_KEY = '_tzj_geo_coords';
@@ -111,6 +113,53 @@ export function identify(traits: VisitorIdentity): void {
 export interface TrackPageViewInput {
   path: string;
   title?: string;
+}
+
+/** 会话首触营销归因（UTM 五参数 + gclid）。 */
+interface SessionAttribution {
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  utmContent?: string;
+  utmTerm?: string;
+  gclid?: string;
+}
+
+function parseAttributionFromUrl(): SessionAttribution {
+  const params = new URLSearchParams(window.location.search);
+  const pick = (k: string) => params.get(k)?.slice(0, 200) || undefined;
+  const attr: SessionAttribution = {
+    utmSource: pick('utm_source'),
+    utmMedium: pick('utm_medium'),
+    utmCampaign: pick('utm_campaign'),
+    utmContent: pick('utm_content'),
+    utmTerm: pick('utm_term'),
+    gclid: params.get('gclid')?.slice(0, 512) || undefined,
+  };
+  // 剔除全空键，便于判断“本次 URL 是否携带归因”
+  for (const key of Object.keys(attr) as Array<keyof SessionAttribution>) {
+    if (attr[key] == null) delete attr[key];
+  }
+  return attr;
+}
+
+/**
+ * 读取会话首触归因：首次带 UTM/gclid 访问时写入 sessionStorage 并锁定，
+ * 后续无参 PV 仍回传会话的原始渠道（业内“渠道归属到会话”惯例）。
+ * 无归因时返回空对象（便于直接展开、不抬高调用处复杂度）。
+ */
+function getSessionAttribution(): SessionAttribution {
+  if (typeof window === 'undefined') return {};
+  try {
+    const stored = sessionStorage.getItem(SESSION_ATTRIBUTION_KEY);
+    if (stored) return JSON.parse(stored) as SessionAttribution;
+    const fresh = parseAttributionFromUrl();
+    if (Object.keys(fresh).length === 0) return {};
+    sessionStorage.setItem(SESSION_ATTRIBUTION_KEY, JSON.stringify(fresh));
+    return fresh;
+  } catch {
+    return {};
+  }
 }
 
 type GeoMode = 'ip' | 'gps';
@@ -237,6 +286,7 @@ export async function trackPageView(input: TrackPageViewInput): Promise<void> {
   }
 
   const identity = getStoredIdentity();
+  const attribution = getSessionAttribution();
   const payload = JSON.stringify({
     visitorId,
     sessionId,
@@ -245,6 +295,7 @@ export async function trackPageView(input: TrackPageViewInput): Promise<void> {
     title: input.title?.slice(0, 200),
     referrer: document.referrer || undefined,
     ...(latitude != null && longitude != null ? { latitude, longitude } : {}),
+    ...attribution,
   });
 
   const url = `${API_BASE}/analytics/collect`;

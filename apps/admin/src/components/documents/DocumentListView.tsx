@@ -58,6 +58,7 @@ import { useList, useRemove } from '@/features/hooks';
 import type { DocumentsResourceConfig } from '@/features/resources/documents';
 import type { InternalDocumentItem } from '@/features/types';
 import { notifyError, notifySuccess } from '@/lib/notify';
+import { intField, stringField, useUrlState } from '@/lib/use-url-state';
 
 const SORT_OPTIONS = [
   { label: '最近更新', sortBy: 'updatedAt', sortOrder: 'desc' },
@@ -300,11 +301,15 @@ export function DocumentListView({
 }) {
   const router = useRouter();
 
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(defaultPageSize);
-  const [searchInput, setSearchInput] = useState('');
-  const [search, setSearch] = useState('');
-  const [sortIdx, setSortIdx] = useState(0);
+  const [urlState, setUrlState] = useUrlState({
+    page: intField(1, { min: 1 }),
+    pageSize: intField(defaultPageSize, { min: 1 }),
+    search: stringField(),
+    sortIdx: intField(0, { min: 0 }),
+  });
+  const { page, pageSize, sortIdx } = urlState;
+  const search = urlState.search;
+  const [searchInput, setSearchInput] = useState(() => urlState.search || '');
   const [deleteTarget, setDeleteTarget] = useState<InternalDocumentItem | null>(null);
   const [tagsManageOpen, setTagsManageOpen] = useState(false);
   const [moveTarget, setMoveTarget] = useState<InternalDocumentItem | null>(null);
@@ -392,16 +397,14 @@ export function DocumentListView({
         searchValue={searchInput}
         onSearchValueChange={setSearchInput}
         onSearchSubmit={() => {
-          setPage(1);
-          setSearch(searchInput.trim());
+          setUrlState({ search: searchInput.trim(), page: 1 });
         }}
         searchPlaceholder="搜索标题或摘要…"
       >
         <Select
           value={String(sortIdx)}
           onValueChange={(v) => {
-            setSortIdx(Number(v));
-            setPage(1);
+            setUrlState({ sortIdx: Number(v), page: 1 });
           }}
         >
           <SelectTrigger className="h-9 w-[140px]">
@@ -514,10 +517,9 @@ export function DocumentListView({
           totalPages={pagination.totalPages}
           total={pagination.total}
           pageSize={pageSize}
-          onPageChange={setPage}
+          onPageChange={(p) => setUrlState({ page: p })}
           onPageSizeChange={(size) => {
-            setPageSize(size);
-            setPage(1);
+            setUrlState({ pageSize: size, page: 1 });
           }}
         />
       ) : null}

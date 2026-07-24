@@ -9,7 +9,7 @@ PROD := docker compose -f $(DEPLOY_DIR)/docker-compose.prod.yml \
 	--env-file $(DEPLOY_DIR)/.env.prod \
 	--env-file $(DEPLOY_DIR)/.env.prod.local
 
-.PHONY: dev dev-down db-push db-migrate prod-deploy prod-status prod-logs prod-gateway-reload \
+.PHONY: dev dev-down db-push db-migrate db-index prod-deploy prod-status prod-logs prod-gateway-reload \
         cert-selfsigned cert-issue cert-deploy-cdn cert-renew deploy-ssh-help
 
 dev:
@@ -28,6 +28,13 @@ db-push:
 db-migrate:
 	@echo "==> Prisma migrate deploy (应用 migrations/ 下的迁移)"
 	pnpm --filter @tzj/api prisma:migrate:deploy
+
+# 全文检索索引：pg_trgm 扩展 + chat_messages.content GIN 索引（幂等，建表后跑一次即可）
+# 注意：API 启动时会自动幂等创建该索引（见 PgTrgmMessageSearchService.onModuleInit），
+#       本目标仅为受限库（应用账号无 DDL 权限、设 CHAT_SEARCH_AUTO_INDEX=false）的手动兜底
+db-index:
+	@echo "==> 应用聊天全文检索索引 (pg_trgm + GIN)"
+	pnpm --filter @tzj/api prisma:index:search
 
 prod-deploy:
 	cd $(DEPLOY_DIR) && ./deploy.sh $(SERVICE) $(TAG)

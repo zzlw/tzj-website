@@ -16,7 +16,6 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-  cn,
   ImagePreview,
   ImagePreviewProvider,
   Input,
@@ -34,6 +33,7 @@ import { useEffect, useState } from 'react';
 import { MediaPicker } from '@/components/crud/MediaPicker';
 import { RichHint } from '@/components/RichHint';
 import { FaviconSettingsCard } from '@/components/settings/FaviconSettingsCard';
+import { ScreenWatermarkSettingsCard } from '@/components/settings/ScreenWatermarkSettingsCard';
 import { WatermarkSettingsCard } from '@/components/settings/WatermarkSettingsCard';
 import {
   useSiteNotificationSettings,
@@ -819,6 +819,13 @@ export default function SiteSettingsPage() {
             />
           </CardFooter>
         </Card>
+
+        <ScreenWatermarkSettingsCard
+          value={form.screenWatermark}
+          onChange={(next) => patch((p) => ({ ...p, screenWatermark: next }))}
+          pending={updateSettings.isPending}
+          onSave={() => savePublicSettings('后台水印设置已保存')}
+        />
       </div>
     </div>
   );

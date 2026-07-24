@@ -51,6 +51,17 @@ const agentProfileSchema = z.object({
   responseMinutes: z.number().int().min(1).max(1440).optional(),
 });
 
+const chatPromptsSchema = z.object({
+  offlineMessage: localizedTextSchema.default({}),
+  noAgentMessage: localizedTextSchema.default({}),
+});
+
+const screenWatermarkSchema = z.object({
+  enabled: z.boolean().default(false),
+  text: z.string().max(64).default(''),
+  opacity: z.number().min(0.02).max(0.3).default(0.08),
+});
+
 export const sitePublicSettingsSchema = z.object({
   contact: z.object({
     phone: z.string().min(3).max(32),
@@ -83,6 +94,11 @@ export const sitePublicSettingsSchema = z.object({
     title: '在线客服',
     greeting: '您好 👋\n\n请描述您的问题，我会尽快为您解答。',
   }),
+  chatPrompts: chatPromptsSchema.default({
+    offlineMessage: {},
+    noAgentMessage: {},
+  }),
+  screenWatermark: screenWatermarkSchema.default({ enabled: false, text: '', opacity: 0.08 }),
 });
 
 export type SitePublicSettingsInput = z.infer<typeof sitePublicSettingsSchema>;

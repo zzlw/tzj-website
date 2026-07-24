@@ -1,12 +1,29 @@
 'use client';
 
+import {
+  Avatar,
+  AvatarFallback,
+  Button,
+  cn,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@tzj/ui';
+import {
+  ArrowLeftRight,
+  Check,
+  Eye,
+  MoreVertical,
+  Phone,
+  UserCheck,
+  Video,
+  XCircle,
+} from 'lucide-react';
 import { useState } from 'react';
-import { Avatar, AvatarFallback, Button, Popover, PopoverContent, PopoverTrigger, cn } from '@tzj/ui';
-import { ArrowLeftRight, Check, Eye, Info, MoreVertical, Phone, UserCheck, Video, XCircle } from 'lucide-react';
 import { LastOperatorCell } from '@/components/LastOperatorCell';
 import type { ChatRoom, ChatRoomStatusKey, PresenceStatus } from '../types';
 import type { OnlineAgent } from '../useChatSocket';
-import { LeadAction, VisitorInfoContent } from './VisitorInfoContent';
+import { VisitorInfoButton } from './VisitorInfoContent';
 
 const statusMeta: Record<ChatRoomStatusKey, { label: string; dot: string }> = {
   waiting: { label: '等待中', dot: 'bg-sky-500' },
@@ -44,8 +61,6 @@ export function ChatHeader({
   const meta = statusMeta[room.status];
   const presence = presenceMeta[room.clientPresence ?? 'offline'];
   const name = room.clientName || room.clientEmail;
-  const [infoOpen, setInfoOpen] = useState(false);
-  const [convertOpen, setConvertOpen] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);
   // 转接两步确认：先选择坐席，再填写备注 + 确认（防误触）
   const [transferTarget, setTransferTarget] = useState<OnlineAgent | null>(null);
@@ -83,7 +98,9 @@ export function ChatHeader({
                 {/* hover 弹出账号资料卡（复用项目封装的 LastOperatorCell） */}
                 <LastOperatorCell
                   user={room.assignedAgentUser}
-                  fallback={room.assignedAgentEmail === currentAgentEmail ? '我' : room.assignedAgentEmail}
+                  fallback={
+                    room.assignedAgentEmail === currentAgentEmail ? '我' : room.assignedAgentEmail
+                  }
                 />
               </>
             )}
@@ -100,49 +117,7 @@ export function ChatHeader({
         </div>
       </div>
       <div className="flex items-center gap-1.5 sm:gap-2">
-        <Popover open={infoOpen} onOpenChange={setInfoOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              aria-label="访客信息"
-              className="border-border/40 bg-background/60 text-muted-foreground hover:bg-muted/60 focus-visible:ring-primary/40 focus-visible:ring-offset-background size-8 rounded-full border transition focus-visible:ring-2 focus-visible:ring-offset-2 sm:size-10"
-            >
-              <Info className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent
-            align="end"
-            side="bottom"
-            className="w-80 p-3"
-            onInteractOutside={(e) => {
-              // 阻止点外部时关闭，导致内嵌 ConvertToLeadDialog 关闭
-              const target = e.target as HTMLElement | null;
-              if (target?.closest('[data-radix-popper-content-wrapper]')) return;
-            }}
-          >
-            <div className="space-y-3">
-              <div>
-                <p className="text-muted-foreground mb-2 text-xs font-medium">访客信息</p>
-                <VisitorInfoContent room={room} />
-              </div>
-              <div className="border-border/40 border-t pt-2">
-                <LeadAction
-                  room={room}
-                  dialogOpen={convertOpen}
-                  onOpenDialog={() => setConvertOpen(true)}
-                  onOpenChange={setConvertOpen}
-                  onConverted={(cid) => {
-                    setConvertOpen(false);
-                    setInfoOpen(false);
-                    onConverted?.(cid);
-                  }}
-                />
-              </div>
-            </div>
-          </PopoverContent>
-        </Popover>
+        <VisitorInfoButton room={room} onConverted={onConverted} />
         <Button
           type="button"
           variant="ghost"
@@ -226,11 +201,13 @@ export function ChatHeader({
                       <span className="min-w-0 flex-1 text-left">
                         <span className="block truncate font-medium">{a.name || a.email}</span>
                         {a.name && (
-                          <span className="text-muted-foreground block truncate text-xs">{a.email}</span>
+                          <span className="text-muted-foreground block truncate text-xs">
+                            {a.email}
+                          </span>
                         )}
                       </span>
                       <span className="text-muted-foreground shrink-0 text-xs">
-                        {(a.activeRoomCount ?? 0)} 个会话
+                        {a.activeRoomCount ?? 0} 个会话
                       </span>
                     </button>
                   ))
@@ -250,7 +227,7 @@ export function ChatHeader({
                     {transferTarget.name || transferTarget.email}
                   </span>
                   <span className="text-muted-foreground text-xs">
-                    {(transferTarget.activeRoomCount ?? 0)} 个会话
+                    {transferTarget.activeRoomCount ?? 0} 个会话
                   </span>
                 </div>
                 <textarea

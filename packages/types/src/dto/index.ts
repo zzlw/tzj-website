@@ -97,6 +97,8 @@ export interface CreateContactDto {
   subject: string;
   message: string;
   source?: string;
+  /** 持久匿名访客 ID（_tzj_vid，与埋点同源）：把询盘锚定到浏览轨迹，供转线索后反查访客抽屉。 */
+  visitorId?: string;
 }
 
 /**
@@ -157,8 +159,10 @@ export type {
   AgentProfile,
   AnalyticsGeoMode,
   BusinessHours,
+  ChatPrompts,
   LocalizedText,
   PageViewGeoSource,
+  ScreenWatermark,
   SitePublicSettings,
   SocialChannelPurpose,
   SocialChannelSetting,

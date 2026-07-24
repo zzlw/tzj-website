@@ -45,12 +45,15 @@ export const sheetVariants = cva(
 
 interface SheetContentProps
   extends ComponentPropsWithoutRef<typeof DialogPrimitive.Content>,
-    VariantProps<typeof sheetVariants> {}
+    VariantProps<typeof sheetVariants> {
+  /** 遮罩层自定义 class（堆叠抽屉时可传 bg-transparent 避免双层遮罩叠加变黑） */
+  overlayClassName?: string;
+}
 
 const SheetContent = forwardRef<ElementRef<typeof DialogPrimitive.Content>, SheetContentProps>(
-  ({ side = 'right', className, children, ...props }, ref) => (
+  ({ side = 'right', className, overlayClassName, children, ...props }, ref) => (
     <SheetPortal>
-      <SheetOverlay />
+      <SheetOverlay className={overlayClassName} />
       <DialogPrimitive.Content
         ref={ref}
         className={cn(sheetVariants({ side }), className)}

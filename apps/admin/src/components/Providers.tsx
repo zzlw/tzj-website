@@ -2,6 +2,7 @@
 
 import { QueryProvider } from './QueryProvider';
 import { type ClientSession, SessionProvider } from './session';
+import { VisitorDrawerProvider } from './visitor-drawer/VisitorDrawerProvider';
 
 export function Providers({
   session,
@@ -12,7 +13,9 @@ export function Providers({
 }) {
   return (
     <SessionProvider session={session}>
-      <QueryProvider>{children}</QueryProvider>
+      <QueryProvider>
+        <VisitorDrawerProvider>{children}</VisitorDrawerProvider>
+      </QueryProvider>
     </SessionProvider>
   );
 }

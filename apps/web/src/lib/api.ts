@@ -8,6 +8,7 @@ import type {
   PaginatedResponse,
   TradeShow,
 } from '@tzj/types';
+import { getVisitorId } from './analytics';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
 const DEFAULT_TIMEOUT_MS = 10_000;
@@ -142,6 +143,8 @@ export const submitContact = (data: WebsiteContactPayload) => {
     subject: data.subject || '网站咨询',
     message: data.message,
     source: data.source || 'website',
+    // 持久匿名访客 ID（_tzj_vid，与埋点同源）：把询盘锚定到浏览轨迹
+    visitorId: getVisitorId() || undefined,
   };
 
   const headers: Record<string, string> = {};

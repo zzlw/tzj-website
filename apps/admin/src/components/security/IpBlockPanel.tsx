@@ -16,7 +16,7 @@ import {
   Textarea,
 } from '@tzj/ui';
 import { Ban, Loader2 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Can } from '@/components/Can';
 import { CopyableIp, CopyableText } from '@/components/CopyableText';
 import {
@@ -29,6 +29,7 @@ import {
   useUnblockIp,
 } from '@/features/security-ip-block';
 import { notifyError, notifySuccess } from '@/lib/notify';
+import { intField, useUrlState } from '@/lib/use-url-state';
 
 const IP_TRAFFIC_TOP = 100;
 
@@ -111,14 +112,25 @@ function BlockIpForm({ hint, onSuccess }: { hint?: string; onSuccess?: () => voi
 }
 
 export function IpBlockPanel({ from, to }: { from?: string; to?: string }) {
-  const [blockedPage, setBlockedPage] = useState(1);
-  const [blockedPageSize, setBlockedPageSize] = useState(10);
-  const [trafficPage, setTrafficPage] = useState(1);
-  const [trafficPageSize, setTrafficPageSize] = useState(10);
+  // 双表分页持久化到 URL（bp/bl = blocked，tp/tl = traffic，键名互不冲突）
+  const [urlState, setUrl] = useUrlState({
+    blockedPage: intField(1, { min: 1 }),
+    blockedPageSize: intField(10, { min: 1 }),
+    trafficPage: intField(1, { min: 1 }),
+    trafficPageSize: intField(10, { min: 1 }),
+  });
+  const { blockedPage, blockedPageSize, trafficPage, trafficPageSize } = urlState;
   const [blockHint, setBlockHint] = useState<string | undefined>();
 
+  // 日期区间变化时高频 IP 表回到第一页（跳过首次挂载，避免刷新时清掉 URL 里的页码）
+  const dateMounted = useRef(false);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: 仅在日期区间变化时重置分页
   useEffect(() => {
-    setTrafficPage(1);
+    if (!dateMounted.current) {
+      dateMounted.current = true;
+      return;
+    }
+    setUrl({ trafficPage: 1 });
   }, [from, to]);
 
   const blockedParams = useMemo(
@@ -258,10 +270,9 @@ export function IpBlockPanel({ from, to }: { from?: string; to?: string }) {
             totalPages={blockedQuery.data.pagination.totalPages}
             total={blockedQuery.data.pagination.total}
             pageSize={blockedPageSize}
-            onPageChange={setBlockedPage}
+            onPageChange={(p) => setUrl({ blockedPage: p })}
             onPageSizeChange={(size) => {
-              setBlockedPageSize(size);
-              setBlockedPage(1);
+              setUrl({ blockedPageSize: size, blockedPage: 1 });
             }}
           />
         ) : null}
@@ -285,10 +296,9 @@ export function IpBlockPanel({ from, to }: { from?: string; to?: string }) {
             totalPages={trafficQuery.data.pagination.totalPages}
             total={trafficQuery.data.pagination.total}
             pageSize={trafficPageSize}
-            onPageChange={setTrafficPage}
+            onPageChange={(p) => setUrl({ trafficPage: p })}
             onPageSizeChange={(size) => {
-              setTrafficPageSize(size);
-              setTrafficPage(1);
+              setUrl({ trafficPageSize: size, trafficPage: 1 });
             }}
           />
         ) : null}

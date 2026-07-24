@@ -1,8 +1,10 @@
 'use client';
 
+import type { ScreenWatermark as ScreenWatermarkConfig } from '@tzj/types';
 import { ScrollArea, SidebarInset, SidebarProvider, SidebarTrigger } from '@tzj/ui';
 import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
+import { ScreenWatermark } from './ScreenWatermark';
 import { AppSidebar } from './Sidebar';
 
 const NAV_QUERY_KEY = 'nav';
@@ -17,12 +19,15 @@ export function DashboardShell({
   username,
   roleLabel,
   defaultOpen = true,
+  watermark,
 }: {
   children: React.ReactNode;
   username: string;
   roleLabel: string;
   /** 服务端从 cookie 读取的默认展开状态（跨页导航后 URL 无参数时的回退） */
   defaultOpen?: boolean;
+  /** 后台防截图水印配置（enabled 为真时叠加全局明水印） */
+  watermark?: ScreenWatermarkConfig;
 }) {
   const searchParams = useSearchParams();
   // URL 参数优先（刷新/显式状态）；无参数 → cookie 默认值
@@ -52,6 +57,9 @@ export function DashboardShell({
 
   return (
     <SidebarProvider open={open} onOpenChange={handleOpenChange} className="h-svh overflow-hidden">
+      {watermark?.enabled ? (
+        <ScreenWatermark username={username} text={watermark.text} opacity={watermark.opacity} />
+      ) : null}
       <AppSidebar username={username} roleLabel={roleLabel} />
       <SidebarInset className="flex min-h-0 flex-col overflow-hidden">
         <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border bg-background/80 px-4 backdrop-blur-md sm:px-6">

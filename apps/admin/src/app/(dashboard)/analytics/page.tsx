@@ -6,9 +6,9 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  cn,
   DataTable,
   type DataTableColumn,
-  type DataTableSort,
   DateRangePicker,
   PageHeader,
   Skeleton,
@@ -16,23 +16,43 @@ import {
 } from '@tzj/ui';
 import { ArrowRight, ShieldBan } from 'lucide-react';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { DonutChart, HorizontalBarChart, TrendChart } from '@/components/analytics/AnalyticsCharts';
 import { Can } from '@/components/Can';
-import { CopyableIp } from '@/components/CopyableText';
 import { RichHint } from '@/components/RichHint';
 import {
+  type AnalyticsOverview,
   type AnalyticsPageRow,
-  type AnalyticsVisitorDetailRow,
   DEFAULT_PAGE_SORT,
-  DEFAULT_VISITOR_DETAIL_SORT,
   deviceLabel,
-  formatLastSeen,
+  sourceLabel,
   useAnalyticsOverview,
   useAnalyticsPages,
-  useAnalyticsVisitorDetails,
+  useAnalyticsSources,
 } from '@/features/analytics';
 import { GPS_GEO_RESOLVE_NOTE } from '@/lib/analytics-geo-hints';
+import {
+  allowedGranularities,
+  defaultGranularity,
+  GRANULARITIES,
+  GRANULARITY_LABELS,
+  type Granularity,
+  resolveGranularity,
+} from '@/lib/analytics-granularity';
+import {
+  BROWSER_SUPPORT_LABELS,
+  type BrowserSupportStatus,
+  classifyBrowserSupport,
+} from '@/lib/browser-support';
+import { WEB_BASE } from '@/lib/config';
+import { intField, sortField, stringField, useUrlState } from '@/lib/use-url-state';
+
+// 兼容性分布配色：与访客表格「兼容性」列徽标同调（支持=绿 / 不支持=红 / 未知=灰）。
+const SUPPORT_CHART_COLOR: Record<BrowserSupportStatus, string> = {
+  supported: '#10b981',
+  unsupported: '#f43f5e',
+  unknown: '#94a3b8',
+};
 
 function StatCard({
   label,
@@ -58,19 +78,236 @@ function StatCard({
   );
 }
 
-export default function AnalyticsPage() {
-  const [from, setFrom] = useState('');
-  const [to, setTo] = useState('');
+// 热门页面明细列（静态无依赖）：提到模块级以免抬高 AnalyticsPage 复杂度。
+const PAGE_COLUMNS: DataTableColumn<AnalyticsPageRow>[] = [
+  {
+    key: 'path',
+    header: '页面路径',
+    sortable: true,
+    className: 'max-w-[240px] font-mono text-xs',
+    // 路径即前台 C 端路由：渲染为新开页链接，直达官网对应页面（复用 WEB_BASE 前台基址）
+    cell: (r) => (
+      <a
+        href={`${WEB_BASE}${r.path}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        title={r.path}
+        className="block truncate text-primary hover:underline"
+      >
+        {r.path}
+      </a>
+    ),
+  },
+  {
+    key: 'title',
+    header: '标题',
+    sortable: true,
+    className: 'max-w-[200px] truncate text-muted-foreground',
+    cell: (r) => r.title ?? '—',
+  },
+  {
+    key: 'pageViews',
+    header: 'PV',
+    sortable: true,
+    className: 'tabular-nums',
+    cell: (r) => r.pageViews.toLocaleString('zh-CN'),
+  },
+  {
+    key: 'uniqueVisitors',
+    header: 'UV',
+    sortable: true,
+    className: 'tabular-nums',
+    cell: (r) => r.uniqueVisitors.toLocaleString('zh-CN'),
+  },
+];
 
-  const [pagesPage, setPagesPage] = useState(1);
-  const [pagesPageSize, setPagesPageSize] = useState(10);
-  const [pagesSort, setPagesSort] = useState<DataTableSort | null>(DEFAULT_PAGE_SORT);
+// 概览图表数据派生：抽为纯函数，收敛 AnalyticsPage 内多段 map/?? 的复杂度。
+function buildOverviewChartData(data: AnalyticsOverview | undefined) {
+  return {
+    deviceChartData: (data?.devices ?? []).map((d) => ({
+      name: deviceLabel(d.deviceType),
+      value: d.count,
+    })),
+    browserChartData: (data?.browsers ?? []).map((b) => ({
+      name: b.browser,
+      value: b.count,
+    })),
+    regionChartData: (data?.topRegions ?? []).map((r) => ({
+      name: r.region,
+      value: r.pageViews,
+    })),
+    pageChartData: (data?.topPages ?? []).slice(0, 8).map((p) => ({
+      name: p.path.length > 28 ? `${p.path.slice(0, 26)}…` : p.path,
+      value: p.pageViews,
+    })),
+    // 浏览器兼容性分布：按版本级明细离线归类为 支持/不支持/未知（口径同访客表「兼容性」列）。
+    browserSupportChartData: buildBrowserSupportData(data?.browserVersions ?? []),
+  };
+}
 
-  const [visitorDetailsPage, setVisitorDetailsPage] = useState(1);
-  const [visitorDetailsPageSize, setVisitorDetailsPageSize] = useState(10);
-  const [visitorDetailsSort, setVisitorDetailsSort] = useState<DataTableSort | null>(
-    DEFAULT_VISITOR_DETAIL_SORT,
+// 兼容性挡位汇总：将版本级明细按 classifyBrowserSupport 归类并累加 PV，固定排序 + 语义色。
+function buildBrowserSupportData(
+  rows: NonNullable<AnalyticsOverview['browserVersions']>,
+): Array<{ name: string; value: number; color: string }> {
+  const buckets: Record<BrowserSupportStatus, number> = {
+    supported: 0,
+    unsupported: 0,
+    unknown: 0,
+  };
+  for (const row of rows) {
+    const { status } = classifyBrowserSupport(row.browser, row.browserVersion);
+    buckets[status] += row.count;
+  }
+  const order: BrowserSupportStatus[] = ['supported', 'unsupported', 'unknown'];
+  return order
+    .filter((status) => buckets[status] > 0)
+    .map((status) => ({
+      name: BROWSER_SUPPORT_LABELS[status],
+      value: buckets[status],
+      color: SUPPORT_CHART_COLOR[status],
+    }));
+}
+
+// 营销归因分区：自含数据拉取与渲染，避免抬高 AnalyticsPage 复杂度
+function SourcesSection({ params }: { params: { from?: string; to?: string } }) {
+  const sourcesQuery = useAnalyticsSources(params);
+  const loading = sourcesQuery.isLoading || sourcesQuery.isFetching;
+
+  const channelChartData = (sourcesQuery.data?.channels ?? []).map((c) => ({
+    name: sourceLabel(c.source),
+    value: c.pageViews,
+  }));
+
+  const campaignRows = (sourcesQuery.data?.topCampaigns ?? []).map((c) => ({
+    id: `${c.campaign}|${c.source}|${c.medium}`,
+    campaign: c.campaign,
+    source: c.source,
+    medium: c.medium,
+    pageViews: c.pageViews,
+    uniqueVisitors: c.uniqueVisitors,
+  }));
+
+  const campaignColumns: DataTableColumn<(typeof campaignRows)[number]>[] = [
+    {
+      key: 'campaign',
+      header: '广告系列',
+      className: 'max-w-[220px] truncate font-medium',
+      cell: (r) => r.campaign,
+    },
+    {
+      key: 'source',
+      header: '来源 · 媒介',
+      className: 'text-muted-foreground',
+      cell: (r) => `${r.source} / ${r.medium}`,
+    },
+    {
+      key: 'pageViews',
+      header: 'PV',
+      className: 'tabular-nums',
+      cell: (r) => r.pageViews.toLocaleString('zh-CN'),
+    },
+    {
+      key: 'uniqueVisitors',
+      header: 'UV',
+      className: 'tabular-nums',
+      cell: (r) => r.uniqueVisitors.toLocaleString('zh-CN'),
+    },
+  ];
+
+  return (
+    <div className="mb-6 grid gap-6 lg:grid-cols-2">
+      <Card className="border-border/80 shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-base">流量来源</CardTitle>
+          <CardDescription>按渠道分组（UTM 媒介 / gclid / 引荐域名推断）的 PV 占比</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <DonutChart items={channelChartData} loading={loading} emptyText="暂无来源数据" />
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/80 shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-base">热门广告系列</CardTitle>
+          <CardDescription>带 utm_campaign 标记的访问排行（Top 15）</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <DataTable
+            columns={campaignColumns}
+            rows={campaignRows}
+            loading={loading}
+            emptyText="暂无带 UTM 标记的访问"
+          />
+        </CardContent>
+      </Card>
+    </div>
   );
+}
+
+// 趋势图粒度切换（segmented control，卡片头右上角）：非法粒度置灰，激活项高亮。
+// 与顶部日期范围正交——范围决定「看多久」，粒度决定「按什么聚合」。
+function GranularitySwitch({
+  value,
+  from,
+  to,
+  onChange,
+}: {
+  value: Granularity;
+  from?: string;
+  to?: string;
+  onChange: (g: Granularity) => void;
+}) {
+  const allowed = allowedGranularities(from, to);
+  return (
+    <div className="inline-flex items-center rounded-md border border-border bg-muted/40 p-0.5">
+      {GRANULARITIES.map((g) => {
+        const disabled = !allowed.includes(g);
+        const active = g === value;
+        return (
+          <button
+            key={g}
+            type="button"
+            disabled={disabled}
+            onClick={() => onChange(g)}
+            title={disabled ? '当前日期范围不适用该粒度' : undefined}
+            className={cn(
+              'rounded px-2.5 py-1 text-xs font-medium transition-colors',
+              active
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground',
+              disabled && 'cursor-not-allowed opacity-40 hover:text-muted-foreground',
+            )}
+          >
+            {GRANULARITY_LABELS[g]}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+export default function AnalyticsPage() {
+  const [dateState, setDate] = useUrlState({
+    from: stringField(),
+    to: stringField(),
+    g: stringField(),
+  });
+  const from = dateState.from;
+  const to = dateState.to;
+  // 后端为权威，但前端先按同一阈值解析出实际粒度：驱动请求参数、控件高亮与横轴标签。
+  const granularity = resolveGranularity(dateState.g, from, to);
+
+  const [pagesState, setPages] = useUrlState(
+    {
+      page: intField(1, { min: 1 }),
+      pageSize: intField(10, { min: 1 }),
+      sort: sortField(DEFAULT_PAGE_SORT),
+    },
+    { prefix: 'p' },
+  );
+  const pagesPage = pagesState.page;
+  const pagesPageSize = pagesState.pageSize;
+  const pagesSort = pagesState.sort;
 
   const dateParams = useMemo(
     () => ({
@@ -80,7 +317,7 @@ export default function AnalyticsPage() {
     [from, to],
   );
 
-  const overviewParams = dateParams;
+  const overviewParams = useMemo(() => ({ ...dateParams, granularity }), [dateParams, granularity]);
 
   const pagesParams = useMemo(
     () => ({
@@ -93,131 +330,22 @@ export default function AnalyticsPage() {
     [dateParams, pagesPage, pagesPageSize, pagesSort],
   );
 
-  const visitorDetailsParams = useMemo(
-    () => ({
-      ...dateParams,
-      page: visitorDetailsPage,
-      limit: visitorDetailsPageSize,
-      sortBy: visitorDetailsSort?.column,
-      sortOrder: visitorDetailsSort?.order,
-    }),
-    [dateParams, visitorDetailsPage, visitorDetailsPageSize, visitorDetailsSort],
-  );
-
   const { data, isLoading, isFetching } = useAnalyticsOverview(overviewParams);
   const pagesQuery = useAnalyticsPages(pagesParams);
-  const visitorDetailsQuery = useAnalyticsVisitorDetails(visitorDetailsParams);
 
   const overviewLoading = isLoading || isFetching;
 
-  const pageColumns: DataTableColumn<AnalyticsPageRow>[] = [
-    {
-      key: 'path',
-      header: '页面路径',
-      sortable: true,
-      className: 'max-w-[240px] truncate font-mono text-xs',
-      cell: (r) => r.path,
-    },
-    {
-      key: 'title',
-      header: '标题',
-      sortable: true,
-      className: 'max-w-[200px] truncate text-muted-foreground',
-      cell: (r) => r.title ?? '—',
-    },
-    {
-      key: 'pageViews',
-      header: 'PV',
-      sortable: true,
-      className: 'tabular-nums',
-      cell: (r) => r.pageViews.toLocaleString('zh-CN'),
-    },
-    {
-      key: 'uniqueVisitors',
-      header: 'UV',
-      sortable: true,
-      className: 'tabular-nums',
-      cell: (r) => r.uniqueVisitors.toLocaleString('zh-CN'),
-    },
-  ];
-
-  const visitorDetailColumns: DataTableColumn<AnalyticsVisitorDetailRow>[] = [
-    {
-      key: 'ip',
-      header: 'IP',
-      cell: (r) => <CopyableIp ip={r.ip} ipMasked={r.ipMasked} />,
-    },
-    {
-      key: 'region',
-      header: '地区',
-      cell: (r) => (
-        <div className="min-w-0">
-          <span>{r.region || '—'}</span>
-          {r.isp ? (
-            <span className="block truncate text-xs text-muted-foreground">{r.isp}</span>
-          ) : null}
-        </div>
-      ),
-    },
-    {
-      key: 'geoSource',
-      header: '定位依据',
-      className: 'tabular-nums text-muted-foreground',
-      cell: (r) => r.geoSource,
-    },
-    {
-      key: 'referrerHost',
-      header: '流量来源',
-      className: 'max-w-[200px] truncate',
-      cell: (r) => r.referrerHost,
-    },
-    {
-      key: 'pageViews',
-      header: 'PV',
-      sortable: true,
-      className: 'tabular-nums',
-      cell: (r) => r.pageViews.toLocaleString('zh-CN'),
-    },
-    {
-      key: 'uniqueVisitors',
-      header: 'UV',
-      sortable: true,
-      className: 'tabular-nums',
-      cell: (r) => r.uniqueVisitors.toLocaleString('zh-CN'),
-    },
-    {
-      key: 'lastSeenAt',
-      header: '最近访问',
-      sortable: true,
-      cell: (r) => formatLastSeen(r.lastSeenAt),
-    },
-  ];
-
-  const deviceChartData = (data?.devices ?? []).map((d) => ({
-    name: deviceLabel(d.deviceType),
-    value: d.count,
-  }));
-
-  const browserChartData = (data?.browsers ?? []).map((b) => ({
-    name: b.browser,
-    value: b.count,
-  }));
-
-  const regionChartData = (data?.topRegions ?? []).map((r) => ({
-    name: r.region,
-    value: r.pageViews,
-  }));
-
-  const pageChartData = (data?.topPages ?? []).slice(0, 8).map((p) => ({
-    name: p.path.length > 28 ? `${p.path.slice(0, 26)}…` : p.path,
-    value: p.pageViews,
-  }));
+  const {
+    deviceChartData,
+    browserChartData,
+    regionChartData,
+    pageChartData,
+    browserSupportChartData,
+  } = buildOverviewChartData(data);
 
   function resetDateFilters(f: string, t: string) {
-    setFrom(f);
-    setTo(t);
-    setPagesPage(1);
-    setVisitorDetailsPage(1);
+    setDate({ from: f, to: t });
+    setPages({ page: 1 });
   }
 
   return (
@@ -288,12 +416,26 @@ export default function AnalyticsPage() {
       </div>
 
       <Card className="mb-6 border-border/80 shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-base">访问趋势</CardTitle>
-          <CardDescription>按日 PV（面积）与 UV（折线）对比</CardDescription>
+        <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
+          <div className="space-y-1.5">
+            <CardTitle className="text-base">访问趋势</CardTitle>
+            <CardDescription>
+              {GRANULARITY_LABELS[granularity]} PV（面积）与 UV（折线）对比
+            </CardDescription>
+          </div>
+          <GranularitySwitch
+            value={granularity}
+            from={from}
+            to={to}
+            onChange={(g) => setDate({ g: g === defaultGranularity(from, to) ? '' : g })}
+          />
         </CardHeader>
         <CardContent>
-          <TrendChart daily={data?.daily ?? []} loading={overviewLoading} />
+          <TrendChart
+            daily={data?.daily ?? []}
+            granularity={granularity}
+            loading={overviewLoading}
+          />
         </CardContent>
       </Card>
 
@@ -329,7 +471,7 @@ export default function AnalyticsPage() {
         </Card>
       </div>
 
-      <div className="mb-6 grid gap-6 lg:grid-cols-2">
+      <div className="mb-6 grid gap-6 lg:grid-cols-3">
         <Card className="border-border/80 shadow-sm">
           <CardHeader>
             <CardTitle className="text-base">设备分布</CardTitle>
@@ -347,20 +489,37 @@ export default function AnalyticsPage() {
             <DonutChart items={browserChartData} loading={overviewLoading} />
           </CardContent>
         </Card>
+
+        <Card className="border-border/80 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-base">浏览器兼容性分布</CardTitle>
+            <CardDescription>
+              按 ES2020 基线归类（口径同前台升级横条）：不支持占比偏高时需关注兼容降级。
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <DonutChart
+              items={browserSupportChartData}
+              loading={overviewLoading}
+              emptyText="暂无浏览器版本数据"
+            />
+          </CardContent>
+        </Card>
       </div>
+
+      <SourcesSection params={dateParams} />
 
       <div className="mb-6 space-y-2">
         <h2 className="text-base font-semibold">热门页面明细</h2>
         <DataTable
-          columns={pageColumns}
+          columns={PAGE_COLUMNS}
           rows={pagesQuery.data?.data ?? []}
           loading={pagesQuery.isLoading || pagesQuery.isFetching}
           emptyText="暂无页面访问记录"
           sort={pagesSort}
           defaultSort={DEFAULT_PAGE_SORT}
           onSortChange={(next) => {
-            setPagesPage(1);
-            setPagesSort(next);
+            setPages({ sort: next, page: 1 });
           }}
         />
         {pagesQuery.data?.pagination ? (
@@ -369,52 +528,13 @@ export default function AnalyticsPage() {
             totalPages={pagesQuery.data.pagination.totalPages}
             total={pagesQuery.data.pagination.total}
             pageSize={pagesPageSize}
-            onPageChange={setPagesPage}
+            onPageChange={(p) => setPages({ page: p })}
             onPageSizeChange={(size) => {
-              setPagesPageSize(size);
-              setPagesPage(1);
+              setPages({ pageSize: size, page: 1 });
             }}
           />
         ) : null}
       </div>
-
-      <Card className="mb-6 border-border/80 shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-base">访客明细</CardTitle>
-          <CardDescription>
-            按 IP 聚合的访客明细，整合地区、定位依据与流量来源。地区采用纯真库为主、
-            在线服务为辅读取时重解析（国内可到省市区 + 运营商）；完整 IP
-            自本次升级后的新访问起记录， 更早数据可能仅显示脱敏地址。点击 IP 右侧图标可复制。
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <DataTable
-            columns={visitorDetailColumns}
-            rows={visitorDetailsQuery.data?.data ?? []}
-            loading={visitorDetailsQuery.isLoading || visitorDetailsQuery.isFetching}
-            emptyText="暂无访客记录"
-            sort={visitorDetailsSort}
-            defaultSort={DEFAULT_VISITOR_DETAIL_SORT}
-            onSortChange={(next) => {
-              setVisitorDetailsPage(1);
-              setVisitorDetailsSort(next);
-            }}
-          />
-          {visitorDetailsQuery.data?.pagination ? (
-            <TablePagination
-              page={visitorDetailsPage}
-              totalPages={visitorDetailsQuery.data.pagination.totalPages}
-              total={visitorDetailsQuery.data.pagination.total}
-              pageSize={visitorDetailsPageSize}
-              onPageChange={setVisitorDetailsPage}
-              onPageSizeChange={(size) => {
-                setVisitorDetailsPageSize(size);
-                setVisitorDetailsPage(1);
-              }}
-            />
-          ) : null}
-        </CardContent>
-      </Card>
     </>
   );
 }

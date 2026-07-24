@@ -28,6 +28,7 @@ import { useList, useRemove } from '@/features/hooks';
 import type { UserItem } from '@/features/types';
 import { roleLabel } from '@/features/users';
 import { notifyError, notifySuccess } from '@/lib/notify';
+import { intField, stringField, useUrlState } from '@/lib/use-url-state';
 
 const COLUMNS = (roleOptions: RoleOption[]): DataTableColumn<UserItem>[] => [
   {
@@ -76,21 +77,24 @@ const COLUMNS = (roleOptions: RoleOption[]): DataTableColumn<UserItem>[] => [
 
 export default function UsersPage() {
   const { username: currentUsername } = useSession();
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
-  const [searchInput, setSearchInput] = useState('');
-  const [search, setSearch] = useState('');
-  const [roleFilter, setRoleFilter] = useState('');
+  const [urlState, setUrlState] = useUrlState({
+    page: intField(1, { min: 1 }),
+    pageSize: intField(20, { min: 1 }),
+    search: stringField(),
+    role: stringField(),
+  });
+  const { page, pageSize, role: roleFilter } = urlState;
+  const [searchInput, setSearchInput] = useState(() => urlState.search || '');
   const [deleteTarget, setDeleteTarget] = useState<UserItem | null>(null);
 
   const params = useMemo(
     () => ({
       page,
       limit: pageSize,
-      search: search || undefined,
+      search: urlState.search || undefined,
       role: roleFilter || undefined,
     }),
-    [page, pageSize, search, roleFilter],
+    [page, pageSize, urlState.search, roleFilter],
   );
 
   const { data, isLoading, isError, error } = useList<UserItem>('users', params);
@@ -133,8 +137,7 @@ export default function UsersPage() {
           className="flex min-w-[200px] flex-1 items-center gap-2 sm:max-w-sm"
           onSubmit={(e) => {
             e.preventDefault();
-            setSearch(searchInput.trim());
-            setPage(1);
+            setUrlState({ search: searchInput.trim(), page: 1 });
           }}
         >
           <div className="relative flex-1">
@@ -153,8 +156,7 @@ export default function UsersPage() {
         <Select
           value={roleFilter || 'all'}
           onValueChange={(v) => {
-            setRoleFilter(v === 'all' ? '' : v);
-            setPage(1);
+            setUrlState({ role: v === 'all' ? '' : v, page: 1 });
           }}
         >
           <SelectTrigger className="w-[140px]">
@@ -211,10 +213,9 @@ export default function UsersPage() {
           totalPages={pagination.totalPages}
           total={pagination.total}
           pageSize={pageSize}
-          onPageChange={setPage}
+          onPageChange={(p) => setUrlState({ page: p })}
           onPageSizeChange={(size) => {
-            setPageSize(size);
-            setPage(1);
+            setUrlState({ pageSize: size, page: 1 });
           }}
           unit="个"
         />

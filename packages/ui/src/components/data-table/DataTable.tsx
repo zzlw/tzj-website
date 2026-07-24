@@ -30,6 +30,10 @@ export interface DataTableColumn<T> {
   sortable?: boolean;
   /** API 排序字段名，默认同 key。 */
   sortKey?: string;
+  /** 固定到右侧（列过多横向溢出时保持可见，常用于操作列）。 */
+  pinRight?: boolean;
+  /** 固定到左侧（列过多横向溢出时保持可见，常用于 ID/标识列）。 */
+  pinLeft?: boolean;
 }
 
 export interface DataTableProps<T extends { id: string }> {
@@ -126,7 +130,7 @@ export function DataTable<T extends { id: string }>({
         c.cell
           ? c.cell(row.original)
           : String((row.original as Record<string, unknown>)[c.key] ?? '—'),
-      meta: { className: c.className },
+      meta: { className: c.className, pinRight: c.pinRight, pinLeft: c.pinLeft },
     }));
     if (renderActions) {
       cols.push({
@@ -152,14 +156,25 @@ export function DataTable<T extends { id: string }>({
         <TableHeader>
           {table.getHeaderGroups().map((hg) => (
             <TableRow key={hg.id} className="hover:bg-transparent">
-              {hg.headers.map((header) => (
-                <TableHead
-                  key={header.id}
-                  className={header.column.id === '__actions' ? 'text-right' : ''}
-                >
-                  {flexRender(header.column.columnDef.header, header.getContext())}
-                </TableHead>
-              ))}
+              {hg.headers.map((header) => {
+                const meta = header.column.columnDef.meta as
+                  | { pinRight?: boolean; pinLeft?: boolean }
+                  | undefined;
+                return (
+                  <TableHead
+                    key={header.id}
+                    className={cn(
+                      'whitespace-nowrap',
+                      header.column.id === '__actions' && 'text-right',
+                      meta?.pinRight &&
+                        'sticky right-0 z-20 bg-card text-right border-l border-border/60',
+                      meta?.pinLeft && 'sticky left-0 z-20 bg-card border-r border-border/60',
+                    )}
+                  >
+                    {flexRender(header.column.columnDef.header, header.getContext())}
+                  </TableHead>
+                );
+              })}
             </TableRow>
           ))}
         </TableHeader>
@@ -183,18 +198,23 @@ export function DataTable<T extends { id: string }>({
           ) : (
             table.getRowModel().rows.map((row) => (
               <TableRow key={row.id} className={getRowClassName?.(row.original)}>
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell
-                    key={cell.id}
-                    className={
-                      cell.column.id === '__actions'
-                        ? 'text-right'
-                        : (cell.column.columnDef.meta as { className?: string })?.className
-                    }
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
+                {row.getVisibleCells().map((cell) => {
+                  const meta = cell.column.columnDef.meta as
+                    | { className?: string; pinRight?: boolean; pinLeft?: boolean }
+                    | undefined;
+                  return (
+                    <TableCell
+                      key={cell.id}
+                      className={cn(
+                        cell.column.id === '__actions' ? 'text-right' : meta?.className,
+                        meta?.pinRight && 'sticky right-0 z-10 bg-card border-l border-border/60',
+                        meta?.pinLeft && 'sticky left-0 z-10 bg-card border-r border-border/60',
+                      )}
+                    >
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  );
+                })}
               </TableRow>
             ))
           )}

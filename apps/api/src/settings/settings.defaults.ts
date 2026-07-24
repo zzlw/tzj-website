@@ -1,6 +1,31 @@
-import type { SitePublicSettings, SocialChannelSetting, SocialPlatformId } from '@tzj/types';
+import type {
+  LocalizedText,
+  SitePublicSettings,
+  SocialChannelSetting,
+  SocialPlatformId,
+} from '@tzj/types';
 
 export const SITE_PUBLIC_SETTING_KEY = 'site.public';
+
+/**
+ * 将历史遗留的单一字符串或任意对象规范为 LocalizedText。
+ * 老数据中 chatPrompts 存的是纯字符串，此处迁移为 { 'zh-CN': str }，
+ * 避免类型破坏；对象则只保留三种合法语言键。
+ */
+export function normalizeLocalizedText(value: unknown): LocalizedText {
+  if (typeof value === 'string') {
+    return value.trim() ? { 'zh-CN': value.trim() } : {};
+  }
+  if (value && typeof value === 'object') {
+    const source = value as Record<string, unknown>;
+    const out: LocalizedText = {};
+    if (typeof source['zh-CN'] === 'string') out['zh-CN'] = source['zh-CN'] as string;
+    if (typeof source['zh-TW'] === 'string') out['zh-TW'] = source['zh-TW'] as string;
+    if (typeof source.en === 'string') out.en = source.en as string;
+    return out;
+  }
+  return {};
+}
 
 /** 微信默认客服，其余默认社媒关注 */
 export function defaultChannelPurpose(platform: SocialPlatformId): 'contact' | 'follow' {
@@ -106,6 +131,15 @@ export const DEFAULT_SITE_PUBLIC_SETTINGS: SitePublicSettings = {
     greeting: '您好 👋\n\n请描述您的问题，我会尽快为您解答。',
     responseMinutes: 5,
   },
+  chatPrompts: {
+    offlineMessage: {},
+    noAgentMessage: {},
+  },
+  screenWatermark: {
+    enabled: false,
+    text: '',
+    opacity: 0.08,
+  },
 };
 
 export function mergeSitePublicSettings(
@@ -146,6 +180,17 @@ export function mergeSitePublicSettings(
       responseMinutes:
         partial.agentProfile?.responseMinutes ??
         DEFAULT_SITE_PUBLIC_SETTINGS.agentProfile.responseMinutes,
+    },
+    chatPrompts: {
+      offlineMessage: normalizeLocalizedText(partial.chatPrompts?.offlineMessage),
+      noAgentMessage: normalizeLocalizedText(partial.chatPrompts?.noAgentMessage),
+    },
+    screenWatermark: {
+      enabled:
+        partial.screenWatermark?.enabled ?? DEFAULT_SITE_PUBLIC_SETTINGS.screenWatermark.enabled,
+      text: partial.screenWatermark?.text ?? DEFAULT_SITE_PUBLIC_SETTINGS.screenWatermark.text,
+      opacity:
+        partial.screenWatermark?.opacity ?? DEFAULT_SITE_PUBLIC_SETTINGS.screenWatermark.opacity,
     },
   };
 }

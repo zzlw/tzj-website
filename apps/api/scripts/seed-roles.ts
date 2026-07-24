@@ -40,7 +40,6 @@ const ROLES: RoleSeed[] = [
       // 只读：排查问题时需要查看
       'settings.view',
       'audit.view',
-      'media.view',
     ],
   },
   {
@@ -78,7 +77,6 @@ const ROLES: RoleSeed[] = [
       'content.publish',
       'content.delete',
       // 媒体管理
-      'media.view',
       'media.upload',
       'media.delete',
       // 运营分析（内容效果评估）
@@ -117,7 +115,6 @@ const ROLES: RoleSeed[] = [
       'content.edit',
       'content.publish',
       // 媒体（不含删除/永久清除）
-      'media.view',
       'media.upload',
       // 客服监控（只读）
       'chat.view',

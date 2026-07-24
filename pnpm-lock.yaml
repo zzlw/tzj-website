@@ -4,87 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-catalogs:
-  default:
-    '@hookform/resolvers':
-      specifier: ^5.4.0
-      version: 5.4.0
-    '@tailwindcss/postcss':
-      specifier: ^4.3.1
-      version: 4.3.1
-    '@tanstack/react-query':
-      specifier: ^5.101.2
-      version: 5.101.2
-    '@types/node':
-      specifier: ^26.0.1
-      version: 26.0.1
-    '@types/react':
-      specifier: ^19.2.17
-      version: 19.2.17
-    '@types/react-dom':
-      specifier: ^19.2.3
-      version: 19.2.3
-    class-variance-authority:
-      specifier: ^0.7.1
-      version: 0.7.1
-    clsx:
-      specifier: ^2.1.1
-      version: 2.1.1
-    lucide-react:
-      specifier: ^1.22.0
-      version: 1.22.0
-    next:
-      specifier: ^16.2.9
-      version: 16.2.9
-    next-intl:
-      specifier: ^4.13.1
-      version: 4.13.1
-    next-view-transitions:
-      specifier: ^0.3.5
-      version: 0.3.5
-    postcss:
-      specifier: ^8.5.16
-      version: 8.5.16
-    radix-ui:
-      specifier: ^1.6.0
-      version: 1.6.0
-    react:
-      specifier: ^19.2.7
-      version: 19.2.7
-    react-dom:
-      specifier: ^19.2.7
-      version: 19.2.7
-    react-hook-form:
-      specifier: ^7.80.0
-      version: 7.80.0
-    recharts:
-      specifier: ^3.9.1
-      version: 3.9.1
-    shadcn:
-      specifier: ^4.12.0
-      version: 4.12.0
-    socket.io-client:
-      specifier: ^4.8.1
-      version: 4.8.3
-    tailwind-merge:
-      specifier: ^3.6.0
-      version: 3.6.0
-    tailwindcss:
-      specifier: ^4.3.1
-      version: 4.3.1
-    tw-animate-css:
-      specifier: ^1.4.0
-      version: 1.4.0
-    typescript:
-      specifier: ^6.0.3
-      version: 6.0.3
-    vditor:
-      specifier: ^3.11.2
-      version: 3.11.2
-    zod:
-      specifier: ^4.4.3
-      version: 4.4.3
-
 importers:
 
   .:
@@ -285,6 +204,9 @@ importers:
       socket.io:
         specifier: ^4.8.3
         version: 4.8.3
+      ua-parser-js:
+        specifier: ^2.0.10
+        version: 2.0.10
       zod:
         specifier: ^4.4.3
         version: 4.4.3
@@ -4525,6 +4447,9 @@ packages:
   destr@2.0.5:
     resolution: {integrity: sha512-ugFTXCtDZunbzasqBxrK93Ik/DRYsO6S/fedkWEMKqt04xZ4csmnmwGDBAb07QWNaGMAmnTIemsYZCksjATwsA==}
 
+  detect-europe-js@0.1.2:
+    resolution: {integrity: sha512-lgdERlL3u0aUdHocoouzT10d9I89VVhk0qNRmll7mXdGfJT1/wqZ2ZLA4oJAjeACPY5fT1wsbq2AT+GkuInsow==}
+
   detect-libc@2.1.2:
     resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
     engines: {node: '>=8'}
@@ -5238,6 +5163,9 @@ packages:
   is-regexp@3.1.0:
     resolution: {integrity: sha512-rbku49cWloU5bSMI+zaRaXdQHXnthP6DZ/vLnfdSKyL4zUzuWnomtOEiZZOd+ioQ+avFo/qau3KPTc7Fjy1uPA==}
     engines: {node: '>=12'}
+
+  is-standalone-pwa@0.1.1:
+    resolution: {integrity: sha512-9Cbovsa52vNQCjdXOzeQq5CnCbAcRk05aU62K20WO372NrTv0NxibLFCK6lQ4/iZEFdEA3p3t2VNOn8AJ53F5g==}
 
   is-stream@2.0.1:
     resolution: {integrity: sha512-hFoiJiTl63nn+kstHGBtewWSKnQLpyb155KHheA1l39uvtO9nWIop1p3udqPcUd/xbF1VLMO4n7OI6p7RbngDg==}
@@ -7118,6 +7046,13 @@ packages:
   typescript@6.0.3:
     resolution: {integrity: sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw==}
     engines: {node: '>=14.17'}
+    hasBin: true
+
+  ua-is-frozen@0.1.2:
+    resolution: {integrity: sha512-RwKDW2p3iyWn4UbaxpP2+VxwqXh0jpvdxsYpZ5j/MLLiQOfbsV5shpgQiw93+KMYQPcteeMQ289MaAFzs3G9pw==}
+
+  ua-parser-js@2.0.10:
+    resolution: {integrity: sha512-t+3Ktbq0Ies2vaSezfOaWiolH4OigQIO1dk+1xDpOydB1COVPocVYOrEV5rqZ0kFY9XYG1v9LutCyMgYBpABcw==}
     hasBin: true
 
   uglify-js@3.19.3:
@@ -11584,6 +11519,8 @@ snapshots:
 
   destr@2.0.5: {}
 
+  detect-europe-js@0.1.2: {}
+
   detect-libc@2.1.2: {}
 
   detect-newline@3.1.0: {}
@@ -12357,6 +12294,8 @@ snapshots:
   is-promise@4.0.0: {}
 
   is-regexp@3.1.0: {}
+
+  is-standalone-pwa@0.1.1: {}
 
   is-stream@2.0.1: {}
 
@@ -14737,6 +14676,14 @@ snapshots:
   typescript@5.9.3: {}
 
   typescript@6.0.3: {}
+
+  ua-is-frozen@0.1.2: {}
+
+  ua-parser-js@2.0.10:
+    dependencies:
+      detect-europe-js: 0.1.2
+      is-standalone-pwa: 0.1.1
+      ua-is-frozen: 0.1.2
 
   uglify-js@3.19.3:
     optional: true

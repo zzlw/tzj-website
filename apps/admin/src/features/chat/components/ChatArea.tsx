@@ -28,6 +28,8 @@ interface Props {
   clientTyping?: boolean;
   /** 访客实时输入内容预览（业内最佳实践 LiveChat/Tawk.to） */
   clientTypingText?: string;
+  /** 搜索跳转的目标消息 id：进入会话后滚动定位并瞬时高亮 */
+  highlightMessageId?: string | null;
 }
 
 export function ChatArea({
@@ -44,6 +46,7 @@ export function ChatArea({
   onTransfer,
   clientTyping,
   clientTypingText,
+  highlightMessageId,
 }: Props) {
   // 真正可滚动的元素是 Radix ScrollArea 的 Viewport（带 data-radix-scroll-area-viewport）。
   // @tzj/ui 的 ScrollArea 没有透出 viewport ref，所以从内容 div 用 closest() 反向找到。
@@ -64,6 +67,11 @@ export function ChatArea({
   const pinnedRef = useRef(true);
   // 「↓ 新消息」浮动按钮计数（业内最佳实践 WhatsApp/Intercom/Telegram）
   const [newMsgCount, setNewMsgCount] = useState(0);
+  // 搜索跳转命中的消息瞬时高亮（自身管理生命周期：定位后点亮，约 2s 后淡出）
+  const [flashId, setFlashId] = useState<string | null>(null);
+  const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 已完成跳转的目标 id：防止 room.messages 后续变化（如新消息到达）时重复把视口拽回旧命中
+  const lastJumpedRef = useRef<string | null>(null);
   // 待执行的 rAF 句柄，卸载/依赖变化时取消，避免泄漏与竞态
   const rafRef = useRef<number | null>(null);
 
@@ -138,6 +146,39 @@ export function ChatArea({
     return () => ro.disconnect();
   }, [room.roomId, scrollToBottom]);
 
+  // 搜索跳转：进入会话（或同会话内命中变化）后，滚动定位到目标消息并瞬时高亮。
+  // 不贴底（pinnedRef=false），避免初始加载/ResizeObserver 把视口重新拽回底部。
+  useEffect(() => {
+    if (!highlightMessageId) return;
+    if (lastJumpedRef.current === highlightMessageId) return;
+    if (!(room.messages ?? []).some((m) => m.messageId === highlightMessageId)) return;
+    lastJumpedRef.current = highlightMessageId;
+    pinnedRef.current = false;
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        const el = contentRef.current?.querySelector<HTMLElement>(
+          `[data-message-id="${CSS.escape(highlightMessageId)}"]`,
+        );
+        el?.scrollIntoView({ block: 'center', behavior: 'auto' });
+        setFlashId(highlightMessageId);
+        if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+        flashTimerRef.current = setTimeout(() => setFlashId(null), 2200);
+      });
+    });
+    return () => {
+      cancelAnimationFrame(raf1);
+      if (raf2) cancelAnimationFrame(raf2);
+    };
+  }, [highlightMessageId, room.messages]);
+
+  // 卸载时清理高亮计时器，避免对已卸载组件 setState
+  useEffect(() => {
+    return () => {
+      if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+    };
+  }, []);
+
   return (
     <div className="border-border/40 relative flex min-h-0 flex-col gap-3 overflow-hidden rounded-2xl border p-3 sm:gap-4 sm:p-4 lg:col-start-2 lg:col-end-3 lg:rounded-3xl">
       <div
@@ -163,7 +204,13 @@ export function ChatArea({
               {room.messages?.length === 0 ? (
                 <p className="text-muted-foreground py-10 text-center text-sm">尚未有消息</p>
               ) : (
-                (room.messages ?? []).map((m) => <ChatMessageBubble key={m.messageId} message={m} />)
+                (room.messages ?? []).map((m) => (
+                  <ChatMessageBubble
+                    key={m.messageId}
+                    message={m}
+                    highlighted={m.messageId === flashId}
+                  />
+                ))
               )}
               {/* 访客正在输入指示器（业内最佳实践 LiveChat/Tawk.to）
                   有预览文本 → 「草稿消息」气泡（淡化+斜体 = 未发送语义）+ 底部小圆点

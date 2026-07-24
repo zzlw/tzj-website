@@ -16,6 +16,8 @@ export interface SimpleDialogProps {
   /** 超大弹窗（媒体库等资源选择器，约 96vw / 最大 72rem） */
   xl?: boolean;
   bodyClassName?: string;
+  /** 覆盖遮罩层样式（如叠在抽屉之上时传 bg-transparent，避免遮罩叠加二次变黑） */
+  overlayClassName?: string;
   /** 为 true 时忽略 ESC / 点击遮罩关闭（嵌套预览层打开时使用） */
   dismissBlocked?: boolean;
   /** 为 false 时不锁定外部层（嵌套 PhotoView 等第三方预览时需要） */
@@ -40,6 +42,7 @@ export function SimpleDialog({
   wide,
   xl,
   bodyClassName,
+  overlayClassName,
   dismissBlocked = false,
   modal = true,
 }: SimpleDialogProps) {
@@ -54,6 +57,7 @@ export function SimpleDialog({
       {open ? (
         <DialogContent
           className={cn('max-h-[90vh] overflow-hidden p-0', widthClass)}
+          overlayClassName={overlayClassName}
           onPointerDownOutside={(e) => {
             if (!dismissBlocked) return;
             if (isNestedOverlayTarget(e.target, e.currentTarget)) return;

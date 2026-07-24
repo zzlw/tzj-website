@@ -1,12 +1,13 @@
 'use client';
 
 import { Card, CardContent, DateRangePicker, PageHeader } from '@tzj/ui';
-import { useState } from 'react';
 import { IpBlockPanel } from '@/components/security/IpBlockPanel';
+import { stringField, useUrlState } from '@/lib/use-url-state';
 
 export default function SecurityIpBlockPage() {
-  const [from, setFrom] = useState<string | undefined>();
-  const [to, setTo] = useState<string | undefined>();
+  const [dateState, setDate] = useUrlState({ from: stringField(), to: stringField() });
+  const from = dateState.from || undefined;
+  const to = dateState.to || undefined;
 
   return (
     <>
@@ -22,8 +23,7 @@ export default function SecurityIpBlockPage() {
             from={from}
             to={to}
             onChange={({ from: f, to: t }) => {
-              setFrom(f);
-              setTo(t);
+              setDate({ from: f ?? '', to: t ?? '' });
             }}
           />
           <p className="text-xs text-muted-foreground">

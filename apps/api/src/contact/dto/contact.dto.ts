@@ -44,6 +44,14 @@ export class CreateContactDto {
   @IsOptional()
   @IsString()
   source?: string;
+
+  @ApiPropertyOptional({
+    description: '持久匿名访客 ID（_tzj_vid，与埋点同源），用于把询盘锚定到浏览轨迹',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  visitorId?: string;
 }
 
 /** 后台处理询盘（标记已读/已处理/备注）。 */

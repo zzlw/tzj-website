@@ -59,6 +59,31 @@ export interface AgentProfile {
   responseMinutes?: number;
 }
 
+/**
+ * 客服自动提示语（C 端聊天在不同在线状态下展示的系统提示）。
+ * 仅保留业内最常用的两条；招呼语见 AgentProfile.greeting。
+ */
+export interface ChatPrompts {
+  /** 非工作时间（下班）提示语，三语可分别填写；某语言留空则回退到 C 端内置多语言默认 */
+  offlineMessage: LocalizedText;
+  /** 无客服在线提示语，三语可分别填写；某语言留空则回退到 C 端内置多语言默认 */
+  noAgentMessage: LocalizedText;
+}
+
+/**
+ * 后台防截图水印（明水印，随身份溯源，非截图拦截）。
+ * 浏览器无法真正阻止截图，此为业内通行的「溯源型明水印」：
+ * 在后台叠加带登录账号 + 日期的半透明平铺水印，使任何截图都可追溯到具体员工。
+ */
+export interface ScreenWatermark {
+  /** 是否开启后台全局水印 */
+  enabled: boolean;
+  /** 自定义前缀标识（如「河南拓之迹 · 机密」），留空则仅显示账号 + 日期 */
+  text: string;
+  /** 透明度 0.02–0.3，默认 0.08（越低越不干扰阅读） */
+  opacity: number;
+}
+
 /** 官网公开站点设置（C 端 + 页脚 + 联系页消费） */
 export interface SitePublicSettings {
   contact: {
@@ -81,4 +106,8 @@ export interface SitePublicSettings {
   businessHours: BusinessHours;
   /** 在线客服资料（头像 / 昵称 / 角色 / 招呼语） */
   agentProfile: AgentProfile;
+  /** 客服自动提示语（离线 / 无坐席在线的系统提示） */
+  chatPrompts: ChatPrompts;
+  /** 后台防截图水印（管理端全局明水印开关与样式） */
+  screenWatermark: ScreenWatermark;
 }

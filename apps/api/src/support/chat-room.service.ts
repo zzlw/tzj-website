@@ -1,6 +1,9 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client/index';
+// biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
+import { IpLocationService } from '../analytics/ip-location.service';
 import { lookupGeo } from '../analytics/utils/geo-ip';
+import { formatGeoLabel } from '../analytics/utils/geo-label';
 import { parseUserAgent } from '../analytics/utils/ua-parser';
 import { maskIp, parseReferrerHost } from '../common/utils/client-ip';
 import { LAST_OPERATOR_USER_SELECT, mapOperatorUser } from '../common/utils/content-list';
@@ -12,6 +15,8 @@ import { S3Service } from '../storage/s3.service';
 import { ChatNotificationService } from './chat-notification.service';
 // biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
 import { ChatPresenceStore } from './chat-presence.store';
+// biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
+import { type MessageSearchHit, MessageSearchService } from './message-search.service';
 
 const MAX_MESSAGE_LENGTH = 4000;
 
@@ -86,6 +91,79 @@ export interface ChatRoomResult {
   reopened?: boolean;
 }
 
+/** 访客站内浏览行为聚合（来自 analytics page_views，按 visitorId 归并）。 */
+interface VisitorBehavior {
+  pageViews: number | null;
+  sessions: number | null;
+  firstSeenAt: string | null;
+  lastSeenAt: string | null;
+  utmSource: string | null;
+  utmMedium: string | null;
+  utmCampaign: string | null;
+  trafficSource: string | null;
+}
+
+/** 无关联访客 / 无浏览记录时的行为占位（各字段留空，前端据此隐藏对应区块）。 */
+const EMPTY_BEHAVIOR: VisitorBehavior = {
+  pageViews: null,
+  sessions: null,
+  firstSeenAt: null,
+  lastSeenAt: null,
+  utmSource: null,
+  utmMedium: null,
+  utmCampaign: null,
+  trafficSource: null,
+};
+
+/** 取最精确地址：优先 IP 重解析结果，回退入库 GeoIP 标签；均无则 null。 */
+function pickLocation(
+  resolvedLocation: string | undefined | null,
+  fallbackLabel: string,
+): string | null {
+  const precise = resolvedLocation?.trim();
+  if (precise) return precise;
+  return fallbackLabel && fallbackLabel !== '未知' ? fallbackLabel : null;
+}
+
+/** 定位依据：IP 重解析命中 → ip；否则有回退地址 → geoip；均无 → unknown。 */
+function resolveGeoSource(
+  resolvedByIp: boolean,
+  location: string | null,
+): 'ip' | 'geoip' | 'unknown' {
+  if (resolvedByIp) return 'ip';
+  if (location) return 'geoip';
+  return 'unknown';
+}
+
+/**
+ * 访客档案（B 端「访客信息」抽屉/弹窗）：在读取时按原始 IP 重解析归属地，
+ * 并聚合该访客站内浏览行为与营销归因（口径对齐「访客分析」）。原始 IP 不外泄，仅返回脱敏 ipMasked。
+ */
+export interface VisitorProfileResult extends VisitorBehavior {
+  ipMasked?: string | null;
+  /** 读取时重解析的最精确地址（省市区/城市），失败回退入库时的 GeoIP 值 */
+  location: string | null;
+  /** 运营商（纯真库中文「电信/联通」等），仅 IP 解析命中时有值 */
+  isp: string | null;
+  /** 定位依据：ip（重解析）| geoip（入库粗定位）| unknown */
+  geoSource: 'ip' | 'geoip' | 'unknown';
+  deviceType?: string | null;
+  deviceModel?: string | null;
+  deviceVendor?: string | null;
+  browser?: string | null;
+  browserVersion?: string | null;
+  os?: string | null;
+  osVersion?: string | null;
+  clientApp?: string | null;
+  referrer?: string | null;
+  referrerHost?: string | null;
+  landingPath?: string | null;
+  source?: string | null;
+  visitorId?: string | null;
+  /** 该访客的历史会话数（按 visitorId 优先，回退 clientEmail） */
+  chatRoomCount: number;
+}
+
 /** 列表用的「最后一条消息」预览（不含完整消息体） */
 export interface ChatRoomLastMessage {
   messageId: string;
@@ -94,6 +172,14 @@ export interface ChatRoomLastMessage {
   senderEmail?: string | null;
   timestamp: Date | string;
   attachmentCount: number;
+}
+
+/** 搜索命中的消息片段（按聊天内容搜索时回填，供列表行高亮 + 跳转定位） */
+export interface ChatRoomMatchedMessage {
+  messageId: string;
+  content: string;
+  sender: string;
+  timestamp: Date | string;
 }
 
 /** 列表项：不含完整 messages，改用 lastMessage 预览 + messageCount（P0 性能根因修复） */
@@ -137,6 +223,8 @@ export interface ChatRoomListItem {
   clientPanelOpen?: boolean;
   /** 已转化客户 ID（坐席将访客转为客户线索后写入） */
   customerId?: string | null;
+  /** 按聊天内容搜索时命中的消息片段（仅正文命中的会话有值，供高亮 + 跳转） */
+  matchedMessage?: ChatRoomMatchedMessage | null;
 }
 
 /** Prisma 返回体的结构类型（去除 any），供 mapRoom / mapRoomSlim / mapAttachments 使用 */
@@ -272,6 +360,8 @@ export class ChatRoomService {
     private readonly s3: S3Service,
     private readonly presence: ChatPresenceStore,
     private readonly chatNotify: ChatNotificationService,
+    private readonly messageSearch: MessageSearchService,
+    private readonly ipLocation: IpLocationService,
   ) {}
 
   private mapRoom(raw: RawRoomFull): ChatRoomResult {
@@ -298,8 +388,10 @@ export class ChatRoomService {
   private mapRoomSlim(
     raw: RawRoomSlim,
     agentUserMap?: Map<string, Parameters<typeof mapOperatorUser>[0]>,
+    matchedHits?: Map<string, MessageSearchHit>,
   ): ChatRoomListItem {
     const last = raw.messages?.[0] ?? null;
+    const hit = matchedHits?.get(raw.id);
     return {
       id: raw.id,
       roomId: raw.roomId,
@@ -320,7 +412,7 @@ export class ChatRoomService {
       unreadCountForAgent:
         raw.status === 'closed' || raw.status === 'archived'
           ? 0
-          : raw._count?.messages ?? raw.unreadCountForAgent,
+          : (raw._count?.messages ?? raw.unreadCountForAgent),
       lastReadByClient: raw.lastReadByClient,
       lastReadByAgent: raw.lastReadByAgent,
       tags: raw.tags ?? [],
@@ -349,6 +441,14 @@ export class ChatRoomService {
       source: raw.source,
       landingPath: raw.landingPath,
       customerId: raw.customerId,
+      matchedMessage: hit
+        ? {
+            messageId: hit.messageId,
+            content: hit.content,
+            sender: hit.sender,
+            timestamp: hit.timestamp,
+          }
+        : null,
     };
   }
 
@@ -532,8 +632,13 @@ export class ChatRoomService {
       region: geo.region,
       city: geo.city,
       deviceType: parsedUa.deviceType,
+      deviceModel: parsedUa.deviceModel,
+      deviceVendor: parsedUa.deviceVendor,
       browser: parsedUa.browser,
+      browserVersion: parsedUa.browserVersion,
       os: parsedUa.os,
+      osVersion: parsedUa.osVersion,
+      clientApp: parsedUa.clientApp,
       referrer: dto.referrer ?? null,
       referrerHost,
       userAgent: ua ? ua.slice(0, 512) : null,
@@ -702,7 +807,10 @@ export class ChatRoomService {
     }
     const countMap = new Map(
       groups
-        .filter((g): g is { assignedAgentEmail: string; _count: { _all: number } } => !!g.assignedAgentEmail)
+        .filter(
+          (g): g is { assignedAgentEmail: string; _count: { _all: number } } =>
+            !!g.assignedAgentEmail,
+        )
         .map((g) => [g.assignedAgentEmail, g._count._all] as [string, number]),
     );
     // 仅保留在 User 表中存在的坐席（过滤测试/探针连接）
@@ -739,6 +847,122 @@ export class ChatRoomService {
       result.assignedAgentUser = mapOperatorUser(agentUser) ?? undefined;
     }
     return result;
+  }
+
+  /**
+   * 访客档案（B 端「访客信息」）：对齐「访客分析」的数据与「依据 IP 取位置」原理。
+   * - 地区在读取时按原始 IP 重解析（IpLocationService：纯真库 + 在线补充），历史会话也能到省市区 + 运营商；
+   *   解析失败回退入库时的 GeoIP 粗定位。原始 IP 不外泄，仅返回脱敏 ipMasked。
+   * - 会话关联分析访客（visitorId）时，聚合其站内 PV/UV/会话数/首末访问/营销归因。
+   */
+  async getVisitorProfile(roomId: string): Promise<VisitorProfileResult> {
+    const room = await this.prisma.chatRoom.findUnique({
+      where: { roomId },
+      select: {
+        clientEmail: true,
+        clientIp: true,
+        ipMasked: true,
+        country: true,
+        region: true,
+        city: true,
+        deviceType: true,
+        deviceModel: true,
+        deviceVendor: true,
+        browser: true,
+        browserVersion: true,
+        os: true,
+        osVersion: true,
+        clientApp: true,
+        referrer: true,
+        referrerHost: true,
+        landingPath: true,
+        source: true,
+        visitorId: true,
+      },
+    });
+    if (!room) {
+      throw new NotFoundException(`Chat room with ID ${roomId} not found`);
+    }
+
+    const resolved = await this.ipLocation.resolve(room.clientIp);
+    const fallback = formatGeoLabel({
+      country: room.country,
+      region: room.region,
+      city: room.city,
+    });
+    const location = pickLocation(resolved?.location, fallback);
+    const geoSource = resolveGeoSource(Boolean(resolved), location);
+
+    const behavior = room.visitorId
+      ? await this.aggregateVisitorBehavior(room.visitorId)
+      : EMPTY_BEHAVIOR;
+    const chatRoomCount = await this.prisma.chatRoom.count({
+      where: room.visitorId
+        ? { visitorId: room.visitorId, deletedAt: null }
+        : { clientEmail: room.clientEmail, deletedAt: null },
+    });
+
+    return {
+      ...behavior,
+      ipMasked: room.ipMasked,
+      location,
+      isp: resolved?.isp?.trim() ? resolved.isp.trim() : null,
+      geoSource,
+      deviceType: room.deviceType,
+      deviceModel: room.deviceModel,
+      deviceVendor: room.deviceVendor,
+      browser: room.browser,
+      browserVersion: room.browserVersion,
+      os: room.os,
+      osVersion: room.osVersion,
+      clientApp: room.clientApp,
+      referrer: room.referrer,
+      referrerHost: room.referrerHost,
+      landingPath: room.landingPath,
+      source: room.source,
+      visitorId: room.visitorId,
+      chatRoomCount,
+    };
+  }
+
+  /** 聚合分析访客的站内浏览行为与首触营销归因（单条 $queryRaw，剔除 bot）。 */
+  private async aggregateVisitorBehavior(visitorId: string): Promise<VisitorBehavior> {
+    const rows = await this.prisma.$queryRaw<
+      Array<{
+        pageViews: bigint;
+        sessions: bigint;
+        firstSeenAt: Date | null;
+        lastSeenAt: Date | null;
+        utmSource: string | null;
+        utmMedium: string | null;
+        utmCampaign: string | null;
+        trafficSource: string | null;
+      }>
+    >`
+      SELECT
+        COUNT(*)::bigint AS "pageViews",
+        COUNT(DISTINCT "sessionId")::bigint AS sessions,
+        MIN("createdAt") AS "firstSeenAt",
+        MAX("createdAt") AS "lastSeenAt",
+        (ARRAY_AGG("utmSource" ORDER BY "createdAt" DESC) FILTER (WHERE "utmSource" IS NOT NULL))[1] AS "utmSource",
+        (ARRAY_AGG("utmMedium" ORDER BY "createdAt" DESC) FILTER (WHERE "utmMedium" IS NOT NULL))[1] AS "utmMedium",
+        (ARRAY_AGG("utmCampaign" ORDER BY "createdAt" DESC) FILTER (WHERE "utmCampaign" IS NOT NULL))[1] AS "utmCampaign",
+        (ARRAY_AGG("trafficSource" ORDER BY "createdAt" DESC) FILTER (WHERE "trafficSource" IS NOT NULL))[1] AS "trafficSource"
+      FROM "page_views"
+      WHERE "visitorId" = ${visitorId} AND "isBot" = false
+    `;
+    const row = rows[0];
+    if (!row || Number(row.pageViews) === 0) return EMPTY_BEHAVIOR;
+    return {
+      pageViews: Number(row.pageViews),
+      sessions: Number(row.sessions),
+      firstSeenAt: row.firstSeenAt ? row.firstSeenAt.toISOString() : null,
+      lastSeenAt: row.lastSeenAt ? row.lastSeenAt.toISOString() : null,
+      utmSource: row.utmSource,
+      utmMedium: row.utmMedium,
+      utmCampaign: row.utmCampaign,
+      trafficSource: row.trafficSource,
+    };
   }
 
   async getChatRoomByClientEmail(clientEmail: string): Promise<ChatRoomResult | null> {
@@ -805,9 +1029,22 @@ export class ChatRoomService {
     if (filters.clientEmail) base.clientEmail = filters.clientEmail;
     if (filters.assignedAgentEmail) base.assignedAgentEmail = filters.assignedAgentEmail;
     if (filters.visitorId) base.visitorId = filters.visitorId;
+    // 搜索：访客名 / 邮箱（元数据）+ 聊天正文（pg_trgm）。正文命中的会话经 MessageSearchService
+    // 折叠为「每会话最相关一条」，其 id 并入 base.OR；命中片段回填到列表行（高亮 + 跳转）。
+    // 状态 / deletedAt 过滤由外层 where 复合完成，正文命中不绕过权限与桶过滤。
+    let matchedHits: Map<string, MessageSearchHit> | undefined;
     if (filters.search && filters.search.trim()) {
       const q = filters.search.trim();
-      base.OR = [{ clientName: { contains: q } }, { clientEmail: { contains: q } }];
+      const orClauses: Prisma.ChatRoomWhereInput[] = [
+        { clientName: { contains: q } },
+        { clientEmail: { contains: q } },
+      ];
+      const hits = await this.messageSearch.searchRooms(q, { limit: 200 });
+      if (hits.length) {
+        matchedHits = new Map(hits.map((h) => [h.roomId, h]));
+        orClauses.push({ id: { in: [...matchedHits.keys()] } });
+      }
+      base.OR = orClauses;
     }
 
     let where: Prisma.ChatRoomWhereInput = base;
@@ -885,7 +1122,7 @@ export class ChatRoomService {
     }
 
     return {
-      rooms: pageRows.map((r) => this.mapRoomSlim(r, agentUserMap)),
+      rooms: pageRows.map((r) => this.mapRoomSlim(r, agentUserMap, matchedHits)),
       nextCursor,
     };
   }
@@ -1043,25 +1280,30 @@ export class ChatRoomService {
     if (!room) {
       throw new NotFoundException(`Chat room with ID ${roomId} not found`);
     }
-  
+
     // 归属校验（P0 C2，REST 兖底路径）：访客只能操作自己的会话。
     if (userType === 'client' && userEmail !== room.clientEmail) {
       throw new BadRequestException('无权操作该会话');
     }
-  
+
     const oppositeSender = userType === 'client' ? 'agent' : 'client';
     const now = new Date();
     // 收集需要创建回执的消息 ID（内部 DB id）和公开 messageId
-    const receiptCreates: Array<{ messageId: string; userEmail: string; userType: 'client' | 'agent'; readAt: Date }> = [];
+    const receiptCreates: Array<{
+      messageId: string;
+      userEmail: string;
+      userType: 'client' | 'agent';
+      readAt: Date;
+    }> = [];
     const markedMessageIds: string[] = [];
     // 双方都已读的消息 ID，需更新 isRead=true
     const bothReadMessageIds: string[] = [];
-  
+
     for (const msg of room.messages) {
       const shouldMark = messageIds
         ? messageIds.includes(msg.messageId)
         : msg.sender === oppositeSender && !msg.readReceipts.some((r) => r.userEmail === userEmail);
-  
+
       if (shouldMark && !msg.readReceipts.some((r) => r.userEmail === userEmail)) {
         receiptCreates.push({ messageId: msg.id, userEmail, userType, readAt: now });
         markedMessageIds.push(msg.messageId);
@@ -1071,7 +1313,7 @@ export class ChatRoomService {
         }
       }
     }
-  
+
     // 批量创建回执（单次 DB 写入，替代逐条 create，大幅降低延迟）
     if (receiptCreates.length > 0) {
       await this.prisma.messageReadReceipt.createMany({
@@ -1086,7 +1328,7 @@ export class ChatRoomService {
         data: { isRead: true },
       });
     }
-  
+
     const updatedCount = receiptCreates.length;
     const updateData: Prisma.ChatRoomUpdateInput = {};
     if (userType === 'client') {
@@ -1100,12 +1342,12 @@ export class ChatRoomService {
       }
       updateData.lastReadByAgent = now;
     }
-  
+
     const updatedRoom = await this.prisma.chatRoom.update({
       where: { roomId },
       data: updateData,
     });
-  
+
     // 轻量返回：网关仅需 roomId / unreadCounts / lastRead 字段，无需加载全量消息，
     // 避免昂贵的 getChatRoomById 查询（包含所有消息 + 所有回执）。
     return {

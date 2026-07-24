@@ -23,7 +23,7 @@ import {
   Switch,
   Textarea,
 } from '@tzj/ui';
-import { Clock, ImagePlus, Loader2, X } from 'lucide-react';
+import { Clock, ImagePlus, Loader2, MessageSquareText, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { MediaPicker } from '@/components/crud/MediaPicker';
 import { useSitePublicSettings, useUpdateSitePublicSettings } from '@/features/site-settings';
@@ -40,6 +40,13 @@ const WEEKDAYS: { value: number; label: string }[] = [
   { value: 4, label: '四' },
   { value: 5, label: '五' },
   { value: 6, label: '六' },
+];
+
+/** 自动提示语：三语可分别填写，某语言留空则 C 端回退到内置多语言默认 */
+const PROMPT_LOCALES: { key: 'zh-CN' | 'zh-TW' | 'en'; label: string }[] = [
+  { key: 'zh-CN', label: '简体中文' },
+  { key: 'zh-TW', label: '繁體中文' },
+  { key: 'en', label: 'English' },
 ];
 
 /** 客服在线时间配置：常用业务时区 */
@@ -450,6 +457,94 @@ export default function ChatSettingsPage() {
               <ModuleSaveButton
                 pending={updateSettings.isPending}
                 onClick={() => savePublicSettings('客服在线时间已保存')}
+              />
+            </CardFooter>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquareText className="h-4 w-4" />
+                自动提示语
+              </CardTitle>
+              <CardDescription>
+                访客在特定状态下看到的系统提示；首条招呼语请在上方「在线客服资料」配置。
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div>
+                <Label>非工作时间（下班）提示</Label>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  启用「客服在线时间」且当前不在服务时段时展示；某语言留空则使用 C
+                  端内置多语言默认文案
+                </p>
+                <div className="mt-2 space-y-2">
+                  {PROMPT_LOCALES.map(({ key, label }) => (
+                    <div key={key} className="flex items-start gap-2">
+                      <span className="mt-2 w-16 shrink-0 text-xs text-muted-foreground">
+                        {label}
+                      </span>
+                      <Textarea
+                        className="text-sm"
+                        rows={2}
+                        placeholder="留空回退到内置默认"
+                        value={form.chatPrompts.offlineMessage[key] ?? ''}
+                        onChange={(e) =>
+                          patch((p) => ({
+                            ...p,
+                            chatPrompts: {
+                              ...p.chatPrompts,
+                              offlineMessage: {
+                                ...p.chatPrompts.offlineMessage,
+                                [key]: e.target.value,
+                              },
+                            },
+                          }))
+                        }
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <Label>无客服在线提示</Label>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  工作时间内但暂无坐席在线（均离线/忙碌）时展示；某语言留空则使用 C
+                  端内置多语言默认文案
+                </p>
+                <div className="mt-2 space-y-2">
+                  {PROMPT_LOCALES.map(({ key, label }) => (
+                    <div key={key} className="flex items-start gap-2">
+                      <span className="mt-2 w-16 shrink-0 text-xs text-muted-foreground">
+                        {label}
+                      </span>
+                      <Textarea
+                        className="text-sm"
+                        rows={2}
+                        placeholder="留空回退到内置默认"
+                        value={form.chatPrompts.noAgentMessage[key] ?? ''}
+                        onChange={(e) =>
+                          patch((p) => ({
+                            ...p,
+                            chatPrompts: {
+                              ...p.chatPrompts,
+                              noAgentMessage: {
+                                ...p.chatPrompts.noAgentMessage,
+                                [key]: e.target.value,
+                              },
+                            },
+                          }))
+                        }
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter className="items-center justify-end border-t bg-muted/20 px-6 py-4">
+              <ModuleSaveButton
+                pending={updateSettings.isPending}
+                onClick={() => savePublicSettings('自动提示语已保存')}
               />
             </CardFooter>
           </Card>

@@ -410,7 +410,7 @@ const SidebarContent = forwardRef<HTMLDivElement, ComponentProps<'div'>>(
         ref={ref}
         data-sidebar="content"
         className={cn(
-          'flex min-h-0 flex-1 flex-col gap-2 overflow-auto transition-[gap] duration-300 ease-in-out motion-reduce:transition-none group-data-[collapsible=icon]:overflow-hidden',
+          'flex min-h-0 flex-1 flex-col gap-2 overflow-auto transition-[gap] duration-300 ease-in-out motion-reduce:transition-none group-data-[collapsible=icon]:overflow-x-hidden group-data-[collapsible=icon]:overflow-y-auto',
           className,
         )}
         {...props}

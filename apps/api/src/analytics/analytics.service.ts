@@ -16,16 +16,29 @@ import type { CollectPageViewDto } from './dto/collect-pageview.dto';
 import { IpLocationService } from './ip-location.service';
 import {
   type AnalyticsListParams,
+  ipDetailGroupWhereSql,
+  ipDetailSearchSql,
   pageOrderClause,
   paginateMeta,
   referrerOrderClause,
   regionOrderClause,
+  visitorBaseFilterSql,
   visitorDetailOrderClause,
+  visitorGroupWhereSql,
+  visitorOrderClause,
 } from './utils/analytics-list';
 import { extractClientIp, hashIp, maskIp, parseReferrerHost } from './utils/client-ip';
 import { lookupGeo } from './utils/geo-ip';
 import { formatGeoLabel, formatGeoSource } from './utils/geo-label';
 import { lookupGeoFromCoordinates } from './utils/geo-reverse';
+import {
+  CASE_PATH_SEGMENTS,
+  CONTACT_PATH_SEGMENTS,
+  keyPageTouchedSql,
+  touchedCase,
+  touchedContact,
+} from './utils/key-pages';
+import { classifyTrafficSource } from './utils/traffic-source';
 import { parseUserAgent } from './utils/ua-parser';
 
 interface DateRange {
@@ -60,6 +73,242 @@ function humanWhere(range: DateRange): Prisma.PageViewWhereInput {
     isBot: false,
     createdAt: { gte: range.from, lte: range.to },
   };
+}
+
+// ── 趋势图时间粒度（与 admin lib/analytics-granularity.ts 阈值保持一致）──────────
+// date_trunc 单位；hour/day/week/month。范围跨度决定「合法粒度」与「自动默认」，
+// 避免小时粒度在长跨度下产生数千个桶。后端为权威：非法/缺省一律回落到自动默认。
+type Granularity = 'hour' | 'day' | 'week' | 'month';
+
+function spanDaysOf(range: DateRange): number {
+  return Math.max(1, Math.round((range.to.getTime() - range.from.getTime()) / 86400000) + 1);
+}
+
+/** 合法粒度集合：跨度越大，越细的粒度越先被剔除（点数上限约束）。 */
+function allowedGranularities(range: DateRange): Granularity[] {
+  const d = spanDaysOf(range);
+  const out: Granularity[] = [];
+  if (d <= 7) out.push('hour');
+  if (d <= 186) out.push('day');
+  if (d <= 1100) out.push('week');
+  out.push('month');
+  return out;
+}
+
+/** 自动默认粒度：始终落在 allowedGranularities 内。 */
+function defaultGranularity(range: DateRange): Granularity {
+  const d = spanDaysOf(range);
+  if (d <= 2) return 'hour';
+  if (d <= 92) return 'day';
+  if (d <= 730) return 'week';
+  return 'month';
+}
+
+/** 解析入参粒度：合法则采用，否则回落自动默认。 */
+function resolveGranularity(g: string | undefined, range: DateRange): Granularity {
+  if (g && allowedGranularities(range).includes(g as Granularity)) return g as Granularity;
+  return defaultGranularity(range);
+}
+
+/** 将时间截断到粒度桶起点（UTC；与 Postgres date_trunc 边界对齐：周一为周起点）。 */
+function truncateBucket(d: Date, unit: Granularity): Date {
+  const y = d.getUTCFullYear();
+  const mo = d.getUTCMonth();
+  const day = d.getUTCDate();
+  if (unit === 'hour') return new Date(Date.UTC(y, mo, day, d.getUTCHours()));
+  if (unit === 'month') return new Date(Date.UTC(y, mo, 1));
+  if (unit === 'week') {
+    const base = new Date(Date.UTC(y, mo, day));
+    const dow = base.getUTCDay(); // 0=周日
+    const backToMon = (dow + 6) % 7;
+    base.setUTCDate(base.getUTCDate() - backToMon);
+    return base;
+  }
+  return new Date(Date.UTC(y, mo, day)); // day
+}
+
+function advanceBucket(d: Date, unit: Granularity): Date {
+  const next = new Date(d);
+  if (unit === 'hour') next.setUTCHours(next.getUTCHours() + 1);
+  else if (unit === 'week') next.setUTCDate(next.getUTCDate() + 7);
+  else if (unit === 'month') next.setUTCMonth(next.getUTCMonth() + 1);
+  else next.setUTCDate(next.getUTCDate() + 1);
+  return next;
+}
+
+/** 枚举区间内所有粒度桶起点（用于补零：无数据的桶也占位，避免趋势线断裂）。 */
+function enumerateBuckets(range: DateRange, unit: Granularity): Date[] {
+  const out: Date[] = [];
+  const end = range.to.getTime();
+  let cur = truncateBucket(range.from, unit);
+  while (cur.getTime() <= end) {
+    out.push(cur);
+    cur = advanceBucket(cur, unit);
+  }
+  return out;
+}
+
+// 统一将空/空白字符串归一为 null（将 || 收敛至此，避免抬高 collect 复杂度）；供多处复用
+function nullableTrim(v?: string | null): string | null {
+  return v?.trim() || null;
+}
+
+/** getVisitorActivity 查询 PageView 的精简投影行 */
+interface VisitorPageViewRow {
+  sessionId: string;
+  path: string;
+  title: string | null;
+  createdAt: Date;
+  referrerHost: string | null;
+  trafficSource: string | null;
+  deviceType: string | null;
+  deviceModel: string | null;
+  deviceVendor: string | null;
+  browser: string | null;
+  browserVersion: string | null;
+  os: string | null;
+  osVersion: string | null;
+  clientApp: string | null;
+  region: string | null;
+  city: string | null;
+  country: string | null;
+  // 网络维度（仅 getVisitorActivity 查询，按 visitorId 归并跨 IP 时用；IP 抽屉不选，故可选）
+  ipHash?: string | null;
+  ipMasked?: string | null;
+}
+
+// 时间正序 views 中「最近一次」非空值（用于设备/地区等取代表值）
+function latestValue(
+  views: VisitorPageViewRow[],
+  pick: (v: VisitorPageViewRow) => string | null,
+): string | null {
+  for (let i = views.length - 1; i >= 0; i--) {
+    const item = views[i];
+    const val = item ? pick(item) : null;
+    if (val != null) return val;
+  }
+  return null;
+}
+
+// 时间正序 views 中「首触」非空值（用于渠道/引荐域名归因）
+function firstValue(
+  views: VisitorPageViewRow[],
+  pick: (v: VisitorPageViewRow) => string | null,
+): string | null {
+  for (const v of views) {
+    const val = pick(v);
+    if (val != null) return val;
+  }
+  return null;
+}
+
+// 按 sessionId 分组为会话（views 已按 createdAt 正序），会话按开始时间倒序
+function groupVisitorSessions(views: VisitorPageViewRow[]) {
+  const map = new Map<string, VisitorPageViewRow[]>();
+  for (const v of views) {
+    const list = map.get(v.sessionId);
+    if (list) list.push(v);
+    else map.set(v.sessionId, [v]);
+  }
+  const sessions = Array.from(map.values()).map(buildVisitorSession);
+  sessions.sort((a, b) => b.startedAt.localeCompare(a.startedAt));
+  return sessions;
+}
+
+// 将同一会话的 PageView 组（非空、时间正序）折叠为会话摘要
+function buildVisitorSession(group: VisitorPageViewRow[]) {
+  const first = group[0] ?? group[group.length - 1];
+  const last = group[group.length - 1] ?? first;
+  return {
+    sessionId: first?.sessionId ?? '',
+    startedAt: first?.createdAt.toISOString() ?? '',
+    endedAt: last?.createdAt.toISOString() ?? '',
+    // 会话内首末 PageView 时间差（约，非真实停留时长）
+    durationMs: first && last ? last.createdAt.getTime() - first.createdAt.getTime() : 0,
+    pageCount: group.length,
+    channel: first?.trafficSource ?? null, // 首触渠道
+    referrerHost: first?.referrerHost ?? null,
+    deviceType: last?.deviceType ?? null,
+    deviceModel: last?.deviceModel ?? null,
+    deviceVendor: last?.deviceVendor ?? null,
+    browser: last?.browser ?? null,
+    browserVersion: last?.browserVersion ?? null,
+    os: last?.os ?? null,
+    osVersion: last?.osVersion ?? null,
+    clientApp: last?.clientApp ?? null,
+    views: group.map((v) => ({
+      path: v.path,
+      title: v.title ?? null,
+      createdAt: v.createdAt.toISOString(),
+    })),
+  };
+}
+
+// 汇总最近设备/地区 + 首触渠道/引荐域名
+function buildVisitorTechInfo(views: VisitorPageViewRow[]) {
+  return {
+    deviceType: latestValue(views, (v) => v.deviceType),
+    deviceModel: latestValue(views, (v) => v.deviceModel),
+    deviceVendor: latestValue(views, (v) => v.deviceVendor),
+    browser: latestValue(views, (v) => v.browser),
+    browserVersion: latestValue(views, (v) => v.browserVersion),
+    os: latestValue(views, (v) => v.os),
+    osVersion: latestValue(views, (v) => v.osVersion),
+    clientApp: latestValue(views, (v) => v.clientApp),
+    region: latestValue(views, (v) => v.region),
+    city: latestValue(views, (v) => v.city),
+    country: latestValue(views, (v) => v.country),
+    channel: firstValue(views, (v) => v.trafficSource),
+    referrerHost: firstValue(views, (v) => v.referrerHost),
+  };
+}
+
+/**
+ * 该访客用过的网络/地区（按 ipHash 去重）：反映「同一个人换了 IP/网络」（visitorId 不变、IP 变）。
+ * 按最近使用倒序，展示掩码 IP + 地区 + 该网络下的浏览量/首末时间；供人物抽屉「历史网络」小节。
+ */
+function buildVisitorNetworks(views: VisitorPageViewRow[]) {
+  const map = new Map<
+    string,
+    {
+      ipMasked: string | null;
+      country: string | null;
+      region: string | null;
+      city: string | null;
+      pageViews: number;
+      firstSeenAt: Date;
+      lastSeenAt: Date;
+    }
+  >();
+  for (const v of views) {
+    const key = v.ipHash ?? '';
+    if (!key) continue;
+    const existing = map.get(key);
+    if (existing) {
+      existing.pageViews += 1;
+      if (v.createdAt < existing.firstSeenAt) existing.firstSeenAt = v.createdAt;
+      if (v.createdAt > existing.lastSeenAt) existing.lastSeenAt = v.createdAt;
+    } else {
+      map.set(key, {
+        ipMasked: v.ipMasked ?? null,
+        country: v.country,
+        region: v.region,
+        city: v.city,
+        pageViews: 1,
+        firstSeenAt: v.createdAt,
+        lastSeenAt: v.createdAt,
+      });
+    }
+  }
+  return Array.from(map.values())
+    .sort((a, b) => b.lastSeenAt.getTime() - a.lastSeenAt.getTime())
+    .map((n) => ({
+      ipMasked: n.ipMasked,
+      region: formatGeoLabel({ country: n.country, region: n.region, city: n.city }),
+      pageViews: n.pageViews,
+      firstSeenAt: n.firstSeenAt.toISOString(),
+      lastSeenAt: n.lastSeenAt.toISOString(),
+    }));
 }
 
 @Injectable()
@@ -99,6 +348,14 @@ export class AnalyticsService {
       }
     }
 
+    const referrerHost = parseReferrerHost(dto.referrer);
+    const trafficSource = classifyTrafficSource({
+      utmMedium: dto.utmMedium,
+      utmSource: dto.utmSource,
+      gclid: dto.gclid,
+      referrerHost,
+    });
+
     await this.prisma.pageView.create({
       data: {
         sessionId: dto.sessionId,
@@ -107,7 +364,7 @@ export class AnalyticsService {
         path: dto.path,
         title: dto.title?.trim() || null,
         referrer: dto.referrer?.trim() || null,
-        referrerHost: parseReferrerHost(dto.referrer),
+        referrerHost,
         userAgent: typeof ua === 'string' ? ua.slice(0, 512) : null,
         ipHash: ip ? hashIp(ip, salt) : null,
         ip: ip ?? null,
@@ -117,8 +374,20 @@ export class AnalyticsService {
         city: geo.city,
         geoSource,
         deviceType: parsed.deviceType,
+        deviceModel: parsed.deviceModel,
+        deviceVendor: parsed.deviceVendor,
         browser: parsed.browser,
+        browserVersion: parsed.browserVersion,
         os: parsed.os,
+        osVersion: parsed.osVersion,
+        clientApp: parsed.clientApp,
+        utmSource: nullableTrim(dto.utmSource),
+        utmMedium: nullableTrim(dto.utmMedium),
+        utmCampaign: nullableTrim(dto.utmCampaign),
+        utmContent: nullableTrim(dto.utmContent),
+        utmTerm: nullableTrim(dto.utmTerm),
+        gclid: nullableTrim(dto.gclid),
+        trafficSource,
         isBot: parsed.isBot,
       },
     });
@@ -126,11 +395,13 @@ export class AnalyticsService {
     return { ok: true };
   }
 
-  async getOverview(from?: string, to?: string) {
+  async getOverview(from?: string, to?: string, granularity?: string) {
     const range = parseRange(from, to);
     const where = humanWhere(range);
     const todayStart = startOfDay(new Date());
     const todayEnd = endOfDay(new Date());
+    // 时间粒度：后端为权威，非法/缺省回落自动默认；date_trunc 单位由此值驱动。
+    const bucketUnit = resolveGranularity(granularity, range);
 
     const [
       pageViews,
@@ -143,6 +414,7 @@ export class AnalyticsService {
       topRegionsRaw,
       devicesRaw,
       browsersRaw,
+      browserVersionsRaw,
     ] = await Promise.all([
       this.prisma.pageView.count({ where }),
       this.prisma.$queryRaw<Array<{ c: bigint }>>`
@@ -162,17 +434,17 @@ export class AnalyticsService {
           AND "createdAt" >= ${todayStart}
           AND "createdAt" <= ${todayEnd}
       `,
-      this.prisma.$queryRaw<Array<{ day: Date; pageViews: bigint; uniqueVisitors: bigint }>>`
+      this.prisma.$queryRaw<Array<{ bucket: Date; pageViews: bigint; uniqueVisitors: bigint }>>`
         SELECT
-          DATE("createdAt") AS day,
+          date_trunc(${bucketUnit}, "createdAt") AS bucket,
           COUNT(*)::bigint AS "pageViews",
           COUNT(DISTINCT COALESCE("visitorId", "sessionId"))::bigint AS "uniqueVisitors"
         FROM "page_views"
         WHERE "isBot" = false
           AND "createdAt" >= ${range.from}
           AND "createdAt" <= ${range.to}
-        GROUP BY DATE("createdAt")
-        ORDER BY day ASC
+        GROUP BY 1
+        ORDER BY 1 ASC
       `,
       this.prisma.pageView.groupBy({
         by: ['path'],
@@ -245,6 +517,14 @@ export class AnalyticsService {
         orderBy: { _count: { browser: 'desc' } },
         take: 8,
       }),
+      // 版本级明细：供前端按「兼容性基线」离线归类（不在后端硬编码支持矩阵，避免与
+      // 前台探针 / 访客表格「兼容性」列口径漂移；分类逻辑统一在 admin 端 browser-support）。
+      this.prisma.pageView.groupBy({
+        by: ['browser', 'browserVersion'],
+        where,
+        _count: { _all: true },
+        orderBy: { _count: { browser: 'desc' } },
+      }),
     ]);
 
     const topPaths = topPagesRaw.map((r) => r.path);
@@ -277,7 +557,20 @@ export class AnalyticsService {
       }),
     );
 
+    // 补零：按粒度枚举区间内所有桶，无数据的桶填 0，避免趋势线抖动/断裂（日期为桶起点 ISO）。
+    const bucketMap = new Map(dailyRaw.map((row) => [row.bucket.toISOString(), row]));
+    const daily = enumerateBuckets(range, bucketUnit).map((b) => {
+      const hit = bucketMap.get(b.toISOString());
+      return {
+        date: b.toISOString(),
+        pageViews: hit ? Number(hit.pageViews) : 0,
+        uniqueVisitors: hit ? Number(hit.uniqueVisitors) : 0,
+      };
+    });
+
     return {
+      // 回传实际采用的粒度（可能因非法/缺省被回落），供前端标轴与控件高亮。
+      granularity: bucketUnit,
       summary: {
         pageViews,
         uniqueVisitors: Number(uniqueRaw[0]?.c ?? 0),
@@ -286,11 +579,7 @@ export class AnalyticsService {
         from: range.from.toISOString(),
         to: range.to.toISOString(),
       },
-      daily: dailyRaw.map((row) => ({
-        date: row.day.toISOString().slice(0, 10),
-        pageViews: Number(row.pageViews),
-        uniqueVisitors: Number(row.uniqueVisitors),
-      })),
+      daily,
       topPages: topPagesUv,
       topReferrers: topReferrersRaw.map((row) => ({
         referrerHost: row.referrerHost ?? '—',
@@ -319,6 +608,91 @@ export class AnalyticsService {
       browsers: browsersRaw.map((row) => ({
         browser: row.browser ?? 'Other',
         count: row._count._all,
+      })),
+      browserVersions: browserVersionsRaw.map((row) => ({
+        browser: row.browser ?? 'Other',
+        browserVersion: row.browserVersion ?? null,
+        count: row._count._all,
+      })),
+    };
+  }
+
+  // 营销归因：渠道分组 + 广告系列 + 来源排行（均滤 bot，UV 用 visitor/session 去重）
+  async getSources(from?: string, to?: string) {
+    const range = parseRange(from, to);
+
+    const [channelsRaw, campaignsRaw, sourcesRaw] = await Promise.all([
+      this.prisma.$queryRaw<
+        Array<{ source: string | null; pageViews: bigint; uniqueVisitors: bigint }>
+      >`
+        SELECT
+          COALESCE("trafficSource", 'other') AS source,
+          COUNT(*)::bigint AS "pageViews",
+          COUNT(DISTINCT COALESCE("visitorId", "sessionId"))::bigint AS "uniqueVisitors"
+        FROM "page_views"
+        WHERE "isBot" = false
+          AND "createdAt" >= ${range.from}
+          AND "createdAt" <= ${range.to}
+        GROUP BY COALESCE("trafficSource", 'other')
+        ORDER BY "pageViews" DESC
+      `,
+      this.prisma.$queryRaw<
+        Array<{
+          campaign: string;
+          source: string | null;
+          medium: string | null;
+          pageViews: bigint;
+          uniqueVisitors: bigint;
+        }>
+      >`
+        SELECT
+          "utmCampaign" AS campaign,
+          "utmSource" AS source,
+          "utmMedium" AS medium,
+          COUNT(*)::bigint AS "pageViews",
+          COUNT(DISTINCT COALESCE("visitorId", "sessionId"))::bigint AS "uniqueVisitors"
+        FROM "page_views"
+        WHERE "isBot" = false
+          AND "utmCampaign" IS NOT NULL
+          AND "createdAt" >= ${range.from}
+          AND "createdAt" <= ${range.to}
+        GROUP BY "utmCampaign", "utmSource", "utmMedium"
+        ORDER BY "pageViews" DESC
+        LIMIT 15
+      `,
+      this.prisma.$queryRaw<Array<{ source: string; pageViews: bigint; uniqueVisitors: bigint }>>`
+        SELECT
+          "utmSource" AS source,
+          COUNT(*)::bigint AS "pageViews",
+          COUNT(DISTINCT COALESCE("visitorId", "sessionId"))::bigint AS "uniqueVisitors"
+        FROM "page_views"
+        WHERE "isBot" = false
+          AND "utmSource" IS NOT NULL
+          AND "createdAt" >= ${range.from}
+          AND "createdAt" <= ${range.to}
+        GROUP BY "utmSource"
+        ORDER BY "pageViews" DESC
+        LIMIT 10
+      `,
+    ]);
+
+    return {
+      channels: channelsRaw.map((row) => ({
+        source: row.source ?? 'other',
+        pageViews: Number(row.pageViews),
+        uniqueVisitors: Number(row.uniqueVisitors),
+      })),
+      topCampaigns: campaignsRaw.map((row) => ({
+        campaign: row.campaign,
+        source: row.source ?? '—',
+        medium: row.medium ?? '—',
+        pageViews: Number(row.pageViews),
+        uniqueVisitors: Number(row.uniqueVisitors),
+      })),
+      topSources: sourcesRaw.map((row) => ({
+        source: row.source,
+        pageViews: Number(row.pageViews),
+        uniqueVisitors: Number(row.uniqueVisitors),
       })),
     };
   }
@@ -524,33 +898,39 @@ export class AnalyticsService {
     const range = parseRange(from, to);
     const skip = (page - 1) * limit;
     const order = visitorDetailOrderClause(sortBy, sortOrder);
+    // 全文检索在 grouped CTE 内按行过滤；渠道/设备按聚合代表值在 grouped 之外过滤。
+    const search = ipDetailSearchSql(params.q);
+    const groupWhere = ipDetailGroupWhereSql(params);
 
-    const [countRow, rows] = await Promise.all([
-      this.prisma.$queryRaw<Array<{ count: bigint }>>`
-        SELECT COUNT(*)::bigint AS count FROM (
-          SELECT "ipHash" FROM "page_views"
-          WHERE "isBot" = false
-            AND "ipHash" IS NOT NULL
-            AND "createdAt" >= ${range.from}
-            AND "createdAt" <= ${range.to}
-          GROUP BY "ipHash"
-        ) grouped
-      `,
-      this.prisma.$queryRaw<
-        Array<{
-          ipHash: string;
-          ip: string | null;
-          ipMasked: string | null;
-          country: string | null;
-          region: string | null;
-          city: string | null;
-          geoSource: string | null;
-          referrerHost: string | null;
-          pageViews: bigint;
-          uniqueVisitors: bigint;
-          lastSeenAt: Date;
-        }>
-      >`
+    const rows = await this.prisma.$queryRaw<
+      Array<{
+        ipHash: string;
+        _total: bigint;
+        ip: string | null;
+        ipMasked: string | null;
+        country: string | null;
+        region: string | null;
+        city: string | null;
+        geoSource: string | null;
+        referrerHost: string | null;
+        deviceType: string | null;
+        deviceModel: string | null;
+        deviceVendor: string | null;
+        browser: string | null;
+        browserVersion: string | null;
+        os: string | null;
+        osVersion: string | null;
+        clientApp: string | null;
+        trafficSource: string | null;
+        utmSource: string | null;
+        utmMedium: string | null;
+        landingPath: string | null;
+        pageViews: bigint;
+        sessions: bigint;
+        firstSeenAt: Date;
+        lastSeenAt: Date;
+      }>
+    >`
         WITH grouped AS (
           SELECT
             "ipHash",
@@ -560,44 +940,72 @@ export class AnalyticsService {
             (ARRAY_AGG(region ORDER BY "createdAt" DESC) FILTER (WHERE region IS NOT NULL))[1] AS region,
             (ARRAY_AGG(city ORDER BY "createdAt" DESC) FILTER (WHERE city IS NOT NULL))[1] AS city,
             (ARRAY_AGG("geoSource" ORDER BY "createdAt" DESC) FILTER (WHERE "geoSource" IS NOT NULL))[1] AS "geoSource",
-            (ARRAY_AGG("referrerHost" ORDER BY "createdAt" DESC) FILTER (WHERE "referrerHost" IS NOT NULL))[1] AS "referrerHost",
+            -- 设备取最近一次（同一 IP 可能换设备，展示当前使用的更直观）
+            (ARRAY_AGG("deviceType" ORDER BY "createdAt" DESC) FILTER (WHERE "deviceType" IS NOT NULL))[1] AS "deviceType",
+            (ARRAY_AGG("deviceModel" ORDER BY "createdAt" DESC) FILTER (WHERE "deviceModel" IS NOT NULL))[1] AS "deviceModel",
+            (ARRAY_AGG("deviceVendor" ORDER BY "createdAt" DESC) FILTER (WHERE "deviceVendor" IS NOT NULL))[1] AS "deviceVendor",
+            (ARRAY_AGG(browser ORDER BY "createdAt" DESC) FILTER (WHERE browser IS NOT NULL))[1] AS browser,
+            (ARRAY_AGG("browserVersion" ORDER BY "createdAt" DESC) FILTER (WHERE "browserVersion" IS NOT NULL))[1] AS "browserVersion",
+            (ARRAY_AGG(os ORDER BY "createdAt" DESC) FILTER (WHERE os IS NOT NULL))[1] AS os,
+            (ARRAY_AGG("osVersion" ORDER BY "createdAt" DESC) FILTER (WHERE "osVersion" IS NOT NULL))[1] AS "osVersion",
+            (ARRAY_AGG("clientApp" ORDER BY "createdAt" DESC) FILTER (WHERE "clientApp" IS NOT NULL))[1] AS "clientApp",
+            -- 渠道/来源/落地页取最早一次（首触归因，反映获客入口）
+            (ARRAY_AGG("referrerHost" ORDER BY "createdAt" ASC) FILTER (WHERE "referrerHost" IS NOT NULL))[1] AS "referrerHost",
+            (ARRAY_AGG("trafficSource" ORDER BY "createdAt" ASC) FILTER (WHERE "trafficSource" IS NOT NULL))[1] AS "trafficSource",
+            (ARRAY_AGG("utmSource" ORDER BY "createdAt" ASC) FILTER (WHERE "utmSource" IS NOT NULL))[1] AS "utmSource",
+            (ARRAY_AGG("utmMedium" ORDER BY "createdAt" ASC) FILTER (WHERE "utmMedium" IS NOT NULL))[1] AS "utmMedium",
+            (ARRAY_AGG(path ORDER BY "createdAt" ASC) FILTER (WHERE path IS NOT NULL))[1] AS "landingPath",
             COUNT(*)::bigint AS "pageViews",
-            COUNT(DISTINCT "sessionId")::bigint AS "uniqueVisitors",
+            COUNT(DISTINCT "sessionId")::bigint AS "sessions",
+            MIN("createdAt") AS "firstSeenAt",
             MAX("createdAt") AS "lastSeenAt"
           FROM "page_views"
           WHERE "isBot" = false
             AND "ipHash" IS NOT NULL
             AND "createdAt" >= ${range.from}
             AND "createdAt" <= ${range.to}
+            ${search}
           GROUP BY "ipHash"
         )
-        SELECT "ipHash", ip, "ipMasked", country, region, city, "geoSource", "referrerHost", "pageViews", "uniqueVisitors", "lastSeenAt"
+        SELECT "ipHash", ip, "ipMasked", country, region, city, "geoSource", "referrerHost",
+               "deviceType", "deviceModel", "deviceVendor", browser, "browserVersion", os, "osVersion", "clientApp",
+               "trafficSource", "utmSource", "utmMedium", "landingPath",
+               "pageViews", "sessions", "firstSeenAt", "lastSeenAt",
+               COUNT(*) OVER()::bigint AS "_total"
         FROM grouped
+        ${groupWhere}
         ORDER BY ${order}
         LIMIT ${limit} OFFSET ${skip}
-      `,
-    ]);
+      `;
 
-    const total = Number(countRow[0]?.count ?? 0);
+    const total = Number(rows[0]?._total ?? 0);
 
     const data = await Promise.all(
       rows.map(async (row) => {
-        // GPS 采集的行地区更权威，沿用入库值；其余按 IP 读取时重解析（纯真库+在线补充）
-        const useGps = row.geoSource === 'gps';
-        const resolved = useGps ? null : await this.ipLocation.resolve(row.ip);
-        const region = resolved?.location
-          ? resolved.location
-          : formatGeoLabel({ country: row.country, region: row.region, city: row.city });
+        const geo = await this.resolveVisitorDetailGeo(row);
         return {
           id: row.ipHash,
           ip: row.ip,
           ipMasked: row.ipMasked,
-          region,
-          isp: resolved?.isp?.trim() ? resolved.isp.trim() : null,
-          geoSource: useGps ? 'GPS' : resolved ? 'IP' : formatGeoSource(row.geoSource),
+          region: geo.region,
+          isp: geo.isp,
+          geoSource: geo.geoSource,
           referrerHost: row.referrerHost ?? '—',
+          channel: row.trafficSource ?? null,
+          source: row.utmSource ?? null,
+          medium: row.utmMedium ?? null,
+          deviceType: row.deviceType ?? null,
+          deviceModel: row.deviceModel ?? null,
+          deviceVendor: row.deviceVendor ?? null,
+          browser: row.browser ?? null,
+          browserVersion: row.browserVersion ?? null,
+          os: row.os ?? null,
+          osVersion: row.osVersion ?? null,
+          clientApp: row.clientApp ?? null,
+          landingPath: row.landingPath ?? null,
           pageViews: Number(row.pageViews),
-          uniqueVisitors: Number(row.uniqueVisitors),
+          sessions: Number(row.sessions),
+          firstSeenAt: row.firstSeenAt.toISOString(),
           lastSeenAt: row.lastSeenAt.toISOString(),
         };
       }),
@@ -606,6 +1014,29 @@ export class AnalyticsService {
     return {
       data,
       pagination: paginateMeta(page, limit, total),
+    };
+  }
+
+  /**
+   * 单行 IP 访客明细的地区/来源/ISP 解析：GPS 行沿用入库值（更权威），
+   * 其余按 IP 读取时重解析（纯真库+在线补充）。抽出以收敛 map 回调复杂度。
+   */
+  private async resolveVisitorDetailGeo(row: {
+    geoSource: string | null;
+    ip: string | null;
+    country: string | null;
+    region: string | null;
+    city: string | null;
+  }): Promise<{ region: string; geoSource: string; isp: string | null }> {
+    const useGps = row.geoSource === 'gps';
+    const resolved = useGps ? null : await this.ipLocation.resolve(row.ip);
+    const region = resolved?.location
+      ? resolved.location
+      : formatGeoLabel({ country: row.country, region: row.region, city: row.city });
+    return {
+      region,
+      isp: resolved?.isp?.trim() ? resolved.isp.trim() : null,
+      geoSource: useGps ? 'GPS' : resolved ? 'IP' : formatGeoSource(row.geoSource),
     };
   }
 
@@ -663,25 +1094,20 @@ export class AnalyticsService {
    * 同一 visitorId（或已识别 userId）的多次会话合并为一行，
    * 并关联 visitors 表的身份资料（姓名/邮箱/电话/公司）。
    */
-  async listVisitors(params: AnalyticsListParams & { q?: string }) {
-    const { page, limit, from, to, q } = params;
+  async listVisitors(params: AnalyticsListParams) {
+    const { page, limit, from, to, sortBy, sortOrder } = params;
     const range = parseRange(from, to);
     const skip = (page - 1) * limit;
-
-    const countRow = await this.prisma.$queryRaw<Array<{ count: bigint }>>`
-      SELECT COUNT(DISTINCT COALESCE(pv."userId", pv."visitorId"))::bigint AS count
-      FROM "page_views" pv
-      LEFT JOIN "visitors" v ON v."anonymousId" = pv."visitorId"
-      WHERE pv."isBot" = false
-        AND pv."visitorId" IS NOT NULL
-        AND pv."createdAt" >= ${range.from}
-        AND pv."createdAt" <= ${range.to}
-        ${q ? Prisma.sql`AND (v."email" ILIKE ${`%${q}%`} OR v."name" ILIKE ${`%${q}%`} OR v."phone" ILIKE ${`%${q}%`} OR v."company" ILIKE ${`%${q}%`})` : Prisma.sql``}
-    `;
+    const order = visitorOrderClause(sortBy, sortOrder);
+    // 行级过滤（身份 + 全文检索）拼进 base CTE 的 WHERE；
+    // 渠道/设备/关键页按聚合代表值在 grouped 之外过滤（与前端展示一致）。
+    const baseFilter = visitorBaseFilterSql(params);
+    const groupWhere = visitorGroupWhereSql(params);
 
     const rows = await this.prisma.$queryRaw<
       Array<{
         mergeKey: string;
+        _total: bigint;
         visitorId: string | null;
         pageViews: bigint;
         sessions: bigint;
@@ -690,6 +1116,22 @@ export class AnalyticsService {
         landingPath: string | null;
         deviceType: string | null;
         country: string | null;
+        channel: string | null;
+        browser: string | null;
+        browserVersion: string | null;
+        os: string | null;
+        osVersion: string | null;
+        deviceModel: string | null;
+        deviceVendor: string | null;
+        clientApp: string | null;
+        region: string | null;
+        city: string | null;
+        lastIp: string | null;
+        lastIpMasked: string | null;
+        lastIpHash: string | null;
+        referrerHost: string | null;
+        touchedContact: boolean | null;
+        touchedCase: boolean | null;
         userId: string | null;
         email: string | null;
         name: string | null;
@@ -699,6 +1141,7 @@ export class AnalyticsService {
       }>
     >`
       WITH base AS (
+        -- base：逐行明细（含身份关联 + 行级过滤），grouped 归并后再按代表值过滤 + 窗口计数
         SELECT
           COALESCE(pv."userId", pv."visitorId") AS "mergeKey",
           pv."visitorId",
@@ -707,6 +1150,20 @@ export class AnalyticsService {
           pv."path",
           pv."deviceType",
           pv."country",
+          pv."region",
+          pv."city",
+          pv."browser",
+          pv."browserVersion",
+          pv."os",
+          pv."osVersion",
+          pv."deviceModel",
+          pv."deviceVendor",
+          pv."clientApp",
+          pv."referrerHost",
+          pv."trafficSource",
+          pv."ip",
+          pv."ipMasked",
+          pv."ipHash",
           pv."userId",
           v."email",
           v."name",
@@ -719,9 +1176,10 @@ export class AnalyticsService {
           AND pv."visitorId" IS NOT NULL
           AND pv."createdAt" >= ${range.from}
           AND pv."createdAt" <= ${range.to}
-          ${q ? Prisma.sql`AND (v."email" ILIKE ${`%${q}%`} OR v."name" ILIKE ${`%${q}%`} OR v."phone" ILIKE ${`%${q}%`} OR v."company" ILIKE ${`%${q}%`})` : Prisma.sql``}
-      )
-      SELECT
+          ${baseFilter}
+      ),
+      grouped AS (
+        SELECT
         "mergeKey",
         (ARRAY_AGG("visitorId" ORDER BY "createdAt" DESC) FILTER (WHERE "visitorId" IS NOT NULL))[1] AS "visitorId",
         COUNT(*)::bigint AS "pageViews",
@@ -731,6 +1189,23 @@ export class AnalyticsService {
         (ARRAY_AGG("path" ORDER BY "createdAt" ASC) FILTER (WHERE "path" IS NOT NULL))[1] AS "landingPath",
         (ARRAY_AGG("deviceType" ORDER BY "createdAt" DESC) FILTER (WHERE "deviceType" IS NOT NULL))[1] AS "deviceType",
         (ARRAY_AGG("country" ORDER BY "createdAt" DESC) FILTER (WHERE "country" IS NOT NULL))[1] AS "country",
+        (ARRAY_AGG("trafficSource" ORDER BY "createdAt" ASC) FILTER (WHERE "trafficSource" IS NOT NULL))[1] AS "channel",
+        (ARRAY_AGG("browser" ORDER BY "createdAt" DESC) FILTER (WHERE "browser" IS NOT NULL))[1] AS "browser",
+        (ARRAY_AGG("browserVersion" ORDER BY "createdAt" DESC) FILTER (WHERE "browserVersion" IS NOT NULL))[1] AS "browserVersion",
+        (ARRAY_AGG("os" ORDER BY "createdAt" DESC) FILTER (WHERE "os" IS NOT NULL))[1] AS "os",
+        (ARRAY_AGG("osVersion" ORDER BY "createdAt" DESC) FILTER (WHERE "osVersion" IS NOT NULL))[1] AS "osVersion",
+        (ARRAY_AGG("deviceModel" ORDER BY "createdAt" DESC) FILTER (WHERE "deviceModel" IS NOT NULL))[1] AS "deviceModel",
+        (ARRAY_AGG("deviceVendor" ORDER BY "createdAt" DESC) FILTER (WHERE "deviceVendor" IS NOT NULL))[1] AS "deviceVendor",
+        (ARRAY_AGG("clientApp" ORDER BY "createdAt" DESC) FILTER (WHERE "clientApp" IS NOT NULL))[1] AS "clientApp",
+        (ARRAY_AGG("region" ORDER BY "createdAt" DESC) FILTER (WHERE "region" IS NOT NULL))[1] AS "region",
+        (ARRAY_AGG("city" ORDER BY "createdAt" DESC) FILTER (WHERE "city" IS NOT NULL))[1] AS "city",
+        -- 最后一次访问的 IP（环境维度：展示/复制/下钻 IP 抽屉，非身份标识）
+        (ARRAY_AGG("ip" ORDER BY "createdAt" DESC) FILTER (WHERE "ip" IS NOT NULL))[1] AS "lastIp",
+        (ARRAY_AGG("ipMasked" ORDER BY "createdAt" DESC) FILTER (WHERE "ipMasked" IS NOT NULL))[1] AS "lastIpMasked",
+        (ARRAY_AGG("ipHash" ORDER BY "createdAt" DESC) FILTER (WHERE "ipHash" IS NOT NULL))[1] AS "lastIpHash",
+        (ARRAY_AGG("referrerHost" ORDER BY "createdAt" ASC) FILTER (WHERE "referrerHost" IS NOT NULL))[1] AS "referrerHost",
+        ${keyPageTouchedSql(CONTACT_PATH_SEGMENTS)} AS "touchedContact",
+        ${keyPageTouchedSql(CASE_PATH_SEGMENTS)} AS "touchedCase",
         (ARRAY_AGG("userId" ORDER BY "createdAt" DESC) FILTER (WHERE "userId" IS NOT NULL))[1] AS "userId",
         (ARRAY_AGG("email" ORDER BY "createdAt" DESC) FILTER (WHERE "email" IS NOT NULL))[1] AS "email",
         (ARRAY_AGG("name" ORDER BY "createdAt" DESC) FILTER (WHERE "name" IS NOT NULL))[1] AS "name",
@@ -739,21 +1214,26 @@ export class AnalyticsService {
         (ARRAY_AGG("identifiedAt" ORDER BY "createdAt" DESC) FILTER (WHERE "identifiedAt" IS NOT NULL))[1] AS "identifiedAt"
       FROM base
       GROUP BY "mergeKey"
-      ORDER BY "lastSeenAt" DESC
+      )
+      SELECT grouped.*, COUNT(*) OVER()::bigint AS "_total"
+      FROM grouped
+      ${groupWhere}
+      ORDER BY ${order}
       LIMIT ${limit} OFFSET ${skip}
     `;
 
-    const total = Number(countRow[0]?.count ?? 0);
+    const total = Number(rows[0]?._total ?? 0);
 
     return {
       data: rows.map((row) => ({
         id: row.mergeKey,
         visitorId: row.visitorId ?? row.mergeKey,
-        userId: row.userId ?? null,
-        name: row.name ?? null,
-        email: row.email ?? null,
-        phone: row.phone ?? null,
-        company: row.company ?? null,
+        // 以下可空字段原始 SQL 已返回 string | null，无需再 ?? null（避免抬高圈复杂度）
+        userId: row.userId,
+        name: row.name,
+        email: row.email,
+        phone: row.phone,
+        company: row.company,
         identified: Boolean(row.identifiedAt),
         identifiedAt: row.identifiedAt?.toISOString() ?? null,
         pageViews: Number(row.pageViews),
@@ -763,8 +1243,323 @@ export class AnalyticsService {
         landingPath: row.landingPath ?? '—',
         deviceType: row.deviceType ?? 'unknown',
         country: row.country ?? '—',
+        channel: row.channel,
+        browser: row.browser,
+        browserVersion: row.browserVersion,
+        os: row.os,
+        osVersion: row.osVersion,
+        deviceModel: row.deviceModel,
+        deviceVendor: row.deviceVendor,
+        clientApp: row.clientApp,
+        region: row.region,
+        city: row.city,
+        lastIp: row.lastIp,
+        lastIpMasked: row.lastIpMasked,
+        lastIpHash: row.lastIpHash,
+        referrerHost: row.referrerHost,
+        touchedContact: Boolean(row.touchedContact),
+        touchedCase: Boolean(row.touchedCase),
       })),
       pagination: paginateMeta(page, limit, total),
+    };
+  }
+
+  /**
+   * 单个访客（按持久 visitorId 或已识别 userId）的浏览行为时间线。
+   * Phase 1：仅读取已采集的 PageView，按 sessionId 分组为会话；
+   * durationMs = 会话内首末 PageView 时间差（非真实停留，UI 标注「约」）。
+   */
+  async getVisitorActivity(visitorId: string, opts: { from?: string; to?: string }) {
+    const range = parseRange(opts.from, opts.to);
+    const views = await this.prisma.pageView.findMany({
+      where: {
+        isBot: false,
+        createdAt: { gte: range.from, lte: range.to },
+        OR: [{ visitorId }, { userId: visitorId }],
+      },
+      orderBy: { createdAt: 'asc' },
+      take: 500, // 上限防超大访客
+      select: {
+        sessionId: true,
+        path: true,
+        title: true,
+        createdAt: true,
+        referrerHost: true,
+        trafficSource: true,
+        deviceType: true,
+        deviceModel: true,
+        deviceVendor: true,
+        browser: true,
+        browserVersion: true,
+        os: true,
+        osVersion: true,
+        clientApp: true,
+        region: true,
+        city: true,
+        country: true,
+        ipHash: true,
+        ipMasked: true,
+      },
+    });
+
+    const sessions = groupVisitorSessions(views);
+    const techInfo = buildVisitorTechInfo(views);
+    const networks = buildVisitorNetworks(views);
+    const identity = await this.resolveVisitorIdentity(visitorId);
+    const first = views[0];
+    const last = views[views.length - 1];
+
+    return {
+      visitorId,
+      identity,
+      sessions,
+      techInfo,
+      networks,
+      summary: {
+        totalPageViews: views.length,
+        totalSessions: sessions.length,
+        firstSeenAt: first?.createdAt.toISOString() ?? null,
+        lastSeenAt: last?.createdAt.toISOString() ?? null,
+        touchedContact: views.some((v) => touchedContact(v.path)),
+        touchedCase: views.some((v) => touchedCase(v.path)),
+      },
+    };
+  }
+
+  /**
+   * 单个 IP（ipHash）的浏览行为时间线（按会话分组，读取现有 PageView）。
+   * 与 getVisitorActivity 同构，供 /analytics「访客明细」（按 IP 聚合，无 visitorId）下钻使用。
+   * 返回结构一致，visitorId 字段回填 ipHash 以复用前端时间线组件。
+   */
+  async getIpVisitorActivity(ipHash: string, opts: { from?: string; to?: string }) {
+    const range = parseRange(opts.from, opts.to);
+    const views = await this.prisma.pageView.findMany({
+      where: {
+        isBot: false,
+        createdAt: { gte: range.from, lte: range.to },
+        ipHash,
+      },
+      orderBy: { createdAt: 'asc' },
+      take: 500, // 上限防超大访客
+      select: {
+        sessionId: true,
+        path: true,
+        title: true,
+        createdAt: true,
+        referrerHost: true,
+        trafficSource: true,
+        deviceType: true,
+        deviceModel: true,
+        deviceVendor: true,
+        browser: true,
+        browserVersion: true,
+        os: true,
+        osVersion: true,
+        clientApp: true,
+        region: true,
+        city: true,
+        country: true,
+      },
+    });
+
+    const sessions = groupVisitorSessions(views);
+    const techInfo = buildVisitorTechInfo(views);
+    const first = views[0];
+    const last = views[views.length - 1];
+    const relatedVisitors = await this.getIpRelatedVisitors(ipHash, range);
+    const header = await this.resolveIpHeader(ipHash, range);
+
+    return {
+      visitorId: ipHash,
+      header,
+      sessions,
+      techInfo,
+      relatedVisitors,
+      summary: {
+        totalPageViews: views.length,
+        totalSessions: sessions.length,
+        firstSeenAt: first?.createdAt.toISOString() ?? null,
+        lastSeenAt: last?.createdAt.toISOString() ?? null,
+        touchedContact: views.some((v) => touchedContact(v.path)),
+        touchedCase: views.some((v) => touchedCase(v.path)),
+      },
+    };
+  }
+
+  /**
+   * 同一 IP 下去重的关联访客（IP↔访客为多对多：NAT/共享网络下一个 IP 可能对应多人）。
+   * 按该 IP 内浏览量倒序取 Top 20，关联 visitors 表身份，供抽屉「关联访客」桥跳转按人下钻。
+   */
+  private async getIpRelatedVisitors(ipHash: string, range: { from: Date; to: Date }) {
+    const grouped = await this.prisma.pageView.groupBy({
+      by: ['visitorId'],
+      where: {
+        ipHash,
+        isBot: false,
+        createdAt: { gte: range.from, lte: range.to },
+        visitorId: { not: null },
+      },
+      _count: { visitorId: true },
+      orderBy: { _count: { visitorId: 'desc' } },
+      take: 20,
+    });
+    const visitorIds = grouped
+      .map((g) => g.visitorId)
+      .filter((v): v is string => typeof v === 'string');
+    if (visitorIds.length === 0) return [];
+    const metas = await this.prisma.visitor.findMany({
+      where: { anonymousId: { in: visitorIds } },
+    });
+    const metaMap = new Map(metas.map((m) => [m.anonymousId, m]));
+    return grouped
+      .filter((g): g is typeof g & { visitorId: string } => typeof g.visitorId === 'string')
+      .map((g) => {
+        const meta = metaMap.get(g.visitorId);
+        return {
+          visitorId: g.visitorId,
+          name: meta?.name ?? null,
+          email: meta?.email ?? null,
+          phone: meta?.phone ?? null,
+          company: meta?.company ?? null,
+          identified: Boolean(meta?.identifiedAt),
+          pageViews: g._count.visitorId,
+        };
+      });
+  }
+
+  /** 人物抽屉头部身份：按 anonymousId 或已识别 userId 命中 visitors 表，无记录则空身份。 */
+  private async resolveVisitorIdentity(visitorId: string) {
+    const visitor = await this.prisma.visitor.findFirst({
+      where: { OR: [{ anonymousId: visitorId }, { userId: visitorId }] },
+      select: {
+        name: true,
+        email: true,
+        phone: true,
+        company: true,
+        identifiedAt: true,
+        userId: true,
+      },
+    });
+    const lead = await this.resolveVisitorLeadStatus(visitorId, visitor);
+    return {
+      visitorId,
+      name: visitor?.name ?? null,
+      email: visitor?.email ?? null,
+      phone: visitor?.phone ?? null,
+      company: visitor?.company ?? null,
+      identified: Boolean(visitor?.identifiedAt),
+      // 人物级转化：最近一条询盘 contactId 作去重锚点，任一已关联 Customer 则标记已转
+      latestContactId: lead.latestContactId,
+      convertedCustomerId: lead.convertedCustomerId,
+    };
+  }
+
+  /**
+   * 人物级转化状态：复用询盘反查口径（Visitor.userId=contactId / 同 email）取该访客的 Contact，
+   * 返回最近一条 contactId（转化去重锚点）与任一已关联 Customer id（已转标记）。
+   */
+  private async resolveVisitorLeadStatus(
+    visitorId: string,
+    visitor: { userId: string | null; email: string | null } | null,
+  ): Promise<{ latestContactId: string | null; convertedCustomerId: string | null }> {
+    const contactIds = [visitorId, visitor?.userId].filter((v): v is string => !!v);
+    const emails = [visitor?.email].filter((v): v is string => !!v);
+    if (contactIds.length === 0 && emails.length === 0) {
+      return { latestContactId: null, convertedCustomerId: null };
+    }
+    const contacts = await this.prisma.contact.findMany({
+      where: { OR: [{ id: { in: contactIds } }, { email: { in: emails } }] },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true },
+    });
+    const [latest] = contacts;
+    if (!latest) {
+      return { latestContactId: null, convertedCustomerId: null };
+    }
+    const customer = await this.prisma.customer.findFirst({
+      where: { contactId: { in: contacts.map((c) => c.id) } },
+      select: { id: true },
+    });
+    return {
+      latestContactId: latest.id,
+      convertedCustomerId: customer?.id ?? null,
+    };
+  }
+
+  /** IP 抽屉头部：取该 ipHash 最近一条代表行，按原始 IP 重解析地区/ISP（复用 resolveVisitorDetailGeo）。 */
+  private async resolveIpHeader(ipHash: string, range: { from: Date; to: Date }) {
+    const repr = await this.prisma.pageView.findFirst({
+      where: { ipHash, isBot: false, createdAt: { gte: range.from, lte: range.to } },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        ip: true,
+        ipMasked: true,
+        country: true,
+        region: true,
+        city: true,
+        geoSource: true,
+      },
+    });
+    if (!repr) {
+      return {
+        ip: null,
+        ipMasked: null,
+        region: '未知',
+        isp: null,
+        geoSource: formatGeoSource(null),
+      };
+    }
+    const geo = await this.resolveVisitorDetailGeo(repr);
+    return {
+      ip: repr.ip,
+      ipMasked: repr.ipMasked,
+      region: geo.region,
+      isp: geo.isp,
+      geoSource: geo.geoSource,
+    };
+  }
+
+  /**
+   * 按 visitorId 归并的询盘列表（人物抽屉「询盘」tab）：
+   * 询盘(Contact) 经 visitors 表关联（Visitor.userId=contactId 或同 email），
+   * 故先由 visitorId 反解 contactId/email，再取 contacts + 是否已转客户。
+   */
+  async getVisitorInquiries(visitorId: string) {
+    const visitor = await this.prisma.visitor.findFirst({
+      where: { OR: [{ anonymousId: visitorId }, { userId: visitorId }] },
+      select: { userId: true, email: true },
+    });
+    const contactIds = [visitorId, visitor?.userId].filter((v): v is string => !!v);
+    const emails = [visitor?.email].filter((v): v is string => !!v);
+    if (contactIds.length === 0 && emails.length === 0) return { data: [] };
+
+    const contacts = await this.prisma.contact.findMany({
+      where: { OR: [{ id: { in: contactIds } }, { email: { in: emails } }] },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+    if (contacts.length === 0) return { data: [] };
+
+    const customers = await this.prisma.customer.findMany({
+      where: { contactId: { in: contacts.map((c) => c.id) } },
+      select: { id: true, contactId: true },
+    });
+    const customerByContact = new Map(customers.map((c) => [c.contactId, c.id]));
+
+    return {
+      data: contacts.map((c) => ({
+        id: c.id,
+        name: c.name,
+        email: c.email,
+        phone: c.phone,
+        company: c.company,
+        subject: c.subject,
+        message: c.message,
+        createdAt: c.createdAt.toISOString(),
+        isRead: c.isRead,
+        isHandled: c.isHandled,
+        convertedCustomerId: customerByContact.get(c.id) ?? null,
+      })),
     };
   }
 }

@@ -10,11 +10,23 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@tzj/ui';
-import { Archive, Check, CheckSquare, ChevronDown, ChevronLeft, Eye, Loader2, Search, Trash2, UserCheck } from 'lucide-react';
+import {
+  Archive,
+  Check,
+  CheckSquare,
+  ChevronDown,
+  ChevronLeft,
+  Eye,
+  Loader2,
+  Search,
+  Trash2,
+  UserCheck,
+} from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { BatchChatRoomAction } from '../api';
 import { useChatPresence } from '../ChatPresenceProvider';
 import type { ChatRoom, PresenceStatus } from '../types';
+import { MatchedSnippet } from './message-search-highlight';
 import { VirtualList } from './VirtualList';
 
 const ROW_HEIGHT = 84;
@@ -92,6 +104,37 @@ function AssigneeChip({ room, currentAgentEmail }: { room: ChatRoom; currentAgen
   );
 }
 
+/** 会话行第二行：归属/未分配芯片 + 命中片段或最后一条预览。
+    抽出为独立组件，把这段分支从 renderRow 里挪走，收敛其认知复杂度。 */
+function RoomSecondaryLine({
+  room,
+  currentAgentEmail,
+  query,
+}: {
+  room: ChatRoom;
+  currentAgentEmail?: string;
+  query: string;
+}) {
+  return (
+    <div className="flex items-center gap-1.5">
+      {/* 归属坐席芯片：与预览文本等重的轻量标签，行本身是点击目标，
+          不嵌套独立 hover 按钮；完整资料卡在 ChatHeader 提供 */}
+      {room.assignedAgentEmail ? (
+        <AssigneeChip room={room} currentAgentEmail={currentAgentEmail} />
+      ) : room.status === 'waiting' ? (
+        <span className="inline-flex shrink-0 items-center rounded-full bg-zinc-500/10 px-1.5 py-0.5 text-[0.6rem] font-medium text-zinc-500">
+          未分配
+        </span>
+      ) : null}
+      {query && room.matchedMessage ? (
+        <MatchedSnippet matched={room.matchedMessage} query={query} />
+      ) : (
+        <p className="text-muted-foreground min-w-0 flex-1 truncate text-xs">{previewOf(room)}</p>
+      )}
+    </div>
+  );
+}
+
 export interface BucketView {
   rooms: ChatRoom[];
   cursor: string | null;
@@ -110,7 +153,7 @@ interface Props {
   search: string;
   onSearch: (s: string) => void;
   selectedId: string | null;
-  onSelect: (roomId: string) => void;
+  onSelect: (roomId: string, messageId?: string) => void;
   onLoadMore: () => void;
   loadingMore: boolean;
   selectMode: boolean;
@@ -157,7 +200,10 @@ export function ChatConversationList({
 }: Props) {
   const view = buckets[activeBucket];
   const rooms = useMemo(
-    () => (mineOnly && currentAgentEmail ? view.rooms.filter((r) => r.assignedAgentEmail === currentAgentEmail) : view.rooms),
+    () =>
+      mineOnly && currentAgentEmail
+        ? view.rooms.filter((r) => r.assignedAgentEmail === currentAgentEmail)
+        : view.rooms,
     [view.rooms, mineOnly, currentAgentEmail],
   );
   const selectedCount = selectedRoomIds.size;
@@ -358,7 +404,7 @@ export function ChatConversationList({
                 type="search"
                 value={search}
                 onChange={(e) => onSearch(e.target.value)}
-                placeholder="搜索访客或邮箱"
+                placeholder="搜索访客 / 邮箱 / 聊天内容"
                 className="border-border/40 bg-background/60 w-full rounded-2xl pl-10 text-sm focus-visible:ring-primary/40 focus-visible:ring-2"
               />
             </div>
@@ -407,7 +453,11 @@ export function ChatConversationList({
           return (
             <button
               type="button"
-              onClick={() => (selectMode ? onToggleSelect(room.roomId) : onSelect(room.roomId))}
+              onClick={() =>
+                selectMode
+                  ? onToggleSelect(room.roomId)
+                  : onSelect(room.roomId, room.matchedMessage?.messageId)
+              }
               aria-current={isActive ? 'true' : undefined}
               className={cn(
                 'focus-visible:ring-primary/50 flex h-full w-full items-start gap-3 rounded-2xl border border-transparent p-3 text-left transition focus-visible:ring-2 focus-visible:outline-none',
@@ -469,18 +519,11 @@ export function ChatConversationList({
                     {timeOf(room)}
                   </span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  {/* 归属坐席芯片：与预览文本等重的轻量标签，行本身是点击目标，
-                      不嵌套独立 hover 按钮；完整资料卡在 ChatHeader 提供 */}
-                  {room.assignedAgentEmail ? (
-                    <AssigneeChip room={room} currentAgentEmail={currentAgentEmail} />
-                  ) : room.status === 'waiting' ? (
-                    <span className="inline-flex shrink-0 items-center rounded-full bg-zinc-500/10 px-1.5 py-0.5 text-[0.6rem] font-medium text-zinc-500">
-                      未分配
-                    </span>
-                  ) : null}
-                  <p className="text-muted-foreground min-w-0 flex-1 truncate text-xs">{previewOf(room)}</p>
-                </div>
+                <RoomSecondaryLine
+                  room={room}
+                  currentAgentEmail={currentAgentEmail}
+                  query={search.trim()}
+                />
               </div>
               {unread > 0 && (
                 <span className="bg-primary text-primary-foreground ml-1 inline-flex min-h-[1.5rem] min-w-[1.5rem] items-center justify-center rounded-full text-[0.7rem] font-semibold shadow-lg">

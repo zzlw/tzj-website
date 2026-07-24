@@ -37,6 +37,7 @@ import {
 } from '@/features/audit';
 import { useList } from '@/features/hooks';
 import type { AuditLogItem } from '@/features/types';
+import { enumField, intField, sortField, stringField, useUrlState } from '@/lib/use-url-state';
 
 const DEFAULT_SORT: DataTableSort = { column: 'createdAt', order: 'desc' };
 
@@ -50,16 +51,24 @@ function DetailBlock({ label, children }: { label: string; children: React.React
 }
 
 export default function AuditLogsPage() {
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
-  const [userId, setUserId] = useState<string>('all');
-  const [resource, setResource] = useState<string>('all');
-  const [action, setAction] = useState<string>('all');
-  const [from, setFrom] = useState('');
-  const [to, setTo] = useState('');
-  const [searchInput, setSearchInput] = useState('');
-  const [search, setSearch] = useState('');
-  const [sort, setSort] = useState<DataTableSort | null>(DEFAULT_SORT);
+  const [urlState, setUrlState] = useUrlState({
+    page: intField(1, { min: 1 }),
+    pageSize: intField(20, { min: 1 }),
+    userId: {
+      default: 'all',
+      parse: (raw: string | null) => raw || 'all',
+      serialize: (v: string) => (v === 'all' ? null : v),
+    },
+    resource: enumField([...AUDIT_RESOURCE_OPTIONS.map((o) => o.value), 'all'], 'all'),
+    action: enumField([...AUDIT_ACTION_OPTIONS.map((o) => o.value), 'all'], 'all'),
+    from: stringField(),
+    to: stringField(),
+    search: stringField(),
+    sort: sortField(DEFAULT_SORT),
+  });
+  const { page, pageSize, userId, resource, action, from, to } = urlState;
+  const sort = urlState.sort;
+  const [searchInput, setSearchInput] = useState(() => urlState.search || '');
   const [detailId, setDetailId] = useState<string | null>(null);
 
   const params = useMemo(
@@ -71,11 +80,11 @@ export default function AuditLogsPage() {
       action: action === 'all' ? undefined : action,
       from: from || undefined,
       to: to || undefined,
-      search: search || undefined,
+      search: urlState.search || undefined,
       sortBy: sort?.column,
       sortOrder: sort?.order,
     }),
-    [page, pageSize, userId, resource, action, from, to, search, sort],
+    [page, pageSize, userId, resource, action, from, to, urlState.search, sort],
   );
 
   const { data, isLoading, isFetching } = useAuditLogList(params);
@@ -146,8 +155,7 @@ export default function AuditLogsPage() {
             className="relative min-w-[220px] flex-1"
             onSubmit={(e) => {
               e.preventDefault();
-              setPage(1);
-              setSearch(searchInput.trim());
+              setUrlState({ search: searchInput.trim(), page: 1 });
             }}
           >
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -162,8 +170,7 @@ export default function AuditLogsPage() {
             <Select
               value={userId}
               onValueChange={(v) => {
-                setUserId(v);
-                setPage(1);
+                setUrlState({ userId: v, page: 1 });
               }}
             >
               <SelectTrigger className="h-9 w-[160px]">
@@ -182,8 +189,7 @@ export default function AuditLogsPage() {
           <Select
             value={resource}
             onValueChange={(v) => {
-              setResource(v);
-              setPage(1);
+              setUrlState({ resource: v, page: 1 });
             }}
           >
             <SelectTrigger className="h-9 w-[160px]">
@@ -201,8 +207,7 @@ export default function AuditLogsPage() {
           <Select
             value={action}
             onValueChange={(v) => {
-              setAction(v);
-              setPage(1);
+              setUrlState({ action: v, page: 1 });
             }}
           >
             <SelectTrigger className="h-9 w-[140px]">
@@ -222,9 +227,7 @@ export default function AuditLogsPage() {
             from={from}
             to={to}
             onChange={({ from: nextFrom, to: nextTo }) => {
-              setFrom(nextFrom);
-              setTo(nextTo);
-              setPage(1);
+              setUrlState({ from: nextFrom, to: nextTo, page: 1 });
             }}
           />
         </CardContent>
@@ -238,8 +241,7 @@ export default function AuditLogsPage() {
         sort={sort}
         defaultSort={DEFAULT_SORT}
         onSortChange={(next) => {
-          setPage(1);
-          setSort(next);
+          setUrlState({ sort: next, page: 1 });
         }}
         renderActions={(r) => (
           <Tooltip>
@@ -268,10 +270,9 @@ export default function AuditLogsPage() {
           total={pagination.total}
           pageSize={pageSize}
           pageSizeOptions={[20, 50, 100]}
-          onPageChange={setPage}
+          onPageChange={(p) => setUrlState({ page: p })}
           onPageSizeChange={(size) => {
-            setPageSize(size);
-            setPage(1);
+            setUrlState({ pageSize: size, page: 1 });
           }}
           unit="条"
         />

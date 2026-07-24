@@ -29,7 +29,7 @@ export const PERMISSION_GROUPS: PermissionGroupDef[] = [
     id: 'media',
     label: '媒体库',
     permissions: [
-      { id: 'media.view', label: '查看媒体' },
+      // 说明：媒体库「查看/浏览」已对所有已登录角色开放，无需单独权限，故此处不再定义 media.view。
       { id: 'media.upload', label: '上传媒体' },
       { id: 'media.delete', label: '删除媒体', description: '移入回收站' },
       {
@@ -211,7 +211,6 @@ export const ROLE_PERMISSIONS: Record<string, readonly string[]> = {
     'content.create',
     'content.edit',
     'content.publish',
-    'media.view',
     'media.upload',
     'contacts.view',
     'contacts.manage',

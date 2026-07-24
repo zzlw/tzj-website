@@ -10,10 +10,13 @@ export function CopyableText({
   value,
   className,
   mono = true,
+  onActivate,
 }: {
   value: string | null | undefined;
   className?: string;
   mono?: boolean;
+  /** 提供时主值渲染为可点击链接（如打开详情抽屉），复制图标保留 */
+  onActivate?: () => void;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -34,7 +37,17 @@ export function CopyableText({
 
   return (
     <span className={cn('inline-flex items-center gap-1.5', className)}>
-      <span className={mono ? 'font-mono text-sm' : 'text-sm'}>{value}</span>
+      {onActivate ? (
+        <button
+          type="button"
+          onClick={onActivate}
+          className={cn('text-primary hover:underline', mono ? 'font-mono text-sm' : 'text-sm')}
+        >
+          {value}
+        </button>
+      ) : (
+        <span className={mono ? 'font-mono text-sm' : 'text-sm'}>{value}</span>
+      )}
       <button
         type="button"
         onClick={() => void onCopy()}
@@ -56,9 +69,11 @@ export function CopyableText({
 export function CopyableIp({
   ip,
   ipMasked,
+  onActivate,
 }: {
   ip: string | null | undefined;
   ipMasked?: string | null;
+  onActivate?: () => void;
 }) {
-  return <CopyableText value={ip ?? ipMasked ?? null} />;
+  return <CopyableText value={ip ?? ipMasked ?? null} onActivate={onActivate} />;
 }

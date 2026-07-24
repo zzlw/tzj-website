@@ -30,7 +30,8 @@ export class MediaController {
     private readonly s3: S3Service,
   ) {}
 
-  @RequirePermissions('media.view')
+  // 媒体库浏览/读取对所有已登录角色开放（无需专门权限）：素材为团队共享资源，
+  // 只读浏览不构成风险；写操作（上传/删除/清除/替换站点资源）仍各自受权限约束。
   @Get()
   @ApiOperation({ summary: '媒体库列表（分页）' })
   findAll(

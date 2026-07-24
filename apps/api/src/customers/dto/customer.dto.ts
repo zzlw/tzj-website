@@ -102,6 +102,11 @@ export class CreateCustomerDto {
   @IsString()
   chatRoomId?: string;
 
+  @ApiPropertyOptional({ description: '来源询盘 ID（询盘转线索，幂等去重）' })
+  @IsOptional()
+  @IsString()
+  contactId?: string;
+
   @ApiPropertyOptional({ description: '归属坐席 ID（空 = 公海；不传则创建人自动归入私海）' })
   @IsOptional()
   @IsString()

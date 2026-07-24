@@ -1,5 +1,5 @@
 import { BASE_PATH } from '@/lib/config';
-import type { ChatRoom, ChatRoomStats, ChatRoomsResponseData } from './types';
+import type { ChatRoom, ChatRoomStats, ChatRoomsResponseData, ChatVisitorProfile } from './types';
 
 // 走 Next.js BFF 代理（/api/bff/[...path]）：服务端读取 httpOnly access cookie
 // 并附加 Authorization header，401 时自动刷新令牌。
@@ -64,6 +64,11 @@ export function batchChatRooms(
 
 export function getChatRoom(roomId: string): Promise<ChatRoom> {
   return request<ChatRoom>(`/chat-rooms/${encodeURIComponent(roomId)}`);
+}
+
+/** 访客档案：IP 重解析地区 + 运营商 + 站内行为/营销归因（对齐「访客分析」）。 */
+export function getChatVisitorProfile(roomId: string): Promise<ChatVisitorProfile> {
+  return request<ChatVisitorProfile>(`/chat-rooms/${encodeURIComponent(roomId)}/visitor-profile`);
 }
 
 export function updateChatRoom(

@@ -8,8 +8,8 @@ import {
 import type { Prisma } from '@prisma/client/index';
 import { resolveContentAuthor } from '../common/utils/content-author';
 import { LAST_OPERATOR_USER_SELECT } from '../common/utils/content-list';
-import { PrismaService } from '../prisma/prisma.service';
-import { CreateCustomerDto, TransferCustomerDto, UpdateCustomerDto } from './dto/customer.dto';
+import type { PrismaService } from '../prisma/prisma.service';
+import type { CreateCustomerDto, TransferCustomerDto, UpdateCustomerDto } from './dto/customer.dto';
 
 /** 关联用户展示字段（owner / lastOperator / createdBy 复用同一结构） */
 const CUSTOMER_USER_SELECT = LAST_OPERATOR_USER_SELECT;
@@ -27,6 +27,22 @@ const CUSTOMER_AGENT_SELECT = {
 } as const;
 
 type Scope = 'mine' | 'public' | 'all';
+
+/** 转线索去重键：优先会话（chatRoomId），其次询盘（contactId），均无则不去重。 */
+function dedupeWhere(dto: CreateCustomerDto): Prisma.CustomerWhereUniqueInput | null {
+  if (dto.chatRoomId) return { chatRoomId: dto.chatRoomId };
+  if (dto.contactId) return { contactId: dto.contactId };
+  return null;
+}
+
+/** 幂等去重：命中已有客户则返回完整实体（含关联 User），否则 null。 */
+async function findDuplicateCustomer(tx: Prisma.TransactionClient, dto: CreateCustomerDto) {
+  const where = dedupeWhere(dto);
+  if (!where) return null;
+  const existing = await tx.customer.findUnique({ where });
+  if (!existing) return null;
+  return tx.customer.findUnique({ where: { id: existing.id }, include: CUSTOMER_INCLUDE });
+}
 
 interface FindAllParams {
   page: number;
@@ -128,8 +144,38 @@ export class CustomersService {
       this.prisma.customer.count({ where }),
     ]);
 
+    // 反查来源对应的匿名访客 ID，供前端跳转访客详情抽屉（无 Prisma 关系，故当前页批量二次查询后内存映射）：
+    //  - 会话链路：Customer.chatRoomId = ChatRoom.roomId → ChatRoom.visitorId
+    //  - 询盘链路：Customer.contactId = Contact.id → Contact.visitorId（询盘转线索）
+    const roomIds = data.map((c) => c.chatRoomId).filter((id): id is string => Boolean(id));
+    const contactIds = data.map((c) => c.contactId).filter((id): id is string => Boolean(id));
+    const [rooms, contacts] = await Promise.all([
+      roomIds.length
+        ? this.prisma.chatRoom.findMany({
+            where: { roomId: { in: roomIds }, visitorId: { not: null } },
+            select: { roomId: true, visitorId: true },
+          })
+        : Promise.resolve([]),
+      contactIds.length
+        ? this.prisma.contact.findMany({
+            where: { id: { in: contactIds }, visitorId: { not: null } },
+            select: { id: true, visitorId: true },
+          })
+        : Promise.resolve([]),
+    ]);
+    const visitorByRoom = new Map(rooms.map((r) => [r.roomId, r.visitorId]));
+    const visitorByContact = new Map(contacts.map((c) => [c.id, c.visitorId]));
+    const enriched = data.map((c) => ({
+      ...c,
+      // 会话链路优先（实时度高），其次回退询盘链路
+      visitorId:
+        (c.chatRoomId ? visitorByRoom.get(c.chatRoomId) : null) ??
+        (c.contactId ? visitorByContact.get(c.contactId) : null) ??
+        null,
+    }));
+
     return {
-      data,
+      data: enriched,
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     };
   }
@@ -172,19 +218,9 @@ export class CustomersService {
     const ownerId = dto.ownerId === undefined ? operatorId : dto.ownerId;
 
     return this.prisma.$transaction(async (tx) => {
-      // 会话转线索：幂等去重，避免同一会话重复生成客户
-      if (dto.chatRoomId) {
-        const existing = await tx.customer.findUnique({
-          where: { chatRoomId: dto.chatRoomId },
-        });
-        if (existing) {
-          // 已存在则直接返回完整客户（含关联 User）
-          return tx.customer.findUnique({
-            where: { id: existing.id },
-            include: CUSTOMER_INCLUDE,
-          });
-        }
-      }
+      // 会话 / 询盘转线索：幂等去重，命中已有客户则直接返回（避免重复生成）
+      const deduped = await findDuplicateCustomer(tx, dto);
+      if (deduped) return deduped;
 
       const data: Prisma.CustomerUncheckedCreateInput = {
         name: dto.name,
@@ -209,6 +245,7 @@ export class CustomersService {
         createdById: operatorId,
         createdBy: author,
         chatRoomId: dto.chatRoomId ?? null,
+        contactId: dto.contactId ?? null,
       };
       const customer = await tx.customer.create({ data, include: CUSTOMER_INCLUDE });
 

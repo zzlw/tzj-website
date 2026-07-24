@@ -52,4 +52,13 @@ export const DEFAULT_SITE_PUBLIC_SETTINGS: SitePublicSettings = {
     title: '在线客服',
     greeting: '您好 👋\n\n请描述您的问题，我会尽快为您解答。',
   },
+  chatPrompts: {
+    offlineMessage: {},
+    noAgentMessage: {},
+  },
+  screenWatermark: {
+    enabled: false,
+    text: '',
+    opacity: 0.08,
+  },
 };
