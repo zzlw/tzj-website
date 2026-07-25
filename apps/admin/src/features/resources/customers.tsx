@@ -38,6 +38,7 @@ export const customersConfig: ResourceConfig<CustomerItem> = {
   title: '客户管理',
   singular: '客户',
   searchable: true,
+  searchPlaceholder: '搜索姓名、单位、电话、邮箱、地区、访客ID…',
   filters: [
     { key: 'customerType', label: '全部类型', options: CUSTOMER_TYPE_OPTIONS },
     { key: 'stage', label: '全部阶段', options: CUSTOMER_STAGE_OPTIONS },
@@ -45,7 +46,19 @@ export const customersConfig: ResourceConfig<CustomerItem> = {
     { key: 'source', label: '全部来源', options: CUSTOMER_SOURCE_OPTIONS },
   ],
   columns: [
-    { key: 'name', header: '联系人', sortable: true },
+    {
+      key: 'name',
+      header: '联系人',
+      sortable: true,
+      className: 'whitespace-nowrap',
+      // 姓名主行 + 职务副行，避免为低频字段单开一列
+      cell: (r) => (
+        <div className="min-w-0">
+          <div className="font-medium">{r.name}</div>
+          {r.title ? <div className="text-xs text-muted-foreground">{r.title}</div> : null}
+        </div>
+      ),
+    },
     {
       key: 'company',
       header: '客户单位',
@@ -53,10 +66,31 @@ export const customersConfig: ResourceConfig<CustomerItem> = {
       cell: (r) => r.company ?? '—',
     },
     {
+      key: 'contact',
+      header: '联系方式',
+      className: 'whitespace-nowrap',
+      cell: (r) =>
+        r.phone || r.email ? (
+          <div className="space-y-0.5 text-xs">
+            {r.phone ? <div>{r.phone}</div> : null}
+            {r.email ? <div className="text-muted-foreground">{r.email}</div> : null}
+          </div>
+        ) : (
+          '—'
+        ),
+    },
+    {
       key: 'customerType',
       header: '类型',
       sortable: true,
       cell: (r) => labelOf(CUSTOMER_TYPE_OPTIONS, r.customerType),
+    },
+    {
+      key: 'source',
+      header: '来源',
+      sortable: true,
+      className: 'whitespace-nowrap',
+      cell: (r) => (r.source ? labelOf(CUSTOMER_SOURCE_OPTIONS, r.source) : '—'),
     },
     {
       key: 'level',
@@ -77,6 +111,39 @@ export const customersConfig: ResourceConfig<CustomerItem> = {
       cell: (r) => (r.amount != null ? `¥${r.amount.toLocaleString('zh-CN')}` : '—'),
     },
     {
+      key: 'region',
+      header: '地区',
+      sortable: true,
+      className: 'whitespace-nowrap',
+      // 详细地址不单开列，悬停地区即可查看
+      cell: (r) => <span title={r.address ?? undefined}>{r.region ?? '—'}</span>,
+    },
+    {
+      key: 'tags',
+      header: '标签',
+      className: 'whitespace-nowrap',
+      cell: (r) => {
+        const tags = Array.isArray(r.tags) ? r.tags.filter(Boolean) : [];
+        if (tags.length === 0) return '—';
+        const shown = tags.slice(0, 2);
+        return (
+          <span className="inline-flex items-center gap-1" title={tags.join('、')}>
+            {shown.map((t) => (
+              <span
+                key={t}
+                className="rounded-sm bg-muted px-1.5 py-0.5 text-xs text-muted-foreground"
+              >
+                {t}
+              </span>
+            ))}
+            {tags.length > shown.length ? (
+              <span className="text-xs text-muted-foreground">+{tags.length - shown.length}</span>
+            ) : null}
+          </span>
+        );
+      },
+    },
+    {
       key: 'owner',
       header: '归属',
       sortable: true,
@@ -89,10 +156,29 @@ export const customersConfig: ResourceConfig<CustomerItem> = {
         ),
     },
     {
+      key: 'lastContactAt',
+      header: '最近联系',
+      sortable: true,
+      cell: (r) => formatDate(r.lastContactAt),
+    },
+    {
       key: 'nextFollowAt',
       header: '下次跟进',
       sortable: true,
       cell: (r) => formatDate(r.nextFollowAt),
+    },
+    {
+      key: 'notes',
+      header: '备注',
+      className: 'max-w-[200px]',
+      cell: (r) =>
+        r.notes ? (
+          <span className="block truncate text-xs text-muted-foreground" title={r.notes}>
+            {r.notes}
+          </span>
+        ) : (
+          '—'
+        ),
     },
     ...contentAuditColumns<CustomerItem>(),
   ],
@@ -127,6 +213,8 @@ export const customersConfig: ResourceConfig<CustomerItem> = {
   schema,
   autoSlug: false,
   defaultSort: { column: 'updatedAt', order: 'desc' },
+  // 列多且追加了访客 ID / IP 等列，横向易溢出，固定操作列到右侧保持可见。
+  pinActions: true,
   defaults: {
     name: '',
     company: '',

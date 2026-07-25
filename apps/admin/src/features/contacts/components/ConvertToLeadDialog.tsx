@@ -3,46 +3,31 @@
 import { Button, Input, Label, SimpleDialog, Textarea } from '@tzj/ui';
 import { UserRoundCheck } from 'lucide-react';
 import { useState } from 'react';
-import { sourceLabel } from '@/features/analytics';
 import { CUSTOMER_LEVEL_OPTIONS, CUSTOMER_TYPE_OPTIONS } from '@/features/constants';
 import type { ContactItem, CustomerItem } from '@/features/types';
 import { api } from '@/lib/apiClient';
 import { notifyError, notifySuccess } from '@/lib/notify';
-import type { ContactVisitorProfile } from '../types';
 
 interface Props {
   contact: ContactItem;
-  profile?: ContactVisitorProfile;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConverted: (customerId: string) => void;
 }
 
-/** 渠道来源：优先分析渠道分组（sourceLabel），回退 referrerHost / 询盘来源 / 直接访问。 */
-function channelLabel(contact: ContactItem, p?: ContactVisitorProfile): string {
-  if (p?.trafficSource) return sourceLabel(p.trafficSource);
-  if (p?.referrerHost) return p.referrerHost;
+/** 渠道来源：取询盘来源，回退直接访问。 */
+function channelLabel(contact: ContactItem): string {
   return contact.source || '直接访问';
 }
 
-/** 系统备注：来源 / 渠道 / 位置（创建后可手动补充）。 */
-function buildNotes(contact: ContactItem, p?: ContactVisitorProfile): string {
-  return [
-    `来源：官网询盘 id=${contact.id}`,
-    `渠道：${channelLabel(contact, p)}`,
-    p?.location ? `位置：${p.location}` : '',
-  ]
-    .filter(Boolean)
-    .join('\n');
+/** 系统备注：来源 / 渠道（创建后可手动补充）。 */
+function buildNotes(contact: ContactItem): string {
+  return [`来源：官网询盘 id=${contact.id}`, `渠道：${channelLabel(contact)}`].join('\n');
 }
 
-/** 线索标签：询盘固定标签 + 来源域名 + 落地页首段（去空去重、上限 10）。 */
-function buildTags(p?: ContactVisitorProfile): string[] {
-  const tags = new Set<string>();
-  tags.add('询盘线索');
-  if (p?.referrerHost) tags.add(p.referrerHost);
-  if (p?.landingPath) tags.add(p.landingPath.split('/').filter(Boolean)[0] ?? '');
-  return [...tags].filter(Boolean).slice(0, 10);
+/** 线索标签：询盘固定标签。 */
+function buildTags(): string[] {
+  return ['询盘线索'];
 }
 
 /** 表单快照（提交时组装 payload 用，收敛 submit 的认知复杂度）。 */
@@ -58,11 +43,7 @@ interface LeadFormState {
 }
 
 /** 组装建客 payload：空串归一为 undefined，公海置空 ownerId。 */
-function buildLeadPayload(
-  form: LeadFormState,
-  contact: ContactItem,
-  profile?: ContactVisitorProfile,
-): Record<string, unknown> {
+function buildLeadPayload(form: LeadFormState, contact: ContactItem): Record<string, unknown> {
   return {
     name: form.name.trim(),
     email: form.email || undefined,
@@ -73,21 +54,21 @@ function buildLeadPayload(
     level: form.level,
     stage: 'new',
     region: form.region || undefined,
-    tags: buildTags(profile),
-    notes: buildNotes(contact, profile),
+    tags: buildTags(),
+    notes: buildNotes(contact),
     contactId: contact.id,
     ownerId: form.dest === 'public' ? null : undefined,
   };
 }
 
-export function ConvertToLeadDialog({ contact, profile, open, onOpenChange, onConverted }: Props) {
+export function ConvertToLeadDialog({ contact, open, onOpenChange, onConverted }: Props) {
   const [name, setName] = useState(contact.name);
   const [email, setEmail] = useState(contact.email ?? '');
   const [company, setCompany] = useState(contact.company ?? '');
   const [phone, setPhone] = useState(contact.phone ?? '');
   const [customerType, setCustomerType] = useState('');
   const [level, setLevel] = useState('B');
-  const [region, setRegion] = useState(profile?.location ?? '');
+  const [region, setRegion] = useState('');
   const [dest, setDest] = useState<'public' | 'mine'>('public');
   const [submitting, setSubmitting] = useState(false);
 
@@ -98,7 +79,7 @@ export function ConvertToLeadDialog({ contact, profile, open, onOpenChange, onCo
     setPhone(contact.phone ?? '');
     setCustomerType('');
     setLevel('B');
-    setRegion(profile?.location ?? '');
+    setRegion('');
     setDest('public');
   }
 
@@ -113,7 +94,6 @@ export function ConvertToLeadDialog({ contact, profile, open, onOpenChange, onCo
       const payload = buildLeadPayload(
         { name: n, email, company, phone, customerType, level, region, dest },
         contact,
-        profile,
       );
       const created = await api.create<CustomerItem>('customers', payload);
       notifySuccess(
@@ -264,7 +244,7 @@ export function ConvertToLeadDialog({ contact, profile, open, onOpenChange, onCo
             <Textarea
               rows={3}
               className="text-xs"
-              value={buildNotes(contact, profile)}
+              value={buildNotes(contact)}
               onChange={() => {}}
               disabled
             />

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import type { DocFolderTreeNode, DocRevisionItem, InternalDocumentItem } from '@/features/types';
 import type { ListResult } from '@/lib/apiClient';
@@ -148,12 +148,85 @@ export function useRenamePersonalFolder() {
   });
 }
 
+/** 拖拽：重排同一父级下的个人文件夹顺序 */
+export function useReorderFolders() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { parentId?: string | null; orderedIds: string[] }) =>
+      api.patch('documents/folders/personal/reorder', payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['documents', 'folders', 'tree'] });
+      qc.invalidateQueries({ queryKey: ['documents'] });
+    },
+  });
+}
+
+/** 拖拽：移动个人文件夹到新父级 */
+export function useMoveFolder() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, parentId }: { id: string; parentId?: string | null }) =>
+      api.patch(`documents/folders/personal/${id}/move`, { parentId }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['documents', 'folders', 'tree'] });
+      qc.invalidateQueries({ queryKey: ['documents'] });
+    },
+  });
+}
+
+/** 拖拽：重排某文件夹内个人文档顺序 */
+export function useReorderDocuments() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: { folderId?: string | null; orderedIds: string[] }) =>
+      api.patch('documents/reorder', payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['documents'] });
+    },
+  });
+}
+
+/** 拖拽：移动个人文档到目标文件夹并落到指定序位 */
+export function useMoveDocument() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      folderId,
+      sortOrder,
+    }: {
+      id: string;
+      folderId?: string | null;
+      sortOrder?: number;
+    }) => api.patch(`documents/${id}/move`, { folderId, sortOrder }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['documents', 'folders', 'tree'] });
+      qc.invalidateQueries({ queryKey: ['documents'] });
+    },
+  });
+}
+
 export function useDocRevisions(documentId: string | undefined) {
   return useQuery<DocRevisionItem[]>({
     queryKey: ['documents', documentId, 'revisions'],
     queryFn: () => api.query<DocRevisionItem[]>(`documents/${documentId}/revisions`),
     enabled: Boolean(documentId),
   });
+}
+
+/** 单个文件夹文档查询配置（与批量版共用缓存键，保证拖拽后失效一致） */
+function folderDocsQueryOptions(folderId: string) {
+  return {
+    queryKey: ['documents', 'folderDocs', { folderId }] as const,
+    queryFn: () =>
+      api.list<InternalDocumentItem>('documents', {
+        folderId,
+        mine: '1',
+        limit: 50,
+        sortBy: 'sortOrder',
+        sortOrder: 'asc',
+      }),
+  };
 }
 
 /** 获取指定文件夹下的文档列表 */
@@ -165,10 +238,20 @@ export function useFolderDocuments(folderId: string | null) {
         folderId: folderId!,
         mine: '1',
         limit: 50,
-        sortBy: 'updatedAt',
-        sortOrder: 'desc',
+        sortBy: 'sortOrder',
+        sortOrder: 'asc',
       }),
     enabled: Boolean(folderId),
+  });
+}
+
+/**
+ * 拖拽侧栏用：一次性获取多个可见文件夹下的文档（每个文件夹一条查询，
+ * 与 useFolderDocuments 共享缓存键）。React Hook 不能在循环中调用，故用 useQueries。
+ */
+export function useFolderDocumentsBatch(folderIds: string[]) {
+  return useQueries({
+    queries: folderIds.map((folderId) => folderDocsQueryOptions(folderId)),
   });
 }
 

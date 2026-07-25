@@ -55,7 +55,7 @@ interface LeadFormState {
   dest: 'public' | 'mine';
 }
 
-/** 组装建客 payload：空串归一为 undefined，公海置空 ownerId，去重锚点带 contactId。 */
+/** 组装建客 payload：空串归一为 undefined，公海置空 ownerId，去重锚点带 contactId，一级归因带 visitorId。 */
 function buildLeadPayload(form: LeadFormState, seed: VisitorConvertSeed): Record<string, unknown> {
   return {
     name: form.name.trim(),
@@ -70,6 +70,7 @@ function buildLeadPayload(form: LeadFormState, seed: VisitorConvertSeed): Record
     tags: ['访客线索'],
     notes: buildNotes(seed),
     contactId: seed.contactId ?? undefined,
+    visitorId: seed.visitorId,
     ownerId: form.dest === 'public' ? null : undefined,
   };
 }

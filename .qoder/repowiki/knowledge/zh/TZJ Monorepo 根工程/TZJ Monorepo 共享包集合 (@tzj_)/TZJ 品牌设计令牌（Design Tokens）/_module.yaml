@@ -1,0 +1,9 @@
+schema_version: 1
+module_path: packages/theme
+title: TZJ 品牌设计令牌（Design Tokens）
+scope:
+    - packages/theme/
+source_files: []
+depends_on: []
+related_to:
+    - path: web_app/shared_components

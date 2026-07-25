@@ -22,6 +22,7 @@ import { ArrowLeft, ArrowUpRight, MessagesSquare, Search, UserRoundPlus } from '
 import Link from 'next/link';
 import { type ReactNode, type RefObject, useEffect, useRef, useState } from 'react';
 import { VisitorActivityTimeline } from '@/components/analytics/VisitorActivityTimeline';
+import { CopyableText } from '@/components/CopyableText';
 import { VisitorConvertToLeadDialog } from '@/components/visitor-drawer/VisitorConvertToLeadDialog';
 import {
   type AnalyticsVisitorInquiry,
@@ -30,6 +31,7 @@ import {
   type VisitorIdentityBlock,
   type VisitorProfileIdentity,
 } from '@/features/analytics';
+import { useStickyFlag } from '@/lib/use-sticky-flag';
 import { getChatRoom, getChatRooms } from '../api';
 import type { ChatMessage, ChatRoom, ChatRoomStatusKey } from '../types';
 import { ChatMessageBubble } from './ChatMessageBubble';
@@ -448,7 +450,14 @@ function VisitorSheetHeader({
           {visitor ? <VisitorStatusBadge identified={visitor.identified} /> : null}
         </SheetTitle>
       </div>
-      <SheetDescription className="flex flex-wrap gap-x-2 text-xs">
+      <SheetDescription className="flex flex-wrap items-center gap-x-2 text-xs">
+        {visitor ? (
+          <CopyableText
+            value={visitor.visitorId}
+            display={`#${visitor.visitorId.slice(0, 8)}`}
+            className="[&>span]:text-xs [&>button]:text-xs"
+          />
+        ) : null}
         {visitor?.company ? <span>{visitor.company}</span> : null}
         {visitor?.email ? <span>{visitor.email}</span> : null}
         {visitor?.phone ? <span>{visitor.phone}</span> : null}
@@ -696,6 +705,9 @@ export function VisitorProfileSheet({
     visitor,
     activityQuery.data?.techInfo.region ?? null,
   );
+  // 转化弹窗「粘滞」标记：弹窗打开期间为真，关闭后再保持短暂窗口（覆盖其卸载/焦点回迁）。
+  // 本抽屉据此在 onInteractOutside/onEscapeKeyDown 拦截关闭弹窗时级联到抽屉的误关闭，保证 LIFO。
+  const convertSticky = useStickyFlag(convert.open);
   // 当前查看的会话 roomId；null = 会话列表级
   const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
   // 该访客聊天历史搜索：正文命中经后端 pg_trgm 检索，返回 matchedMessage 片段
@@ -782,6 +794,12 @@ export function VisitorProfileSheet({
           side="right"
           overlayClassName={overlayClassName}
           className="flex w-[520px] max-w-[90vw] flex-col p-0 sm:max-w-[520px]"
+          onEscapeKeyDown={(e) => {
+            if (convertSticky.current) e.preventDefault();
+          }}
+          onInteractOutside={(e) => {
+            if (convertSticky.current) e.preventDefault();
+          }}
         >
           <VisitorSheetHeader
             visitor={visitor}

@@ -16,8 +16,11 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
 import type { AuthUser } from '../auth/roles';
+// biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
 import { AliyunCaptchaService } from '../integrations/aliyun-captcha.service';
+// biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
 import { ContactService } from './contact.service';
+// biome-ignore lint/style/useImportType: @Body() 校验需要 DTO 类作为运行期元数据
 import { CreateContactDto, UpdateContactDto } from './dto/contact.dto';
 
 @ApiTags('contact')
@@ -36,17 +39,26 @@ export class ContactController {
   @ApiQuery({ name: 'limit', required: false })
   @ApiQuery({ name: 'isRead', required: false })
   @ApiQuery({ name: 'isHandled', required: false })
+  @ApiQuery({ name: 'search', required: false })
+  @ApiQuery({ name: 'sortBy', required: false })
+  @ApiQuery({ name: 'sortOrder', required: false })
   findAll(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
     @Query('isRead') isRead?: string,
     @Query('isHandled') isHandled?: string,
+    @Query('search') search?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string,
   ) {
     return this.contactService.findAll({
       page,
       limit,
       isRead: isRead !== undefined ? isRead === 'true' : undefined,
       isHandled: isHandled !== undefined ? isHandled === 'true' : undefined,
+      search,
+      sortBy,
+      sortOrder,
     });
   }
 

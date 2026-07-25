@@ -7,7 +7,7 @@ const monorepoRoot = join(appDir, '..', '..');
 
 const nextConfig: NextConfig = {
   output: 'standalone',
-  transpilePackages: ['@tzj/ui', '@tzj/types'],
+  transpilePackages: ['@tzj/ui', '@tzj/types', '@tzj/dnd'],
   // monorepo 下显式指定 Turbopack 根目录，避免推断错误导致 dev 崩溃
   turbopack: {
     root: monorepoRoot,

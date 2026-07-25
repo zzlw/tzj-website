@@ -42,6 +42,7 @@ import {
   MessageSquare,
   MessagesSquare,
   Newspaper,
+  Scale,
   ScrollText,
   Shield,
   ShieldBan,
@@ -79,6 +80,7 @@ const NAV_GROUPS: Array<{
       { label: '新闻管理', href: '/news', icon: Newspaper },
       { label: '博客管理', href: '/blog', icon: BookOpen },
       { label: '展会管理', href: '/trade-shows', icon: CalendarDays },
+      { label: '法务页面', href: '/legal-pages', icon: Scale },
     ],
   },
   {

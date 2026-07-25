@@ -1,0 +1,9 @@
+schema_version: 1
+module_path: api_server/documents
+title: 文档中心 API（文档、文件夹、标签与权限）
+scope:
+    - apps/api/src/documents/
+source_files: []
+depends_on: []
+related_to:
+    - path: admin_app/shared_features_api_hooks

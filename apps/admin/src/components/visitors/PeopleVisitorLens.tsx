@@ -18,7 +18,7 @@ import {
 import { Eye } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { deviceColumns } from '@/components/analytics/device-columns';
-import { CopyableIp } from '@/components/CopyableText';
+import { CopyableIp, CopyableText } from '@/components/CopyableText';
 import { useVisitorDrawer } from '@/components/visitor-drawer/context';
 import { DEVICE_FACET_OPTIONS, SOURCE_FACET_OPTIONS } from '@/components/visitors/facet-options';
 import { type FilterFacet, VisitorFilterBar } from '@/components/visitors/VisitorFilterBar';
@@ -30,6 +30,7 @@ import {
   sourceLabel,
   useAnalyticsVisitors,
 } from '@/features/analytics';
+import { downloadCsv, PEOPLE_EXPORT_COLUMNS } from '@/features/analytics-export';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { intField, sortField, stringField, useUrlState } from '@/lib/use-url-state';
 
@@ -128,14 +129,11 @@ function buildPeopleColumns(
       className: 'whitespace-nowrap',
       pinLeft: true,
       cell: (r) => (
-        <button
-          type="button"
-          onClick={() => onView(r)}
-          title={r.visitorId}
-          className="text-primary hover:underline font-mono text-xs"
-        >
-          #{r.visitorId.slice(0, 8)}
-        </button>
+        <CopyableText
+          value={r.visitorId}
+          display={`#${r.visitorId.slice(0, 8)}`}
+          onActivate={() => onView(r)}
+        />
       ),
     },
     {
@@ -284,6 +282,7 @@ export function PeopleVisitorLens({ dateParams }: { dateParams: { from?: string;
 
   const { data, isLoading, isFetching } = useAnalyticsVisitors(params);
   const loading = isLoading || isFetching;
+  const rows = data?.data ?? [];
   const columns = buildPeopleColumns(
     (row) => openPerson(row.visitorId, row),
     (row) => {
@@ -348,6 +347,8 @@ export function PeopleVisitorLens({ dateParams }: { dateParams: { from?: string;
           onSearchChange={setSearchInput}
           searchPlaceholder="搜索姓名/邮箱/电话/公司/访客ID/地区"
           facets={facets}
+          onExport={() => downloadCsv('访客明细_按访客', rows, PEOPLE_EXPORT_COLUMNS)}
+          exportDisabled={loading || rows.length === 0}
         />
         {loading && !data ? (
           <div className="space-y-2">
@@ -358,7 +359,7 @@ export function PeopleVisitorLens({ dateParams }: { dateParams: { from?: string;
         ) : (
           <DataTable
             columns={columns}
-            rows={data?.data ?? []}
+            rows={rows}
             loading={loading}
             emptyText="暂无访客数据（新版本客户端上线后开始采集）"
             sort={sort}

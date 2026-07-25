@@ -136,7 +136,8 @@ export function visitorBaseFilterSql(params: { q?: string; identified?: string }
   if (params.identified === 'true') conds.push(Prisma.sql`v."identifiedAt" IS NOT NULL`);
   else if (params.identified === 'false') conds.push(Prisma.sql`v."identifiedAt" IS NULL`);
   if (params.q) {
-    const like = `%${params.q}%`;
+    // 前端访客ID展示为「#xxxxxxxx」，容忍用户连 # 一起复制来搜
+    const like = `%${params.q.replace(/^#/, '')}%`;
     conds.push(
       Prisma.sql`(v."email" ILIKE ${like} OR v."name" ILIKE ${like} OR v."phone" ILIKE ${like} OR v."company" ILIKE ${like} OR pv."visitorId" ILIKE ${like} OR pv."region" ILIKE ${like} OR pv."city" ILIKE ${like})`,
     );

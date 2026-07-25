@@ -4,6 +4,7 @@ import { contentAuditColumns } from '@/components/LastOperatorCell';
 import {
   formatDate,
   labelOf,
+  STATUS_OPTIONS,
   StatusBadge,
   TRADE_SHOW_TYPE_OPTIONS,
   toDateTimeLocal,
@@ -34,9 +35,14 @@ export const tradeShowsConfig: ResourceConfig<TradeShowItem> = {
   title: '展会活动',
   singular: '展会',
   searchable: true,
-  filters: [{ key: 'eventType', label: '全部类型', options: TRADE_SHOW_TYPE_OPTIONS }],
+  searchPlaceholder: '搜索名称、摘要、正文、地点、展位号…',
+  filters: [
+    { key: 'eventType', label: '全部类型', options: TRADE_SHOW_TYPE_OPTIONS },
+    { key: 'status', label: '全部状态', options: STATUS_OPTIONS },
+  ],
   columns: [
-    { key: 'title', header: '名称', sortable: true },
+    // 主标识列固定到左侧，宽表横向滚动时始终可辨认当前行（滚动阴影按需出现）。
+    { key: 'title', header: '名称', sortable: true, pinLeft: true },
     { key: 'location', header: '地点', sortable: true },
     {
       key: 'eventDateLabel',
@@ -95,8 +101,10 @@ export const tradeShowsConfig: ResourceConfig<TradeShowItem> = {
   ],
   schema,
   publishable: true,
-  previewPath: () => '/resources/trade-shows',
+  previewPath: (r) => `/resources/trade-shows/${r.slug}`,
   defaultSort: { column: 'publishedAt', order: 'desc' },
+  // 含审计列（创建/更新时间、创建人）后列多易溢出，固定操作列到右侧保持可达。
+  pinActions: true,
   defaults: {
     title: '',
     slug: '',

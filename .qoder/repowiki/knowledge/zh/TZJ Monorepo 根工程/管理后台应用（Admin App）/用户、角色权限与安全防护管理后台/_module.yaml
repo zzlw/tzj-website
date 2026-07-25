@@ -1,0 +1,13 @@
+schema_version: 1
+module_path: admin_app/feature_users_access_security
+title: 用户、角色权限与安全防护管理后台
+scope:
+    - apps/admin/src/app/(dashboard)/users/
+    - apps/admin/src/app/(dashboard)/access/
+    - apps/admin/src/app/(dashboard)/security/
+    - apps/admin/src/components/users/
+    - apps/admin/src/components/access/
+    - apps/admin/src/components/security/
+source_files: []
+depends_on: []
+related_to: []

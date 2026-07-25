@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: api_server/cases
+title: 工程案例（Cases）业务模块
+scope:
+    - apps/api/src/cases/
+source_files: []
+depends_on: []
+related_to: []

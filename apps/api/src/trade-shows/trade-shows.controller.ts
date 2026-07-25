@@ -15,13 +15,17 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
 import type { AuthUser } from '../auth/roles';
+import { PreviewTokenService } from '../preview/preview-token.service';
 import { CreateTradeShowDto, UpdateTradeShowDto } from './dto/trade-show.dto';
 import { TradeShowsService } from './trade-shows.service';
 
 @ApiTags('trade-shows')
 @Controller('trade-shows')
 export class TradeShowsController {
-  constructor(private readonly tradeShowsService: TradeShowsService) {}
+  constructor(
+    private readonly tradeShowsService: TradeShowsService,
+    private readonly previewTokens: PreviewTokenService,
+  ) {}
 
   @Public()
   @Get()
@@ -36,6 +40,11 @@ export class TradeShowsController {
   @ApiQuery({ name: 'search', required: false })
   @ApiQuery({ name: 'sortBy', required: false, description: '排序字段，如 title' })
   @ApiQuery({ name: 'sortOrder', required: false, description: 'asc|desc' })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    description: 'draft|published|archived（仅登录后台可按状态过滤）',
+  })
   findAll(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(12), ParseIntPipe) limit: number,
@@ -43,6 +52,7 @@ export class TradeShowsController {
     @Query('search') search?: string,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: string,
+    @Query('status') status?: string,
     @CurrentUser() user?: AuthUser,
   ) {
     return this.tradeShowsService.findAll({
@@ -52,6 +62,7 @@ export class TradeShowsController {
       search,
       sortBy,
       sortOrder,
+      status,
       includeUnpublished: !!user,
     });
   }
@@ -59,8 +70,15 @@ export class TradeShowsController {
   @Public()
   @Get(':slug')
   @ApiOperation({ summary: '获取展会详情' })
-  findOne(@Param('slug') slug: string, @CurrentUser() user?: AuthUser) {
-    return this.tradeShowsService.findOne(slug, !!user);
+  @ApiQuery({ name: 'previewToken', required: false, description: '草稿预览令牌（后台生成）' })
+  async findOne(
+    @Param('slug') slug: string,
+    @Query('previewToken') previewToken?: string,
+    @CurrentUser() user?: AuthUser,
+  ) {
+    const includeUnpublished =
+      !!user || (await this.previewTokens.verify(previewToken, 'trade-shows', slug));
+    return this.tradeShowsService.findOne(slug, includeUnpublished);
   }
 
   @RequirePermissions('content.create')

@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: packages
+title: TZJ Monorepo 共享包集合 (@tzj/*)
+scope:
+    - packages/
+source_files: []
+depends_on: []
+related_to: []

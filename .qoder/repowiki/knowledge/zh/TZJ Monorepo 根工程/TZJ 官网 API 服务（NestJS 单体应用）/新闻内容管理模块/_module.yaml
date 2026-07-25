@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: api_server/news
+title: 新闻内容管理模块
+scope:
+    - apps/api/src/news/
+source_files: []
+depends_on: []
+related_to: []

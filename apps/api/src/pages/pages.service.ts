@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client/index';
-import { sanitizeRichText } from '../common/utils/sanitize';
+import { sanitizeMarkdown } from '../common/utils/markdown';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePageDto, UpdatePageDto } from './dto/page.dto';
 
@@ -22,8 +22,9 @@ export class PagesService {
 
   async create(dto: CreatePageDto) {
     const { content, ...rest } = dto;
+    // 正文为 Markdown（后台 Vditor 编辑），存原文，渲染端（MarkdownBody/rehypeSanitize）再消毒
     return this.prisma.page.create({
-      data: { ...rest, content: sanitizeRichText(content) },
+      data: { ...rest, content: sanitizeMarkdown(content) },
     });
   }
 
@@ -32,7 +33,7 @@ export class PagesService {
     if (!page) throw new NotFoundException(`页面 ID "${id}" 未找到`);
     const { content, ...rest } = dto;
     const data: Prisma.PageUpdateInput = { ...rest };
-    if (content !== undefined) data.content = sanitizeRichText(content);
+    if (content !== undefined) data.content = sanitizeMarkdown(content);
     return this.prisma.page.update({ where: { id }, data });
   }
 

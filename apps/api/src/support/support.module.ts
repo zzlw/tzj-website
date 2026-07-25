@@ -3,6 +3,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { createClient, type RedisClientType } from 'redis';
 import { IpLocationService } from '../analytics/ip-location.service';
 import { IntegrationsModule } from '../integrations/integrations.module';
+import { SecurityModule } from '../security/security.module';
 import { SettingsModule } from '../settings/settings.module';
 import { StorageModule } from '../storage/storage.module';
 import { ChatGateway } from './chat.gateway';
@@ -25,7 +26,13 @@ export interface ChatRedisClients {
 }
 
 @Module({
-  imports: [StorageModule, SettingsModule, IntegrationsModule, JwtModule.register({})],
+  imports: [
+    StorageModule,
+    SettingsModule,
+    IntegrationsModule,
+    SecurityModule,
+    JwtModule.register({}),
+  ],
   controllers: [SupportController, ChatRoomController],
   providers: [
     SupportService,

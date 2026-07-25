@@ -9,6 +9,11 @@ import {
   ImagePreviewProvider,
   Input,
   PageHeader,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   TablePagination,
   Tabs,
   TabsList,
@@ -16,7 +21,7 @@ import {
   TooltipProvider,
 } from '@tzj/ui';
 import { ImageOff, Loader2, Search, Upload, X } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Can } from '@/components/Can';
 import { MediaCard } from '@/components/media/MediaCard';
 import { MediaPreviewDialog } from '@/components/media/MediaPreviewDialog';
@@ -30,6 +35,7 @@ import {
   useUploadMedia,
 } from '@/features/media';
 import type { MediaAsset } from '@/features/types';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { ApiError } from '@/lib/apiClient';
 import { notifyError, notifySuccess } from '@/lib/notify';
 import { enumField, intField, stringField, useUrlState } from '@/lib/use-url-state';
@@ -54,6 +60,15 @@ const VIEW_TABS = [
 
 type ViewTab = (typeof VIEW_TABS)[number]['value'];
 
+/** 排序预设（对齐 WordPress 媒体库 / 云存储控制台惯例）；后端支持 createdAt/filename/size/updatedAt */
+const SORT_OPTIONS = [
+  { label: '最新上传', sortBy: 'createdAt', sortOrder: 'desc' },
+  { label: '最早上传', sortBy: 'createdAt', sortOrder: 'asc' },
+  { label: '文件名 A–Z', sortBy: 'filename', sortOrder: 'asc' },
+  { label: '体积从大到小', sortBy: 'size', sortOrder: 'desc' },
+  { label: '体积从小到大', sortBy: 'size', sortOrder: 'asc' },
+] as const;
+
 export default function MediaPage() {
   const [urlState, setUrlState] = useUrlState({
     view: enumField(['library', 'trash'] as const, 'library'),
@@ -62,8 +77,9 @@ export default function MediaPage() {
     page: intField(1, { min: 1 }),
     pageSize: intField(24, { min: 1 }),
     search: stringField(),
+    sortIdx: intField(0, { min: 0 }),
   });
-  const { view, type, folder, page, pageSize } = urlState;
+  const { view, type, folder, page, pageSize, sortIdx } = urlState;
   const search = urlState.search;
   const [searchInput, setSearchInput] = useState(() => urlState.search || '');
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
@@ -76,6 +92,14 @@ export default function MediaPage() {
   const replaceFileRef = useRef<HTMLInputElement>(null);
 
   const isTrash = view === 'trash';
+  const sort = SORT_OPTIONS[sortIdx] ?? SORT_OPTIONS[0];
+
+  // 击键防抖：停止输入 300ms 后自动落地检索词并回到第 1 页（对齐文档中心，免按回车）
+  const debouncedSearch = useDebouncedValue(searchInput.trim(), 300);
+  const appliedSearch = urlState.search || '';
+  useEffect(() => {
+    if (debouncedSearch !== appliedSearch) setUrlState({ search: debouncedSearch, page: 1 });
+  }, [debouncedSearch, appliedSearch, setUrlState]);
 
   const { data, isLoading, isError, error } = useMediaList({
     page,
@@ -83,6 +107,8 @@ export default function MediaPage() {
     type: type || undefined,
     folder: folder || undefined,
     search: search || undefined,
+    sortBy: sort.sortBy,
+    sortOrder: sort.sortOrder,
     trash: isTrash ? 1 : undefined,
   });
   const upload = useUploadMedia();
@@ -264,9 +290,9 @@ export default function MediaPage() {
       ) : null}
 
       <Card className="mb-6 border-border/80 py-0 shadow-sm">
-        <CardContent className="p-4">
+        <CardContent className="flex flex-wrap items-center gap-3 p-4">
           <form
-            className="relative max-w-md"
+            className="relative min-w-[220px] max-w-md flex-1"
             onSubmit={(e) => {
               e.preventDefault();
               setUrlState({ search: searchInput.trim(), page: 1 });
@@ -276,7 +302,7 @@ export default function MediaPage() {
             <Input
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="搜索文件名、文件夹、描述…"
+              placeholder="搜索文件名、文件夹、描述或对象 key…"
               className="pl-9 pr-9"
             />
             {searchInput && (
@@ -293,6 +319,23 @@ export default function MediaPage() {
               </button>
             )}
           </form>
+          <Select
+            value={String(sortIdx)}
+            onValueChange={(v) => {
+              setUrlState({ sortIdx: Number(v), page: 1 });
+            }}
+          >
+            <SelectTrigger className="h-9 w-[150px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {SORT_OPTIONS.map((opt, i) => (
+                <SelectItem key={`${opt.sortBy}:${opt.sortOrder}`} value={String(i)}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </CardContent>
       </Card>
 

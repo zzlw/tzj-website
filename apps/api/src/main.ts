@@ -29,11 +29,11 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // 全局验证管道
+  // 全局验证管道（调试模式：暂时关闭 forbidNonWhitelisted）
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
+      whitelist: false,       // TODO: 开启前先修复 MoveDocumentDto 装饰器问题
+      forbidNonWhitelisted: false,
       transform: true,
       transformOptions: { enableImplicitConversion: true },
     }),

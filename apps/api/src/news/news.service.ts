@@ -33,6 +33,7 @@ interface FindAllParams {
   page: number;
   limit: number;
   category?: string;
+  status?: string;
   search?: string;
   includeUnpublished?: boolean;
   sortBy?: string;
@@ -44,17 +45,23 @@ export class NewsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll(params: FindAllParams) {
-    const { page, limit, category, search, includeUnpublished = false, sortBy, sortOrder } = params;
+    const { page, limit, category, status, search, includeUnpublished = false, sortBy, sortOrder } =
+      params;
     const skip = (page - 1) * limit;
 
     const where: Prisma.NewsWhereInput = {
       ...applyPublishedFilter(includeUnpublished),
     };
+    // 后台（已登录）可按具体发布状态过滤；公开访问恒为「仅已发布」，忽略该参数以防越权查看草稿/归档。
+    if (status && includeUnpublished) where.status = status;
     if (category) where.category = category;
     if (search) {
+      // OR 模糊匹配业务关键文本字段（标题/摘要/正文/作者），覆盖后台常用检索维度。
       where.OR = [
         { title: { contains: search, mode: 'insensitive' } },
         { summary: { contains: search, mode: 'insensitive' } },
+        { content: { contains: search, mode: 'insensitive' } },
+        { author: { contains: search, mode: 'insensitive' } },
       ];
     }
 

@@ -8,7 +8,7 @@ import { JsonLd } from '@/components/JsonLd';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { Container, Eyebrow, RbButton, RbLink } from '@/components/ui';
 import { getTradeShow, getTradeShows } from '@/lib/api';
-import { fetchBySlug } from '@/lib/content-detail';
+import { fetchBySlug, previewParams } from '@/lib/content-detail';
 import { formatContentDate, tradeShowTypeLabel } from '@/lib/content-labels';
 import { pickCoverImage, pickSummary } from '@/lib/content-list';
 import { breadcrumbJsonLd, eventJsonLd } from '@/lib/jsonld';
@@ -16,32 +16,40 @@ import { generateSeo } from '@/lib/seo';
 
 interface TradeShowPageProps {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ previewToken?: string }>;
 }
 
-export async function generateMetadata({ params }: TradeShowPageProps): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+  searchParams,
+}: TradeShowPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const item = await fetchBySlug(getTradeShow, slug);
+  const { previewToken } = await searchParams;
+  const item = await fetchBySlug((s) => getTradeShow(s, previewParams(previewToken)), slug);
   if (!item) return {};
 
   const summary = pickSummary(item.summary, item.content);
 
-  return generateSeo({
+  const seo = generateSeo({
     title: (item as { seoTitle?: string }).seoTitle || item.title,
     description: (item as { seoDesc?: string }).seoDesc || summary,
     path: `/resources/trade-shows/${slug}`,
     image: pickCoverImage(item.coverImage),
     type: 'article',
   });
+  // 草稿预览链接不应被搜索引擎收录
+  return previewToken ? { ...seo, robots: { index: false, follow: false } } : seo;
 }
 
-export default async function TradeShowDetailPage({ params }: TradeShowPageProps) {
+export default async function TradeShowDetailPage({ params, searchParams }: TradeShowPageProps) {
   const { slug } = await params;
+  const { previewToken } = await searchParams;
   const t = await getTranslations('content.detail');
   const tBread = await getTranslations('breadcrumbs');
   const tCta = await getTranslations('cta');
   const locale = await getLocale();
 
-  const item = await fetchBySlug(getTradeShow, slug);
+  const item = await fetchBySlug((s) => getTradeShow(s, previewParams(previewToken)), slug);
   if (!item) notFound();
 
   const summary = pickSummary(item.summary, item.content);

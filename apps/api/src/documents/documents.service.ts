@@ -12,13 +12,13 @@ import {
 } from '../common/utils/content-list';
 import { applyContentEditorMetadata } from '../common/utils/content-metadata';
 import { generateDocumentSummary } from '../common/utils/document-summary';
-import { buildListOrderBy, OrderByEntry, parseListSort } from '../common/utils/list-sort';
+import { buildListOrderBy, type OrderByEntry, parseListSort } from '../common/utils/list-sort';
 import { sanitizeMarkdown } from '../common/utils/markdown';
 import { ensureUniqueDocumentSlug, slugifyTitle } from '../common/utils/slug';
 import { PrismaService } from '../prisma/prisma.service';
 import { DocTagsService } from './doc-tags.service';
 import { DocumentPermissionsService } from './document-permissions.service';
-import { CreateDocumentDto, UpdateDocumentDto } from './dto/document.dto';
+import type { CreateDocumentDto, UpdateDocumentDto } from './dto/document.dto';
 
 const LIST_SORT_FIELDS = [
   'title',
@@ -28,11 +28,16 @@ const LIST_SORT_FIELDS = [
   'updatedAt',
   'viewCount',
   'isPinned',
+  'sortOrder',
   'createdById',
   'lastOperatorId',
 ] as const;
 
-const DEFAULT_ORDER: OrderByEntry[] = [{ isPinned: 'desc' }, { updatedAt: 'desc' }];
+const DEFAULT_ORDER: OrderByEntry[] = [
+  { isPinned: 'desc' },
+  { sortOrder: 'asc' },
+  { updatedAt: 'desc' },
+];
 
 /**
  * 计算文档的可见范围
@@ -212,10 +217,15 @@ export class DocumentsService {
     }
     if (search?.trim()) {
       const q = search.trim();
+      // 全字段检索（业内知识库惯例：Notion/Confluence 搜标题+正文+标签+所属目录）：
+      // 标题/摘要/正文模糊匹配，标签精确命中，文件夹名模糊匹配（搜目录名可定位整类文档）。
       andFilters.push({
         OR: [
           { title: { contains: q, mode: 'insensitive' } },
           { summary: { contains: q, mode: 'insensitive' } },
+          { content: { contains: q, mode: 'insensitive' } },
+          { tags: { has: q } },
+          { folder: { is: { name: { contains: q, mode: 'insensitive' } } } },
         ],
       });
     }
@@ -517,6 +527,63 @@ export class DocumentsService {
       editorId,
       canManage,
     );
+  }
+
+  /** 文档中心 — 重排某文件夹（folderId 省略/null = 未分类）内个人文档的顺序 */
+  async reorderDocuments(
+    userId: string,
+    { folderId, orderedIds }: { folderId?: string | null; orderedIds: string[] },
+  ) {
+    const targetFolderId = folderId ?? null;
+    if (!orderedIds.length) return { reordered: 0 };
+
+    // 仅允许操作本人个人文档，且必须位于目标文件夹内
+    const docs = await this.prisma.internalDocument.findMany({
+      where: { id: { in: orderedIds }, ownerId: userId, folderId: targetFolderId },
+      select: { id: true },
+    });
+    const allowed = new Set(docs.map((d) => d.id));
+    const ids = orderedIds.filter((id) => allowed.has(id));
+
+    await this.prisma.$transaction(
+      ids.map((id, index) =>
+        this.prisma.internalDocument.update({
+          where: { id },
+          data: { sortOrder: index },
+        }),
+      ),
+    );
+    return { reordered: ids.length };
+  }
+
+  /** 文档中心 — 移动个人文档到目标文件夹并落到指定序位（省略则置末尾） */
+  async moveDocument(
+    userId: string,
+    id: string,
+    { folderId, sortOrder }: { folderId?: string | null; sortOrder?: number },
+  ) {
+    const doc = await this.prisma.internalDocument.findUnique({ where: { id } });
+    if (!doc) throw new NotFoundException(`文档 ID "${id}" 未找到`);
+    if (doc.ownerId !== userId) {
+      throw new ForbiddenException('无权移动此文档');
+    }
+
+    const targetFolderId = folderId ?? null;
+    await this.assertFolderScope(targetFolderId, true, userId);
+
+    let order = sortOrder;
+    if (order === undefined || order < 0) {
+      const last = await this.prisma.internalDocument.aggregate({
+        where: { ownerId: userId, folderId: targetFolderId },
+        _max: { sortOrder: true },
+      });
+      order = (last._max.sortOrder ?? -1) + 1;
+    }
+
+    return this.prisma.internalDocument.update({
+      where: { id },
+      data: { folderId: targetFolderId, sortOrder: order },
+    });
   }
 
   // ==================== 权限管理方法 ====================

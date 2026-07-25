@@ -14,6 +14,24 @@ export function extractClientIp(req: Request): string | undefined {
   return raw ? normalizeIp(raw) : undefined;
 }
 
+/**
+ * 从 Socket.IO 握手信息中提取客户端 IP（复用 HTTP 侧的 x-forwarded-for 优先策略）。
+ * 用于 WS 入口的 IP 封禁校验，与 extractClientIp 保持一致的取值口径。
+ */
+export function extractSocketIp(handshake: {
+  headers?: Record<string, string | string[] | undefined>;
+  address?: string;
+}): string | undefined {
+  const forwarded = handshake.headers?.['x-forwarded-for'];
+  if (typeof forwarded === 'string' && forwarded.trim()) {
+    return normalizeIp(forwarded.split(',')[0]?.trim() ?? '');
+  }
+  if (Array.isArray(forwarded) && forwarded[0]) {
+    return normalizeIp(forwarded[0].split(',')[0]?.trim() ?? '');
+  }
+  return handshake.address ? normalizeIp(handshake.address) : undefined;
+}
+
 /** 规范化 IPv4-mapped IPv6（::ffff:1.2.3.4 → 1.2.3.4） */
 export function normalizeIp(ip: string): string {
   const trimmed = ip.trim();

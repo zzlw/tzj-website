@@ -46,7 +46,7 @@ describe('chat-panel: engagement 信号与在线态解耦（业内最佳实践�
   beforeAll(() => {
     server = new FakeServer();
     presence = new ChatPresenceStore(null);
-    gateway = new ChatGateway(null as never, null as never, presence, null) as unknown as ChatGateway;
+    gateway = new ChatGateway(null as never, null as never, presence, null as never, null) as unknown as ChatGateway;
     gateway.server = server as never;
   });
 

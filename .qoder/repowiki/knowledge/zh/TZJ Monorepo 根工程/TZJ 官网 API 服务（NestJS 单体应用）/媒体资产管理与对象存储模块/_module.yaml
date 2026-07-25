@@ -1,0 +1,11 @@
+schema_version: 1
+module_path: api_server/media_storage
+title: 媒体资产管理与对象存储模块
+scope:
+    - apps/api/src/media/
+    - apps/api/src/storage/
+source_files: []
+depends_on: []
+related_to:
+    - path: admin_app/shared_features_api_hooks
+    - path: web_app/app_shell_lib

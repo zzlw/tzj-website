@@ -1350,16 +1350,18 @@ export function ChatWidget({
   //  - 在线单坐席：在线客服 · 通常 X 分钟内回复
   //  - 离开/离线：附「最后在线时间」
   const presenceLabel = !connected
-    ? // 尚未连接：若已知有坐席在线，按工作时间区分文案（非工作时间显示「在线但回复稍慢」，
-      // 与连接后的权威分支保持一致）；非营业且未知坐席数时不乐观声称在线，
-      // 避免与灰点 + 下班留言相互矛盾（连接后收到 agents-online 会立即纠正）。
-      agentsOnline > 0
+    ? // 尚未连接：文案与圆点共用同一真值 displayPresence（即圆点所依赖的
+      // effectivePresence），避免「计数未知但已收到 presence 在线信号」时，
+      // 圆点变绿而文案仍按 agentsOnline 判为离线的矛盾。
+      displayPresence === 'online'
       ? outsideHours
         ? t.presenceOutsideOnline
-        : `${t.onlineAgent} · ${slaOnline}`
-      : outsideHours
-        ? t.presenceOffline
-        : t.subtitle
+        : agentsOnline > 0
+          ? `${t.onlineAgent} · ${slaOnline}`
+          : t.subtitle
+      : displayPresence === 'away'
+        ? t.presenceAway
+        : t.presenceOffline
     : noAgentOnline
       ? t.presenceNoAgent
       : displayPresence === 'offline'

@@ -12,6 +12,7 @@ import { IpVisitorDetailSheet } from '@/components/analytics/IpVisitorDetailShee
 import { useSession } from '@/components/session';
 import type { IpDrawerSeed, VisitorProfileIdentity } from '@/features/analytics';
 import { VisitorProfileSheet } from '@/features/chat/components/VisitorProfileSheet';
+import { useStickyFlag } from '@/lib/use-sticky-flag';
 import { type VisitorDrawerApi, VisitorDrawerContext } from './context';
 
 interface PersonEntry {
@@ -98,6 +99,10 @@ export function VisitorDrawerProvider({ children }: { children: React.ReactNode 
     setIpEntry(null);
   }, [personEntry]);
 
+  // 人物层「粘滞」标记：人物抽屉打开期间为真，关闭后再保持短暂窗口（覆盖其关闭动画/焦点回迁）。
+  // 底层 IP 抽屉据此在 onInteractOutside/onEscapeKeyDown 拦截人物层关闭时级联的误关闭。
+  const personSticky = useStickyFlag(!!personEntry);
+
   return (
     <VisitorDrawerContext.Provider value={api}>
       {children}
@@ -109,6 +114,7 @@ export function VisitorDrawerProvider({ children }: { children: React.ReactNode 
         onOpenChange={(v) => {
           if (!v) closeIp();
         }}
+        shouldBlockDismiss={() => personSticky.current}
       />
 
       {/* 人物抽屉：作为二层叠在 IP 抽屉之上时遮罩透明 + 提供 onBack 弹回 IP 层 */}

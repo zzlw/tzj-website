@@ -14,6 +14,11 @@ export async function fetchBySlug<T>(
   }
 }
 
+/** 草稿预览：将 URL 上的 previewToken 转成 API 查询参数（无令牌时返回 undefined，保持公开可见性）。 */
+export function previewParams(previewToken?: string): Record<string, string> | undefined {
+  return previewToken ? { previewToken } : undefined;
+}
+
 export function parseCaseSpecs(raw: unknown): { label: string; value: string }[] {
   if (!Array.isArray(raw)) return [];
   return raw.filter(

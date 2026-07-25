@@ -60,6 +60,8 @@ export interface ResourceConfig<T> {
   schema: ZodType;
   defaults: Record<string, unknown>;
   searchable?: boolean;
+  /** 搜索框占位文案；应准确列出后端实际检索的字段，默认「搜索标题…」。 */
+  searchPlaceholder?: string;
   filters?: FilterDef[];
   /** 从实体映射为表单初始值（编辑时）。 */
   toForm?: (row: T) => Record<string, unknown>;
@@ -84,4 +86,6 @@ export interface ResourceConfig<T> {
   detailPath?: (row: T) => string;
   /** 自定义操作按钮（插入到默认操作之前） */
   extraActions?: (row: T) => ReactNode;
+  /** 固定操作列到右侧（列多、横向溢出时保持可见）。 */
+  pinActions?: boolean;
 }

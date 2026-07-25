@@ -23,7 +23,7 @@ import { useState } from 'react';
 import { LastOperatorCell } from '@/components/LastOperatorCell';
 import type { ChatRoom, ChatRoomStatusKey, PresenceStatus } from '../types';
 import type { OnlineAgent } from '../useChatSocket';
-import { VisitorInfoButton } from './VisitorInfoContent';
+import { VisitorInfoButton } from './VisitorInfoButton';
 
 const statusMeta: Record<ChatRoomStatusKey, { label: string; dot: string }> = {
   waiting: { label: '等待中', dot: 'bg-sky-500' },
@@ -46,14 +46,12 @@ function initials(name?: string, email?: string) {
 export function ChatHeader({
   room,
   onClose,
-  onConverted,
   onlineAgents = [],
   currentAgentEmail,
   onTransfer,
 }: {
   room: ChatRoom;
   onClose: () => void;
-  onConverted?: (customerId: string) => void;
   onlineAgents?: OnlineAgent[];
   currentAgentEmail?: string;
   onTransfer?: (email: string, note?: string) => void;
@@ -117,7 +115,7 @@ export function ChatHeader({
         </div>
       </div>
       <div className="flex items-center gap-1.5 sm:gap-2">
-        <VisitorInfoButton room={room} onConverted={onConverted} />
+        <VisitorInfoButton room={room} />
         <Button
           type="button"
           variant="ghost"

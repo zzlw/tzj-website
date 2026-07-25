@@ -1,0 +1,16 @@
+schema_version: 1
+module_path: web_app/shared_components
+title: 网站共享 UI 组件与页面区块
+scope:
+    - apps/web/src/components/layout/
+    - apps/web/src/components/content/
+    - apps/web/src/components/products/
+    - apps/web/src/components/sections/
+    - apps/web/src/components/ui/
+    - apps/web/src/components/analytics/
+    - apps/web/src/components/i18n/
+source_files: []
+depends_on: []
+related_to:
+    - path: packages/theme
+    - path: packages/ui

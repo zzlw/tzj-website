@@ -35,6 +35,7 @@ interface FindAllParams {
   page: number;
   limit: number;
   eventType?: string;
+  status?: string;
   search?: string;
   includeUnpublished?: boolean;
   sortBy?: string;
@@ -50,6 +51,7 @@ export class TradeShowsService {
       page,
       limit,
       eventType,
+      status,
       search,
       includeUnpublished = false,
       sortBy,
@@ -60,12 +62,18 @@ export class TradeShowsService {
     const where: Prisma.TradeShowWhereInput = {
       ...applyPublishedFilter(includeUnpublished),
     };
+    // 后台（已登录）可按具体发布状态过滤；公开访问恒为「仅已发布」，忽略该参数以防越权查看草稿/归档。
+    if (status && includeUnpublished) where.status = status;
     if (eventType) where.eventType = eventType;
     if (search) {
+      // OR 模糊匹配业务关键文本字段（标题/摘要/正文/地点/展位号/展示日期），覆盖后台常用检索维度。
       where.OR = [
         { title: { contains: search, mode: 'insensitive' } },
         { summary: { contains: search, mode: 'insensitive' } },
+        { content: { contains: search, mode: 'insensitive' } },
         { location: { contains: search, mode: 'insensitive' } },
+        { boothNumber: { contains: search, mode: 'insensitive' } },
+        { eventDateLabel: { contains: search, mode: 'insensitive' } },
       ];
     }
 

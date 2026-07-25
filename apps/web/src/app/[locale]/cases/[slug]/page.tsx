@@ -8,7 +8,7 @@ import { JsonLd } from '@/components/JsonLd';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { Container, Eyebrow, RbButton, RbLink } from '@/components/ui';
 import { getCase } from '@/lib/api';
-import { fetchBySlug, parseCaseSpecs } from '@/lib/content-detail';
+import { fetchBySlug, parseCaseSpecs, previewParams } from '@/lib/content-detail';
 import { caseTypeLabelI18n, formatContentDate } from '@/lib/content-labels';
 import { pickCoverImage } from '@/lib/content-list';
 import { articleJsonLd, breadcrumbJsonLd } from '@/lib/jsonld';
@@ -16,11 +16,13 @@ import { generateSeo } from '@/lib/seo';
 
 interface CasePageProps {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ previewToken?: string }>;
 }
 
-export async function generateMetadata({ params }: CasePageProps): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: CasePageProps): Promise<Metadata> {
   const { slug } = await params;
-  const caseStudy = await fetchBySlug(getCase, slug);
+  const { previewToken } = await searchParams;
+  const caseStudy = await fetchBySlug((s) => getCase(s, previewParams(previewToken)), slug);
   if (!caseStudy) return {};
 
   const summary =
@@ -28,24 +30,27 @@ export async function generateMetadata({ params }: CasePageProps): Promise<Metad
     (caseStudy as { description?: string }).description ??
     '';
 
-  return generateSeo({
+  const seo = generateSeo({
     title: (caseStudy as { seoTitle?: string }).seoTitle || caseStudy.title,
     description: (caseStudy as { seoDesc?: string }).seoDesc || summary,
     path: `/cases/${slug}`,
     image: pickCoverImage(caseStudy.coverImage),
     type: 'article',
   });
+  // 草稿预览链接不应被搜索引擎收录
+  return previewToken ? { ...seo, robots: { index: false, follow: false } } : seo;
 }
 
-export default async function CaseDetailPage({ params }: CasePageProps) {
+export default async function CaseDetailPage({ params, searchParams }: CasePageProps) {
   const { slug } = await params;
+  const { previewToken } = await searchParams;
   const t = await getTranslations('content.detail');
   const tBread = await getTranslations('breadcrumbs');
   const tCta = await getTranslations('cta');
   const tCases = await getTranslations('content.categories.cases');
   const locale = await getLocale();
 
-  const caseStudy = await fetchBySlug(getCase, slug);
+  const caseStudy = await fetchBySlug((s) => getCase(s, previewParams(previewToken)), slug);
   if (!caseStudy) notFound();
 
   const summary =

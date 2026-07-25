@@ -1,0 +1,9 @@
+schema_version: 1
+module_path: api_server/audit
+title: 审计日志查询模块
+scope:
+    - apps/api/src/audit/
+source_files: []
+depends_on: []
+related_to:
+    - path: admin_app/shared_features_api_hooks

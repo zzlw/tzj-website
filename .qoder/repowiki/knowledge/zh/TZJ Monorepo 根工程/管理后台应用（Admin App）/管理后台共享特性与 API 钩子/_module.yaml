@@ -1,0 +1,19 @@
+schema_version: 1
+module_path: admin_app/shared_features_api_hooks
+title: 管理后台共享特性与 API 钩子
+scope:
+    - apps/admin/src/features/
+    - apps/admin/src/hooks/
+    - apps/admin/src/lib/
+source_files: []
+depends_on: []
+related_to:
+    - path: api_server/access_management
+    - path: api_server/audit
+    - path: api_server/customers
+    - path: api_server/documents
+    - path: api_server/media_storage
+    - path: api_server/notifications
+    - path: api_server/security
+    - path: api_server/users
+    - path: packages/types

@@ -1,0 +1,15 @@
+schema_version: 1
+module_path: admin_app/shared_crud_components
+title: Admin 通用 CRUD 与媒体组件库
+scope:
+    - apps/admin/src/components/crud/
+    - apps/admin/src/components/media/
+    - apps/admin/src/components/Can.tsx
+    - apps/admin/src/components/CopyableText.tsx
+    - apps/admin/src/components/RichHint.tsx
+    - apps/admin/src/components/session.tsx
+source_files: []
+depends_on: []
+related_to:
+    - path: packages/dnd
+    - path: packages/ui

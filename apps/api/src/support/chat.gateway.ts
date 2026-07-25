@@ -12,6 +12,9 @@ import {
 import { createAdapter } from '@socket.io/redis-adapter';
 import type { RedisClientType } from 'redis';
 import type { Server, Socket, RemoteSocket } from 'socket.io';
+import { extractSocketIp } from '../common/utils/client-ip';
+// biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
+import { IpBanService } from '../security/ip-ban.service';
 // biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
 import { ChatAuthService } from './chat-auth.service';
 import type { ChatTokenPayload } from './chat-auth.service';
@@ -121,6 +124,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly chatRoomService: ChatRoomService,
     private readonly chatAuth: ChatAuthService,
     private readonly presence: ChatPresenceStore,
+    private readonly ipBanService: IpBanService,
     @Inject('CHAT_REDIS')
     private readonly redis: { pub: RedisClientType; sub: RedisClientType } | null,
   ) {}
@@ -151,9 +155,32 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const token =
       (client.handshake.auth && (client.handshake.auth.token as string | undefined)) || undefined;
 
+    // 令牌校验前置：先解析身份以决定封禁豁免（坐席豁免，与 HTTP 侧 IpBanGuard「只封游客」一致）。
+    let payload: ChatTokenPayload | null = null;
+    if (token) {
+      try {
+        payload = this.chatAuth.verify(token);
+      } catch (error) {
+        client.emit('auth-error', { message: (error as Error).message });
+        client.disconnect(true);
+        return;
+      }
+    }
+
+    // WS 入口 IP 封禁：非坐席连接（匿名访客 / 访客令牌）命中封禁名单即拒绝握手，
+    // 与 HTTP 侧 IpBanGuard 对齐，避免被封 IP 绕过 HTTP 封禁经聊天通道骚扰。
+    if (payload?.type !== 'agent') {
+      const ip = extractSocketIp(client.handshake);
+      if (ip && (await this.ipBanService.isBlocked(ip))) {
+        client.emit('auth-error', { message: '您的访问已被限制，如有疑问请联系管理员' });
+        client.disconnect(true);
+        return;
+      }
+    }
+
     // 匿名连接（无 token）：允许保持连接以接收坐席可用性广播（agents-online / presence-changed），
     // 使访客在创建房间之前就能看到客服在线状态。所有需要身份的操作由 getAuth() 守卫。
-    if (!token) {
+    if (!payload) {
       const avail = await this.agentAvailability();
       client.emit('agents-online', avail);
       client.emit('presence-changed', {
@@ -164,15 +191,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         awayCount: avail.away,
         lastOnlineAt: avail.lastOnlineAt,
       });
-      return;
-    }
-
-    let payload: ChatTokenPayload;
-    try {
-      payload = this.chatAuth.verify(token);
-    } catch (error) {
-      client.emit('auth-error', { message: (error as Error).message });
-      client.disconnect(true);
       return;
     }
 
@@ -1338,6 +1356,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   /** 广播在线坐席花名册（仅给坐席端，供转接时选择目标；含 email + 状态 + 显示名 + 工作量）。 */
   private async broadcastAgentRoster(): Promise<void> {
     try {
+      // 与 broadcastRoomListUpdate / broadcastNotificationCounts 一致的防御性守卫：
+      // chatRoomService 未注入或缺该方法（如测试桩）时静默跳过，避免 caught 噪声日志。
+      // 生产环境真实 ChatRoomService 恒有此方法，守卫永不触发，行为无变化。
+      if (!this.chatRoomService?.getAgentRosterDetails) return;
       const allAgents = await this.presence.getAgentSummaries();
       // 仅保留有活跃 socket 连接的坐席（排除 Redis 中的僵尸/离线记录）
       const agents = allAgents.filter((a) => a.socketCount > 0);

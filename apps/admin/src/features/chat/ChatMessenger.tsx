@@ -1343,14 +1343,6 @@ export function ChatMessenger() {
     [socket],
   );
 
-  const handleConverted = useCallback(
-    (customerId: string) => {
-      if (!selectedRoomRef.current) return;
-      patchRoom(selectedRoomRef.current.roomId, { customerId });
-    },
-    [patchRoom],
-  );
-
   const handleLoadMore = useCallback(async () => {
     if (loadingMore) return;
     setLoadingMore(true);
@@ -1520,7 +1512,6 @@ export function ChatMessenger() {
           onClose={handleClose}
           quickReplies={QUICK_REPLIES}
           onQuickReply={handleQuickReply}
-          onConverted={handleConverted}
           onlineAgents={onlineAgents}
           currentAgentEmail={agentEmail}
           onTransfer={handleTransfer}

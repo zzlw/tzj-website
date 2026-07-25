@@ -13,9 +13,11 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@tzj/ui';
-import { Hand, Undo2, UserPlus } from 'lucide-react';
-import { useMemo } from 'react';
+import { Hand, Undo2, Upload, UserPlus } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { CopyableText } from '@/components/CopyableText';
 import { ResourceListView } from '@/components/crud/ResourceListView';
+import { ImportCustomersDialog } from '@/components/customers/ImportCustomersDialog';
 import { useSession } from '@/components/session';
 import { useVisitorDrawer } from '@/components/visitor-drawer/context';
 import { customersConfig } from '@/features/resources/customers';
@@ -33,35 +35,43 @@ export function CustomerList({ scope }: { scope: 'mine' | 'public' }) {
   const qc = useQueryClient();
   const { permissions } = useSession();
   const canManage = permissions.includes('customers.manage') || permissions.includes('*');
-  const { openPerson } = useVisitorDrawer();
+  const { openPerson, openIp } = useVisitorDrawer();
+  const [importOpen, setImportOpen] = useState(false);
 
-  // 在共享 config 基础上注入可点击「访客 ID」列（私海/公海共用），
-  // 插在“下次跟进”之后、审计列之前；点击打开全局访客抽屉。
+  // 在共享 config 基础上注入可点击「访客 ID」「最后访问 IP」两列（私海/公海共用），
+  // 置于表首便于定位；访客 ID 列固定在左侧（横向溢出时保持可见）；点击分别打开全局访客 / IP 抽屉。
   const config = useMemo(() => {
     const columns = [...customersConfig.columns];
     const visitorColumn = {
       key: 'visitorId',
       header: '访客 ID',
       className: 'whitespace-nowrap',
+      pinLeft: true,
       cell: (r: CustomerItem) => {
         const vid = r.visitorId;
         if (!vid) return <span className="text-muted-foreground">—</span>;
         return (
-          <button
-            type="button"
-            onClick={() => openPerson(vid)}
-            title={vid}
-            className="font-mono text-xs text-primary hover:underline"
-          >
-            #{vid.slice(0, 8)}
-          </button>
+          <CopyableText value={vid} display={`#${vid.slice(0, 8)}`} onActivate={() => openPerson(vid)} />
         );
       },
     };
-    const at = columns.findIndex((c) => c.key === 'nextFollowAt');
-    columns.splice(at >= 0 ? at + 1 : columns.length, 0, visitorColumn);
+    const ipColumn = {
+      key: 'lastIp',
+      header: '最后访问 IP',
+      className: 'whitespace-nowrap',
+      cell: (r: CustomerItem) => {
+        const hash = r.lastIpHash;
+        return (
+          <CopyableText
+            value={r.lastIp ?? null}
+            onActivate={hash ? () => openIp(hash, { ipMasked: r.lastIpMasked ?? null }) : undefined}
+          />
+        );
+      },
+    };
+    columns.unshift(visitorColumn, ipColumn);
     return { ...customersConfig, columns };
-  }, [openPerson]);
+  }, [openPerson, openIp]);
 
   const agentsQ = useQuery<Agent[]>({
     queryKey: ['customers', 'agents'],
@@ -180,6 +190,22 @@ export function CustomerList({ scope }: { scope: 'mine' | 'public' }) {
       extraListParams={{ scope }}
       rowActions={rowActions}
       titleOverride={scope === 'mine' ? '我的客户' : '公海客户'}
+      headerActions={
+        canManage ? (
+          <>
+            <Button variant="outline" onClick={() => setImportOpen(true)}>
+              <Upload className="mr-2 h-4 w-4" />
+              导入 CSV
+            </Button>
+            <ImportCustomersDialog
+              scope={scope}
+              open={importOpen}
+              onOpenChange={setImportOpen}
+              onImported={invalidate}
+            />
+          </>
+        ) : undefined
+      }
     />
   );
 }

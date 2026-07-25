@@ -96,6 +96,34 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* 侧边栏内容区滚动条 — 细窄、半透明、hover 加深，避免原生滚动条又粗又丑。
+   展开态用 6px 细滚动条；折叠（纯 icon）态内容通常无需滚动，隐藏滚动条以保持整洁。 */
+[data-sidebar="content"] {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--color-border-strong) 80%, transparent) transparent;
+}
+[data-sidebar="content"]::-webkit-scrollbar {
+  width: 6px;
+}
+[data-sidebar="content"]::-webkit-scrollbar-track {
+  background: transparent;
+}
+[data-sidebar="content"]::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--color-border-strong) 70%, transparent);
+  border-radius: 9999px;
+}
+[data-sidebar="content"]:hover::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--color-muted-foreground) 55%, transparent);
+}
+/* 折叠态：隐藏滚动条（纯 icon 宽度仅 3rem，滚动条占比过大且不优雅） */
+[data-collapsible="icon"] [data-sidebar="content"] {
+  scrollbar-width: none;
+}
+[data-collapsible="icon"] [data-sidebar="content"]::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
 /* Vditor Markdown 编辑器 — 浅色主题适配 Admin */
 .markdown-editor .vditor {
   --panel-background-color: #ffffff;

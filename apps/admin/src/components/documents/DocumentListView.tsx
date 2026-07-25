@@ -43,10 +43,11 @@ import {
   Plus,
   Tags,
   Trash2,
+  X,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Can } from '@/components/Can';
 import { DocumentPermissionDialog } from '@/components/DocumentPermissionDialog';
 import { DocumentMoveDialog } from '@/components/documents/DocumentMoveDialog';
@@ -57,6 +58,8 @@ import { buildDocListHref, useDocTags } from '@/features/documents';
 import { useList, useRemove } from '@/features/hooks';
 import type { DocumentsResourceConfig } from '@/features/resources/documents';
 import type { InternalDocumentItem } from '@/features/types';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import { highlightKeyword } from '@/lib/highlight';
 import { notifyError, notifySuccess } from '@/lib/notify';
 import { intField, stringField, useUrlState } from '@/lib/use-url-state';
 
@@ -188,6 +191,7 @@ function DocumentListRow({
   config,
   folderId,
   activeTag,
+  search,
   onMove,
   onDelete,
 }: {
@@ -195,6 +199,8 @@ function DocumentListRow({
   config: DocumentsResourceConfig;
   folderId?: string;
   activeTag?: string;
+  /** 已应用的检索词：命中时高亮标题/摘要（业内检索惯例） */
+  search?: string;
   onMove: () => void;
   onDelete: () => void;
 }) {
@@ -208,8 +214,8 @@ function DocumentListRow({
       linkLabel={doc.title}
       variant={pinned ? 'pinned' : 'default'}
       icon={pinned ? <Pin className="h-5 w-5 fill-current" /> : <FileText className="h-5 w-5" />}
-      title={doc.title}
-      description={summary}
+      title={highlightKeyword(doc.title, search)}
+      description={highlightKeyword(summary, search)}
       badges={<>{pinned ? <PinnedBadge /> : null}</>}
       tags={
         doc.tags?.length
@@ -317,6 +323,14 @@ export function DocumentListView({
   const folderId = extraListParams?.folderId;
   const activeTag = extraListParams?.tag;
 
+  // 击键防抖：停止输入 300ms 后才把检索词落地到 URL 并回到第 1 页（对齐 ResourceListView，
+  // 避免逐键请求后端）。初次挂载 debouncedSearch 恒等于已应用值，故跳过写入、不误重置分页。
+  const debouncedSearch = useDebouncedValue(searchInput.trim(), 300);
+  const appliedSearch = urlState.search || '';
+  useEffect(() => {
+    if (debouncedSearch !== appliedSearch) setUrlState({ search: debouncedSearch, page: 1 });
+  }, [debouncedSearch, appliedSearch, setUrlState]);
+
   const { data: tagStats, isLoading: tagsLoading } = useDocTags();
 
   const buildTagHref = (tag?: string) =>
@@ -345,6 +359,34 @@ export function DocumentListView({
 
   const rows = data?.data ?? [];
   const pagination = data?.pagination;
+
+  // 已应用的搜索/标签摘要：驱动「活动筛选芯片 + 命中计数 + 一键清除」（对齐分面检索惯例）。
+  const activeChips: { key: string; label: string; value: string; onRemove: () => void }[] = [];
+  if (search) {
+    activeChips.push({
+      key: 'search',
+      label: '搜索',
+      value: search,
+      onRemove: () => {
+        setSearchInput('');
+        setUrlState({ search: '', page: 1 });
+      },
+    });
+  }
+  if (activeTag) {
+    activeChips.push({
+      key: 'tag',
+      label: '标签',
+      value: activeTag,
+      onRemove: () => router.push(buildDocListHref(config.basePath, { folder: folderId })),
+    });
+  }
+
+  // 一键清除：重置搜索并回到 basePath（同时清掉 folder/tag 查询）。
+  const clearAllFilters = () => {
+    setSearchInput('');
+    router.push(config.basePath);
+  };
 
   const { pinnedRows, restRows } = useMemo(() => {
     const pinned: InternalDocumentItem[] = [];
@@ -399,7 +441,7 @@ export function DocumentListView({
         onSearchSubmit={() => {
           setUrlState({ search: searchInput.trim(), page: 1 });
         }}
-        searchPlaceholder="搜索标题或摘要…"
+        searchPlaceholder="搜索标题、摘要、正文、标签或文件夹…"
       >
         <Select
           value={String(sortIdx)}
@@ -419,6 +461,48 @@ export function DocumentListView({
           </SelectContent>
         </Select>
       </ListToolbar>
+
+      {activeChips.length > 0 ? (
+        <div className="mb-4 flex flex-wrap items-center gap-1.5">
+          {pagination ? (
+            <span className="mr-1 text-xs text-muted-foreground">
+              找到{' '}
+              <span className="font-medium text-foreground tabular-nums">
+                {pagination.total.toLocaleString('zh-CN')}
+              </span>{' '}
+              条结果
+            </span>
+          ) : null}
+          {activeChips.map((chip) => (
+            <Badge
+              key={chip.key}
+              variant="outline"
+              className="gap-1 border-border bg-muted/60 font-normal text-muted-foreground"
+            >
+              <span className="text-foreground/60">{chip.label}：</span>
+              {chip.value}
+              <button
+                type="button"
+                aria-label={`移除${chip.label}筛选`}
+                onClick={chip.onRemove}
+                className="hover:text-foreground"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          ))}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={clearAllFilters}
+            className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-3.5 w-3.5" />
+            清除全部
+          </Button>
+        </div>
+      ) : null}
 
       {tagStats?.length || activeTag ? (
         <Card className="mb-4 border-border/80 py-0 shadow-sm">
@@ -489,6 +573,7 @@ export function DocumentListView({
                   config={config}
                   folderId={folderId}
                   activeTag={activeTag}
+                  search={search}
                   onMove={() => setMoveTarget(doc)}
                   onDelete={() => setDeleteTarget(doc)}
                 />
@@ -503,6 +588,7 @@ export function DocumentListView({
                   config={config}
                   folderId={folderId}
                   activeTag={activeTag}
+                  search={search}
                   onMove={() => setMoveTarget(doc)}
                   onDelete={() => setDeleteTarget(doc)}
                 />

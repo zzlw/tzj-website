@@ -1455,33 +1455,39 @@ export class AnalyticsService {
   }
 
   /**
-   * 人物级转化状态：复用询盘反查口径（Visitor.userId=contactId / 同 email）取该访客的 Contact，
-   * 返回最近一条 contactId（转化去重锚点）与任一已关联 Customer id（已转标记）。
+   * 人物级转化状态：覆盖询盘 contactId / 访客 visitorId 两条归因链路，
+   * 任一命中已关联 Customer 即标记「已转客户」；同时返回最近一条 contactId 作转化去重锚点。
+   * 纯访客/纯聊天转化（无询盘）依靠转化时回写的 visitorId 识别，避免头部误显示未转化。
    */
   private async resolveVisitorLeadStatus(
     visitorId: string,
     visitor: { userId: string | null; email: string | null } | null,
   ): Promise<{ latestContactId: string | null; convertedCustomerId: string | null }> {
-    const contactIds = [visitorId, visitor?.userId].filter((v): v is string => !!v);
+    // 访客身份键：匿名 ID 与识别后的 userId 均视为同一访客
+    const visitorKeys = [visitorId, visitor?.userId].filter((v): v is string => !!v);
     const emails = [visitor?.email].filter((v): v is string => !!v);
-    if (contactIds.length === 0 && emails.length === 0) {
-      return { latestContactId: null, convertedCustomerId: null };
-    }
-    const contacts = await this.prisma.contact.findMany({
-      where: { OR: [{ id: { in: contactIds } }, { email: { in: emails } }] },
-      orderBy: { createdAt: 'desc' },
-      select: { id: true },
-    });
-    const [latest] = contacts;
-    if (!latest) {
-      return { latestContactId: null, convertedCustomerId: null };
-    }
-    const customer = await this.prisma.customer.findFirst({
-      where: { contactId: { in: contacts.map((c) => c.id) } },
-      select: { id: true },
-    });
+
+    // 询盘链路：按 userId=contactId 或同 email 反解该访客的 Contact（最近一条作转化去重锚点）
+    const contacts =
+      visitorKeys.length || emails.length
+        ? await this.prisma.contact.findMany({
+            where: { OR: [{ id: { in: visitorKeys } }, { email: { in: emails } }] },
+            orderBy: { createdAt: 'desc' },
+            select: { id: true },
+          })
+        : [];
+    const contactIds = contacts.map((c) => c.id);
+
+    // 已转客户：询盘 / 访客两条归因链路任一命中即视为已转
+    const orConds: Prisma.CustomerWhereInput[] = [];
+    if (contactIds.length) orConds.push({ contactId: { in: contactIds } });
+    if (visitorKeys.length) orConds.push({ visitorId: { in: visitorKeys } });
+    const customer = orConds.length
+      ? await this.prisma.customer.findFirst({ where: { OR: orConds }, select: { id: true } })
+      : null;
+
     return {
-      latestContactId: latest.id,
+      latestContactId: contacts[0]?.id ?? null,
       convertedCustomerId: customer?.id ?? null,
     };
   }

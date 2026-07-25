@@ -7,13 +7,20 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { cn } from '../../lib/utils';
 import { Card } from '../card';
 import { Skeleton } from '../skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../table';
 
 export type SortOrder = 'asc' | 'desc';
+
+/** 左固定列阴影：分隔线 + 右侧外挂 10px 渐变（::after 画在相邻内容上方，不受 border-collapse 限制） */
+const PIN_LEFT_SHADOW =
+  'border-r border-border after:pointer-events-none after:absolute after:inset-y-0 after:left-full after:w-2.5 after:bg-gradient-to-r after:from-black/15 after:to-transparent';
+/** 右固定列阴影：分隔线 + 左侧外挂 10px 渐变 */
+const PIN_RIGHT_SHADOW =
+  'border-l border-border after:pointer-events-none after:absolute after:inset-y-0 after:right-full after:w-2.5 after:bg-gradient-to-l after:from-black/15 after:to-transparent';
 
 export interface DataTableSort {
   column: string;
@@ -52,6 +59,8 @@ export interface DataTableProps<T extends { id: string }> {
   defaultSort?: DataTableSort | null;
   /** 排序变化：asc → desc → 恢复默认。 */
   onSortChange?: (sort: DataTableSort | null) => void;
+  /** 固定操作列到右侧（宽表横向滚动时保持可见）。 */
+  pinActions?: boolean;
 }
 
 function SortableHeader({
@@ -110,6 +119,7 @@ export function DataTable<T extends { id: string }>({
   sort,
   defaultSort,
   onSortChange,
+  pinActions,
 }: DataTableProps<T>) {
   const tanstackColumns = useMemo<TanstackColumnDef<T>[]>(() => {
     const cols: TanstackColumnDef<T>[] = columns.map((c) => ({
@@ -137,10 +147,11 @@ export function DataTable<T extends { id: string }>({
         id: '__actions',
         header: () => '操作',
         cell: ({ row }) => renderActions(row.original),
+        meta: pinActions ? { pinRight: true } : undefined,
       });
     }
     return cols;
-  }, [columns, renderActions, sort, defaultSort, onSortChange]);
+  }, [columns, renderActions, sort, defaultSort, onSortChange, pinActions]);
 
   const table = useReactTable({
     data: rows,
@@ -150,9 +161,37 @@ export function DataTable<T extends { id: string }>({
 
   const colCount = tanstackColumns.length;
 
+  // 固定列滚动阴影：仅当该侧有内容被滚出视口时，才给对应固定列加分隔线 + 阴影，
+  // 滚到边缘（无遮挡内容）时隐去，避免未滚动的表格出现多余竖线。这是让用户「感知列已固定」的关键。
+  // 实现注意：Tailwind preflight 将 table 设为 border-collapse，而 CSS 规范规定 collapse 模型下
+  // box-shadow 对 td/th 不生效（曾直接给单元格加 shadow-* 完全不渲染）。
+  // 故采用业内通行方案（Ant Design 同款）：用 ::after 伪元素在固定列外侧画渐变阴影。
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const [atLeft, setAtLeft] = useState(true);
+  const [atRight, setAtRight] = useState(true);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const update = () => {
+      const { scrollLeft, scrollWidth, clientWidth } = el;
+      setAtLeft(scrollLeft <= 0);
+      // -1 容差：抵消部分浏览器在缩放/小数像素下的取整误差
+      setAtRight(scrollLeft + clientWidth >= scrollWidth - 1);
+    };
+    update();
+    el.addEventListener('scroll', update, { passive: true });
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener('scroll', update);
+      ro.disconnect();
+    };
+    // rows/loading/colCount 变化会改变内容宽度，需重算是否溢出
+  }, [rows, loading, colCount]);
+
   return (
     <Card className="overflow-hidden border-border/80 py-0 shadow-sm">
-      <Table>
+      <Table containerRef={scrollRef}>
         <TableHeader>
           {table.getHeaderGroups().map((hg) => (
             <TableRow key={hg.id} className="hover:bg-transparent">
@@ -166,9 +205,10 @@ export function DataTable<T extends { id: string }>({
                     className={cn(
                       'whitespace-nowrap',
                       header.column.id === '__actions' && 'text-right',
-                      meta?.pinRight &&
-                        'sticky right-0 z-20 bg-card text-right border-l border-border/60',
-                      meta?.pinLeft && 'sticky left-0 z-20 bg-card border-r border-border/60',
+                      meta?.pinRight && 'sticky right-0 z-20 bg-card text-right',
+                      meta?.pinRight && !atRight && PIN_RIGHT_SHADOW,
+                      meta?.pinLeft && 'sticky left-0 z-20 bg-card',
+                      meta?.pinLeft && !atLeft && PIN_LEFT_SHADOW,
                     )}
                   >
                     {flexRender(header.column.columnDef.header, header.getContext())}
@@ -207,8 +247,10 @@ export function DataTable<T extends { id: string }>({
                       key={cell.id}
                       className={cn(
                         cell.column.id === '__actions' ? 'text-right' : meta?.className,
-                        meta?.pinRight && 'sticky right-0 z-10 bg-card border-l border-border/60',
-                        meta?.pinLeft && 'sticky left-0 z-10 bg-card border-r border-border/60',
+                        meta?.pinRight && 'sticky right-0 z-10 bg-card',
+                        meta?.pinRight && !atRight && PIN_RIGHT_SHADOW,
+                        meta?.pinLeft && 'sticky left-0 z-10 bg-card',
+                        meta?.pinLeft && !atLeft && PIN_LEFT_SHADOW,
                       )}
                     >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}

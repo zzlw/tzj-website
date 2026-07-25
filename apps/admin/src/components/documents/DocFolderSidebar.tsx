@@ -1,6 +1,13 @@
 'use client';
 
 import {
+  collectDescendantIds,
+  type FlatNode,
+  type RenderItemArgs,
+  SortableTree,
+  type SortableTreeMoveEvent,
+} from '@tzj/dnd';
+import {
   Button,
   Card,
   CardContent,
@@ -30,6 +37,7 @@ import {
   Folder,
   FolderOpen,
   FolderPlus,
+  GripVertical,
   Inbox,
   MoreHorizontal,
   Pencil,
@@ -38,15 +46,27 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import {
+  type ButtonHTMLAttributes,
+  type Ref,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { Can } from '@/components/Can';
 import {
   useCreatePersonalFolder,
   useDocFolderTree,
-  useFolderDocuments,
+  useFolderDocumentsBatch,
+  useMoveDocument,
+  useMoveFolder,
   useRemovePersonalFolder,
   useRenamePersonalFolder,
+  useReorderDocuments,
+  useReorderFolders,
 } from '@/features/documents';
+import { useRemove, useUpdate } from '@/features/hooks';
 import type { DocFolderTreeNode, InternalDocumentItem } from '@/features/types';
 import { notifyError, notifySuccess } from '@/lib/notify';
 
@@ -63,7 +83,7 @@ function collectAncestorIds(nodes: DocFolderTreeNode[], targetId: string): Set<s
   function walk(list: DocFolderTreeNode[], ancestors: string[]): boolean {
     for (const node of list) {
       if (node.id === targetId) {
-        ancestors.forEach((id) => result.add(id));
+        for (const id of ancestors) result.add(id);
         return true;
       }
       if (node.children.length > 0 && walk(node.children, [...ancestors, node.id])) {
@@ -76,13 +96,40 @@ function collectAncestorIds(nodes: DocFolderTreeNode[], targetId: string): Set<s
   return result;
 }
 
+/** 收集可见文件夹 id（根级恒可见；子级仅当父级展开时可见）——决定需预取文档的文件夹范围 */
+function collectVisibleFolderIds(
+  nodes: DocFolderTreeNode[],
+  expandedIds: Set<string>,
+  out: string[] = [],
+): string[] {
+  for (const node of nodes) {
+    out.push(node.id);
+    if (expandedIds.has(node.id)) {
+      collectVisibleFolderIds(node.children, expandedIds, out);
+    }
+  }
+  return out;
+}
+
+/** 收集全部文件夹 id → 节点映射，供 renderItem 反查 */
+function indexFolders(
+  nodes: DocFolderTreeNode[],
+  map: Map<string, DocFolderTreeNode> = new Map(),
+): Map<string, DocFolderTreeNode> {
+  for (const node of nodes) {
+    map.set(node.id, node);
+    if (node.children.length > 0) indexFolders(node.children, map);
+  }
+  return map;
+}
+
 function FolderNavItem({
   href,
   label,
   active,
   icon: Icon,
   depth = 0,
-  /** 与文件夹树行对齐（预留 chevron 占位） */
+  /** 与文件夹树行对齐（预留 chevron + 手柄占位） */
   alignWithTree = false,
 }: {
   href: string;
@@ -103,7 +150,7 @@ function FolderNavItem({
             : 'text-muted-foreground hover:bg-muted hover:text-foreground',
         )}
       >
-        {alignWithTree ? <span className="w-5 shrink-0" aria-hidden /> : null}
+        {alignWithTree ? <span className="w-9 shrink-0" aria-hidden /> : null}
         <Icon className="h-4 w-4 shrink-0 opacity-70" />
         <span className="min-w-0 truncate pl-1.5" title={label}>
           {label}
@@ -113,247 +160,289 @@ function FolderNavItem({
   );
 }
 
-function FolderTreeNode({
-  node,
+/** 拖拽手柄（悬停显现，键盘可聚焦） */
+function DragHandle({ handleProps }: { handleProps: RenderItemArgs['handleProps'] }) {
+  return (
+    <button
+      type="button"
+      aria-label="拖动排序"
+      className="flex h-6 w-4 shrink-0 cursor-grab touch-none items-center justify-center rounded-sm text-muted-foreground opacity-0 transition-opacity hover:bg-background/60 group-hover:opacity-60 focus-visible:opacity-100 active:cursor-grabbing"
+      {...(handleProps as ButtonHTMLAttributes<HTMLButtonElement> & {
+        ref?: Ref<HTMLButtonElement>;
+      })}
+    >
+      <GripVertical className="h-3.5 w-3.5" />
+    </button>
+  );
+}
+
+function SidebarFolderRow({
+  folder,
   depth,
-  activeId,
+  active,
   basePath,
   manageable,
-  expandedIds,
+  expanded,
+  expandable,
+  isDragging,
+  isOverlay,
+  isDropTarget,
+  handleProps,
   onToggle,
   onAddChild,
   onRename,
   onDelete,
 }: {
-  node: DocFolderTreeNode;
+  folder: DocFolderTreeNode;
   depth: number;
-  activeId: string | null;
+  active: boolean;
   basePath: string;
   manageable: boolean;
-  expandedIds: Set<string>;
+  expanded: boolean;
+  expandable: boolean;
+  isDragging: boolean;
+  isOverlay: boolean;
+  isDropTarget: boolean;
+  handleProps: RenderItemArgs['handleProps'];
   onToggle: (id: string) => void;
   onAddChild: (parentId: string | null) => void;
   onRename: (folder: DocFolderTreeNode) => void;
   onDelete: (folder: DocFolderTreeNode) => void;
 }) {
-  const hasChildren = node.children.length > 0;
-  const expanded = expandedIds.has(node.id);
-  const active = activeId === node.id;
   const Icon = active ? FolderOpen : Folder;
-
   const [createOpen, setCreateOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const anyPopoverOpen = createOpen || moreOpen;
 
-  const { data: docsData } = useFolderDocuments(node.id);
-  const folderDocs = docsData?.data ?? [];
-  const hasDocs = folderDocs.length > 0;
-  const expandable = hasChildren || hasDocs;
-  const showChildren = expanded && expandable;
-
   return (
-    <li>
+    <div
+      className={cn(
+        'group relative mb-0.5 rounded-md',
+        isDragging && 'opacity-40',
+        isOverlay && 'bg-background shadow-md ring-1 ring-border',
+        isDropTarget && !isOverlay && 'ring-1 ring-primary/50',
+        !active &&
+          !isOverlay &&
+          cn('hover:bg-muted group-focus-within:bg-muted', anyPopoverOpen && 'bg-muted'),
+      )}
+      style={{ paddingLeft: 8 + visualDepth(depth) * INDENT_PX }}
+    >
       <div
         className={cn(
-          'group relative rounded-md',
-          !active && cn('hover:bg-muted group-focus-within:bg-muted', anyPopoverOpen && 'bg-muted'),
+          'flex h-8 items-center pr-1',
+          active
+            ? 'bg-primary/10 text-primary'
+            : 'text-muted-foreground group-hover:text-foreground',
         )}
-        style={{ paddingLeft: 8 + visualDepth(depth) * INDENT_PX }}
       >
-        <div
+        <DragHandle handleProps={handleProps} />
+        <button
+          type="button"
+          aria-label={expanded ? '收起' : '展开'}
           className={cn(
-            'flex h-8 items-center pr-1',
-            active
-              ? 'bg-primary/10 text-primary'
-              : 'text-muted-foreground group-hover:text-foreground',
+            'flex h-6 w-5 shrink-0 items-center justify-center rounded-sm hover:bg-background/60',
+            !expandable && 'invisible',
           )}
+          onClick={() => expandable && onToggle(folder.id)}
         >
-          <button
-            type="button"
-            aria-label={expanded ? '收起' : '展开'}
-            className={cn(
-              'flex h-6 w-5 shrink-0 items-center justify-center rounded-sm hover:bg-background/60',
-              !expandable && 'invisible',
-            )}
-            onClick={() => expandable && onToggle(node.id)}
-          >
-            <ChevronRight
-              className={cn('h-3.5 w-3.5 transition-transform', expanded && 'rotate-90')}
-            />
-          </button>
+          <ChevronRight
+            className={cn('h-3.5 w-3.5 transition-transform', expanded && 'rotate-90')}
+          />
+        </button>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link
-                href={`${basePath}?folder=${node.id}`}
-                className={cn(
-                  'flex min-w-0 flex-1 items-center gap-1.5 pr-12 text-sm',
-                  active && 'font-medium',
-                )}
-              >
-                <Icon
-                  className={cn(
-                    'h-4 w-4 shrink-0',
-                    active || anyPopoverOpen ? 'opacity-100' : 'opacity-70 group-hover:opacity-100',
-                  )}
-                />
-                <span className="truncate">{node.name}</span>
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent side="right">{node.name}</TooltipContent>
-          </Tooltip>
-        </div>
-
-        {manageable ? (
-          <Can anyPerm={['docs.create']}>
-            <div
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Link
+              href={`${basePath}?folder=${folder.id}`}
               className={cn(
-                'absolute right-0.5 top-1/2 flex -translate-y-1/2 items-center gap-0.5 rounded-md bg-muted/95 shadow-sm transition-opacity',
-                anyPopoverOpen
-                  ? 'opacity-100'
-                  : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100',
+                'flex min-w-0 flex-1 items-center gap-1.5 pr-12 text-sm',
+                active && 'font-medium',
               )}
             >
-              {/* "+" 创建菜单 */}
-              <Popover open={createOpen} onOpenChange={setCreateOpen}>
-                <PopoverTrigger asChild>
-                  <button
-                    type="button"
-                    className="flex h-7 w-7 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-background/80 hover:text-foreground"
-                    title="创建"
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent side="top" align="end" className="w-36 p-1">
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-foreground hover:bg-muted"
-                    onClick={() => onAddChild(node.id)}
-                  >
-                    <FolderPlus className="h-3.5 w-3.5" />
-                    <span>创建文件夹</span>
-                  </button>
-                  <Link
-                    href={`${basePath}/new?folder=${node.id}`}
-                    className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-foreground hover:bg-muted"
-                  >
-                    <FilePlus className="h-3.5 w-3.5" />
-                    <span>创建文章</span>
-                  </Link>
-                </PopoverContent>
-              </Popover>
+              <Icon
+                className={cn(
+                  'h-4 w-4 shrink-0',
+                  active || anyPopoverOpen ? 'opacity-100' : 'opacity-70 group-hover:opacity-100',
+                )}
+              />
+              <span className="truncate">{folder.name}</span>
+            </Link>
+          </TooltipTrigger>
+          <TooltipContent side="right">{folder.name}</TooltipContent>
+        </Tooltip>
+      </div>
 
-              {/* "..." 管理菜单 */}
-              <Popover open={moreOpen} onOpenChange={setMoreOpen}>
-                <PopoverTrigger asChild>
-                  <button
-                    type="button"
-                    className="flex h-7 w-7 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-background/80 hover:text-foreground"
-                    title="更多操作"
-                  >
-                    <MoreHorizontal className="h-3.5 w-3.5" />
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent side="bottom" align="end" className="w-32 p-1">
+      {manageable && !isOverlay ? (
+        <Can anyPerm={['docs.create']}>
+          <div
+            className={cn(
+              'absolute right-0.5 top-1/2 flex -translate-y-1/2 items-center gap-0.5 rounded-md bg-muted/95 shadow-sm transition-opacity',
+              anyPopoverOpen
+                ? 'opacity-100'
+                : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100',
+            )}
+          >
+            {/* "+" 创建菜单 */}
+            <Popover open={createOpen} onOpenChange={setCreateOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className="flex h-7 w-7 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-background/80 hover:text-foreground"
+                  title="创建"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent side="top" align="end" className="w-36 p-1">
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-foreground hover:bg-muted"
+                  onClick={() => onAddChild(folder.id)}
+                >
+                  <FolderPlus className="h-3.5 w-3.5" />
+                  <span>创建文件夹</span>
+                </button>
+                <Link
+                  href={`${basePath}/new?folder=${folder.id}`}
+                  className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-foreground hover:bg-muted"
+                >
+                  <FilePlus className="h-3.5 w-3.5" />
+                  <span>创建文章</span>
+                </Link>
+              </PopoverContent>
+            </Popover>
+
+            {/* "..." 管理菜单 */}
+            <Popover open={moreOpen} onOpenChange={setMoreOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className="flex h-7 w-7 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-background/80 hover:text-foreground"
+                  title="更多操作"
+                >
+                  <MoreHorizontal className="h-3.5 w-3.5" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent side="bottom" align="end" className="w-32 p-1">
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-foreground hover:bg-muted"
+                  onClick={() => onRename(folder)}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  <span>重命名</span>
+                </button>
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-destructive hover:bg-destructive/10"
+                  onClick={() => onDelete(folder)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  <span>删除</span>
+                </button>
+              </PopoverContent>
+            </Popover>
+          </div>
+        </Can>
+      ) : null}
+    </div>
+  );
+}
+
+function SidebarDocRow({
+  doc,
+  depth,
+  basePath,
+  isDragging,
+  isOverlay,
+  handleProps,
+  onRename,
+  onDelete,
+}: {
+  doc: InternalDocumentItem;
+  depth: number;
+  basePath: string;
+  isDragging: boolean;
+  isOverlay: boolean;
+  handleProps: RenderItemArgs['handleProps'];
+  onRename: (doc: InternalDocumentItem) => void;
+  onDelete: (doc: InternalDocumentItem) => void;
+}) {
+  const [moreOpen, setMoreOpen] = useState(false);
+  return (
+    <div
+      className={cn(
+        'group relative mb-0.5 flex h-7 items-center rounded-md text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground',
+        isDragging && 'opacity-40',
+        isOverlay && 'bg-background text-foreground shadow-md ring-1 ring-border',
+        moreOpen && 'bg-muted text-foreground',
+      )}
+      style={{ paddingLeft: 8 + visualDepth(depth) * INDENT_PX }}
+    >
+      <DragHandle handleProps={handleProps} />
+      {/* 与文件夹行的 chevron 对齐占位，保证同层级文件与文件夹图标左对齐 */}
+      <span className="w-5 shrink-0" aria-hidden />
+      <Link href={`${basePath}/${doc.id}`} className="flex min-w-0 flex-1 items-center pr-8">
+        <FileText className="mr-1.5 h-3.5 w-3.5 shrink-0 opacity-70" />
+        <span className="truncate" title={doc.title}>
+          {doc.title}
+        </span>
+      </Link>
+
+      {!isOverlay ? (
+        <Can anyPerm={['docs.edit', 'docs.delete']}>
+          {/* "..." 管理菜单：与文件夹行同款交互（悬停显现，重命名 / 删除） */}
+          <div
+            className={cn(
+              'absolute right-0.5 top-1/2 flex -translate-y-1/2 items-center rounded-md bg-muted/95 shadow-sm transition-opacity',
+              moreOpen
+                ? 'opacity-100'
+                : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100',
+            )}
+          >
+            <Popover open={moreOpen} onOpenChange={setMoreOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className="flex h-6 w-6 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-background/80 hover:text-foreground"
+                  title="更多操作"
+                >
+                  <MoreHorizontal className="h-3.5 w-3.5" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent side="bottom" align="end" className="w-32 p-1">
+                <Can anyPerm={['docs.edit']}>
                   <button
                     type="button"
                     className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-foreground hover:bg-muted"
-                    onClick={() => onRename(node)}
+                    onClick={() => {
+                      setMoreOpen(false);
+                      onRename(doc);
+                    }}
                   >
                     <Pencil className="h-3.5 w-3.5" />
                     <span>重命名</span>
                   </button>
+                </Can>
+                <Can perm="docs.delete">
                   <button
                     type="button"
                     className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-destructive hover:bg-destructive/10"
-                    onClick={() => onDelete(node)}
+                    onClick={() => {
+                      setMoreOpen(false);
+                      onDelete(doc);
+                    }}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                     <span>删除</span>
                   </button>
-                </PopoverContent>
-              </Popover>
-            </div>
-          </Can>
-        ) : null}
-      </div>
-
-      {showChildren ? (
-        <ul className="space-y-0.5">
-          {node.children.map((child) => (
-            <FolderTreeNode
-              key={child.id}
-              node={child}
-              depth={depth + 1}
-              activeId={activeId}
-              basePath={basePath}
-              manageable={manageable}
-              expandedIds={expandedIds}
-              onToggle={onToggle}
-              onAddChild={onAddChild}
-              onRename={onRename}
-              onDelete={onDelete}
-            />
-          ))}
-          {folderDocs.map((doc: InternalDocumentItem) => (
-            <li key={doc.id}>
-              <Link
-                href={`${basePath}/${doc.id}`}
-                className="flex h-7 items-center rounded-md text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                style={{ paddingLeft: 8 + visualDepth(depth + 1) * INDENT_PX }}
-              >
-                <span className="w-5 shrink-0" aria-hidden />
-                <FileText className="mr-1.5 h-3.5 w-3.5 shrink-0 opacity-70" />
-                <span className="truncate">{doc.title}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
+                </Can>
+              </PopoverContent>
+            </Popover>
+          </div>
+        </Can>
       ) : null}
-    </li>
-  );
-}
-
-function FolderTree({
-  nodes,
-  activeId,
-  basePath,
-  manageable,
-  expandedIds,
-  onToggle,
-  onAddChild,
-  onRename,
-  onDelete,
-}: {
-  nodes: DocFolderTreeNode[];
-  activeId: string | null;
-  basePath: string;
-  manageable: boolean;
-  expandedIds: Set<string>;
-  onToggle: (id: string) => void;
-  onAddChild: (parentId: string | null) => void;
-  onRename: (folder: DocFolderTreeNode) => void;
-  onDelete: (folder: DocFolderTreeNode) => void;
-}) {
-  return (
-    <ul className="space-y-0.5">
-      {nodes.map((node) => (
-        <FolderTreeNode
-          key={node.id}
-          node={node}
-          depth={0}
-          activeId={activeId}
-          basePath={basePath}
-          manageable={manageable}
-          expandedIds={expandedIds}
-          onToggle={onToggle}
-          onAddChild={onAddChild}
-          onRename={onRename}
-          onDelete={onDelete}
-        />
-      ))}
-    </ul>
+    </div>
   );
 }
 
@@ -365,6 +454,13 @@ export function DocFolderSidebar({ basePath = '/documents' }: { basePath?: strin
   const createMut = useCreatePersonalFolder();
   const removeMut = useRemovePersonalFolder();
   const renameMut = useRenamePersonalFolder();
+  const reorderFoldersMut = useReorderFolders();
+  const moveFolderMut = useMoveFolder();
+  const reorderDocsMut = useReorderDocuments();
+  const moveDocMut = useMoveDocument();
+  // 文档重命名 / 删除：复用通用资源 hooks（queryKey 前缀 ['documents'] 会连带失效侧栏树与列表）
+  const updateDocMut = useUpdate<InternalDocumentItem>('documents');
+  const removeDocMut = useRemove('documents');
 
   const [createOpen, setCreateOpen] = useState(false);
   const [createName, setCreateName] = useState('');
@@ -372,6 +468,9 @@ export function DocFolderSidebar({ basePath = '/documents' }: { basePath?: strin
   const [deleteTarget, setDeleteTarget] = useState<DocFolderTreeNode | null>(null);
   const [renameTarget, setRenameTarget] = useState<DocFolderTreeNode | null>(null);
   const [renameName, setRenameName] = useState('');
+  const [docDeleteTarget, setDocDeleteTarget] = useState<InternalDocumentItem | null>(null);
+  const [docRenameTarget, setDocRenameTarget] = useState<InternalDocumentItem | null>(null);
+  const [docRenameTitle, setDocRenameTitle] = useState('');
 
   const activeId = folderParam && folderParam !== '__none__' ? folderParam : null;
   const isAll = !folderParam;
@@ -390,20 +489,79 @@ export function DocFolderSidebar({ basePath = '/documents' }: { basePath?: strin
     }
   }, [ancestorIds]);
 
-  function toggleExpanded(id: string) {
+  // 预取所有可见文件夹（根级 + 已展开父级的子级）的文档：既决定 chevron 是否展示，也为拍平树提供数据。
+  const visibleFolderIds = useMemo(
+    () => collectVisibleFolderIds(tree ?? [], expandedIds),
+    [tree, expandedIds],
+  );
+  const folderById = useMemo(() => indexFolders(tree ?? []), [tree]);
+  const docsQueries = useFolderDocumentsBatch(visibleFolderIds);
+
+  // 用可见文件夹及其文档 id+更新时间 组成的签名作为记忆依赖：id 覆盖增删/移动，updatedAt 覆盖重命名等内容变更，
+  // 确保文档加载完成或更新后重新拍平树（仅用 id 会导致重命名后树上标题不刷新）。
+  const docsSignature = visibleFolderIds
+    .map(
+      (fid, i) =>
+        `${fid}:${(docsQueries[i]?.data?.data ?? []).map((d) => `${d.id}@${d.updatedAt}`).join(',')}`,
+    )
+    .join('|');
+
+  // folderId -> 文档列表（按 sortOrder 升序，后端已排序）
+  // biome-ignore lint/correctness/useExhaustiveDependencies: 以 docsSignature（文档 id+updatedAt 序列）作为稳定依赖，替代每次渲染都变化的 docsQueries 引用
+  const docsByFolder = useMemo(() => {
+    const map = new Map<string, InternalDocumentItem[]>();
+    visibleFolderIds.forEach((fid, i) => {
+      map.set(fid, docsQueries[i]?.data?.data ?? []);
+    });
+    return map;
+  }, [docsSignature]);
+
+  const docById = useMemo(() => {
+    const map = new Map<string, InternalDocumentItem>();
+    for (const list of docsByFolder.values()) {
+      for (const doc of list) map.set(doc.id, doc);
+    }
+    return map;
+  }, [docsByFolder]);
+
+  // 将文件夹树 + 各展开文件夹下文档拍平为 SortableTree 所需的扁平节点（按显示顺序：文件夹 → 子文件夹 → 文档）。
+  const flatNodes = useMemo(() => {
+    const flat: FlatNode[] = [];
+    const walk = (nodes: DocFolderTreeNode[], depth: number, parentId: string | null) => {
+      for (const node of nodes) {
+        flat.push({ id: node.id, parentId, depth, droppable: true, type: 'folder' });
+        if (expandedIds.has(node.id)) {
+          walk(node.children, depth + 1, node.id);
+          for (const doc of docsByFolder.get(node.id) ?? []) {
+            flat.push({
+              id: doc.id,
+              parentId: node.id,
+              depth: depth + 1,
+              droppable: false,
+              type: 'document',
+            });
+          }
+        }
+      }
+    };
+    walk(tree ?? [], 0, null);
+    return flat;
+  }, [tree, expandedIds, docsByFolder]);
+
+  const toggleExpanded = useCallback((id: string) => {
     setExpandedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
-  }
+  }, []);
 
-  function openCreate(parentId: string | null = null) {
+  const openCreate = useCallback((parentId: string | null = null) => {
     setCreateParentId(parentId);
     setCreateName('');
     setCreateOpen(true);
-  }
+  }, []);
 
   async function handleCreateConfirm() {
     const name = createName.trim();
@@ -435,10 +593,10 @@ export function DocFolderSidebar({ basePath = '/documents' }: { basePath?: strin
     }
   }
 
-  function openRename(folder: DocFolderTreeNode) {
+  const openRename = useCallback((folder: DocFolderTreeNode) => {
     setRenameTarget(folder);
     setRenameName(folder.name);
-  }
+  }, []);
 
   async function handleRenameConfirm() {
     if (!renameTarget) return;
@@ -455,6 +613,155 @@ export function DocFolderSidebar({ basePath = '/documents' }: { basePath?: strin
       notifyError(e, '重命名失败');
     }
   }
+
+  const openDocRename = useCallback((doc: InternalDocumentItem) => {
+    setDocRenameTarget(doc);
+    setDocRenameTitle(doc.title);
+  }, []);
+
+  async function handleDocRenameConfirm() {
+    if (!docRenameTarget) return;
+    const title = docRenameTitle.trim();
+    if (!title || title === docRenameTarget.title) {
+      setDocRenameTarget(null);
+      return;
+    }
+    try {
+      await updateDocMut.mutateAsync({ id: docRenameTarget.id, payload: { title } });
+      setDocRenameTarget(null);
+      notifySuccess('文档已重命名');
+    } catch (e) {
+      notifyError(e, '重命名失败');
+    }
+  }
+
+  async function handleDocDeleteConfirm() {
+    if (!docDeleteTarget) return;
+    try {
+      await removeDocMut.mutateAsync(docDeleteTarget.id);
+      setDocDeleteTarget(null);
+      notifySuccess('文档已删除');
+    } catch (e) {
+      notifyError(e, '删除失败');
+    }
+  }
+
+  // 客户端拖放约束：
+  // - 文件夹：禁止拖入自身或其后代（与服务端双保险）
+  // - 文档：禁止拖到根级（会变「未分类」，侧边栏树不展示未分类文档，视觉上会“消失”）
+  const canDrop = useCallback(
+    (dragId: string, newParentId: string | null) => {
+      const node = flatNodes.find((n) => n.id === dragId);
+      if (node?.type === 'document') return newParentId !== null;
+      if (node?.type !== 'folder') return true;
+      if (newParentId === dragId) return false;
+      if (newParentId && collectDescendantIds(flatNodes, dragId).has(newParentId)) return false;
+      return true;
+    },
+    [flatNodes],
+  );
+
+  // 拖拽结束：按被拖拽节点类型分派到文件夹 / 文档的 reorder / move 接口。
+  const handleMove = useCallback(
+    async (evt: SortableTreeMoveEvent) => {
+      const changedParent = evt.newParentId !== evt.oldParentId;
+      try {
+        if (evt.activeType === 'folder') {
+          if (changedParent) {
+            await moveFolderMut.mutateAsync({
+              id: evt.activeId,
+              parentId: evt.newParentId ?? null,
+            });
+          }
+          if (evt.siblingIds.length > 1) {
+            await reorderFoldersMut.mutateAsync({
+              parentId: evt.newParentId,
+              orderedIds: evt.siblingIds,
+            });
+          }
+        } else {
+          if (changedParent) {
+            await moveDocMut.mutateAsync({
+              id: evt.activeId,
+              folderId: evt.newParentId,
+              sortOrder: Math.max(0, evt.newIndex),
+            });
+          }
+          if (evt.siblingIds.length > 1) {
+            await reorderDocsMut.mutateAsync({
+              folderId: evt.newParentId,
+              orderedIds: evt.siblingIds,
+            });
+          }
+        }
+        // 展开目标父级，便于看到落点
+        if (changedParent && evt.newParentId) {
+          const target = evt.newParentId;
+          setExpandedIds((prev) => new Set([...prev, target]));
+        }
+      } catch (e) {
+        notifyError(e, '移动失败');
+      }
+    },
+    [moveFolderMut, reorderFoldersMut, moveDocMut, reorderDocsMut],
+  );
+
+  const renderRow = useCallback(
+    (args: RenderItemArgs) => {
+      const { node, depth, isDragging, isOverlay, isDropTarget, handleProps } = args;
+      if (node.type === 'document') {
+        const doc = docById.get(node.id);
+        if (!doc) return null;
+        return (
+          <SidebarDocRow
+            doc={doc}
+            depth={depth}
+            basePath={basePath}
+            isDragging={isDragging}
+            isOverlay={isOverlay}
+            handleProps={handleProps}
+            onRename={openDocRename}
+            onDelete={setDocDeleteTarget}
+          />
+        );
+      }
+      const folder = folderById.get(node.id);
+      if (!folder) return null;
+      const hasDocs = (docsByFolder.get(folder.id) ?? []).length > 0;
+      const expandable = folder.children.length > 0 || hasDocs;
+      return (
+        <SidebarFolderRow
+          folder={folder}
+          depth={depth}
+          active={activeId === folder.id}
+          basePath={basePath}
+          manageable
+          expanded={expandedIds.has(folder.id)}
+          expandable={expandable}
+          isDragging={isDragging}
+          isOverlay={isOverlay}
+          isDropTarget={isDropTarget}
+          handleProps={handleProps}
+          onToggle={toggleExpanded}
+          onAddChild={openCreate}
+          onRename={openRename}
+          onDelete={setDeleteTarget}
+        />
+      );
+    },
+    [
+      activeId,
+      basePath,
+      docById,
+      docsByFolder,
+      expandedIds,
+      folderById,
+      openCreate,
+      openDocRename,
+      openRename,
+      toggleExpanded,
+    ],
+  );
 
   return (
     <TooltipProvider delayDuration={400}>
@@ -479,16 +786,12 @@ export function DocFolderSidebar({ basePath = '/documents' }: { basePath?: strin
           {isLoading ? (
             <p className="px-2.5 py-2 text-xs text-muted-foreground">加载中…</p>
           ) : tree?.length ? (
-            <FolderTree
-              nodes={tree}
-              activeId={activeId}
-              basePath={basePath}
-              manageable
-              expandedIds={expandedIds}
-              onToggle={toggleExpanded}
-              onAddChild={(parentId) => openCreate(parentId)}
-              onRename={openRename}
-              onDelete={setDeleteTarget}
+            <SortableTree
+              items={flatNodes}
+              indentationWidth={INDENT_PX}
+              renderItem={renderRow}
+              onMove={handleMove}
+              canDrop={canDrop}
             />
           ) : (
             <p className="px-2.5 py-2 text-xs text-muted-foreground">暂无个人文件夹，点击 + 创建</p>
@@ -572,6 +875,57 @@ export function DocFolderSidebar({ basePath = '/documents' }: { basePath?: strin
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog
+        open={docRenameTarget !== null}
+        onOpenChange={(open) => !open && setDocRenameTarget(null)}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>重命名文档</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <Label htmlFor="rename-doc-title">标题</Label>
+            <Input
+              id="rename-doc-title"
+              value={docRenameTitle}
+              onChange={(e) => setDocRenameTitle(e.target.value)}
+              placeholder="输入新标题"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') void handleDocRenameConfirm();
+              }}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setDocRenameTarget(null)}>
+              取消
+            </Button>
+            <Button
+              onClick={() => void handleDocRenameConfirm()}
+              disabled={
+                !docRenameTitle.trim() ||
+                docRenameTitle.trim() === docRenameTarget?.title ||
+                updateDocMut.isPending
+              }
+            >
+              {updateDocMut.isPending ? '保存中…' : '保存'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog
+        open={docDeleteTarget !== null}
+        onOpenChange={(open) => !open && setDocDeleteTarget(null)}
+        title="删除文档"
+        description={
+          docDeleteTarget ? `确认删除「${docDeleteTarget.title}」？此操作不可撤销。` : undefined
+        }
+        confirmLabel="删除"
+        onConfirm={handleDocDeleteConfirm}
+        loading={removeDocMut.isPending}
+      />
 
       <ConfirmDialog
         open={deleteTarget !== null}

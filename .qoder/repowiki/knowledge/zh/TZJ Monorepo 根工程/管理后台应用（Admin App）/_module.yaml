@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: admin_app
+title: 管理后台应用（Admin App）
+scope:
+    - apps/admin/
+source_files: []
+depends_on: []
+related_to:
+    - path: api_server
+    - path: infra

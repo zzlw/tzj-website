@@ -163,6 +163,7 @@ export class IpBanService implements OnModuleInit {
   }): BlockedIpItem {
     return {
       id: row.id,
+      ipHash: row.ipHash,
       ipMasked: row.ipMasked,
       reason: row.reason,
       expiresAt: row.expiresAt?.toISOString() ?? null,

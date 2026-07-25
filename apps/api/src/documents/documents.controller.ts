@@ -24,10 +24,17 @@ import {
   CreateDocumentDto,
   CreatePersonalDocFolderDto,
   MergeDocTagsDto,
+  MoveDocumentDto,
+  MoveFolderDto,
   RenameDocTagDto,
+  ReorderDocumentsDto,
+  ReorderFoldersDto,
   UpdateDocumentDto,
 } from './dto/document.dto';
-import { BatchUpdatePermissionsDto, CreateDocumentPermissionDto, PermissionRole, PermissionTargetType } from './dto/document-permission.dto';
+import {
+  BatchUpdatePermissionsDto,
+  CreateDocumentPermissionDto,
+} from './dto/document-permission.dto';
 
 @ApiTags('documents')
 @ApiBearerAuth()
@@ -70,6 +77,24 @@ export class DocumentsController {
   @ApiOperation({ summary: '删除个人文件夹（文档中心）' })
   removePersonalFolder(@Param('id') id: string, @CurrentUser() user: AuthUser) {
     return this.foldersService.removePersonal(user.id, id);
+  }
+
+  @RequirePermissions('docs.edit')
+  @Patch('folders/personal/reorder')
+  @ApiOperation({ summary: '重排个人文件夹顺序（文档中心）' })
+  reorderPersonalFolders(@Body() dto: ReorderFoldersDto, @CurrentUser() user: AuthUser) {
+    return this.foldersService.reorderFolders(user.id, dto);
+  }
+
+  @RequirePermissions('docs.edit')
+  @Patch('folders/personal/:id/move')
+  @ApiOperation({ summary: '移动个人文件夹到新父级（文档中心）' })
+  movePersonalFolder(
+    @Param('id') id: string,
+    @Body() dto: MoveFolderDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.foldersService.moveFolder(user.id, id, dto);
   }
 
   @RequirePermissions('docs.create')
@@ -219,6 +244,24 @@ export class DocumentsController {
   @ApiOperation({ summary: '更新文档' })
   update(@Param('id') id: string, @Body() dto: UpdateDocumentDto, @CurrentUser() user: AuthUser) {
     return this.documentsService.update(id, dto, user.id, this.canManage(user));
+  }
+
+  @RequirePermissions('docs.edit')
+  @Patch('reorder')
+  @ApiOperation({ summary: '重排文档顺序（文档中心）' })
+  reorderDocuments(@Body() dto: ReorderDocumentsDto, @CurrentUser() user: AuthUser) {
+    return this.documentsService.reorderDocuments(user.id, dto);
+  }
+
+  @RequirePermissions('docs.edit')
+  @Patch(':id/move')
+  @ApiOperation({ summary: '移动文档到目标文件夹（文档中心）' })
+  moveDocument(
+    @Param('id') id: string,
+    @Body() dto: MoveDocumentDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.documentsService.moveDocument(user.id, id, dto);
   }
 
   @RequirePermissions('docs.delete')

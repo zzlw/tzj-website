@@ -5,6 +5,7 @@ import {
   formatDate,
   labelOf,
   NEWS_CATEGORY_OPTIONS,
+  STATUS_OPTIONS,
   StatusBadge,
   toDateInput,
 } from '@/features/constants';
@@ -29,9 +30,14 @@ export const newsConfig: ResourceConfig<NewsItem> = {
   title: '新闻动态',
   singular: '新闻',
   searchable: true,
-  filters: [{ key: 'category', label: '全部分类', options: NEWS_CATEGORY_OPTIONS }],
+  searchPlaceholder: '搜索标题、摘要、正文、作者…',
+  filters: [
+    { key: 'category', label: '全部分类', options: NEWS_CATEGORY_OPTIONS },
+    { key: 'status', label: '全部状态', options: STATUS_OPTIONS },
+  ],
   columns: [
-    { key: 'title', header: '标题', sortable: true },
+    // 主标识列固定到左侧，宽表横向滚动时始终可辨认当前行（滚动阴影按需出现）。
+    { key: 'title', header: '标题', sortable: true, pinLeft: true },
     {
       key: 'category',
       header: '分类',
@@ -85,6 +91,8 @@ export const newsConfig: ResourceConfig<NewsItem> = {
   publishable: true,
   previewPath: (r) => `/resources/news/${r.slug}`,
   defaultSort: { column: 'publishedAt', order: 'desc' },
+  // 含审计列（创建/更新时间、创建人）后列多易溢出，固定操作列到右侧保持可达。
+  pinActions: true,
   defaults: {
     title: '',
     slug: '',

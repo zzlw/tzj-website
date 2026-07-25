@@ -19,6 +19,7 @@ import { Ban, Loader2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Can } from '@/components/Can';
 import { CopyableIp, CopyableText } from '@/components/CopyableText';
+import { useVisitorDrawer } from '@/components/visitor-drawer/context';
 import {
   BLOCK_DURATION_OPTIONS,
   formatBlockedExpiry,
@@ -152,12 +153,23 @@ export function IpBlockPanel({ from, to }: { from?: string; to?: string }) {
   const blockedQuery = useBlockedIps(blockedParams);
   const trafficQuery = useSecurityIpTraffic(trafficParams);
   const unblockMut = useUnblockIp();
+  const { openIp } = useVisitorDrawer();
 
   const trafficColumns: DataTableColumn<AnalyticsIpTrafficRow>[] = [
     {
       key: 'ip',
       header: 'IP',
-      cell: (row) => <CopyableIp ip={row.ip} ipMasked={row.ipMasked} />,
+      // IP 为主标识列，固定到左侧，横向滚动时保持可辨认。
+      pinLeft: true,
+      cell: (row) => (
+        <CopyableIp
+          ip={row.ip}
+          ipMasked={row.ipMasked}
+          onActivate={() =>
+            openIp(row.id, { ip: row.ip, ipMasked: row.ipMasked, region: row.region })
+          }
+        />
+      ),
     },
     { key: 'region', header: '地区', cell: (row) => row.region || '—' },
     {
@@ -181,6 +193,8 @@ export function IpBlockPanel({ from, to }: { from?: string; to?: string }) {
     {
       key: 'actions',
       header: '',
+      // 操作列固定到右侧，横向滚动时“封禁”按钮始终可达。
+      pinRight: true,
       cell: (row) => (
         <Can perm="security.manage">
           <Button
@@ -206,7 +220,14 @@ export function IpBlockPanel({ from, to }: { from?: string; to?: string }) {
     {
       key: 'ipMasked',
       header: 'IP',
-      cell: (row) => <CopyableText value={row.ipMasked} />,
+      // IP 为主标识列，固定到左侧，横向滚动时保持可辨认。
+      pinLeft: true,
+      cell: (row) => (
+        <CopyableText
+          value={row.ipMasked}
+          onActivate={() => openIp(row.ipHash, { ipMasked: row.ipMasked })}
+        />
+      ),
     },
     {
       key: 'reason',
@@ -226,6 +247,8 @@ export function IpBlockPanel({ from, to }: { from?: string; to?: string }) {
     {
       key: 'actions',
       header: '',
+      // 操作列固定到右侧，横向滚动时“解封”按钮始终可达。
+      pinRight: true,
       cell: (row) => (
         <Can perm="security.manage">
           <Button

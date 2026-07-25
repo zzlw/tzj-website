@@ -1,0 +1,12 @@
+schema_version: 1
+module_path: admin_app/feature_content_resources
+title: 内容资源管理模块（博客/案例/新闻/展会）
+scope:
+    - apps/admin/src/app/(dashboard)/blog/
+    - apps/admin/src/app/(dashboard)/cases/
+    - apps/admin/src/app/(dashboard)/news/
+    - apps/admin/src/app/(dashboard)/trade-shows/
+    - apps/admin/src/features/resources/
+source_files: []
+depends_on: []
+related_to: []

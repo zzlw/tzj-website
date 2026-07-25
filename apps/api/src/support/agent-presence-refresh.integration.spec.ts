@@ -96,8 +96,8 @@ describe('agent presence: refresh-after-idle race', () => {
   beforeAll(() => {
     server = new FakeServer();
     presence = new ChatPresenceStore(null);
-    // chatRoomService / chatAuth 在 presence 路径中不被使用，传入 null 占位
-    gatewayInstance = new ChatGateway(null as never, null as never, presence, null);
+    // chatRoomService / chatAuth / ipBanService 在 presence 路径中不被使用，传入 null 占位
+    gatewayInstance = new ChatGateway(null as never, null as never, presence, null as never, null);
     gateway = gatewayInstance as unknown as PresenceGateway;
     gateway.server = server;
   });

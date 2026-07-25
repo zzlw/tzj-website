@@ -19,7 +19,6 @@ import {
 } from '@tzj/ui';
 import { ArrowLeft, Plus, Search, Trash2, UserCog } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { useSession } from '@/components/session';
 import { type RoleOption, useRoleOptions } from '@/features/access';
@@ -35,6 +34,8 @@ const COLUMNS = (roleOptions: RoleOption[]): DataTableColumn<UserItem>[] => [
     key: 'username',
     header: '用户名',
     className: 'font-medium',
+    // 主标识列固定到左侧，横向滚动时保持账号可辨认（滚动阴影按需出现）。
+    pinLeft: true,
     cell: (r) => (
       <div>
         <p>{r.username}</p>
@@ -184,6 +185,7 @@ export default function UsersPage() {
         rows={rows}
         loading={isLoading}
         emptyText="暂无账号"
+        pinActions
         renderActions={(r) => (
           <div className="flex justify-end gap-1">
             <Button size="icon" variant="ghost" className="h-8 w-8" asChild>

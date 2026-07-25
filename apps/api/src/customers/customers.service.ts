@@ -6,10 +6,17 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { Prisma } from '@prisma/client/index';
+import { aggregateLastIp, pickLatestIp } from '../analytics/utils/last-ip';
 import { resolveContentAuthor } from '../common/utils/content-author';
 import { LAST_OPERATOR_USER_SELECT } from '../common/utils/content-list';
-import type { PrismaService } from '../prisma/prisma.service';
-import type { CreateCustomerDto, TransferCustomerDto, UpdateCustomerDto } from './dto/customer.dto';
+// biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
+import { PrismaService } from '../prisma/prisma.service';
+import type {
+  CreateCustomerDto,
+  ImportCustomersDto,
+  TransferCustomerDto,
+  UpdateCustomerDto,
+} from './dto/customer.dto';
 
 /** 关联用户展示字段（owner / lastOperator / createdBy 复用同一结构） */
 const CUSTOMER_USER_SELECT = LAST_OPERATOR_USER_SELECT;
@@ -28,6 +35,21 @@ const CUSTOMER_AGENT_SELECT = {
 
 type Scope = 'mine' | 'public' | 'all';
 
+/** 单行导入失败明细（行号从 1 起，对应用户 CSV 的数据行序）。 */
+export interface ImportRowError {
+  row: number;
+  message: string;
+}
+
+/** 批量导入结果：成功 / 跳过（重复）/ 失败计数 + 失败明细，供前端反馈。 */
+export interface ImportResult {
+  total: number;
+  created: number;
+  skipped: number;
+  failed: number;
+  errors: ImportRowError[];
+}
+
 /** 转线索去重键：优先会话（chatRoomId），其次询盘（contactId），均无则不去重。 */
 function dedupeWhere(dto: CreateCustomerDto): Prisma.CustomerWhereUniqueInput | null {
   if (dto.chatRoomId) return { chatRoomId: dto.chatRoomId };
@@ -35,11 +57,15 @@ function dedupeWhere(dto: CreateCustomerDto): Prisma.CustomerWhereUniqueInput | 
   return null;
 }
 
-/** 幂等去重：命中已有客户则返回完整实体（含关联 User），否则 null。 */
+/** 幂等去重：命中已有客户则返回完整实体（含关联 User），否则 null。
+ *  顺序：先按唯一键（会话 chatRoomId / 询盘 contactId）；未命中时再用 visitorId 兼底。
+ *  Customer.visitorId 非唯一，故用 findFirst 做守卫（不能靠 DB 唯一约束），防止同一纯访客重复转化。 */
 async function findDuplicateCustomer(tx: Prisma.TransactionClient, dto: CreateCustomerDto) {
   const where = dedupeWhere(dto);
-  if (!where) return null;
-  const existing = await tx.customer.findUnique({ where });
+  let existing = where ? await tx.customer.findUnique({ where }) : null;
+  if (!existing && dto.visitorId) {
+    existing = await tx.customer.findFirst({ where: { visitorId: dto.visitorId } });
+  }
   if (!existing) return null;
   return tx.customer.findUnique({ where: { id: existing.id }, include: CUSTOMER_INCLUDE });
 }
@@ -65,6 +91,8 @@ const SORTABLE: Record<
 > = {
   name: { field: 'name', dir: 'asc' },
   company: { field: 'company', dir: 'asc' },
+  source: { field: 'source', dir: 'asc' },
+  region: { field: 'region', dir: 'asc' },
   amount: { field: 'amount', dir: 'desc' },
   lastContactAt: { field: 'lastContactAt', dir: 'desc' },
   nextFollowAt: { field: 'nextFollowAt', dir: 'asc' },
@@ -115,23 +143,40 @@ export class CustomersService {
     if (source) where.source = source;
     if (customerType) where.customerType = customerType;
     if (search?.trim()) {
-      const q = search.trim();
-      where.OR = [
-        { name: { contains: q } },
-        { company: { contains: q } },
-        { phone: { contains: q } },
-        { email: { contains: q } },
+      // 列表访客ID展示为「#xxxxxxxx」，用户会连 # 一起复制来搜，统一剥掉展示前缀
+      const q = search.trim().replace(/^#/, '');
+      const or: Prisma.CustomerWhereInput[] = [
+        { name: { contains: q, mode: 'insensitive' } },
+        { company: { contains: q, mode: 'insensitive' } },
+        { phone: { contains: q, mode: 'insensitive' } },
+        { email: { contains: q, mode: 'insensitive' } },
+        { region: { contains: q, mode: 'insensitive' } },
+        { visitorId: { contains: q, mode: 'insensitive' } },
       ];
+      // 存量客户自身 visitorId 列可能为空，访客ID 需经会话/询盘链路反查（无 Prisma 关系，二次查询取 ID 集合）
+      const [roomHits, contactHits] = await Promise.all([
+        this.prisma.chatRoom.findMany({
+          where: { visitorId: { contains: q, mode: 'insensitive' } },
+          select: { roomId: true },
+          take: 500,
+        }),
+        this.prisma.contact.findMany({
+          where: { visitorId: { contains: q, mode: 'insensitive' } },
+          select: { id: true },
+          take: 500,
+        }),
+      ]);
+      if (roomHits.length) or.push({ chatRoomId: { in: roomHits.map((r) => r.roomId) } });
+      if (contactHits.length) or.push({ contactId: { in: contactHits.map((c) => c.id) } });
+      where.OR = or;
     }
 
     const dir: 'asc' | 'desc' = sortOrder === 'asc' ? 'asc' : 'desc';
-    const orderInput: Prisma.CustomerOrderByWithRelationInput =
+    // Prisma 多字段排序必须传数组（单对象多 key 会在运行时报 Invalid orderBy）
+    const orderInput: Prisma.CustomerOrderByWithRelationInput[] =
       sortBy && SORTABLE[sortBy]
-        ? ({
-            [SORTABLE[sortBy].field]: dir,
-            updatedAt: 'desc',
-          } as Prisma.CustomerOrderByWithRelationInput)
-        : DEFAULT_ORDER;
+        ? [{ [SORTABLE[sortBy].field]: dir }, { updatedAt: 'desc' }]
+        : [DEFAULT_ORDER];
 
     const [data, total] = await Promise.all([
       this.prisma.customer.findMany({
@@ -165,14 +210,38 @@ export class CustomersService {
     ]);
     const visitorByRoom = new Map(rooms.map((r) => [r.roomId, r.visitorId]));
     const visitorByContact = new Map(contacts.map((c) => [c.id, c.visitorId]));
-    const enriched = data.map((c) => ({
+    const withVisitor = data.map((c) => ({
       ...c,
-      // 会话链路优先（实时度高），其次回退询盘链路
+      // 自身列优先（转化时直接锚定，最可靠），其次会话链路（实时度高），再回退询盘链路
       visitorId:
+        c.visitorId ??
         (c.chatRoomId ? visitorByRoom.get(c.chatRoomId) : null) ??
         (c.contactId ? visitorByContact.get(c.contactId) : null) ??
         null,
     }));
+
+    // 「最后访问 IP」富化：按解析出的 visitorId 或 userId=contactId（identify 回写）聚合
+    // page_views 最近一次非空 IP，两条口径命中取最近访问的一条；脱敏 + ipHash 供抽屉下钻，原始 IP 不外泄。
+    const ipVisitorIds = withVisitor.map((c) => c.visitorId).filter((v): v is string => Boolean(v));
+    const ipContactIds = data.map((c) => c.contactId).filter((id): id is string => Boolean(id));
+    const [ipByVisitor, ipByUser] = await Promise.all([
+      aggregateLastIp(this.prisma, 'visitorId', ipVisitorIds),
+      aggregateLastIp(this.prisma, 'userId', ipContactIds),
+    ]);
+    const ipVisitorMap = new Map(ipByVisitor.map((r) => [r.key, r]));
+    const ipUserMap = new Map(ipByUser.map((r) => [r.key, r]));
+
+    const enriched = withVisitor.map((c) => {
+      const viaVisitor = c.visitorId ? ipVisitorMap.get(c.visitorId) : undefined;
+      const viaUser = c.contactId ? ipUserMap.get(c.contactId) : undefined;
+      const best = pickLatestIp(viaVisitor, viaUser);
+      return {
+        ...c,
+        lastIp: best?.lastIp ?? null,
+        lastIpMasked: best?.lastIpMasked ?? null,
+        lastIpHash: best?.lastIpHash ?? null,
+      };
+    });
 
     return {
       data: enriched,
@@ -246,6 +315,7 @@ export class CustomersService {
         createdBy: author,
         chatRoomId: dto.chatRoomId ?? null,
         contactId: dto.contactId ?? null,
+        visitorId: dto.visitorId ?? null,
       };
       const customer = await tx.customer.create({ data, include: CUSTOMER_INCLUDE });
 
@@ -260,6 +330,92 @@ export class CustomersService {
       }
       return customer;
     });
+  }
+
+  /**
+   * 批量导入客户（CSV 解析后逐条写入）。
+   * - 归属：scope=public → ownerId 置空（公海）；scope=mine → 当前坐席私海。
+   * - 去重：按 email（非空、忽略大小写）与库内既有客户及本批次已写入行比对，命中则跳过，
+   *   避免重复导入同一联系人（CSV 无 chatRoomId/contactId，故不走会话/询盘去重）。
+   * - 逐条写入并捕获单行异常，返回成功/跳过/失败计数与失败明细（不因单行失败中断整批）。
+   */
+  async importMany(dto: ImportCustomersDto, operatorId: string): Promise<ImportResult> {
+    const ownerId = dto.scope === 'public' ? null : operatorId;
+    const author = await resolveContentAuthor(this.prisma, operatorId);
+
+    // 预载库内已存在的邮箱（非空），用于跳过重复导入
+    const emails = dto.items
+      .map((i) => i.email?.trim().toLowerCase())
+      .filter((e): e is string => Boolean(e));
+    const existing = emails.length
+      ? await this.prisma.customer.findMany({
+          where: { email: { in: [...new Set(emails)] } },
+          select: { email: true },
+        })
+      : [];
+    const seen = new Set(
+      existing.map((c) => c.email?.trim().toLowerCase()).filter((e): e is string => Boolean(e)),
+    );
+
+    let created = 0;
+    let skipped = 0;
+    const errors: ImportRowError[] = [];
+
+    let rowNo = 0;
+    for (const row of dto.items) {
+      rowNo++;
+      const name = row.name?.trim();
+      if (!name) {
+        errors.push({ row: rowNo, message: '缺少联系人姓名' });
+        continue;
+      }
+      const emailKey = row.email?.trim().toLowerCase();
+      if (emailKey && seen.has(emailKey)) {
+        skipped++;
+        continue;
+      }
+      try {
+        const data: Prisma.CustomerUncheckedCreateInput = {
+          name,
+          company: row.company,
+          title: row.title,
+          phone: row.phone,
+          email: row.email,
+          customerType: row.customerType ?? 'other',
+          source: row.source,
+          level: row.level ?? 'C',
+          stage: row.stage ?? 'new',
+          amount: row.amount,
+          region: row.region,
+          address: row.address,
+          tags: row.tags ?? [],
+          notes: row.notes,
+          ownerId,
+          lastContactAt: row.lastContactAt ? new Date(row.lastContactAt) : null,
+          nextFollowAt: row.nextFollowAt ? new Date(row.nextFollowAt) : null,
+          lastOperatorId: operatorId,
+          lastOperator: author,
+          createdById: operatorId,
+          createdBy: author,
+        };
+        await this.prisma.customer.create({ data });
+        created++;
+        if (emailKey) seen.add(emailKey);
+      } catch (e) {
+        errors.push({
+          row: rowNo,
+          message: e instanceof Error ? e.message : '写入失败',
+        });
+      }
+    }
+
+    return {
+      total: dto.items.length,
+      created,
+      skipped,
+      failed: errors.length,
+      errors,
+    };
   }
 
   async update(id: string, dto: UpdateCustomerDto, operatorId: string) {

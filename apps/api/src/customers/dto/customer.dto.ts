@@ -1,14 +1,17 @@
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
   IsArray,
   IsDateString,
+  IsIn,
   IsInt,
   IsOptional,
   IsPositive,
   IsString,
   MaxLength,
-  Min,
   MinLength,
+  ValidateNested,
 } from 'class-validator';
 
 export class CreateCustomerDto {
@@ -107,6 +110,13 @@ export class CreateCustomerDto {
   @IsString()
   contactId?: string;
 
+  @ApiPropertyOptional({
+    description: '来源匿名访客 ID（_tzj_vid，访客/会话转线索时直接锚定，供访客/IP 归因）',
+  })
+  @IsOptional()
+  @IsString()
+  visitorId?: string;
+
   @ApiPropertyOptional({ description: '归属坐席 ID（空 = 公海；不传则创建人自动归入私海）' })
   @IsOptional()
   @IsString()
@@ -130,4 +140,21 @@ export class TransferCustomerDto {
   @IsString()
   @MinLength(1)
   toUserId!: string;
+}
+
+/** 批量导入：前端解析 CSV + 预校验后提交，按 scope 决定公海/私海归属。 */
+export class ImportCustomersDto {
+  @ApiProperty({
+    description: '导入归属：public=公海（ownerId 置空）| mine=当前坐席私海',
+    enum: ['public', 'mine'],
+  })
+  @IsIn(['public', 'mine'])
+  scope!: 'public' | 'mine';
+
+  @ApiProperty({ type: [CreateCustomerDto], description: '待导入客户行（上限 1000 条）' })
+  @IsArray()
+  @ArrayMaxSize(1000)
+  @ValidateNested({ each: true })
+  @Type(() => CreateCustomerDto)
+  items!: CreateCustomerDto[];
 }

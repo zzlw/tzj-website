@@ -8,6 +8,8 @@ export interface CreateBlockedIpDto {
 
 export interface BlockedIpItem {
   id: string;
+  /** IP 哈希（用于打开 IP 详情抽屉下钻；原始 IP 不外泄） */
+  ipHash: string;
   ipMasked: string;
   reason: string | null;
   expiresAt: string | null;

@@ -1,0 +1,630 @@
+# 知识卡导出索引文件
+schema_version: 1
+locale: zh-CN
+branch: main
+nodes_managed: true
+exported_at: "2026-07-25T06:50:18Z"
+modules:
+    "":
+        dir_name: TZJ Monorepo 根工程
+        title: TZJ Monorepo 根工程
+        scope:
+            - README.md
+            - AGENTS.md
+            - package.json
+            - pnpm-workspace.yaml
+            - turbo.json
+            - tsconfig.base.json
+            - biome.json
+            - .npmrc
+            - Makefile
+            - .dockerignore
+            - .editorconfig
+            - .env.example
+            - .gitignore
+            - ARCHITECTURE.md
+            - CHANGELOG.md
+            - CONVENTIONS.md
+            - pnpm-lock.yaml
+            - tsconfig.json
+        source_files: []
+        children:
+            - admin_app
+            - api_server
+            - docs
+            - infra
+            - packages
+            - web_app
+        depends_on: []
+        related_to: []
+    admin_app:
+        dir_name: 管理后台应用（Admin App）
+        title: 管理后台应用（Admin App）
+        scope:
+            - apps/admin/
+        source_files: []
+        children:
+            - admin_app/app_shell_and_auth
+            - admin_app/feature_analytics_visitors
+            - admin_app/feature_chat
+            - admin_app/feature_content_resources
+            - admin_app/feature_customers
+            - admin_app/feature_documents
+            - admin_app/feature_settings_integrations
+            - admin_app/feature_users_access_security
+            - admin_app/shared_crud_components
+            - admin_app/shared_features_api_hooks
+        depends_on: []
+        related_to:
+            - path: api_server
+            - path: infra
+    admin_app/app_shell_and_auth:
+        dir_name: 管理后台应用外壳与认证
+        title: 管理后台应用外壳与认证
+        scope:
+            - apps/admin/src/app/
+            - apps/admin/src/components/DashboardShell.tsx
+            - apps/admin/src/components/Providers.tsx
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: api_server/access_management
+            - path: api_server/auth
+    admin_app/feature_analytics_visitors:
+        dir_name: 访客分析与访客中心（Analytics & Visitors）
+        title: 访客分析与访客中心（Analytics & Visitors）
+        scope:
+            - apps/admin/src/app/(dashboard)/analytics/
+            - apps/admin/src/app/(dashboard)/visitors/
+            - apps/admin/src/components/analytics/
+            - apps/admin/src/components/visitors/
+            - apps/admin/src/components/visitor-drawer/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    admin_app/feature_chat:
+        dir_name: 客服聊天控制台（Agent Chat Console）
+        title: 客服聊天控制台（Agent Chat Console）
+        scope:
+            - apps/admin/src/app/(dashboard)/chat/
+            - apps/admin/src/features/chat/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: api_server/support_chat
+    admin_app/feature_content_resources:
+        dir_name: 内容资源管理模块（博客_案例_新闻_展会）
+        title: 内容资源管理模块（博客/案例/新闻/展会）
+        scope:
+            - apps/admin/src/app/(dashboard)/blog/
+            - apps/admin/src/app/(dashboard)/cases/
+            - apps/admin/src/app/(dashboard)/news/
+            - apps/admin/src/app/(dashboard)/trade-shows/
+            - apps/admin/src/features/resources/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    admin_app/feature_customers:
+        dir_name: 客户管理功能模块（私海_公海与导入）
+        title: 客户管理功能模块（私海/公海与导入）
+        scope:
+            - apps/admin/src/app/(dashboard)/customers/
+            - apps/admin/src/components/customers/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    admin_app/feature_documents:
+        dir_name: 文档管理功能模块
+        title: 文档管理功能模块
+        scope:
+            - apps/admin/src/app/(dashboard)/documents/
+            - apps/admin/src/components/documents/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    admin_app/feature_settings_integrations:
+        dir_name: 管理后台设置中心（账户_聊天_站点_集成）
+        title: 管理后台设置中心（账户/聊天/站点/集成）
+        scope:
+            - apps/admin/src/app/(dashboard)/settings/
+            - apps/admin/src/components/settings/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    admin_app/feature_users_access_security:
+        dir_name: 用户、角色权限与安全防护管理后台
+        title: 用户、角色权限与安全防护管理后台
+        scope:
+            - apps/admin/src/app/(dashboard)/users/
+            - apps/admin/src/app/(dashboard)/access/
+            - apps/admin/src/app/(dashboard)/security/
+            - apps/admin/src/components/users/
+            - apps/admin/src/components/access/
+            - apps/admin/src/components/security/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    admin_app/shared_crud_components:
+        dir_name: Admin 通用 CRUD 与媒体组件库
+        title: Admin 通用 CRUD 与媒体组件库
+        scope:
+            - apps/admin/src/components/crud/
+            - apps/admin/src/components/media/
+            - apps/admin/src/components/Can.tsx
+            - apps/admin/src/components/CopyableText.tsx
+            - apps/admin/src/components/RichHint.tsx
+            - apps/admin/src/components/session.tsx
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: packages/dnd
+            - path: packages/ui
+    admin_app/shared_features_api_hooks:
+        dir_name: 管理后台共享特性与 API 钩子
+        title: 管理后台共享特性与 API 钩子
+        scope:
+            - apps/admin/src/features/
+            - apps/admin/src/hooks/
+            - apps/admin/src/lib/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: api_server/access_management
+            - path: api_server/audit
+            - path: api_server/customers
+            - path: api_server/documents
+            - path: api_server/media_storage
+            - path: api_server/notifications
+            - path: api_server/security
+            - path: api_server/users
+            - path: packages/types
+    api_server:
+        dir_name: TZJ 官网 API 服务（NestJS 单体应用）
+        title: TZJ 官网 API 服务（NestJS 单体应用）
+        scope:
+            - apps/api/
+        source_files: []
+        children:
+            - api_server/access_management
+            - api_server/analytics
+            - api_server/audit
+            - api_server/auth
+            - api_server/blogs
+            - api_server/cases
+            - api_server/contact
+            - api_server/customers
+            - api_server/documents
+            - api_server/integrations
+            - api_server/media_storage
+            - api_server/news
+            - api_server/notifications
+            - api_server/pages
+            - api_server/security
+            - api_server/settings
+            - api_server/support_chat
+            - api_server/system_health
+            - api_server/trade_shows
+            - api_server/users
+        depends_on: []
+        related_to:
+            - path: admin_app
+            - path: docs
+            - path: infra
+    api_server/access_management:
+        dir_name: 角色与权限管理模块
+        title: 角色与权限管理模块
+        scope:
+            - apps/api/src/access/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: admin_app/app_shell_and_auth
+            - path: admin_app/shared_features_api_hooks
+    api_server/analytics:
+        dir_name: 网站流量分析与访客归因服务
+        title: 网站流量分析与访客归因服务
+        scope:
+            - apps/api/src/analytics/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: web_app/routes_search_api
+    api_server/audit:
+        dir_name: 审计日志查询模块
+        title: 审计日志查询模块
+        scope:
+            - apps/api/src/audit/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: admin_app/shared_features_api_hooks
+    api_server/auth:
+        dir_name: 认证与授权模块（JWT + 会话管理）
+        title: 认证与授权模块（JWT + 会话管理）
+        scope:
+            - apps/api/src/auth/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: admin_app/app_shell_and_auth
+    api_server/blogs:
+        dir_name: 博客内容管理模块
+        title: 博客内容管理模块
+        scope:
+            - apps/api/src/blogs/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    api_server/cases:
+        dir_name: 工程案例（Cases）业务模块
+        title: 工程案例（Cases）业务模块
+        scope:
+            - apps/api/src/cases/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    api_server/contact:
+        dir_name: 联系信息（询盘）管理模块
+        title: 联系信息（询盘）管理模块
+        scope:
+            - apps/api/src/contact/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    api_server/customers:
+        dir_name: 客户管理（CRM）模块
+        title: 客户管理（CRM）模块
+        scope:
+            - apps/api/src/customers/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: admin_app/shared_features_api_hooks
+    api_server/documents:
+        dir_name: 文档中心 API（文档、文件夹、标签与权限）
+        title: 文档中心 API（文档、文件夹、标签与权限）
+        scope:
+            - apps/api/src/documents/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: admin_app/shared_features_api_hooks
+    api_server/integrations:
+        dir_name: 第三方服务集成管理模块
+        title: 第三方服务集成管理模块
+        scope:
+            - apps/api/src/integrations/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: web_app/app_shell_lib
+    api_server/media_storage:
+        dir_name: 媒体资产管理与对象存储模块
+        title: 媒体资产管理与对象存储模块
+        scope:
+            - apps/api/src/media/
+            - apps/api/src/storage/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: admin_app/shared_features_api_hooks
+            - path: web_app/app_shell_lib
+    api_server/news:
+        dir_name: 新闻内容管理模块
+        title: 新闻内容管理模块
+        scope:
+            - apps/api/src/news/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    api_server/notifications:
+        dir_name: 通知与邮件服务模块
+        title: 通知与邮件服务模块
+        scope:
+            - apps/api/src/notifications/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: admin_app/shared_features_api_hooks
+    api_server/pages:
+        dir_name: 页面内容管理模块
+        title: 页面内容管理模块
+        scope:
+            - apps/api/src/pages/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    api_server/security:
+        dir_name: 安全管控与 IP 封禁模块
+        title: 安全管控与 IP 封禁模块
+        scope:
+            - apps/api/src/security/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: admin_app/shared_features_api_hooks
+    api_server/settings:
+        dir_name: 站点设置与 Favicon 管理
+        title: 站点设置与 Favicon 管理
+        scope:
+            - apps/api/src/settings/
+            - apps/api/src/site-settings/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: web_app/app_shell_lib
+    api_server/support_chat:
+        dir_name: 实时客服聊天支持模块
+        title: 实时客服聊天支持模块
+        scope:
+            - apps/api/src/support/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: admin_app/feature_chat
+            - path: web_app/chat_feature
+    api_server/system_health:
+        dir_name: 系统健康检查与状态监控
+        title: 系统健康检查与状态监控
+        scope:
+            - apps/api/src/system/
+            - apps/api/src/health/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    api_server/trade_shows:
+        dir_name: 展会内容管理 API
+        title: 展会内容管理 API
+        scope:
+            - apps/api/src/trade-shows/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    api_server/users:
+        dir_name: 用户管理模块
+        title: 用户管理模块
+        scope:
+            - apps/api/src/users/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: admin_app/shared_features_api_hooks
+    docs:
+        dir_name: 项目文档与设计规范
+        title: 项目文档与设计规范
+        scope:
+            - docs/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: api_server
+    infra:
+        dir_name: TZJ 基础设施与部署编排
+        title: TZJ 基础设施与部署编排
+        scope:
+            - infra/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: admin_app
+            - path: api_server
+            - path: web_app
+    packages:
+        dir_name: TZJ Monorepo 共享包集合 (@tzj_)
+        title: TZJ Monorepo 共享包集合 (@tzj/*)
+        scope:
+            - packages/
+        source_files: []
+        children:
+            - packages/config
+            - packages/dnd
+            - packages/theme
+            - packages/types
+            - packages/ui
+        depends_on: []
+        related_to: []
+    packages/config:
+        dir_name: 共享配置与环境变量校验包 (@tzj_config)
+        title: 共享配置与环境变量校验包 (@tzj/config)
+        scope:
+            - packages/config/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: web_app/app_shell_lib
+    packages/dnd:
+        dir_name: 基于 dnd-kit 的可排序树组件库
+        title: 基于 dnd-kit 的可排序树组件库
+        scope:
+            - packages/dnd/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: admin_app/shared_crud_components
+    packages/theme:
+        dir_name: TZJ 品牌设计令牌（Design Tokens）
+        title: TZJ 品牌设计令牌（Design Tokens）
+        scope:
+            - packages/theme/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: web_app/shared_components
+    packages/types:
+        dir_name: 共享类型定义包 (@tzj_types)
+        title: 共享类型定义包 (@tzj/types)
+        scope:
+            - packages/types/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: admin_app/shared_features_api_hooks
+            - path: web_app/app_shell_lib
+    packages/ui:
+        dir_name: 统一 UI 组件库 (@tzj_ui)
+        title: 统一 UI 组件库 (@tzj/ui)
+        scope:
+            - packages/ui/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: admin_app/shared_crud_components
+            - path: web_app/shared_components
+    web_app:
+        dir_name: TZJ 官网 Next.js 应用（apps_web）
+        title: TZJ 官网 Next.js 应用（apps/web）
+        scope:
+            - apps/web/
+        source_files: []
+        children:
+            - web_app/app_shell_lib
+            - web_app/chat_feature
+            - web_app/routes_content_pages
+            - web_app/routes_legal_contact
+            - web_app/routes_products
+            - web_app/routes_search_api
+            - web_app/routes_solutions_resources
+            - web_app/shared_components
+        depends_on: []
+        related_to:
+            - path: infra
+    web_app/app_shell_lib:
+        dir_name: Next.js 应用外壳与多语言站点框架
+        title: Next.js 应用外壳与多语言站点框架
+        scope:
+            - apps/web/src/app/
+            - apps/web/src/lib/
+            - apps/web/src/hooks/
+            - apps/web/src/i18n/
+            - apps/web/src/messages/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: api_server/integrations
+            - path: api_server/media_storage
+            - path: api_server/settings
+            - path: packages/config
+            - path: packages/types
+    web_app/chat_feature:
+        dir_name: 访客聊天功能（实时客服聊天面板）
+        title: 访客聊天功能（实时客服聊天面板）
+        scope:
+            - apps/web/src/features/chat/
+            - apps/web/src/components/chat/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: api_server/support_chat
+    web_app/routes_content_pages:
+        dir_name: 内容型业务页面路由（案例中心、教育中心、专业培训、为什么选择我们）
+        title: 内容型业务页面路由（案例中心、教育中心、专业培训、为什么选择我们）
+        scope:
+            - apps/web/src/app/[locale]/cases/
+            - apps/web/src/app/[locale]/education-center/
+            - apps/web/src/app/[locale]/specialized-training/
+            - apps/web/src/app/[locale]/why-us/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    web_app/routes_legal_contact:
+        dir_name: 法律与联系页面路由（Contact _ Privacy _ Terms）
+        title: 法律与联系页面路由（Contact / Privacy / Terms）
+        scope:
+            - apps/web/src/app/[locale]/contact/
+            - apps/web/src/app/[locale]/privacy/
+            - apps/web/src/app/[locale]/terms/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    web_app/routes_products:
+        dir_name: 产品目录路由页面（配件、燃烧室、固定塔、模块化塔、塔楼）
+        title: 产品目录路由页面（配件、燃烧室、固定塔、模块化塔、塔楼）
+        scope:
+            - apps/web/src/app/[locale]/accessories/
+            - apps/web/src/app/[locale]/burn-rooms/
+            - apps/web/src/app/[locale]/fixed-tower/
+            - apps/web/src/app/[locale]/modular-tower/
+            - apps/web/src/app/[locale]/towers/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    web_app/routes_search_api:
+        dir_name: 全站搜索页面与搜索 API
+        title: 全站搜索页面与搜索 API
+        scope:
+            - apps/web/src/app/[locale]/search/
+            - apps/web/src/app/api/search/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: api_server/analytics
+    web_app/routes_solutions_resources:
+        dir_name: 解决方案与资源内容路由
+        title: 解决方案与资源内容路由
+        scope:
+            - apps/web/src/app/[locale]/solutions/
+            - apps/web/src/app/[locale]/resources/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    web_app/shared_components:
+        dir_name: 网站共享 UI 组件与页面区块
+        title: 网站共享 UI 组件与页面区块
+        scope:
+            - apps/web/src/components/layout/
+            - apps/web/src/components/content/
+            - apps/web/src/components/products/
+            - apps/web/src/components/sections/
+            - apps/web/src/components/ui/
+            - apps/web/src/components/analytics/
+            - apps/web/src/components/i18n/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: packages/theme
+            - path: packages/ui

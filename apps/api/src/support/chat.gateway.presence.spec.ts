@@ -77,7 +77,7 @@ function makeGateway(presence: FakePresence) {
     to: () => ({ emit: () => {} }),
     fetchSockets: async () => [],
   };
-  const gateway: any = new ChatGateway({} as any, {} as any, presence as any, null);
+  const gateway: any = new ChatGateway({} as any, {} as any, presence as any, null as any, null);
   gateway.server = server;
   return { gateway, emits };
 }

@@ -27,6 +27,7 @@ import {
   sourceLabel,
   useAnalyticsVisitorDetails,
 } from '@/features/analytics';
+import { downloadCsv, IP_EXPORT_COLUMNS } from '@/features/analytics-export';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { intField, sortField, stringField, useUrlState } from '@/lib/use-url-state';
 
@@ -184,6 +185,7 @@ export function IpVisitorLens({ dateParams }: { dateParams: { from?: string; to?
 
   const { data, isLoading, isFetching } = useAnalyticsVisitorDetails(params);
   const loading = isLoading || isFetching;
+  const rows = data?.data ?? [];
   // 「查看详情」经全局 Provider 打开 IP 抽屉（桥跳转与栈由 Provider 接管，行数据作 seed 占位）
   const columns = buildIpDetailColumns((row) => openIp(row.id, row));
 
@@ -215,10 +217,12 @@ export function IpVisitorLens({ dateParams }: { dateParams: { from?: string; to?
           onSearchChange={setSearchInput}
           searchPlaceholder="搜索 IP/地区/城市/浏览器/系统"
           facets={facets}
+          onExport={() => downloadCsv('访客明细_按IP', rows, IP_EXPORT_COLUMNS)}
+          exportDisabled={loading || rows.length === 0}
         />
         <DataTable
           columns={columns}
-          rows={data?.data ?? []}
+          rows={rows}
           loading={loading}
           emptyText="暂无访客记录"
           sort={sort}

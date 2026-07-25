@@ -48,5 +48,6 @@
     "phone": "Phone: +86 371-58691119",
     "address": "Address: Kexue Avenue, High-tech Development Zone, Zhengzhou, Henan Province, China"
   },
-  "lastUpdated": "Last updated: July 6, 2025"
+  "lastUpdated": "Last updated: July 6, 2025",
+  "lastUpdatedAt": "Last updated: {date}"
 }

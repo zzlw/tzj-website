@@ -23,6 +23,7 @@ import {
   PenLine,
   Plus,
   ScrollText,
+  Users,
 } from 'lucide-react';
 import Link from 'next/link';
 import { DashboardAnalyticsPanel } from '@/components/dashboard/DashboardAnalyticsPanel';
@@ -128,6 +129,88 @@ function ContactStatusBadge({ handled }: { handled: boolean }) {
   );
 }
 
+interface OpsAlert {
+  label: string;
+  value: number;
+  href: string;
+  icon: typeof Inbox;
+  accent: boolean;
+  hint: string;
+}
+
+/** 核心指标卡片（询盘漏斗 + 客户）：抽为纯函数，避免抬高 DashboardPage 认知复杂度。 */
+function buildOpsAlerts(args: {
+  pendingTotal: number;
+  unreadTotal: number;
+  contactsTotal: number;
+  customersTotal: number;
+  canCustomers: boolean;
+}): OpsAlert[] {
+  const { pendingTotal, unreadTotal, contactsTotal, customersTotal, canCustomers } = args;
+  const alerts: OpsAlert[] = [
+    {
+      label: '待处理询盘',
+      value: pendingTotal,
+      href: '/contacts',
+      icon: Inbox,
+      accent: pendingTotal > 0,
+      hint: pendingTotal > 0 ? '需尽快跟进' : '暂无积压',
+    },
+    {
+      label: '未读询盘',
+      value: unreadTotal,
+      href: '/contacts',
+      icon: Mail,
+      accent: unreadTotal > 0,
+      hint: '新到未查看',
+    },
+    {
+      label: '询盘总数',
+      value: contactsTotal,
+      href: '/contacts',
+      icon: MessageSquare,
+      accent: false,
+      hint: '累计客户咨询',
+    },
+  ];
+  if (canCustomers) {
+    alerts.push({
+      label: '客户总数',
+      value: customersTotal,
+      href: '/customers',
+      icon: Users,
+      accent: false,
+      hint: '已建档客户',
+    });
+  }
+  return alerts;
+}
+
+/** 欢迎区运营一句话：优先提醒待处理，其次未读，都无则报内容库规模。抽出以收敛嵌套三元分支。 */
+function HeroSummary({
+  pendingTotal,
+  unreadTotal,
+  publishedCount,
+}: {
+  pendingTotal: number;
+  unreadTotal: number;
+  publishedCount: number;
+}) {
+  if (pendingTotal > 0) {
+    return (
+      <>
+        当前有 <span className="font-medium text-amber-700">{pendingTotal} 条待处理询盘</span>
+        {unreadTotal > 0 ? `、${unreadTotal} 条未读` : ''}
+        ，建议优先跟进。
+      </>
+    );
+  }
+  if (unreadTotal > 0) {
+    return <>有 {unreadTotal} 条未读询盘，暂无待处理事项。</>;
+  }
+  return <>内容库共 {publishedCount} 篇已发布内容，运营状态良好。</>;
+}
+
 export default async function DashboardPage() {
   const me = await apiFetch<{
     permissions?: string[];
@@ -143,6 +226,8 @@ export default async function DashboardPage() {
   const displayName = me.nickname?.trim() || me.username || '管理员';
   const canAnalytics = hasPermission(permissions, 'analytics.view');
   const canAudit = hasPermission(permissions, 'audit.view');
+  const canCustomers =
+    hasPermission(permissions, 'customers.view') || hasPermission(permissions, 'customers.manage');
 
   const [
     cases,
@@ -155,6 +240,7 @@ export default async function DashboardPage() {
     unreadTotal,
     contacts,
     auditLogs,
+    customersTotal,
   ] = await Promise.all([
     countOf('cases'),
     countOf('news'),
@@ -168,6 +254,11 @@ export default async function DashboardPage() {
     canAudit
       ? fetchList<AuditLogItem>('audit-logs', 'limit=8&sortBy=createdAt&sortOrder=desc')
       : Promise.resolve([]),
+    canCustomers
+      ? apiFetch<{ total?: number }>('/customers/summary')
+          .then((r) => r?.total ?? 0)
+          .catch(() => 0)
+      : Promise.resolve(0),
   ]);
 
   const values: Record<string, number> = {
@@ -184,22 +275,13 @@ export default async function DashboardPage() {
     (a) => !('perm' in a && a.perm) || hasPermission(permissions, a.perm),
   );
 
-  const opsAlerts = [
-    {
-      label: '待处理询盘',
-      value: pendingTotal,
-      href: '/contacts',
-      icon: Inbox,
-      accent: pendingTotal > 0,
-    },
-    {
-      label: '未读询盘',
-      value: unreadTotal,
-      href: '/contacts',
-      icon: Mail,
-      accent: unreadTotal > 0,
-    },
-  ];
+  const opsAlerts = buildOpsAlerts({
+    pendingTotal,
+    unreadTotal,
+    contactsTotal,
+    customersTotal,
+    canCustomers,
+  });
 
   return (
     <div>
@@ -213,18 +295,11 @@ export default async function DashboardPage() {
               你好，{displayName}
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              {pendingTotal > 0 ? (
-                <>
-                  当前有{' '}
-                  <span className="font-medium text-amber-700">{pendingTotal} 条待处理询盘</span>
-                  {unreadTotal > 0 ? `、${unreadTotal} 条未读` : ''}
-                  ，建议优先跟进。
-                </>
-              ) : unreadTotal > 0 ? (
-                <>有 {unreadTotal} 条未读询盘，暂无待处理事项。</>
-              ) : (
-                <>内容库共 {cases + news + blogs + tradeShows} 篇已发布内容，运营状态良好。</>
-              )}
+              <HeroSummary
+                pendingTotal={pendingTotal}
+                unreadTotal={unreadTotal}
+                publishedCount={cases + news + blogs + tradeShows}
+              />
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -267,13 +342,13 @@ export default async function DashboardPage() {
       </section>
 
       <section className="mb-8">
-        <h3 className="mb-3 text-sm font-medium text-muted-foreground">待办提醒</h3>
-        <div className="grid gap-3 sm:grid-cols-3">
+        <h3 className="mb-3 text-sm font-medium text-muted-foreground">核心指标</h3>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {opsAlerts.map((item) => (
             <Link key={item.label} href={item.href} className="group">
               <Card
                 className={cn(
-                  'border-border/80 transition-colors hover:border-primary/40',
+                  'h-full border-border/80 transition-colors hover:border-primary/40',
                   item.accent && 'border-amber-200/80 bg-amber-50/40',
                 )}
               >
@@ -288,27 +363,15 @@ export default async function DashboardPage() {
                   >
                     <item.icon className="h-4 w-4" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <div className="text-2xl font-semibold tabular-nums">{item.value}</div>
-                    <div className="text-xs text-muted-foreground">{item.label}</div>
+                    <div className="text-xs font-medium text-foreground/80">{item.label}</div>
+                    <div className="mt-0.5 text-[11px] text-muted-foreground">{item.hint}</div>
                   </div>
                 </CardContent>
               </Card>
             </Link>
           ))}
-          <Link href="/contacts" className="group">
-            <Card className="border-border/80 transition-colors hover:border-primary/40">
-              <CardContent className="flex items-center gap-4 p-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                  <MessageSquare className="h-4 w-4" />
-                </div>
-                <div>
-                  <div className="text-2xl font-semibold tabular-nums">{contactsTotal}</div>
-                  <div className="text-xs text-muted-foreground">询盘总数</div>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
         </div>
       </section>
 

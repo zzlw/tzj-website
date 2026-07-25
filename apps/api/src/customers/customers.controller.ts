@@ -14,8 +14,15 @@ import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger'
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
 import type { AuthUser } from '../auth/roles';
+// biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
 import { CustomersService } from './customers.service';
-import { CreateCustomerDto, TransferCustomerDto, UpdateCustomerDto } from './dto/customer.dto';
+// biome-ignore lint/style/useImportType: @Body() 校验需要 DTO 类作为运行期元数据
+import {
+  CreateCustomerDto,
+  ImportCustomersDto,
+  TransferCustomerDto,
+  UpdateCustomerDto,
+} from './dto/customer.dto';
 
 function canViewAll(user: AuthUser): boolean {
   return user.role === 'admin' || (user.permissions?.includes('customers.manage') ?? false);
@@ -108,6 +115,14 @@ export class CustomersController {
   @ApiOperation({ summary: '创建客户（默认归入创建人私海）' })
   create(@Body() dto: CreateCustomerDto, @CurrentUser() user: AuthUser) {
     return this.customersService.create(dto, user.id);
+  }
+
+  @RequirePermissions('customers.manage')
+  @ApiBearerAuth()
+  @Post('import')
+  @ApiOperation({ summary: '批量导入客户（CSV 解析后逐条写入，按 scope 归属公海/私海）' })
+  importCustomers(@Body() dto: ImportCustomersDto, @CurrentUser() user: AuthUser) {
+    return this.customersService.importMany(dto, user.id);
   }
 
   @RequirePermissions('customers.manage')

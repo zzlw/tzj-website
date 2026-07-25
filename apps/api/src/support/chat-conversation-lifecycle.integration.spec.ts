@@ -46,6 +46,23 @@ class FakeRoomService {
     this.rooms.set(roomId, closed);
     return closed;
   }
+
+  // 网关 broadcastRoomListUpdate / sendRoomListToAgent 会附带状态统计；桩需实现该方法，
+  // 否则调用抛错被网关 try/catch 吞掉，room-list-updated 将不被 emit（表现为 clientPresence undefined）。
+  async getChatRoomStats() {
+    const rooms = [...this.rooms.values()];
+    const count = (s: string) => rooms.filter((r) => r.status === s).length;
+    return {
+      totalRooms: rooms.length,
+      statusBreakdown: {
+        active: count('active'),
+        waiting: count('waiting'),
+        closed: count('closed'),
+        archived: count('archived'),
+      },
+      totalMessages: rooms.reduce((n, r) => n + (r.messages?.length ?? 0), 0),
+    };
+  }
 }
 
 interface SocketData {
@@ -230,7 +247,9 @@ describe('聊天会话生命周期：结束对话 → 开始新对话（按房�
     server = new FakeServer();
     const presence = new ChatPresenceStore(null);
     const roomService = new FakeRoomService(roomSeed);
-    gateway = new ChatGateway(roomService as never, authService, presence, null);
+    // 封禁校验对本测试不适用：桩 IpBanService 一律放行（游客/坐席均不封）。
+    const ipBan = { isBlocked: async () => false };
+    gateway = new ChatGateway(roomService as never, authService, presence, ipBan as never, null);
     (gateway as unknown as { server: Server }).server = server as unknown as Server;
 
     // 坐席端连接 + 注册 + 加入活跃房间

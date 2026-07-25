@@ -105,6 +105,8 @@ export default function AuditLogsPage() {
         header: '时间',
         sortable: true,
         className: 'whitespace-nowrap text-muted-foreground',
+        // 时间作为主锚点固定到左侧，宽表横向滚动时保持时间上下文可见。
+        pinLeft: true,
         cell: (r) => formatAuditDateTime(r.createdAt),
       },
       {
@@ -243,6 +245,7 @@ export default function AuditLogsPage() {
         onSortChange={(next) => {
           setUrlState({ sort: next, page: 1 });
         }}
+        pinActions
         renderActions={(r) => (
           <Tooltip>
             <TooltipTrigger asChild>

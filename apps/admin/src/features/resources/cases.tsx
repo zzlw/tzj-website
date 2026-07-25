@@ -5,6 +5,7 @@ import {
   CASE_TYPE_OPTIONS,
   formatDate,
   labelOf,
+  STATUS_OPTIONS,
   StatusBadge,
   toDateInput,
 } from '@/features/constants';
@@ -38,9 +39,14 @@ export const casesConfig: ResourceConfig<CaseItem> = {
   title: '工程案例',
   singular: '案例',
   searchable: true,
-  filters: [{ key: 'type', label: '全部类型', options: CASE_TYPE_OPTIONS }],
+  searchPlaceholder: '搜索标题、摘要、详情、地点、客户…',
+  filters: [
+    { key: 'type', label: '全部类型', options: CASE_TYPE_OPTIONS },
+    { key: 'status', label: '全部状态', options: STATUS_OPTIONS },
+  ],
   columns: [
-    { key: 'title', header: '标题', sortable: true },
+    // 主标识列固定到左侧，宽表横向滚动时始终可辨认当前行（滚动阴影按需出现）。
+    { key: 'title', header: '标题', sortable: true, pinLeft: true },
     {
       key: 'caseType',
       header: '类型',
@@ -110,6 +116,8 @@ export const casesConfig: ResourceConfig<CaseItem> = {
   publishable: true,
   previewPath: (r) => `/cases/${r.slug}`,
   defaultSort: { column: 'completionDate', order: 'desc' },
+  // 含审计列（创建/更新时间、创建人）后列多易溢出，固定操作列到右侧保持可达。
+  pinActions: true,
   defaults: {
     title: '',
     slug: '',

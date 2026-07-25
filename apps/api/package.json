@@ -25,6 +25,9 @@
     "prisma:seed:content": "node --env-file=../../.env ./node_modules/tsx/dist/cli.mjs prisma/seed-content.ts",
     "prisma:seed:content:media": "node --env-file=../../.env ./node_modules/tsx/dist/cli.mjs prisma/seed-content-media.ts",
     "seed:contacts:mock": "node --env-file=../../.env ./node_modules/tsx/dist/cli.mjs scripts/seed-contacts-mock.ts",
+    "seed:visitors:mock": "node --env-file=../../.env ./node_modules/tsx/dist/cli.mjs scripts/seed-visitors-mock.ts",
+    "seed:chat:mock": "node --env-file=../../.env ./node_modules/tsx/dist/cli.mjs scripts/seed-chat-mock.ts",
+    "seed:customers:mock": "node --env-file=../../.env ./node_modules/tsx/dist/cli.mjs scripts/seed-customers-mock.ts",
     "prisma:sync:static-media": "node --env-file=../../.env ./node_modules/tsx/dist/cli.mjs prisma/seed-content-media.ts",
     "test:favicon": "node --env-file=../../.env ./node_modules/tsx/dist/cli.mjs scripts/test-favicon.ts"
   },

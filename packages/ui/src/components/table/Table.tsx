@@ -1,10 +1,15 @@
-import type { HTMLAttributes, TdHTMLAttributes, ThHTMLAttributes } from 'react';
+import type { HTMLAttributes, Ref, TdHTMLAttributes, ThHTMLAttributes } from 'react';
 import { forwardRef } from 'react';
 import { cn } from '../../lib/utils';
 
-const Table = forwardRef<HTMLTableElement, HTMLAttributes<HTMLTableElement>>(
-  ({ className, ...props }, ref) => (
-    <div className="relative w-full overflow-auto">
+interface TableProps extends HTMLAttributes<HTMLTableElement> {
+  /** 转发内部横向滚动容器的 ref（用于监听 scrollLeft 计算固定列滚动阴影）。 */
+  containerRef?: Ref<HTMLDivElement>;
+}
+
+const Table = forwardRef<HTMLTableElement, TableProps>(
+  ({ className, containerRef, ...props }, ref) => (
+    <div ref={containerRef} className="relative w-full overflow-auto">
       <table ref={ref} className={cn('w-full caption-bottom text-sm', className)} {...props} />
     </div>
   ),

@@ -24,8 +24,10 @@ import { MediaModule } from './media/media.module';
 import { NewsModule } from './news/news.module';
 import { NotificationModule } from './notifications/notification.module';
 import { PagesModule } from './pages/pages.module';
+import { PreviewModule } from './preview/preview.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { PublishingModule } from './publishing/publishing.module';
+import { IpBanGuard } from './security/ip-ban.guard';
 import { SecurityModule } from './security/security.module';
 import { SettingsModule } from './settings/settings.module';
 import { StorageModule } from './storage/storage.module';
@@ -61,6 +63,7 @@ import { UsersModule } from './users/users.module';
     BlogsModule,
     TradeShowsModule,
     PagesModule,
+    PreviewModule,
     ContactModule,
     CustomersModule,
     StorageModule,
@@ -83,6 +86,8 @@ import { UsersModule } from './users/users.module';
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     // 全局鉴权（@Public 放行）
     { provide: APP_GUARD, useClass: JwtAuthGuard },
+    // 全局 IP 封禁（置于鉴权之后：豁免已认证管理员，仅拦截命中封禁名单的访客）
+    { provide: APP_GUARD, useClass: IpBanGuard },
     // 全局角色控制（@Roles 生效）
     { provide: APP_GUARD, useClass: RolesGuard },
     // 统一响应包装（最外层）

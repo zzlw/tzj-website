@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tzj/ui';
-import { Search, X } from 'lucide-react';
+import { Download, Search, X } from 'lucide-react';
 
 export interface FilterFacet {
   key: string;
@@ -51,12 +51,20 @@ export function VisitorFilterBar({
   searchPlaceholder,
   facets,
   className,
+  onExport,
+  exportDisabled,
+  exportLabel = '导出 CSV',
 }: {
   search: string;
   onSearchChange: (value: string) => void;
   searchPlaceholder: string;
   facets: FilterFacet[];
   className?: string;
+  /** 传入即在工具栏右侧显示「导出 CSV」按钮，导出当前筛选结果（调用方负责脱敏白名单） */
+  onExport?: () => void;
+  /** 无数据 / 加载中时禁用导出 */
+  exportDisabled?: boolean;
+  exportLabel?: string;
 }) {
   const chips = activeChips(facets);
   const hasActive = search.trim().length > 0 || chips.length > 0;
@@ -119,6 +127,20 @@ export function VisitorFilterBar({
           >
             <X className="h-3.5 w-3.5" />
             清除筛选
+          </Button>
+        ) : null}
+
+        {onExport ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onExport}
+            disabled={exportDisabled}
+            className="ml-auto h-9 gap-1 px-3 text-xs"
+          >
+            <Download className="h-3.5 w-3.5" />
+            {exportLabel}
           </Button>
         ) : null}
       </div>

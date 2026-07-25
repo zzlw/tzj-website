@@ -6,16 +6,20 @@ import { cn } from '@/lib/utils';
 
 const OVERVIEW_ID = 'overview';
 
+/**
+ * 实测固定 Header 当前可见高度（bottom）：隐藏态被 translate 上移后 bottom ≤ 0 归 0，
+ * 过渡中取部分值。不再解析 CSS 变量（--site-header-height 为 calc()，parseFloat 会得 NaN）。
+ */
 function getHeaderOffsetPx(): number {
-  const root = document.documentElement;
-  const styles = getComputedStyle(root);
-  const offset = styles.getPropertyValue('--site-header-offset').trim();
-  if (offset.endsWith('px')) {
-    return parseFloat(offset) || 0;
-  }
-  const header = parseFloat(styles.getPropertyValue('--site-header-height')) || 4;
-  const fontSize = parseFloat(styles.fontSize) || 16;
-  return root.dataset.headerHidden ? 0 : header * fontSize;
+  const header = document.querySelector<HTMLElement>('.site-header');
+  if (!header) return 0;
+  return Math.max(0, header.getBoundingClientRect().bottom);
+}
+
+/** Header 完整高度（与是否隐藏无关，transform 不改变 rect.height） */
+function getHeaderHeightPx(): number {
+  const header = document.querySelector<HTMLElement>('.site-header');
+  return header?.getBoundingClientRect().height ?? 0;
 }
 
 function hubLinkClass(active: boolean) {
@@ -88,8 +92,12 @@ export function ProductHubNav() {
     if (!target) return;
 
     const navHeight = navRef.current?.offsetHeight ?? 0;
-    const top =
-      target.getBoundingClientRect().top + window.scrollY - getHeaderOffsetPx() - navHeight;
+    const rectTop = target.getBoundingClientRect().top;
+    // 预判滚动方向对应的终态（Rosenbauer 式顶栏：下滑隐藏 / 上滑重现）：
+    // 向上滚 Header 会重新出现，需预留完整高度，否则定位后卡片被遮挡；向下滚 Header 隐藏，不预留
+    const willScrollUp = rectTop < navHeight + getHeaderOffsetPx();
+    const headerOffset = willScrollUp ? getHeaderHeightPx() : 0;
+    const top = rectTop + window.scrollY - headerOffset - navHeight;
     window.scrollTo({ top, behavior: 'smooth' });
   }, []);
 

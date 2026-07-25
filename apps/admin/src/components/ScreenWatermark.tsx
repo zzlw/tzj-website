@@ -73,38 +73,52 @@ export function ScreenWatermark({
     const cssText = buildCssText(buildBackground(line1, line2, opacity));
 
     let container: HTMLDivElement | null = null;
+    let observer: MutationObserver | null = null;
 
-    const ensure = () => {
-      if (!container || !document.body.contains(container)) {
-        // 已存在同 id 节点则复用，否则新建（防止重复挂载）
-        const existing = document.getElementById(CONTAINER_ID);
-        container = existing instanceof HTMLDivElement ? existing : document.createElement('div');
-        container.id = CONTAINER_ID;
-        container.setAttribute('aria-hidden', 'true');
-        if (!document.body.contains(container)) document.body.appendChild(container);
-      }
-      // 重申关键样式，抵御 DevTools 改 display/opacity/pointer-events
-      if (container.style.cssText !== cssText) container.style.cssText = cssText;
+    // 重新挂载 observer（container 可能被重建为新节点，需重新监听）
+    const observe = () => {
+      if (!observer || !container) return;
+      observer.observe(document.body, { childList: true });
+      observer.observe(container, { attributes: true, attributeFilter: ['style', 'class', 'id'] });
     };
 
-    ensure();
+    // 复用同 id 节点或新建，并确保挂在 body 上（防止重复挂载）
+    const mountContainer = () => {
+      const existing = document.getElementById(CONTAINER_ID);
+      const node = existing instanceof HTMLDivElement ? existing : document.createElement('div');
+      node.id = CONTAINER_ID;
+      node.setAttribute('aria-hidden', 'true');
+      if (!document.body.contains(node)) document.body.appendChild(node);
+      container = node;
+    };
 
-    // 监听移除与属性篡改，命中即重建
-    const observer = new MutationObserver(() => ensure());
-    observer.observe(document.body, { childList: true });
-    if (container) {
-      observer.observe(container, { attributes: true, attributeFilter: ['style', 'class', 'id'] });
-    }
+    const ensure = () => {
+      // 关键：写 DOM 前先断开 observer，避免「自身写样式 → 触发 observer → 再写」的死循环。
+      // （style.cssText 读回值会被浏览器规范化，与写入串永不相等，若不断开将无限自触发、卡死主线程）
+      observer?.disconnect();
+      try {
+        if (!container || !document.body.contains(container)) mountContainer();
+        // 重申关键样式，抵御 DevTools 改 display/opacity/pointer-events
+        if (container && container.style.cssText !== cssText) container.style.cssText = cssText;
+      } finally {
+        observe();
+      }
+    };
+
+    // 监听移除与属性篡改，命中即重建（真实外部篡改仍会触发一次 ensure，自身写入则不会）
+    observer = new MutationObserver(() => ensure());
+    ensure();
 
     // 兜底：整棵子树被替换时 observer 可能漏掉，低频重申
     const timer = window.setInterval(ensure, 2000);
 
     return () => {
-      observer.disconnect();
+      observer?.disconnect();
       window.clearInterval(timer);
       if (container && document.body.contains(container)) {
         document.body.removeChild(container);
       }
+      observer = null;
       container = null;
     };
   }, [username, text, opacity]);

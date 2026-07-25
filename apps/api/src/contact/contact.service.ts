@@ -3,10 +3,13 @@ import { Prisma } from '@prisma/client/index';
 // biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
 import { IpLocationService } from '../analytics/ip-location.service';
 import { formatGeoLabel } from '../analytics/utils/geo-label';
+import { aggregateLastIp, pickLatestIp } from '../analytics/utils/last-ip';
 import { resolveContentAuthor } from '../common/utils/content-author';
 import { LAST_OPERATOR_USER_SELECT } from '../common/utils/content-list';
-import type { NotificationService } from '../notifications/notification.service';
-import type { PrismaService } from '../prisma/prisma.service';
+// biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
+import { NotificationService } from '../notifications/notification.service';
+// biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
+import { PrismaService } from '../prisma/prisma.service';
 import type { CreateContactDto, UpdateContactDto } from './dto/contact.dto';
 
 interface FindAllParams {
@@ -14,11 +17,33 @@ interface FindAllParams {
   limit: number;
   isRead?: boolean;
   isHandled?: boolean;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: string;
 }
+
+/** 白名单：表头排序 key → Contact 字段（防注入 + 区分前端列 key 与库字段）。 */
+const SORTABLE: Record<string, keyof Prisma.ContactOrderByWithRelationInput> = {
+  name: 'name',
+  company: 'company',
+  status: 'isHandled',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+};
+
+const DEFAULT_ORDER: Prisma.ContactOrderByWithRelationInput = { createdAt: 'desc' };
 
 const CONTACT_OPERATOR_INCLUDE = {
   lastOperatorUser: { select: LAST_OPERATOR_USER_SELECT },
 } as const;
+
+/** 询盘列表行的富化字段（转化状态 + 最后访问 IP；IP 与客户表一致，明文展示）。 */
+export interface ContactListEnrichment {
+  convertedCustomerId: string | null;
+  lastIp: string | null;
+  lastIpMasked: string | null;
+  lastIpHash: string | null;
+}
 
 /**
  * 询盘访客画像（GET /contact/:id/visitor-profile）：对齐「访客分析」的数据与
@@ -131,28 +156,90 @@ export class ContactService {
   ) {}
 
   async findAll(params: FindAllParams) {
-    const { page, limit, isRead, isHandled } = params;
+    const { page, limit, isRead, isHandled, search, sortBy, sortOrder } = params;
     const skip = (page - 1) * limit;
 
     const where: Prisma.ContactWhereInput = {};
     if (isRead !== undefined) where.isRead = isRead;
     if (isHandled !== undefined) where.isHandled = isHandled;
+    if (search?.trim()) {
+      const q = search.trim();
+      where.OR = [
+        { name: { contains: q } },
+        { company: { contains: q } },
+        { phone: { contains: q } },
+        { email: { contains: q } },
+        { subject: { contains: q } },
+        { message: { contains: q } },
+      ];
+    }
+
+    const dir: 'asc' | 'desc' = sortOrder === 'asc' ? 'asc' : 'desc';
+    const orderBy: Prisma.ContactOrderByWithRelationInput =
+      sortBy && SORTABLE[sortBy] ? { [SORTABLE[sortBy]]: dir } : DEFAULT_ORDER;
 
     const [data, total] = await Promise.all([
       this.prisma.contact.findMany({
         where,
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         include: CONTACT_OPERATOR_INCLUDE,
       }),
       this.prisma.contact.count({ where }),
     ]);
 
     return {
-      data,
+      data: await this.enrichListRows(data),
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     };
+  }
+
+  /**
+   * 列表行富化：为每条询盘补充转化状态与「最后访问 IP」（明文 + 脱敏 + ipHash 用于抽屉下钻）。
+   * - convertedCustomerId：按 Customer.contactId 反查（批量）。
+   * - lastIp / lastIpMasked / lastIpHash：从 page_views 聚合最近一次非空 IP，
+   *   关联口径为 userId=contactId（identify 回写）或 visitorId=contact.visitorId（会话来源）。
+   *   与客户表口径一致，列表明文展示 IP。
+   */
+  private async enrichListRows<T extends { id: string; visitorId: string | null }>(
+    contacts: T[],
+  ): Promise<Array<T & ContactListEnrichment>> {
+    if (contacts.length === 0) return [];
+    const ids = contacts.map((c) => c.id);
+    const visitorIds = contacts.map((c) => c.visitorId).filter((v): v is string => Boolean(v));
+
+    const [customers, byUser, byVisitor] = await Promise.all([
+      this.prisma.customer.findMany({
+        where: { contactId: { in: ids } },
+        select: { id: true, contactId: true },
+      }),
+      aggregateLastIp(this.prisma, 'userId', ids),
+      visitorIds.length
+        ? aggregateLastIp(this.prisma, 'visitorId', visitorIds)
+        : Promise.resolve([]),
+    ]);
+
+    const convertedMap = new Map<string, string>();
+    for (const c of customers) {
+      if (c.contactId) convertedMap.set(c.contactId, c.id);
+    }
+    const userIpMap = new Map(byUser.map((r) => [r.key, r]));
+    const visitorIpMap = new Map(byVisitor.map((r) => [r.key, r]));
+
+    return contacts.map((c) => {
+      const viaUser = userIpMap.get(c.id);
+      const viaVisitor = c.visitorId ? visitorIpMap.get(c.visitorId) : undefined;
+      // 两条关联口径都可能命中，取最近一次访问的那条
+      const best = pickLatestIp(viaUser, viaVisitor);
+      return {
+        ...c,
+        convertedCustomerId: convertedMap.get(c.id) ?? null,
+        lastIp: best?.lastIp ?? null,
+        lastIpMasked: best?.lastIpMasked ?? null,
+        lastIpHash: best?.lastIpHash ?? null,
+      };
+    });
   }
 
   async findOne(id: string) {

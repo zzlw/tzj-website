@@ -512,6 +512,7 @@ model InternalDocument {
   status      String     @default("draft")
   tags        String[]   @default([])
   isPinned    Boolean    @default(false) @map("is_pinned")
+  sortOrder   Int        @default(0) @map("sort_order")
   viewCount   Int        @default(0) @map("view_count")
   publishedAt DateTime?  @map("published_at")
   createdBy         String?  @map("created_by")
@@ -527,6 +528,7 @@ model InternalDocument {
   permissions DocumentPermission[]
 
   @@index([folderId])
+  @@index([folderId, sortOrder])
   @@index([ownerId])
   @@index([status, updatedAt])
   @@index([isPinned])
@@ -679,6 +681,7 @@ model Customer {
   notes       String?  @db.Text
   chatRoomId  String?  @unique // 来源会话 roomId（幂等去重 + 溯源）
   contactId   String?  @unique // 来源询盘 ID（询盘转线索，幂等去重 + 溯源）
+  visitorId   String? // 来源匿名访客 ID（_tzj_vid，转化时直接锚定；访客列表/IP 归因首选）
 
   // 归属：空 = 公海；指向坐席 = 私海
   ownerId           String?
@@ -706,6 +709,7 @@ model Customer {
   @@index([lastContactAt])
   @@index([chatRoomId])
   @@index([contactId])
+  @@index([visitorId])
   @@map("customers")
 }
 

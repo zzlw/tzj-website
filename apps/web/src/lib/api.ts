@@ -111,23 +111,26 @@ export interface WebsiteContactPayload {
 export const getCases = (params?: Record<string, string | number | boolean | undefined>) =>
   fetchApi<PaginatedResponse<Case>>('/cases', { params });
 
-export const getCase = (slug: string) => fetchApi<ApiResponse<Case>>(`/cases/${slug}`);
+export const getCase = (slug: string, params?: Record<string, string | undefined>) =>
+  fetchApi<ApiResponse<Case>>(`/cases/${slug}`, { params });
 
 export const getNewsList = (params?: Record<string, string | number | boolean | undefined>) =>
   fetchApi<PaginatedResponse<News>>('/news', { params });
 
-export const getNewsItem = (slug: string) => fetchApi<ApiResponse<News>>(`/news/${slug}`);
+export const getNewsItem = (slug: string, params?: Record<string, string | undefined>) =>
+  fetchApi<ApiResponse<News>>(`/news/${slug}`, { params });
 
 export const getBlogs = (params?: Record<string, string | number | boolean | undefined>) =>
   fetchApi<PaginatedResponse<Blog>>('/blogs', { params });
 
-export const getBlog = (slug: string) => fetchApi<ApiResponse<Blog>>(`/blogs/${slug}`);
+export const getBlog = (slug: string, params?: Record<string, string | undefined>) =>
+  fetchApi<ApiResponse<Blog>>(`/blogs/${slug}`, { params });
 
 export const getTradeShows = (params?: Record<string, string | number | boolean | undefined>) =>
   fetchApi<PaginatedResponse<TradeShow>>('/trade-shows', { params });
 
-export const getTradeShow = (slug: string) =>
-  fetchApi<ApiResponse<TradeShow>>(`/trade-shows/${slug}`);
+export const getTradeShow = (slug: string, params?: Record<string, string | undefined>) =>
+  fetchApi<ApiResponse<TradeShow>>(`/trade-shows/${slug}`, { params });
 
 export const getPages = () => fetchApi<ApiResponse<unknown[]>>('/pages');
 

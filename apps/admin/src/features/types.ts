@@ -159,6 +159,16 @@ export interface ContactItem extends BaseEntity {
   remark?: string | null;
   lastOperator?: string | null;
   lastOperatorUser?: ContentOperatorUser | null;
+  /** 来源会话对应的匿名访客 ID（可点击跳转访客抽屉）。 */
+  visitorId?: string | null;
+  /** 已转化的客户 ID（该询盘已转为客户线索时有值）。 */
+  convertedCustomerId?: string | null;
+  /** 最近一次访问的明文 IP（与客户表一致，列表明文展示）。 */
+  lastIp?: string | null;
+  /** 最近一次访问的脱敏 IP（用于抽屉头部提示等场景）。 */
+  lastIpMasked?: string | null;
+  /** 最近一次访问 IP 的哈希（用于打开 IP 详情抽屉下钻）。 */
+  lastIpHash?: string | null;
 }
 
 export interface UserItem extends BaseEntity {
@@ -249,6 +259,12 @@ export interface CustomerItem extends BaseEntity {
   lastOperatorUser?: ContentOperatorUser | null;
   /** 来源会话对应的匿名访客 ID（来自 ChatRoom.visitorId，可点击跳转访客抽屉）。 */
   visitorId?: string | null;
+  /** 最后访问 IP（明文，后端按 visitorId/userId 聚合 page_views 得出）。 */
+  lastIp?: string | null;
+  /** 最后访问 IP（脱敏，如 183.14.*.*；下钻 IP 抽屉时的展示兜底）。 */
+  lastIpMasked?: string | null;
+  /** 最后访问 IP 的 hash（用于点击下钻 IP 详情抽屉，原始 IP 不外泄）。 */
+  lastIpHash?: string | null;
 }
 
 export interface DocFolderTreeNode {
@@ -271,6 +287,7 @@ export interface InternalDocumentItem extends BaseEntity {
   status: string;
   tags: string[];
   isPinned: boolean;
+  sortOrder?: number;
   viewCount: number;
   publishedAt?: string | null;
   createdBy?: string | null;

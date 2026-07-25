@@ -25,6 +25,12 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   params?: { from?: string; to?: string };
+  /**
+   * 是否拦截「外部点击 / Esc / 焦点外移」触发的自动关闭。
+   * 上层（人物抽屉）打开或正处于关闭动画/焦点回迁窗口时返回 true，
+   * 用于吸收 Radix 堆叠层的级联 dismiss，保证 LIFO。
+   */
+  shouldBlockDismiss?: () => boolean;
 }
 
 function relatedVisitorName(v: AnalyticsRelatedVisitor): string {
@@ -65,7 +71,14 @@ function RelatedVisitorsBar({ visitors }: { visitors: AnalyticsRelatedVisitor[] 
   );
 }
 
-export function IpVisitorDetailSheet({ ipHash, seed, open, onOpenChange, params }: Props) {
+export function IpVisitorDetailSheet({
+  ipHash,
+  seed,
+  open,
+  onOpenChange,
+  params,
+  shouldBlockDismiss,
+}: Props) {
   const { data, isLoading } = useAnalyticsIpActivity(open ? ipHash : null, params);
   // 头部优先用后端 header（仅凭 ipHash 即可渲染），回退到打开前透传的 seed。
   const header = data?.header;
@@ -83,6 +96,12 @@ export function IpVisitorDetailSheet({ ipHash, seed, open, onOpenChange, params 
       <SheetContent
         side="right"
         className="flex w-[520px] max-w-[90vw] flex-col p-0 sm:max-w-[520px]"
+        onEscapeKeyDown={(e) => {
+          if (shouldBlockDismiss?.()) e.preventDefault();
+        }}
+        onInteractOutside={(e) => {
+          if (shouldBlockDismiss?.()) e.preventDefault();
+        }}
       >
         <SheetHeader className="border-b px-5 py-4">
           <SheetTitle className="font-mono text-base">{ipLabel}</SheetTitle>

@@ -20,12 +20,13 @@ type TopBarProps = {
 };
 
 const ICON_CLASS =
-  'inline-flex shrink-0 gap-1.5 pt-3 text-secondary-text transition-colors hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary';
+  'inline-flex shrink-0 items-center gap-1.5 text-secondary-text transition-colors hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary';
 
 /**
  * 顶部工具栏（Utility Bar）
  * 固定在页面最顶部，展示联系方式、社媒入口与语言切换。
- * 仅桌面端（md+）显示，移动端隐藏。
+ * 仅桌面端（lg+）显示，与 --site-topbar-height 变量的计入断点（1024px）严格对齐；
+ * 高度锁定为变量值，避免实际渲染高度与吸顶导航的 top 偏移不一致产生透明缝隙。
  */
 export function TopBar({ phone, email, socialChannels, scanHint }: TopBarProps) {
   const locale = useLocale();
@@ -37,13 +38,13 @@ export function TopBar({ phone, email, socialChannels, scanHint }: TopBarProps) 
   const localeShort = LOCALE_SHORT[locale as keyof typeof LOCALE_SHORT];
 
   return (
-    <div className="top-bar hidden bg-white md:block">
-      <Container className="flex justify-end gap-6 text-xs">
+    <div className="top-bar hidden bg-white lg:block">
+      <Container className="flex h-[var(--site-topbar-height)] items-center justify-end gap-6 text-xs">
         {/* ── 社媒 + 联系方式 + 语言切换（全部右对齐） ── */}
-        <div className="flex gap-4">
+        <div className="flex items-center gap-4">
           {socialChannels.length > 0 ? (
             <>
-              <ul className="flex gap-1" aria-label={tContact('followUs')}>
+              <ul className="flex items-center gap-1" aria-label={tContact('followUs')}>
                 {socialChannels.map((channel) => {
                   if (channel.href) {
                     return (

@@ -1,0 +1,9 @@
+schema_version: 1
+module_path: api_server/security
+title: 安全管控与 IP 封禁模块
+scope:
+    - apps/api/src/security/
+source_files: []
+depends_on: []
+related_to:
+    - path: admin_app/shared_features_api_hooks

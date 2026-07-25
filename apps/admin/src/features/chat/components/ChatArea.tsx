@@ -17,7 +17,6 @@ interface Props {
   onClose: () => void;
   quickReplies: string[];
   onQuickReply: (text: string) => void;
-  onConverted?: (customerId: string) => void;
   /** 在线坐席花名册（P1 H3 转接目标） */
   onlineAgents?: OnlineAgent[];
   /** 当前坐席邮箱（用于转接列表排除自身） */
@@ -40,7 +39,6 @@ export function ChatArea({
   onClose,
   quickReplies,
   onQuickReply,
-  onConverted,
   onlineAgents = [],
   currentAgentEmail,
   onTransfer,
@@ -188,7 +186,6 @@ export function ChatArea({
       <ChatHeader
         room={room}
         onClose={onClose}
-        onConverted={onConverted}
         onlineAgents={onlineAgents}
         currentAgentEmail={currentAgentEmail}
         onTransfer={onTransfer}
