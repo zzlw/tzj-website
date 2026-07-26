@@ -1,8 +1,21 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Req } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  Req,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
-import { AuthService } from './auth.service';
+import { extractClientIp } from '../common/utils/client-ip';
 import type { RequestMeta } from './auth.service';
+import { AuthService } from './auth.service';
+import { AllowUnenrolled } from './decorators/allow-unenrolled.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { Public } from './decorators/public.decorator';
 import { LoginDto, LogoutDto, RefreshDto } from './dto/auth.dto';
@@ -11,7 +24,8 @@ import type { AuthUser } from './roles';
 
 function metaFrom(req: Request & { id?: string }): RequestMeta {
   return {
-    ip: req.ip,
+    // 统一真实 IP 口径（受信代理才采信 XFF），避免 BFF 拓扑下审计源 IP 恒为 BFF 地址
+    ip: extractClientIp(req),
     userAgent: req.headers['user-agent'],
     traceId: req.id,
   };
@@ -38,6 +52,7 @@ export class AuthController {
     return this.auth.refresh(dto.refreshToken, metaFrom(req));
   }
 
+  @AllowUnenrolled()
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
@@ -46,6 +61,7 @@ export class AuthController {
     return this.auth.logout(dto.refreshToken, metaFrom(req));
   }
 
+  @AllowUnenrolled()
   @Get('me')
   @ApiBearerAuth()
   @ApiOperation({ summary: '获取当前登录用户' })

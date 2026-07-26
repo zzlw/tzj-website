@@ -1,5 +1,6 @@
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import compression from 'compression';
 import helmet from 'helmet';
@@ -7,9 +8,13 @@ import { AppModule } from './app.module';
 import { requestId } from './common/middleware/request-id.middleware';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: ['error', 'warn', 'log', 'debug', 'verbose'],
   });
+
+  // 仅信任回环/内网代理（BFF/反代）的 X-Forwarded-For，不可 true（公网可伪造）；
+  // 与 common/utils/client-ip.ts 的 isTrustedProxyIp 口径一致
+  app.set('trust proxy', 'loopback, linklocal, uniquelocal');
 
   // 安全 & 性能
   app.use(requestId);

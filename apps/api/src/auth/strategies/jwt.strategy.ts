@@ -19,8 +19,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: JwtPayload): Promise<AuthUser> {
-    if (payload.type === 'refresh') {
-      throw new UnauthorizedException('不能使用刷新令牌访问资源');
+    // 仅接受 access 令牌：refresh / twofa_pending（预鉴权）均不得当作登录态使用
+    if (payload.type !== 'access') {
+      throw new UnauthorizedException('令牌类型错误');
     }
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
@@ -33,6 +34,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       username: user.username,
       role: user.role as Role,
       nickname: user.nickname,
+      twoFactorEnabled: user.twoFactorEnabled,
     };
   }
 }

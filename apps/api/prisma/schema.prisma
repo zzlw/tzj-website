@@ -248,11 +248,19 @@ model User {
   lastLoginAt DateTime?
   failedLoginAttempts Int      @default(0)
   lockedUntil         DateTime?
+  // ── 2FA（TOTP）：全部可空/带默认值，向后兼容无破坏性迁移 ──
+  twoFactorEnabled          Boolean   @default(false) // 是否已启用 2FA
+  twoFactorSecretEnc        String?                   // AES-256-GCM 加密后的 TOTP Secret（启用后才写入）
+  twoFactorPendingSecretEnc String?                   // 绑定流程中的待确认 Secret（加密），确认或超时后清空
+  twoFactorPendingCreatedAt DateTime?                 // 待确认 Secret 生成时间（15 分钟过期）
+  twoFactorConfirmedAt      DateTime?                 // 启用时间（审计/展示用）
+  twoFactorLastStep         BigInt?                   // 最近一次成功校验的 TOTP 绝对时间步（重放防护；BigInt 规避 Int32 溢出）
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   sessions    Session[]
   auditLogs   AuditLog[]
+  recoveryCodes TwoFactorRecoveryCode[]
   mediaAssets MediaAsset[]
   casesLastOperated     Case[]      @relation("CaseLastOperator")
   newsLastOperated      News[]      @relation("NewsLastOperator")
@@ -279,6 +287,23 @@ model User {
   docPermissionsAsUser  DocumentPermission[] @relation("DocPermissionUser")
 
   @@map("users")
+}
+
+// ═══════════════════════════════════════════
+// 2FA 恢复码（一次一密，不存明文）
+// ═══════════════════════════════════════════
+model TwoFactorRecoveryCode {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash  String                    // SHA-256(codeSalt ‖ 规范化恢复码)，不存明文
+  codeSalt  String                    // 每码独立 salt（CSPRNG），与 codeHash 同记录
+  usedAt    DateTime?                 // 使用即标记，永不复用
+  createdAt DateTime  @default(now())
+
+  // 加盐后无法按 hash 反查（验证时逐条带 salt 比对），仅按用户索引
+  @@index([userId])
+  @@map("two_factor_recovery_codes")
 }
 
 // ═══════════════════════════════════════════
@@ -341,6 +366,8 @@ model Session {
   // 而非误判为令牌盗用撤销全部会话（解决坐席被频繁强制登出的问题）。
   rotatedToHash String?
   graceUntil    DateTime?
+  // 2FA gating：本会话通过 2FA 验证的时间；twoFactorEnabled 用户的会话若为 null，refresh 时拒绝（堵 refresh 绕过 2FA）
+  twoFactorVerifiedAt DateTime?
   createdAt    DateTime @default(now())
   lastUsedAt   DateTime @default(now())
 

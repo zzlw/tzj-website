@@ -8,6 +8,7 @@
 import { Badge, Skeleton } from '@tzj/ui';
 import { Activity, ChevronDown, ChevronRight, Network } from 'lucide-react';
 import { useState } from 'react';
+import { CopyableIp } from '@/components/CopyableText';
 import {
   type AnalyticsVisitorActivity,
   type AnalyticsVisitorNetwork,
@@ -16,6 +17,7 @@ import {
   formatDeviceModel,
   formatDuration,
   formatLastSeen,
+  regionLabel,
   sourceLabel,
 } from '@/features/analytics';
 
@@ -70,8 +72,7 @@ function TechInfoBar({ activity }: { activity: AnalyticsVisitorActivity }) {
   const osValue = [techInfo.os, techInfo.osVersion].filter(Boolean).join(' ') || '未知';
   const browserValue =
     [techInfo.browser, techInfo.browserVersion].filter(Boolean).join(' ') || '未知';
-  const region =
-    [techInfo.region, techInfo.city].filter(Boolean).join(' · ') || techInfo.country || '未知';
+  const region = regionLabel(techInfo, '未知');
   const source = techInfo.channel ? sourceLabel(techInfo.channel) : '直接访问';
   return (
     <div className="bg-muted/30 rounded-lg border p-3 text-xs">
@@ -157,6 +158,7 @@ function SessionItem({
 }
 
 /** 历史网络 / 地区：该访客跨 IP 汇总（按 ipHash 去重），反映「同一个人换了网络」。
+    IP 明文展示（内部后台口径，无明文回退掩码）+ 点击复制。
     仅人物抽屉（按 visitorId）有此数据；IP 抽屉为 undefined，不渲染。 */
 function NetworksSection({ networks }: { networks: AnalyticsVisitorNetwork[] }) {
   if (networks.length === 0) return null;
@@ -168,12 +170,10 @@ function NetworksSection({ networks }: { networks: AnalyticsVisitorNetwork[] }) 
       </div>
       <ul className="space-y-1.5">
         {networks.map((n, i) => (
-          <li key={`${n.ipMasked ?? 'ip'}-${i}`} className="flex items-center gap-2">
-            <span className="min-w-0 flex-1 truncate">
-              <span className="text-foreground">{n.region || '未知地区'}</span>
-              {n.ipMasked ? (
-                <span className="text-muted-foreground ml-1.5 font-mono">{n.ipMasked}</span>
-              ) : null}
+          <li key={`${n.ip ?? n.ipMasked ?? 'ip'}-${i}`} className="flex items-center gap-2">
+            <span className="flex min-w-0 flex-1 items-center gap-1.5">
+              <span className="text-foreground shrink-0">{n.region || '未知地区'}</span>
+              <CopyableIp ip={n.ip} ipMasked={n.ipMasked} />
             </span>
             <span className="text-muted-foreground shrink-0 tabular-nums">{n.pageViews} 页</span>
             <span className="text-muted-foreground shrink-0">{formatLastSeen(n.lastSeenAt)}</span>

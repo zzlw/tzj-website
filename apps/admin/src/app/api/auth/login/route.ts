@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 import { API_BASE, COOKIE } from '@/lib/config';
 import { retryFetch } from '@/lib/fetch-retry';
+import { forwardMetaHeaders } from '@/lib/forward-meta';
 
 export async function POST(req: NextRequest) {
   let payload: { username?: string; password?: string };
@@ -16,16 +17,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, message: '请输入用户名和密码' }, { status: 400 });
   }
 
-  const res = await retryFetch(
-    `${API_BASE}/auth/login`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
-      cache: 'no-store',
-    },
-    { retryWrites: true }, // login 无副作用，安全重试
-  );
+  const res = await retryFetch(`${API_BASE}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...forwardMetaHeaders(req) },
+    body: JSON.stringify({ username, password }),
+    cache: 'no-store',
+  }); // 2FA 后 login 会签发 pendingToken（单用 jti），不再开启写重试
 
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
@@ -37,6 +34,17 @@ export async function POST(req: NextRequest) {
   }
 
   const data = body?.data ?? body;
+
+  // 两步验证账号：透传预鉴权态，不写任何 cookie（pendingToken 由前端持有至 verify）
+  if (data?.requires2fa) {
+    return NextResponse.json({
+      success: true,
+      requires2fa: true,
+      pendingToken: data.pendingToken,
+      expiresIn: data.expiresIn,
+    });
+  }
+
   const { accessToken, refreshToken, user } = data;
   if (!accessToken || !refreshToken) {
     return NextResponse.json({ success: false, message: '服务端未返回令牌' }, { status: 502 });

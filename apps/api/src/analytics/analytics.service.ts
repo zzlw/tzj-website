@@ -23,6 +23,7 @@ import {
   referrerOrderClause,
   regionOrderClause,
   visitorBaseFilterSql,
+  visitorConvertedFlagSql,
   visitorDetailOrderClause,
   visitorGroupWhereSql,
   visitorOrderClause,
@@ -175,6 +176,7 @@ interface VisitorPageViewRow {
   // 网络维度（仅 getVisitorActivity 查询，按 visitorId 归并跨 IP 时用；IP 抽屉不选，故可选）
   ipHash?: string | null;
   ipMasked?: string | null;
+  ip?: string | null;
 }
 
 // 时间正序 views 中「最近一次」非空值（用于设备/地区等取代表值）
@@ -263,33 +265,131 @@ function buildVisitorTechInfo(views: VisitorPageViewRow[]) {
   };
 }
 
+/** 全量导出单次上限（防超大导出拖垮查询与浏览器） */
+const EXPORT_MAX_ROWS = 5000;
+
+/** 首访→询盘的天数（保留 1 位小数，负值归 0：询盘早于筛选区间内首访时视为当日转化） */
+function diffDaysNonNegative(fromIso: string, to: Date): number {
+  const from = new Date(fromIso).getTime();
+  if (Number.isNaN(from)) return 0;
+  return Math.max(0, Math.round(((to.getTime() - from) / 86_400_000) * 10) / 10);
+}
+
+/** 转化反查命中的询盘引用（最早一条） */
+interface ContactRef {
+  id: string;
+  createdAt: Date;
+}
+
+/** Contact 匹配条件：visitorId（埋点同源锚定）为主、email 为辅；两者皆空返回空数组 */
+function buildContactMatchOr(visitorIds: string[], emails: string[]): Prisma.ContactWhereInput[] {
+  const or: Prisma.ContactWhereInput[] = [];
+  if (visitorIds.length > 0) or.push({ visitorId: { in: visitorIds } });
+  if (emails.length > 0) or.push({ email: { in: emails } });
+  return or;
+}
+
+/** 时间正序询盘建索引：visitorId / email 各保留最早一条 */
+function indexEarliestContacts(
+  contacts: Array<{ id: string; visitorId: string | null; email: string | null; createdAt: Date }>,
+) {
+  const byVisitorId = new Map<string, ContactRef>();
+  const byEmail = new Map<string, ContactRef>();
+  for (const c of contacts) {
+    const entry = { id: c.id, createdAt: c.createdAt };
+    if (c.visitorId && !byVisitorId.has(c.visitorId)) byVisitorId.set(c.visitorId, entry);
+    if (c.email && !byEmail.has(c.email)) byEmail.set(c.email, entry);
+  }
+  return { byVisitorId, byEmail };
+}
+
+/** 转化归因反查出的询盘行（含 identify 回写场景需要的 id 键） */
+type LeadContactRow = {
+  id: string;
+  visitorId: string | null;
+  email: string | null;
+  createdAt: Date;
+};
+
+/** 时间倒序询盘建索引：询盘 id / visitorId / email 各保留最近一条（desc 首次写入即最近） */
+function indexLatestContactsByKey(contacts: LeadContactRow[]): Map<string, ContactRef> {
+  const latestByKey = new Map<string, ContactRef>();
+  for (const c of contacts) {
+    for (const key of [c.id, c.visitorId, c.email]) {
+      if (key && !latestByKey.has(key)) latestByKey.set(key, { id: c.id, createdAt: c.createdAt });
+    }
+  }
+  return latestByKey;
+}
+
+/** 已转客户建索引：Customer.visitorId / contactId 及其询盘的 visitorId / email 均指向客户 ID */
+function indexConvertedCustomersByKey(
+  customers: Array<{ id: string; contactId: string | null; visitorId: string | null }>,
+  contactById: Map<string, LeadContactRow>,
+): Map<string, string> {
+  const convertedByKey = new Map<string, string>();
+  for (const cust of customers) {
+    const contact = cust.contactId ? contactById.get(cust.contactId) : undefined;
+    for (const key of [cust.visitorId, cust.contactId, contact?.visitorId, contact?.email]) {
+      if (key && !convertedByKey.has(key)) convertedByKey.set(key, cust.id);
+    }
+  }
+  return convertedByKey;
+}
+
+/** 单行转化归因：多路身份键命中时取创建时间最近的询盘作去重锚点，任一键命中即视为已转客户 */
+function resolveRowLeadStatus(
+  keys: string[],
+  latestByKey: Map<string, ContactRef>,
+  convertedByKey: Map<string, string>,
+): { latestContactId: string | null; convertedCustomerId: string | null } {
+  let latest: ContactRef | null = null;
+  let converted: string | null = null;
+  for (const key of keys) {
+    const hit = latestByKey.get(key);
+    if (hit && (!latest || hit.createdAt > latest.createdAt)) latest = hit;
+    converted ??= convertedByKey.get(key) ?? null;
+  }
+  return { latestContactId: latest?.id ?? null, convertedCustomerId: converted };
+}
+
+/** buildVisitorNetworks 的单个网络（ipHash）聚合桶 */
+interface VisitorNetworkBucket {
+  ip: string | null;
+  ipMasked: string | null;
+  country: string | null;
+  region: string | null;
+  city: string | null;
+  pageViews: number;
+  firstSeenAt: Date;
+  lastSeenAt: Date;
+}
+
+/** 向已有网络桶归并一条 PageView：累计浏览量、拓宽首末时间，并回填早期数据缺失的 IP 列 */
+function mergeNetworkView(bucket: VisitorNetworkBucket, v: VisitorPageViewRow): void {
+  bucket.pageViews += 1;
+  if (v.createdAt < bucket.firstSeenAt) bucket.firstSeenAt = v.createdAt;
+  if (v.createdAt > bucket.lastSeenAt) bucket.lastSeenAt = v.createdAt;
+  // 同一 ipHash 明文 IP 同源，但早期数据可能缺列，遇非空值回填
+  if (!bucket.ip && v.ip) bucket.ip = v.ip;
+  if (!bucket.ipMasked && v.ipMasked) bucket.ipMasked = v.ipMasked;
+}
+
 /**
  * 该访客用过的网络/地区（按 ipHash 去重）：反映「同一个人换了 IP/网络」（visitorId 不变、IP 变）。
- * 按最近使用倒序，展示掩码 IP + 地区 + 该网络下的浏览量/首末时间；供人物抽屉「历史网络」小节。
+ * 按最近使用倒序，展示明文 IP（回退掩码）+ 地区 + 该网络下的浏览量/首末时间；供人物抽屉「历史网络」小节。
  */
 function buildVisitorNetworks(views: VisitorPageViewRow[]) {
-  const map = new Map<
-    string,
-    {
-      ipMasked: string | null;
-      country: string | null;
-      region: string | null;
-      city: string | null;
-      pageViews: number;
-      firstSeenAt: Date;
-      lastSeenAt: Date;
-    }
-  >();
+  const map = new Map<string, VisitorNetworkBucket>();
   for (const v of views) {
     const key = v.ipHash ?? '';
     if (!key) continue;
     const existing = map.get(key);
     if (existing) {
-      existing.pageViews += 1;
-      if (v.createdAt < existing.firstSeenAt) existing.firstSeenAt = v.createdAt;
-      if (v.createdAt > existing.lastSeenAt) existing.lastSeenAt = v.createdAt;
+      mergeNetworkView(existing, v);
     } else {
       map.set(key, {
+        ip: v.ip ?? null,
         ipMasked: v.ipMasked ?? null,
         country: v.country,
         region: v.region,
@@ -303,6 +403,7 @@ function buildVisitorNetworks(views: VisitorPageViewRow[]) {
   return Array.from(map.values())
     .sort((a, b) => b.lastSeenAt.getTime() - a.lastSeenAt.getTime())
     .map((n) => ({
+      ip: n.ip,
       ipMasked: n.ipMasked,
       region: formatGeoLabel({ country: n.country, region: n.region, city: n.city }),
       pageViews: n.pageViews,
@@ -1130,6 +1231,12 @@ export class AnalyticsService {
         lastIpMasked: string | null;
         lastIpHash: string | null;
         referrerHost: string | null;
+        utmSource: string | null;
+        utmMedium: string | null;
+        utmCampaign: string | null;
+        utmContent: string | null;
+        utmTerm: string | null;
+        gclid: string | null;
         touchedContact: boolean | null;
         touchedCase: boolean | null;
         userId: string | null;
@@ -1161,6 +1268,12 @@ export class AnalyticsService {
           pv."clientApp",
           pv."referrerHost",
           pv."trafficSource",
+          pv."utmSource",
+          pv."utmMedium",
+          pv."utmCampaign",
+          pv."utmContent",
+          pv."utmTerm",
+          pv."gclid",
           pv."ip",
           pv."ipMasked",
           pv."ipHash",
@@ -1204,6 +1317,13 @@ export class AnalyticsService {
         (ARRAY_AGG("ipMasked" ORDER BY "createdAt" DESC) FILTER (WHERE "ipMasked" IS NOT NULL))[1] AS "lastIpMasked",
         (ARRAY_AGG("ipHash" ORDER BY "createdAt" DESC) FILTER (WHERE "ipHash" IS NOT NULL))[1] AS "lastIpHash",
         (ARRAY_AGG("referrerHost" ORDER BY "createdAt" ASC) FILTER (WHERE "referrerHost" IS NOT NULL))[1] AS "referrerHost",
+        -- 营销归因（首触）：UTM 五参数 + Google Ads 点击 ID，供导出做投放分析
+        (ARRAY_AGG("utmSource" ORDER BY "createdAt" ASC) FILTER (WHERE "utmSource" IS NOT NULL))[1] AS "utmSource",
+        (ARRAY_AGG("utmMedium" ORDER BY "createdAt" ASC) FILTER (WHERE "utmMedium" IS NOT NULL))[1] AS "utmMedium",
+        (ARRAY_AGG("utmCampaign" ORDER BY "createdAt" ASC) FILTER (WHERE "utmCampaign" IS NOT NULL))[1] AS "utmCampaign",
+        (ARRAY_AGG("utmContent" ORDER BY "createdAt" ASC) FILTER (WHERE "utmContent" IS NOT NULL))[1] AS "utmContent",
+        (ARRAY_AGG("utmTerm" ORDER BY "createdAt" ASC) FILTER (WHERE "utmTerm" IS NOT NULL))[1] AS "utmTerm",
+        (ARRAY_AGG("gclid" ORDER BY "createdAt" ASC) FILTER (WHERE "gclid" IS NOT NULL))[1] AS "gclid",
         ${keyPageTouchedSql(CONTACT_PATH_SEGMENTS)} AS "touchedContact",
         ${keyPageTouchedSql(CASE_PATH_SEGMENTS)} AS "touchedCase",
         (ARRAY_AGG("userId" ORDER BY "createdAt" DESC) FILTER (WHERE "userId" IS NOT NULL))[1] AS "userId",
@@ -1214,15 +1334,30 @@ export class AnalyticsService {
         (ARRAY_AGG("identifiedAt" ORDER BY "createdAt" DESC) FILTER (WHERE "identifiedAt" IS NOT NULL))[1] AS "identifiedAt"
       FROM base
       GROUP BY "mergeKey"
+      ),
+      flagged AS (
+        -- flagged：在归并行上附人物级转化旗标（口径同 loadVisitorLeadStatuses），供筛选/排序在分页前生效
+        SELECT grouped.*, ${visitorConvertedFlagSql()} AS "converted"
+        FROM grouped
       )
-      SELECT grouped.*, COUNT(*) OVER()::bigint AS "_total"
-      FROM grouped
+      SELECT flagged.*, COUNT(*) OVER()::bigint AS "_total"
+      FROM flagged
       ${groupWhere}
       ORDER BY ${order}
       LIMIT ${limit} OFFSET ${skip}
     `;
 
     const total = Number(rows[0]?._total ?? 0);
+
+    // 人物级转化状态（转化去重锚点 + 已转客户徽标）：仅对当页行做两次精确 in 反查
+    const leadByKey = await this.loadVisitorLeadStatuses(
+      rows.map((row) => ({
+        id: row.mergeKey,
+        visitorId: row.visitorId ?? row.mergeKey,
+        userId: row.userId,
+        email: row.email,
+      })),
+    );
 
     return {
       data: rows.map((row) => ({
@@ -1257,11 +1392,121 @@ export class AnalyticsService {
         lastIpMasked: row.lastIpMasked,
         lastIpHash: row.lastIpHash,
         referrerHost: row.referrerHost,
+        utmSource: row.utmSource,
+        utmMedium: row.utmMedium,
+        utmCampaign: row.utmCampaign,
+        utmContent: row.utmContent,
+        utmTerm: row.utmTerm,
+        gclid: row.gclid,
         touchedContact: Boolean(row.touchedContact),
         touchedCase: Boolean(row.touchedCase),
+        // 人物级转化：最近一条询盘 ID（转化去重锚点）+ 已转客户 ID（列表徽标/档案链接）
+        latestContactId: leadByKey.get(row.mergeKey)?.latestContactId ?? null,
+        convertedCustomerId: leadByKey.get(row.mergeKey)?.convertedCustomerId ?? null,
       })),
       pagination: paginateMeta(page, limit, total),
     };
+  }
+
+  /**
+   * 人物级转化状态批量版（口径同 resolveVisitorLeadStatus，供列表附带）：
+   * 询盘链路按 id（identify 回写 userId=contactId）/ visitorId 锚定 / email 三路合并反查，
+   * 已转客户按 Customer.contactId / Customer.visitorId 任一命中；共两次精确 in 查询。
+   */
+  private async loadVisitorLeadStatuses(
+    rows: Array<{ id: string; visitorId: string; userId: string | null; email: string | null }>,
+  ): Promise<Map<string, { latestContactId: string | null; convertedCustomerId: string | null }>> {
+    const result = new Map<
+      string,
+      { latestContactId: string | null; convertedCustomerId: string | null }
+    >();
+    if (rows.length === 0) return result;
+    // 访客身份键：匿名 visitorId 与识别后的 userId 均视为同一人
+    const visitorKeys = [
+      ...new Set(rows.flatMap((r) => [r.visitorId, r.userId]).filter((v): v is string => !!v)),
+    ];
+    const emails = [...new Set(rows.map((r) => r.email).filter((v): v is string => !!v))];
+
+    const contacts = await this.prisma.contact.findMany({
+      where: { OR: [{ id: { in: visitorKeys } }, ...buildContactMatchOr(visitorKeys, emails)] },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, visitorId: true, email: true, createdAt: true },
+    });
+
+    const customerOr: Prisma.CustomerWhereInput[] = [{ visitorId: { in: visitorKeys } }];
+    if (contacts.length) customerOr.push({ contactId: { in: contacts.map((c) => c.id) } });
+    const customers = await this.prisma.customer.findMany({
+      where: { OR: customerOr },
+      select: { id: true, contactId: true, visitorId: true },
+    });
+
+    // 建索引：身份键/邮箱 → 最近询盘；身份键/询盘键 → 已转客户；再逐行 O(1) 归因
+    const contactById = new Map(contacts.map((c) => [c.id, c]));
+    const latestByKey = indexLatestContactsByKey(contacts);
+    const convertedByKey = indexConvertedCustomersByKey(customers, contactById);
+    for (const row of rows) {
+      const keys = [row.visitorId, row.userId, row.email].filter((v): v is string => !!v);
+      result.set(row.id, resolveRowLeadStatus(keys, latestByKey, convertedByKey));
+    }
+    return result;
+  }
+
+  /**
+   * 「按访客」lens 全量导出：复用 listVisitors 的筛选/排序，去分页（上限防超大导出），
+   * 并附加转化标签（是否提交询盘 / 是否转客户 / 首访至询盘天数）供 AI 做投放与画像分析。
+   * 返回带 pagination：TransformInterceptor 仅对 { data, pagination } 结构上提 data，
+   * 缺了会被包成嵌套 data.data，前端 api.list 拿到的就不是数组。
+   */
+  async exportVisitors(params: Omit<AnalyticsListParams, 'page' | 'limit'>) {
+    const { data } = await this.listVisitors({ ...params, page: 1, limit: EXPORT_MAX_ROWS });
+    const conversion = await this.loadVisitorConversion(data);
+    return {
+      data: data.map((row) => {
+        const contact =
+          conversion.byVisitorId.get(row.visitorId) ??
+          (row.email ? conversion.byEmail.get(row.email) : undefined);
+        return {
+          ...row,
+          inquirySubmitted: Boolean(contact),
+          inquiredAt: contact?.createdAt.toISOString() ?? null,
+          // 已转客户以列表同源的 convertedCustomerId 为准（覆盖 Customer.visitorId 链路）
+          convertedCustomer: Boolean(row.convertedCustomerId),
+          daysToInquiry: contact ? diffDaysNonNegative(row.firstSeenAt, contact.createdAt) : null,
+        };
+      }),
+      pagination: paginateMeta(1, EXPORT_MAX_ROWS, data.length),
+    };
+  }
+
+  /**
+   * 导出行的询盘反查：Contact 按 visitorId（埋点同源锚定）为主、email 为辅匹配，
+   * 同一键保留最早一条（是否转客户由列表行的 convertedCustomerId 提供）。
+   * 小公司量级下一次精确 in 查询即可，不做预聚合表。
+   */
+  private async loadVisitorConversion(rows: Array<{ visitorId: string; email: string | null }>) {
+    const visitorIds = [...new Set(rows.map((r) => r.visitorId).filter(Boolean))];
+    const emails = [...new Set(rows.map((r) => r.email).filter((v): v is string => Boolean(v)))];
+    const or = buildContactMatchOr(visitorIds, emails);
+    if (or.length === 0) {
+      return {
+        byVisitorId: new Map<string, ContactRef>(),
+        byEmail: new Map<string, ContactRef>(),
+      };
+    }
+
+    const contacts = await this.prisma.contact.findMany({
+      where: { OR: or },
+      select: { id: true, visitorId: true, email: true, createdAt: true },
+      orderBy: { createdAt: 'asc' },
+    });
+    return indexEarliestContacts(contacts);
+  }
+
+  /** 「按 IP」lens 全量导出：复用 listVisitorDetails 的筛选/排序，去分页（上限防超大导出）。 */
+  async exportVisitorDetails(params: Omit<AnalyticsListParams, 'page' | 'limit'>) {
+    const { data } = await this.listVisitorDetails({ ...params, page: 1, limit: EXPORT_MAX_ROWS });
+    // 同 exportVisitors：带 pagination 才能被拦截器上提 data，保持列表接口同构
+    return { data, pagination: paginateMeta(1, EXPORT_MAX_ROWS, data.length) };
   }
 
   /**
@@ -1299,6 +1544,7 @@ export class AnalyticsService {
         country: true,
         ipHash: true,
         ipMasked: true,
+        ip: true,
       },
     });
 
@@ -1427,7 +1673,8 @@ export class AnalyticsService {
       });
   }
 
-  /** 人物抽屉头部身份：按 anonymousId 或已识别 userId 命中 visitors 表，无记录则空身份。 */
+  /** 人物抽屉头部身份：按 anonymousId 或已识别 userId 命中 visitors 表；
+      字段级兜底链：前台自报(visitors) → 转化后客户档案 → 最近一条询盘表单（转化而来的访客多未自报过身份，不兜底会显示匿名）。 */
   private async resolveVisitorIdentity(visitorId: string) {
     const visitor = await this.prisma.visitor.findFirst({
       where: { OR: [{ anonymousId: visitorId }, { userId: visitorId }] },
@@ -1441,12 +1688,14 @@ export class AnalyticsService {
       },
     });
     const lead = await this.resolveVisitorLeadStatus(visitorId, visitor);
+    const customer = lead.customer;
+    const contact = lead.latestContact;
     return {
       visitorId,
-      name: visitor?.name ?? null,
-      email: visitor?.email ?? null,
-      phone: visitor?.phone ?? null,
-      company: visitor?.company ?? null,
+      name: visitor?.name ?? customer?.name ?? contact?.name ?? null,
+      email: visitor?.email ?? customer?.email ?? contact?.email ?? null,
+      phone: visitor?.phone ?? customer?.phone ?? contact?.phone ?? null,
+      company: visitor?.company ?? customer?.company ?? contact?.company ?? null,
       identified: Boolean(visitor?.identifiedAt),
       // 人物级转化：最近一条询盘 contactId 作去重锚点，任一已关联 Customer 则标记已转
       latestContactId: lead.latestContactId,
@@ -1458,11 +1707,12 @@ export class AnalyticsService {
    * 人物级转化状态：覆盖询盘 contactId / 访客 visitorId 两条归因链路，
    * 任一命中已关联 Customer 即标记「已转客户」；同时返回最近一条 contactId 作转化去重锚点。
    * 纯访客/纯聊天转化（无询盘）依靠转化时回写的 visitorId 识别，避免头部误显示未转化。
+   * 同时带出客户档案 / 最近询盘的联系信息，供抽屉头部身份兜底展示。
    */
   private async resolveVisitorLeadStatus(
     visitorId: string,
     visitor: { userId: string | null; email: string | null } | null,
-  ): Promise<{ latestContactId: string | null; convertedCustomerId: string | null }> {
+  ) {
     // 访客身份键：匿名 ID 与识别后的 userId 均视为同一访客
     const visitorKeys = [visitorId, visitor?.userId].filter((v): v is string => !!v);
     const emails = [visitor?.email].filter((v): v is string => !!v);
@@ -1473,7 +1723,7 @@ export class AnalyticsService {
         ? await this.prisma.contact.findMany({
             where: { OR: [{ id: { in: visitorKeys } }, { email: { in: emails } }] },
             orderBy: { createdAt: 'desc' },
-            select: { id: true },
+            select: { id: true, name: true, email: true, phone: true, company: true },
           })
         : [];
     const contactIds = contacts.map((c) => c.id);
@@ -1483,12 +1733,17 @@ export class AnalyticsService {
     if (contactIds.length) orConds.push({ contactId: { in: contactIds } });
     if (visitorKeys.length) orConds.push({ visitorId: { in: visitorKeys } });
     const customer = orConds.length
-      ? await this.prisma.customer.findFirst({ where: { OR: orConds }, select: { id: true } })
+      ? await this.prisma.customer.findFirst({
+          where: { OR: orConds },
+          select: { id: true, name: true, email: true, phone: true, company: true },
+        })
       : null;
 
     return {
       latestContactId: contacts[0]?.id ?? null,
       convertedCustomerId: customer?.id ?? null,
+      customer,
+      latestContact: contacts[0] ?? null,
     };
   }
 

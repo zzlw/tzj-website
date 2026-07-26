@@ -12,9 +12,10 @@ import {
   Label,
   PageHeader,
 } from '@tzj/ui';
-import { Loader2, Monitor, Smartphone, LogOut } from 'lucide-react';
+import { Loader2, LogOut, Monitor, Smartphone } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useSession } from '@/components/session';
+import { TwoFactorCard } from '@/components/settings/TwoFactorCard';
 import {
   useChangePassword,
   useProfile,
@@ -73,7 +74,7 @@ export default function AccountSettingsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-6xl">
       <PageHeader title="账户设置" description="管理个人资料与登录密码" />
 
       {isError && (
@@ -87,89 +88,96 @@ export default function AccountSettingsPage() {
           <Loader2 className="h-6 w-6 animate-spin" />
         </div>
       ) : (
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">基本信息</CardTitle>
-              <CardDescription>
-                用户名 {profile?.username} · {roleLabel(role)}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={saveProfile} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="nickname">昵称</Label>
-                  <Input
-                    id="nickname"
-                    value={nickname}
-                    onChange={(e) => setNickname(e.target.value)}
-                    placeholder="显示名称"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">邮箱</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="name@example.com"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">手机号</Label>
-                  <Input
-                    id="phone"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="可选"
-                  />
-                </div>
-                <Button type="submit" disabled={updateProfile.isPending}>
-                  {updateProfile.isPending ? '保存中…' : '保存资料'}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+        /* 大屏双列：左侧资料/密码，右侧安全相关（ 2FA + 会话）；窄屏退回单列 */
+        <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">基本信息</CardTitle>
+                <CardDescription>
+                  用户名 {profile?.username} · {roleLabel(role)}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={saveProfile} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="nickname">昵称</Label>
+                    <Input
+                      id="nickname"
+                      value={nickname}
+                      onChange={(e) => setNickname(e.target.value)}
+                      placeholder="显示名称"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">邮箱</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="name@example.com"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">手机号</Label>
+                    <Input
+                      id="phone"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="可选"
+                    />
+                  </div>
+                  <Button type="submit" disabled={updateProfile.isPending}>
+                    {updateProfile.isPending ? '保存中…' : '保存资料'}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">修改密码</CardTitle>
-              <CardDescription>修改成功后当前所有会话将失效，需重新登录</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={savePassword} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="currentPassword">当前密码</Label>
-                  <Input
-                    id="currentPassword"
-                    type="password"
-                    autoComplete="current-password"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="newPassword">新密码</Label>
-                  <Input
-                    id="newPassword"
-                    type="password"
-                    autoComplete="new-password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    minLength={8}
-                    required
-                  />
-                </div>
-                <Button type="submit" disabled={changePassword.isPending}>
-                  {changePassword.isPending ? '提交中…' : '更新密码'}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">修改密码</CardTitle>
+                <CardDescription>修改成功后当前所有会话将失效，需重新登录</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={savePassword} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="currentPassword">当前密码</Label>
+                    <Input
+                      id="currentPassword"
+                      type="password"
+                      autoComplete="current-password"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="newPassword">新密码</Label>
+                    <Input
+                      id="newPassword"
+                      type="password"
+                      autoComplete="new-password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      minLength={8}
+                      required
+                    />
+                  </div>
+                  <Button type="submit" disabled={changePassword.isPending}>
+                    {changePassword.isPending ? '提交中…' : '更新密码'}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
 
-          <SessionsCard />
+          <div className="space-y-6">
+            <TwoFactorCard />
+
+            <SessionsCard />
+          </div>
         </div>
       )}
     </div>

@@ -12,6 +12,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  SimpleDialog,
   TablePagination,
   Textarea,
 } from '@tzj/ui';
@@ -121,7 +122,6 @@ export function IpBlockPanel({ from, to }: { from?: string; to?: string }) {
     trafficPageSize: intField(10, { min: 1 }),
   });
   const { blockedPage, blockedPageSize, trafficPage, trafficPageSize } = urlState;
-  const [blockHint, setBlockHint] = useState<string | undefined>();
 
   // 日期区间变化时高频 IP 表回到第一页（跳过首次挂载，避免刷新时清掉 URL 里的页码）
   const dateMounted = useRef(false);
@@ -154,6 +154,21 @@ export function IpBlockPanel({ from, to }: { from?: string; to?: string }) {
   const trafficQuery = useSecurityIpTraffic(trafficParams);
   const unblockMut = useUnblockIp();
   const { openIp } = useVisitorDrawer();
+
+  const blockMut = useBlockIp();
+  const [banTarget, setBanTarget] = useState<AnalyticsIpTrafficRow | null>(null);
+  const [banDuration, setBanDuration] = useState<BlockIpDuration>('7d');
+
+  async function confirmBan() {
+    if (!banTarget?.ip) return;
+    try {
+      await blockMut.mutateAsync({ ip: banTarget.ip, duration: banDuration });
+      notifySuccess('IP 已封禁，后续访问将被静默拒绝');
+      setBanTarget(null);
+    } catch (err) {
+      notifyError(err, '封禁失败');
+    }
+  }
 
   const trafficColumns: DataTableColumn<AnalyticsIpTrafficRow>[] = [
     {
@@ -202,10 +217,8 @@ export function IpBlockPanel({ from, to }: { from?: string; to?: string }) {
             variant="outline"
             size="sm"
             onClick={() => {
-              const label = row.ip ?? row.ipMasked ?? '—';
-              setBlockHint(
-                `IP ${label}（${row.region || '未知地区'}，PV ${row.pageViews}）。确认后可直接封禁，或修改上方表单。`,
-              );
+              setBanDuration('7d');
+              setBanTarget(row);
             }}
           >
             封禁
@@ -276,7 +289,7 @@ export function IpBlockPanel({ from, to }: { from?: string; to?: string }) {
   return (
     <div className="space-y-6">
       <Can perm="security.manage">
-        <BlockIpForm hint={blockHint} onSuccess={() => setBlockHint(undefined)} />
+        <BlockIpForm />
       </Can>
 
       <div className="space-y-2">
@@ -326,6 +339,61 @@ export function IpBlockPanel({ from, to }: { from?: string; to?: string }) {
           />
         ) : null}
       </div>
+
+      <SimpleDialog
+        open={banTarget !== null}
+        onClose={() => setBanTarget(null)}
+        title="封禁 IP"
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setBanTarget(null)} disabled={blockMut.isPending}>
+              取消
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => void confirmBan()}
+              disabled={!banTarget?.ip || blockMut.isPending}
+            >
+              {blockMut.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              确认封禁
+            </Button>
+          </>
+        }
+      >
+        {banTarget ? (
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              确定封禁以下 IP 吗？封禁后该 IP 的访问将被静默拒绝（不计入统计）。
+            </p>
+            <p className="break-all rounded-md bg-muted px-3 py-2 font-mono text-sm">
+              {banTarget.ip ?? banTarget.ipMasked ?? '—'}
+            </p>
+            {!banTarget.ip && (
+              <p className="text-xs text-amber-600">
+                该记录缺少完整 IP，无法直接封禁，请改用上方表单手动输入。
+              </p>
+            )}
+            <div>
+              <Label htmlFor="ban-duration">封禁时长</Label>
+              <Select
+                value={banDuration}
+                onValueChange={(v) => setBanDuration(v as BlockIpDuration)}
+              >
+                <SelectTrigger id="ban-duration" className="mt-1.5">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {BLOCK_DURATION_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        ) : null}
+      </SimpleDialog>
     </div>
   );
 }

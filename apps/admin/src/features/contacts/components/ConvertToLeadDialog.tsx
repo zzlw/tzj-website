@@ -86,7 +86,8 @@ export function ConvertToLeadDialog({ contact, open, onOpenChange, onConverted }
   async function submit() {
     const n = name.trim();
     if (!n) {
-      notifyError(new Error('请填写联系人姓名'));
+      // 传字符串而非 Error：notifyError 仅识别 ApiError/string，普通 Error 会被吞成「操作失败」
+      notifyError('请填写联系人姓名');
       return;
     }
     setSubmitting(true);

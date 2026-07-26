@@ -20,6 +20,8 @@ export interface AnalyticsListParams {
   identified?: string;
   /** 关键页触达过滤（contact/case/any）——仅「按访客」 */
   keyPage?: string;
+  /** 转化状态过滤（'true'=已转客户 / 'false'=未转化）——仅「按访客」 */
+  converted?: string;
 }
 
 export function paginateMeta(page: number, limit: number, total: number) {
@@ -33,6 +35,63 @@ export function paginateMeta(page: number, limit: number, total: number) {
 
 function parseSortOrder(v?: string): SortOrder {
   return v === 'asc' ? 'asc' : 'desc';
+}
+
+/**
+ * 文本代表值列的白名单排序片段（依次比较、NULLS LAST，尾附最近活跃作稳定次序）。
+ * 列名仅来自代码内常量（非用户输入），可安全使用 Prisma.raw。
+ */
+function textOrderSql(columns: string[], dir: SortOrder): Prisma.Sql {
+  const d = dir === 'asc' ? 'ASC' : 'DESC';
+  const parts = columns.map((c) => `${c} ${d} NULLS LAST`);
+  return Prisma.raw(`${parts.join(', ')}, "lastSeenAt" DESC`);
+}
+
+/**
+ * 「兼容性」列排序等级：0=不支持 / 1=支持 / 2=未知（asc 即不支持→支持→未知）。
+ * ⨚︎ 口径与 admin `src/lib/browser-support.ts` 的 ES2020 基线阈值一致，修改需同步。
+ * 版本取「大版本.小版本」数值（Safari 13.1 阈值需要小数；正则不带括号，
+ * 避免 substring(from pattern) 返回捕获组而非整体匹配）。
+ */
+function browserSupportOrderSql(dir: SortOrder): Prisma.Sql {
+  const v = `NULLIF(substring("browserVersion" from '^[0-9]+\\.?[0-9]*'), '')::numeric`;
+  const rank = `CASE
+    WHEN browser IS NULL THEN 2
+    WHEN browser ~* '(internet explorer|iemobile)' OR lower(browser) = 'ie' THEN 0
+    WHEN ${v} IS NULL THEN 2
+    WHEN browser ~* 'edg' THEN (CASE WHEN ${v} >= 85 THEN 1 ELSE 0 END)
+    WHEN browser ~* 'samsung' THEN (CASE WHEN ${v} >= 14 THEN 1 ELSE 0 END)
+    WHEN browser ~* '(opera|opr)' THEN (CASE WHEN ${v} >= 71 THEN 1 ELSE 0 END)
+    WHEN browser ~* 'firefox' THEN (CASE WHEN ${v} >= 77 THEN 1 ELSE 0 END)
+    WHEN browser ~* '(chrome|chromium)' THEN (CASE WHEN ${v} >= 85 THEN 1 ELSE 0 END)
+    WHEN browser ~* 'safari' THEN (CASE WHEN ${v} >= 13.1 THEN 1 ELSE 0 END)
+    ELSE 2
+  END`;
+  return Prisma.raw(`${rank} ${dir === 'asc' ? 'ASC' : 'DESC'}, "lastSeenAt" DESC`);
+}
+
+/**
+ * 两个 lens 共用的环境维度排序（设备/系统/浏览器/兼容性/访问软件/地区，
+ * 列 key 与前端 device-columns 一致）；未命中返回 null 由调用方继续自有 switch。
+ * 排序作用在聚合代表值列上（与列表展示同源），与前端所见一致。
+ */
+function deviceEnvOrderSql(sortBy: string | undefined, dir: SortOrder): Prisma.Sql | null {
+  switch (sortBy) {
+    case 'device':
+      return textOrderSql(['"deviceType"', '"deviceVendor"', '"deviceModel"'], dir);
+    case 'os':
+      return textOrderSql(['os', '"osVersion"'], dir);
+    case 'browser':
+      return textOrderSql(['browser', '"browserVersion"'], dir);
+    case 'browserSupport':
+      return browserSupportOrderSql(dir);
+    case 'clientApp':
+      return textOrderSql(['"clientApp"'], dir);
+    case 'region':
+      return textOrderSql(['country', 'region', 'city'], dir);
+    default:
+      return null;
+  }
 }
 
 export function pageOrderClause(sortBy?: string, sortOrder?: string): Prisma.Sql {
@@ -90,18 +149,27 @@ export function referrerOrderClause(sortBy?: string, sortOrder?: string): Prisma
 
 /**
  * 按访客归并（COALESCE(userId, visitorId)）的明细排序。
- * 身份/来源/设备为代表值或读取时重解析，DB 排序无意义，
- * 故仅对 SQL 原生可聚合列（PV/会话数/首末访问）开放排序。
+ * 除 SQL 原生可聚合列（PV/会话数/首末访问/转化旗标）外，
+ * 来源/设备/系统/浏览器/兼容性/访问软件/地区按聚合代表值排序（与列表展示同源）。
  */
 export function visitorOrderClause(sortBy?: string, sortOrder?: string): Prisma.Sql {
   const dir = parseSortOrder(sortOrder);
+  const envOrder = deviceEnvOrderSql(sortBy, dir);
+  if (envOrder) return envOrder;
   switch (sortBy) {
+    case 'channel':
+      return textOrderSql(['"channel"'], dir);
     case 'pageViews':
       return dir === 'asc' ? Prisma.sql`"pageViews" ASC` : Prisma.sql`"pageViews" DESC`;
     case 'sessions':
       return dir === 'asc' ? Prisma.sql`"sessions" ASC` : Prisma.sql`"sessions" DESC`;
     case 'firstSeenAt':
       return dir === 'asc' ? Prisma.sql`"firstSeenAt" ASC` : Prisma.sql`"firstSeenAt" DESC`;
+    case 'converted':
+      // 布尔旗标同值行多，附最近活跃作稳定次序（desc=已转客户在前）
+      return dir === 'asc'
+        ? Prisma.sql`"converted" ASC, "lastSeenAt" DESC`
+        : Prisma.sql`"converted" DESC, "lastSeenAt" DESC`;
     case 'lastSeenAt':
     default:
       return dir === 'asc' ? Prisma.sql`"lastSeenAt" ASC` : Prisma.sql`"lastSeenAt" DESC`;
@@ -109,12 +177,18 @@ export function visitorOrderClause(sortBy?: string, sortOrder?: string): Prisma.
 }
 
 /**
- * 按 IP 聚合的访客明细排序。地区/来源/设备为读取时重解析或代表值，DB 排序无意义，
- * 故仅对 SQL 原生可聚合列（PV/会话数/最近访问）开放排序。
+ * 按 IP 聚合的访客明细排序。除 SQL 原生可聚合列（PV/会话数/最近访问）外，
+ * 来源/设备/系统/浏览器/兼容性/访问软件/地区按聚合代表值排序
+ * （地区展示时会按 IP 重解析，排序取入库值近似，同地区仍能有效聚类）。
  */
 export function visitorDetailOrderClause(sortBy?: string, sortOrder?: string): Prisma.Sql {
   const dir = parseSortOrder(sortOrder);
+  const envOrder = deviceEnvOrderSql(sortBy, dir);
+  if (envOrder) return envOrder;
   switch (sortBy) {
+    case 'channel':
+      // 「按 IP」聚合列未重命名，沿用库字段名 trafficSource
+      return textOrderSql(['"trafficSource"'], dir);
     case 'sessions':
       return dir === 'asc' ? Prisma.sql`"sessions" ASC` : Prisma.sql`"sessions" DESC`;
     case 'lastSeenAt':
@@ -146,13 +220,33 @@ export function visitorBaseFilterSql(params: { q?: string; identified?: string }
 }
 
 /**
- * 「按访客」归并后的组级过滤（依赖聚合列别名 channel/deviceType/touched*，套在 grouped 之外）。
- * 渠道/设备按代表值等值匹配（与前端展示一致）；关键页按布尔触达。
+ * 「按访客」人物级转化旗标（依赖 grouped 别名，作 flagged CTE 的计算列）。
+ * 口径与 loadVisitorLeadStatuses 的 JS 归因一致（改动需同步）：
+ * 行身份键（visitorId / userId=identify 回写的 contactId / email）命中
+ * Customer.visitorId / Customer.contactId / 客户源询盘的 visitorId / email 任一即视为已转客户。
+ * IN 列表中的 NULL 项永不匹配，无需逐键判空。
+ */
+export function visitorConvertedFlagSql(): Prisma.Sql {
+  return Prisma.sql`EXISTS (
+    SELECT 1
+    FROM "customers" cu
+    LEFT JOIN "contacts" ct ON ct."id" = cu."contactId"
+    WHERE cu."visitorId" IN (COALESCE(grouped."visitorId", grouped."mergeKey"), grouped."userId", grouped."email")
+       OR cu."contactId" IN (COALESCE(grouped."visitorId", grouped."mergeKey"), grouped."userId", grouped."email")
+       OR ct."visitorId" IN (COALESCE(grouped."visitorId", grouped."mergeKey"), grouped."userId", grouped."email")
+       OR ct."email" IN (COALESCE(grouped."visitorId", grouped."mergeKey"), grouped."userId", grouped."email")
+  )`;
+}
+
+/**
+ * 「按访客」归并后的组级过滤（依赖聚合列别名 channel/deviceType/touched两旗标/converted，套在 flagged 之外）。
+ * 渠道/设备按代表值等值匹配（与前端展示一致）；关键页/转化状态按布尔旗标。
  */
 export function visitorGroupWhereSql(params: {
   channel?: string;
   deviceType?: string;
   keyPage?: string;
+  converted?: string;
 }): Prisma.Sql {
   const conds: Prisma.Sql[] = [];
   if (params.channel) conds.push(Prisma.sql`"channel" = ${params.channel}`);
@@ -161,6 +255,8 @@ export function visitorGroupWhereSql(params: {
   else if (params.keyPage === 'case') conds.push(Prisma.sql`"touchedCase" = true`);
   else if (params.keyPage === 'any')
     conds.push(Prisma.sql`("touchedContact" = true OR "touchedCase" = true)`);
+  if (params.converted === 'true') conds.push(Prisma.sql`"converted" = true`);
+  else if (params.converted === 'false') conds.push(Prisma.sql`"converted" = false`);
   return conds.length ? Prisma.sql`WHERE ${Prisma.join(conds, ' AND ')}` : Prisma.sql``;
 }
 

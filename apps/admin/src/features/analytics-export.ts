@@ -3,8 +3,8 @@
  * 仅导出聚合与环境维度，严格排除 PII（visitorId / 姓名 / 邮箱 / 电话 / 公司 / 精确 IP 等）。
  * 纯前端 Blob 实现（项目无 CSV 依赖库），UTF-8 BOM 头保证 Excel 打开中文不乱码。
  */
-import type { AnalyticsVisitorDetailRow, AnalyticsVisitorRow } from './analytics';
-import { deviceLabel, sourceLabel } from './analytics';
+import type { AnalyticsVisitorDetailRow, AnalyticsVisitorExportRow } from './analytics';
+import { deviceLabel, formatDeviceModel, sourceLabel } from './analytics';
 
 /** CSV 列定义：表头文案 + 从行提取「脱敏值」的取值函数。 */
 export interface CsvColumn<T> {
@@ -61,23 +61,42 @@ function isoToLocal(iso: string | null | undefined): string {
 }
 
 /**
- * 「按访客」lens 脱敏白名单列。
+ * 「按访客」lens 脱敏白名单列（全量导出行）。
  * 排除：visitorId / name / email / phone / company / lastIp（及其脱敏 / hash）等 PII，
- * 仅保留时间、渠道、入口、设备、地区（到城市级）与聚合指标。
+ * 保留：时间、身份/转化标签、渠道归因（含 UTM/gclid）、设备环境、地区（到城市级）与聚合指标，
+ * 供 AI 做投放归因与用户画像分析（转化标签为监督信号）。
  */
-export const PEOPLE_EXPORT_COLUMNS: CsvColumn<AnalyticsVisitorRow>[] = [
+export const PEOPLE_EXPORT_COLUMNS: CsvColumn<AnalyticsVisitorExportRow>[] = [
+  // ── 时间与身份/转化标签 ──
   { header: '最近活跃', value: (r) => isoToLocal(r.lastSeenAt) },
   { header: '首次访问', value: (r) => isoToLocal(r.firstSeenAt) },
   { header: '是否识别', value: (r) => r.identified },
+  { header: '识别时间', value: (r) => isoToLocal(r.identifiedAt) },
+  { header: '是否提交询盘', value: (r) => r.inquirySubmitted },
+  { header: '询盘时间', value: (r) => isoToLocal(r.inquiredAt) },
+  { header: '首访至询盘天数', value: (r) => r.daysToInquiry },
+  { header: '是否转为客户', value: (r) => r.convertedCustomer },
+  // ── 渠道归因（首触） ──
   { header: '来源渠道', value: (r) => (r.channel ? sourceLabel(r.channel) : '') },
   { header: '引荐域名', value: (r) => r.referrerHost ?? '' },
+  { header: 'UTM Source', value: (r) => r.utmSource ?? '' },
+  { header: 'UTM Medium', value: (r) => r.utmMedium ?? '' },
+  { header: 'UTM Campaign', value: (r) => r.utmCampaign ?? '' },
+  { header: 'UTM Content', value: (r) => r.utmContent ?? '' },
+  { header: 'UTM Term', value: (r) => r.utmTerm ?? '' },
+  { header: '广告点击ID(gclid)', value: (r) => r.gclid ?? '' },
   { header: '入口页', value: (r) => r.landingPath },
+  // ── 设备环境 ──
   { header: '设备类型', value: (r) => deviceLabel(r.deviceType) },
-  { header: '浏览器', value: (r) => r.browser ?? '' },
-  { header: '操作系统', value: (r) => r.os ?? '' },
-  { header: '国家', value: (r) => r.country },
+  { header: '设备型号', value: (r) => formatDeviceModel(r.deviceModel, r.deviceVendor) ?? '' },
+  { header: '访问软件', value: (r) => r.clientApp ?? '独立浏览器' },
+  { header: '浏览器', value: (r) => [r.browser, r.browserVersion].filter(Boolean).join(' ') },
+  { header: '操作系统', value: (r) => [r.os, r.osVersion].filter(Boolean).join(' ') },
+  // ── 地区（到城市级，不含 IP；内网哨兵值 LOCAL 译为本地网络） ──
+  { header: '国家', value: (r) => (r.country === 'LOCAL' ? '本地网络' : r.country) },
   { header: '地区', value: (r) => r.region ?? '' },
   { header: '城市', value: (r) => r.city ?? '' },
+  // ── 行为聚合 ──
   { header: '页面浏览量', value: (r) => r.pageViews },
   { header: '访问次数', value: (r) => r.sessions },
   { header: '触达联系页', value: (r) => Boolean(r.touchedContact) },
@@ -100,8 +119,10 @@ export const IP_EXPORT_COLUMNS: CsvColumn<AnalyticsVisitorDetailRow>[] = [
   { header: '媒介', value: (r) => r.medium ?? '' },
   { header: '引荐域名', value: (r) => r.referrerHost },
   { header: '设备类型', value: (r) => (r.deviceType ? deviceLabel(r.deviceType) : '') },
-  { header: '浏览器', value: (r) => r.browser ?? '' },
-  { header: '操作系统', value: (r) => r.os ?? '' },
+  { header: '设备型号', value: (r) => formatDeviceModel(r.deviceModel, r.deviceVendor) ?? '' },
+  { header: '访问软件', value: (r) => r.clientApp ?? '独立浏览器' },
+  { header: '浏览器', value: (r) => [r.browser, r.browserVersion].filter(Boolean).join(' ') },
+  { header: '操作系统', value: (r) => [r.os, r.osVersion].filter(Boolean).join(' ') },
   { header: '落地页', value: (r) => r.landingPath ?? '' },
   { header: '页面浏览量', value: (r) => r.pageViews },
   { header: '会话数', value: (r) => r.sessions },

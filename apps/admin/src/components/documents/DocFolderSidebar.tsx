@@ -74,6 +74,9 @@ import { notifyError, notifySuccess } from '@/lib/notify';
 const INDENT_PX = 14;
 const MAX_VISUAL_DEPTH = 6;
 
+/** 「未分类」合成节点 id：与列表页 ?folder=__none__ 同口径，对应文档 folderId=null */
+const UNCATEGORIZED_ID = '__none__';
+
 function visualDepth(depth: number) {
   return Math.min(depth, MAX_VISUAL_DEPTH);
 }
@@ -129,15 +132,12 @@ function FolderNavItem({
   active,
   icon: Icon,
   depth = 0,
-  /** 与文件夹树行对齐（预留 chevron + 手柄占位） */
-  alignWithTree = false,
 }: {
   href: string;
   label: string;
   active: boolean;
   icon: typeof Folder;
   depth?: number;
-  alignWithTree?: boolean;
 }) {
   return (
     <div className="flex-1 min-w-0" style={{ paddingLeft: 8 + visualDepth(depth) * INDENT_PX }}>
@@ -150,13 +150,59 @@ function FolderNavItem({
             : 'text-muted-foreground hover:bg-muted hover:text-foreground',
         )}
       >
-        {alignWithTree ? <span className="w-9 shrink-0" aria-hidden /> : null}
         <Icon className="h-4 w-4 shrink-0 opacity-70" />
         <span className="min-w-0 truncate pl-1.5" title={label}>
           {label}
         </span>
       </Link>
     </div>
+  );
+}
+
+/** 「全部文档」行的 "+" 创建菜单：与文件夹行同款（根级创建的文章不选文件夹，自动落入「未分类」） */
+function RootCreateMenu({
+  basePath,
+  onCreateFolder,
+}: {
+  basePath: string;
+  onCreateFolder: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className={cn(
+            'absolute right-1 flex h-6 w-6 items-center justify-center rounded-sm text-muted-foreground transition-opacity hover:bg-muted hover:text-foreground',
+            open ? 'opacity-100' : 'opacity-0 group-hover/all-docs:opacity-100',
+          )}
+          title="创建"
+        >
+          <Plus className="h-3.5 w-3.5" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent side="bottom" align="end" className="w-36 p-1">
+        <button
+          type="button"
+          className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-foreground hover:bg-muted"
+          onClick={() => {
+            setOpen(false);
+            onCreateFolder();
+          }}
+        >
+          <FolderPlus className="h-3.5 w-3.5" />
+          <span>创建文件夹</span>
+        </button>
+        <Link
+          href={`${basePath}/new`}
+          className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-foreground hover:bg-muted"
+        >
+          <FilePlus className="h-3.5 w-3.5" />
+          <span>创建文章</span>
+        </Link>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -446,6 +492,68 @@ function SidebarDocRow({
   );
 }
 
+/** 侧栏「未分类」合成节点行：并入 SortableTree 作为文档拖拽落点；自身不可拖拽、不可改名删除 */
+function UncategorizedRow({
+  basePath,
+  active,
+  expanded,
+  expandable,
+  isDropTarget,
+  onToggle,
+}: {
+  basePath: string;
+  active: boolean;
+  expanded: boolean;
+  expandable: boolean;
+  isDropTarget: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <div className="mt-1 border-t border-border/60 pt-1">
+      <div
+        className={cn(
+          'group relative mb-0.5 flex h-8 items-center rounded-md pl-2 pr-1',
+          isDropTarget && 'ring-1 ring-primary/50',
+          active
+            ? 'bg-primary/10 text-primary'
+            : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+        )}
+      >
+        {/* 与文件夹行的拖拽手柄等宽占位，保持图标左对齐 */}
+        <span className="w-4 shrink-0" aria-hidden />
+        <button
+          type="button"
+          aria-label={expanded ? '收起' : '展开'}
+          className={cn(
+            'flex h-6 w-5 shrink-0 items-center justify-center rounded-sm hover:bg-background/60',
+            !expandable && 'invisible',
+          )}
+          onClick={onToggle}
+        >
+          <ChevronRight
+            className={cn('h-3.5 w-3.5 transition-transform', expanded && 'rotate-90')}
+          />
+        </button>
+        <Link
+          href={`${basePath}?folder=${UNCATEGORIZED_ID}`}
+          className={cn(
+            'flex min-w-0 flex-1 items-center gap-1.5 text-sm',
+            active && 'font-medium',
+          )}
+        >
+          <Inbox
+            className={cn(
+              'h-4 w-4 shrink-0',
+              active ? 'opacity-100' : 'opacity-70 group-hover:opacity-100',
+            )}
+          />
+          <span className="truncate">未分类</span>
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 export function DocFolderSidebar({ basePath = '/documents' }: { basePath?: string }) {
   const router = useRouter();
   const sp = useSearchParams();
@@ -472,9 +580,9 @@ export function DocFolderSidebar({ basePath = '/documents' }: { basePath?: strin
   const [docRenameTarget, setDocRenameTarget] = useState<InternalDocumentItem | null>(null);
   const [docRenameTitle, setDocRenameTitle] = useState('');
 
-  const activeId = folderParam && folderParam !== '__none__' ? folderParam : null;
+  const activeId = folderParam && folderParam !== UNCATEGORIZED_ID ? folderParam : null;
   const isAll = !folderParam;
-  const isUncategorized = folderParam === '__none__';
+  const isUncategorized = folderParam === UNCATEGORIZED_ID;
 
   const ancestorIds = useMemo(
     () => (activeId && tree ? collectAncestorIds(tree, activeId) : new Set<string>()),
@@ -489,9 +597,16 @@ export function DocFolderSidebar({ basePath = '/documents' }: { basePath?: strin
     }
   }, [ancestorIds]);
 
+  // 进入未分类视图时自动展开该节点（与选中文件夹自动展开祖先链同款体验）
+  useEffect(() => {
+    if (isUncategorized) {
+      setExpandedIds((prev) => new Set([...prev, UNCATEGORIZED_ID]));
+    }
+  }, [isUncategorized]);
+
   // 预取所有可见文件夹（根级 + 已展开父级的子级）的文档：既决定 chevron 是否展示，也为拍平树提供数据。
   const visibleFolderIds = useMemo(
-    () => collectVisibleFolderIds(tree ?? [], expandedIds),
+    () => [...collectVisibleFolderIds(tree ?? [], expandedIds), UNCATEGORIZED_ID],
     [tree, expandedIds],
   );
   const folderById = useMemo(() => indexFolders(tree ?? []), [tree]);
@@ -527,24 +642,33 @@ export function DocFolderSidebar({ basePath = '/documents' }: { basePath?: strin
   // 将文件夹树 + 各展开文件夹下文档拍平为 SortableTree 所需的扁平节点（按显示顺序：文件夹 → 子文件夹 → 文档）。
   const flatNodes = useMemo(() => {
     const flat: FlatNode[] = [];
+    // 拖拽移动后新旧文件夹的文档缓存可能短暂同时包含同一文档（旧缓存尚未刷新），
+    // 去重防止重复 key；以首次出现为准，刷新完成后自然收敛到真实位置
+    const seenDocIds = new Set<string>();
+    const pushDoc = (docId: string, parentId: string, depth: number) => {
+      if (seenDocIds.has(docId)) return;
+      seenDocIds.add(docId);
+      flat.push({ id: docId, parentId, depth, droppable: false, type: 'document' });
+    };
     const walk = (nodes: DocFolderTreeNode[], depth: number, parentId: string | null) => {
       for (const node of nodes) {
         flat.push({ id: node.id, parentId, depth, droppable: true, type: 'folder' });
         if (expandedIds.has(node.id)) {
           walk(node.children, depth + 1, node.id);
           for (const doc of docsByFolder.get(node.id) ?? []) {
-            flat.push({
-              id: doc.id,
-              parentId: node.id,
-              depth: depth + 1,
-              droppable: false,
-              type: 'document',
-            });
+            pushDoc(doc.id, node.id, depth + 1);
           }
         }
       }
     };
     walk(tree ?? [], 0, null);
+    // 「未分类」合成节点固定挂在树末尾：可展开查看、可作为文档拖拽落点（folderId=null）
+    flat.push({ id: UNCATEGORIZED_ID, parentId: null, depth: 0, droppable: true, type: 'folder' });
+    if (expandedIds.has(UNCATEGORIZED_ID)) {
+      for (const doc of docsByFolder.get(UNCATEGORIZED_ID) ?? []) {
+        pushDoc(doc.id, UNCATEGORIZED_ID, 1);
+      }
+    }
     return flat;
   }, [tree, expandedIds, docsByFolder]);
 
@@ -647,13 +771,16 @@ export function DocFolderSidebar({ basePath = '/documents' }: { basePath?: strin
   }
 
   // 客户端拖放约束：
+  // - 「未分类」合成节点：自身不可拖拽，且只接收文档（文件夹不能挂进去）
   // - 文件夹：禁止拖入自身或其后代（与服务端双保险）
-  // - 文档：禁止拖到根级（会变「未分类」，侧边栏树不展示未分类文档，视觉上会“消失”）
+  // - 文档：允许拖到根级或「未分类」节点（两者同义 = folderId 置空）
   const canDrop = useCallback(
     (dragId: string, newParentId: string | null) => {
+      if (dragId === UNCATEGORIZED_ID) return false;
       const node = flatNodes.find((n) => n.id === dragId);
-      if (node?.type === 'document') return newParentId !== null;
+      if (node?.type === 'document') return true;
       if (node?.type !== 'folder') return true;
+      if (newParentId === UNCATEGORIZED_ID) return false;
       if (newParentId === dragId) return false;
       if (newParentId && collectDescendantIds(flatNodes, dragId).has(newParentId)) return false;
       return true;
@@ -662,37 +789,60 @@ export function DocFolderSidebar({ basePath = '/documents' }: { basePath?: strin
   );
 
   // 拖拽结束：按被拖拽节点类型分派到文件夹 / 文档的 reorder / move 接口。
+  // 「未分类」合成节点在接口层映射回 folderId=null（拖到根级空白处与拖入「未分类」同义）。
+  const applyFolderMove = useCallback(
+    async (evt: SortableTreeMoveEvent, changedParent: boolean) => {
+      if (changedParent) {
+        await moveFolderMut.mutateAsync({
+          id: evt.activeId,
+          parentId: evt.newParentId ?? null,
+        });
+      }
+      // 根级同级列表含「未分类」合成节点，重排前剔除
+      const orderedIds = evt.siblingIds.filter((sid) => sid !== UNCATEGORIZED_ID);
+      if (orderedIds.length > 1) {
+        await reorderFoldersMut.mutateAsync({
+          parentId: evt.newParentId,
+          orderedIds,
+        });
+      }
+    },
+    [moveFolderMut, reorderFoldersMut],
+  );
+
+  const applyDocMove = useCallback(
+    async (evt: SortableTreeMoveEvent, newFolderId: string | null, changedParent: boolean) => {
+      if (changedParent) {
+        await moveDocMut.mutateAsync({
+          id: evt.activeId,
+          folderId: newFolderId,
+          sortOrder: Math.max(0, evt.newIndex),
+        });
+        // 移入未分类后自动展开该节点，让落点可见
+        if (newFolderId === null) {
+          setExpandedIds((prev) => new Set([...prev, UNCATEGORIZED_ID]));
+        }
+      }
+      if (evt.siblingIds.length > 1) {
+        await reorderDocsMut.mutateAsync({
+          folderId: newFolderId,
+          orderedIds: evt.siblingIds,
+        });
+      }
+    },
+    [moveDocMut, reorderDocsMut],
+  );
+
   const handleMove = useCallback(
     async (evt: SortableTreeMoveEvent) => {
-      const changedParent = evt.newParentId !== evt.oldParentId;
+      const newFolderId = evt.newParentId === UNCATEGORIZED_ID ? null : evt.newParentId;
+      const oldFolderId = evt.oldParentId === UNCATEGORIZED_ID ? null : evt.oldParentId;
+      const changedParent = newFolderId !== oldFolderId;
       try {
         if (evt.activeType === 'folder') {
-          if (changedParent) {
-            await moveFolderMut.mutateAsync({
-              id: evt.activeId,
-              parentId: evt.newParentId ?? null,
-            });
-          }
-          if (evt.siblingIds.length > 1) {
-            await reorderFoldersMut.mutateAsync({
-              parentId: evt.newParentId,
-              orderedIds: evt.siblingIds,
-            });
-          }
+          await applyFolderMove(evt, changedParent);
         } else {
-          if (changedParent) {
-            await moveDocMut.mutateAsync({
-              id: evt.activeId,
-              folderId: evt.newParentId,
-              sortOrder: Math.max(0, evt.newIndex),
-            });
-          }
-          if (evt.siblingIds.length > 1) {
-            await reorderDocsMut.mutateAsync({
-              folderId: evt.newParentId,
-              orderedIds: evt.siblingIds,
-            });
-          }
+          await applyDocMove(evt, newFolderId, changedParent);
         }
         // 展开目标父级，便于看到落点
         if (changedParent && evt.newParentId) {
@@ -703,7 +853,7 @@ export function DocFolderSidebar({ basePath = '/documents' }: { basePath?: strin
         notifyError(e, '移动失败');
       }
     },
-    [moveFolderMut, reorderFoldersMut, moveDocMut, reorderDocsMut],
+    [applyFolderMove, applyDocMove],
   );
 
   const renderRow = useCallback(
@@ -726,7 +876,20 @@ export function DocFolderSidebar({ basePath = '/documents' }: { basePath?: strin
         );
       }
       const folder = folderById.get(node.id);
-      if (!folder) return null;
+      if (!folder) {
+        // 非真实文件夹的 folder 型节点只有「未分类」合成节点
+        if (node.id !== UNCATEGORIZED_ID) return null;
+        return (
+          <UncategorizedRow
+            basePath={basePath}
+            active={isUncategorized}
+            expanded={expandedIds.has(UNCATEGORIZED_ID)}
+            expandable={(docsByFolder.get(UNCATEGORIZED_ID) ?? []).length > 0}
+            isDropTarget={isDropTarget}
+            onToggle={() => toggleExpanded(UNCATEGORIZED_ID)}
+          />
+        );
+      }
       const hasDocs = (docsByFolder.get(folder.id) ?? []).length > 0;
       const expandable = folder.children.length > 0 || hasDocs;
       return (
@@ -756,6 +919,7 @@ export function DocFolderSidebar({ basePath = '/documents' }: { basePath?: strin
       docsByFolder,
       expandedIds,
       folderById,
+      isUncategorized,
       openCreate,
       openDocRename,
       openRename,
@@ -773,38 +937,28 @@ export function DocFolderSidebar({ basePath = '/documents' }: { basePath?: strin
           <div className="group/all-docs relative flex items-center">
             <FolderNavItem href={basePath} label="全部文档" active={isAll} icon={FolderOpen} />
             <Can anyPerm={['docs.create']}>
-              <button
-                type="button"
-                className="absolute right-1 flex h-6 w-6 items-center justify-center rounded-sm text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground group-hover/all-docs:opacity-100"
-                title="新建文件夹"
-                onClick={() => openCreate(null)}
-              >
-                <Plus className="h-3.5 w-3.5" />
-              </button>
+              <RootCreateMenu basePath={basePath} onCreateFolder={() => openCreate(null)} />
             </Can>
           </div>
           {isLoading ? (
             <p className="px-2.5 py-2 text-xs text-muted-foreground">加载中…</p>
-          ) : tree?.length ? (
-            <SortableTree
-              items={flatNodes}
-              indentationWidth={INDENT_PX}
-              renderItem={renderRow}
-              onMove={handleMove}
-              canDrop={canDrop}
-            />
           ) : (
-            <p className="px-2.5 py-2 text-xs text-muted-foreground">暂无个人文件夹，点击 + 创建</p>
+            <>
+              {!tree?.length && (
+                <p className="px-2.5 py-2 text-xs text-muted-foreground">
+                  暂无个人文件夹，点击 + 创建
+                </p>
+              )}
+              {/* flatNodes 恒含「未分类」合成节点，树为空时也需渲染 */}
+              <SortableTree
+                items={flatNodes}
+                indentationWidth={INDENT_PX}
+                renderItem={renderRow}
+                onMove={handleMove}
+                canDrop={canDrop}
+              />
+            </>
           )}
-          <div className="my-1 border-t border-border/60 pt-1">
-            <FolderNavItem
-              href={`${basePath}?folder=__none__`}
-              label="未分类"
-              active={isUncategorized}
-              icon={Inbox}
-              alignWithTree
-            />
-          </div>
         </CardContent>
       </Card>
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button } from '@tzj/ui';
+import { Button, Tooltip, TooltipContent, TooltipTrigger } from '@tzj/ui';
 import { Info } from 'lucide-react';
 import { useVisitorDrawer } from '@/components/visitor-drawer/context';
 import { notifyError } from '@/lib/notify';
@@ -47,16 +47,22 @@ export function VisitorInfoButton({ room }: { room: ChatRoom }) {
     }
   };
 
+  // hover 提示依赖 ChatHeader 操作区的 TooltipProvider
   return (
-    <Button
-      type="button"
-      variant="ghost"
-      size="icon"
-      aria-label="访客信息"
-      onClick={handleClick}
-      className={INFO_BUTTON_CLASS}
-    >
-      <Info className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-    </Button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label="访客信息"
+          onClick={handleClick}
+          className={INFO_BUTTON_CLASS}
+        >
+          <Info className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>查看访客信息</TooltipContent>
+    </Tooltip>
   );
 }

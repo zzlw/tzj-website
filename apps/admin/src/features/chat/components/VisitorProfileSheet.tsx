@@ -20,6 +20,7 @@ import {
 } from '@tzj/ui';
 import { ArrowLeft, ArrowUpRight, MessagesSquare, Search, UserRoundPlus } from 'lucide-react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { type ReactNode, type RefObject, useEffect, useRef, useState } from 'react';
 import { VisitorActivityTimeline } from '@/components/analytics/VisitorActivityTimeline';
 import { CopyableText } from '@/components/CopyableText';
@@ -647,6 +648,9 @@ function useVisitorConvert(
   region: string | null,
 ) {
   const queryClient = useQueryClient();
+  const pathname = usePathname();
+  // 本抽屉是全局复用的（访客中心/询盘页也会拉起）：仅在聊天控制台打开时算「在线客服」获客
+  const convertSource = pathname?.startsWith('/chat') ? 'chat' : 'website';
   const [convertOpen, setConvertOpen] = useState(false);
   const headerProps = {
     showConvert: !!visitor && !!identityBlock,
@@ -663,6 +667,7 @@ function useVisitorConvert(
   const dialog =
     visitorId && identityBlock ? (
       <VisitorConvertToLeadDialog
+        source={convertSource}
         seed={{
           visitorId,
           name: visitor?.name ?? null,

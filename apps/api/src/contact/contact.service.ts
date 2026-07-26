@@ -18,9 +18,26 @@ interface FindAllParams {
   isRead?: boolean;
   isHandled?: boolean;
   search?: string;
+  source?: string;
+  channel?: string;
+  converted?: boolean;
   sortBy?: string;
   sortOrder?: string;
 }
+
+/** 来源筛选白名单（与 Contact.source 口径一致：website|admin|api）。 */
+const SOURCE_VALUES = new Set(['website', 'admin', 'api']);
+
+/** 来源渠道筛选白名单（与访客中心 trafficSource 口径一致）。 */
+const CHANNEL_VALUES = new Set([
+  'direct',
+  'organic',
+  'paid',
+  'social',
+  'email',
+  'referral',
+  'other',
+]);
 
 /** 白名单：表头排序 key → Contact 字段（防注入 + 区分前端列 key 与库字段）。 */
 const SORTABLE: Record<string, keyof Prisma.ContactOrderByWithRelationInput> = {
@@ -37,12 +54,18 @@ const CONTACT_OPERATOR_INCLUDE = {
   lastOperatorUser: { select: LAST_OPERATOR_USER_SELECT },
 } as const;
 
-/** 询盘列表行的富化字段（转化状态 + 最后访问 IP；IP 与客户表一致，明文展示）。 */
+/** 询盘列表行的富化字段（转化状态 + 最后访问 IP/地区 + 首触来源；IP 与客户表一致，明文展示）。 */
 export interface ContactListEnrichment {
   convertedCustomerId: string | null;
   lastIp: string | null;
   lastIpMasked: string | null;
   lastIpHash: string | null;
+  /** 最近一次访问的入库地区标签（省 · 市，无则 null） */
+  lastRegion: string | null;
+  /** 首触来源渠道（与访客中心「来源」列口径一致，无浏览轨迹则 null） */
+  channel: string | null;
+  /** 首触引荐域名 */
+  referrerHost: string | null;
 }
 
 /**
@@ -156,12 +179,27 @@ export class ContactService {
   ) {}
 
   async findAll(params: FindAllParams) {
-    const { page, limit, isRead, isHandled, search, sortBy, sortOrder } = params;
+    const {
+      page,
+      limit,
+      isRead,
+      isHandled,
+      search,
+      source,
+      channel,
+      converted,
+      sortBy,
+      sortOrder,
+    } = params;
     const skip = (page - 1) * limit;
 
     const where: Prisma.ContactWhereInput = {};
     if (isRead !== undefined) where.isRead = isRead;
     if (isHandled !== undefined) where.isHandled = isHandled;
+    if (source && SOURCE_VALUES.has(source)) where.source = source;
+    if (converted !== undefined) where.id = await this.buildConvertedIdFilter(converted);
+    // 渠道筛选走 AND，避免与搜索的 where.OR 互斥
+    if (channel && CHANNEL_VALUES.has(channel)) where.AND = [await this.buildChannelWhere(channel)];
     if (search?.trim()) {
       const q = search.trim();
       where.OR = [
@@ -175,6 +213,24 @@ export class ContactService {
     }
 
     const dir: 'asc' | 'desc' = sortOrder === 'asc' ? 'asc' : 'desc';
+
+    // 转化状态非库字段（Customer.contactId 弱引用反查），无法用 orderBy 表达，走两段分页拼接
+    if (sortBy === 'converted') {
+      const [data, total] = await Promise.all([
+        this.findPageSortedByConverted(where, dir, skip, limit),
+        this.prisma.contact.count({ where }),
+      ]);
+      return {
+        data: await this.enrichListRows(data),
+        pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+      };
+    }
+
+    // 地区/来源/最后访问 IP 为富化字段（page_views 反查），同样无法用 orderBy 表达，走全量富化后内存排序
+    if (sortBy === 'region' || sortBy === 'channel' || sortBy === 'lastIp') {
+      return this.findPageSortedByEnrichment(where, sortBy, dir, page, limit);
+    }
+
     const orderBy: Prisma.ContactOrderByWithRelationInput =
       sortBy && SORTABLE[sortBy] ? { [SORTABLE[sortBy]]: dir } : DEFAULT_ORDER;
 
@@ -196,9 +252,134 @@ export class ContactService {
   }
 
   /**
-   * 列表行富化：为每条询盘补充转化状态与「最后访问 IP」（明文 + 脱敏 + ipHash 用于抽屉下钻）。
+   * 转化状态筛选：Contact 与 Customer 无 Prisma 关系（仅 Customer.contactId 弱引用），
+   * 以反查 contactId 集合的方式过滤。客户表量级小（询盘转线索是低频动作），全量取 ID 可接受。
+   */
+  private async buildConvertedIdFilter(converted: boolean): Promise<Prisma.StringFilter> {
+    const ids = await this.loadConvertedContactIds();
+    return converted ? { in: ids } : { notIn: ids };
+  }
+
+  /** 已转客户的源询盘 ID 全量（转化筛选/排序共用，单次查询）。 */
+  private async loadConvertedContactIds(): Promise<string[]> {
+    const rows = await this.prisma.customer.findMany({
+      where: { contactId: { not: null } },
+      select: { contactId: true },
+    });
+    return rows.map((r) => r.contactId).filter((v): v is string => Boolean(v));
+  }
+
+  /**
+   * 按转化状态排序的单页取数：「已转 / 未转」两段各自按默认次序（createdAt desc）分页拼接，
+   * desc=已转客户在前。逐段 count 定位页内偏移，跨段页自动补齐（同转化筛选的反查策略）。
+   */
+  private async findPageSortedByConverted(
+    where: Prisma.ContactWhereInput,
+    dir: 'asc' | 'desc',
+    skip: number,
+    take: number,
+  ) {
+    const ids = await this.loadConvertedContactIds();
+    const convertedSeg: Prisma.ContactWhereInput = { AND: [where, { id: { in: ids } }] };
+    const unconvertedSeg: Prisma.ContactWhereInput = { AND: [where, { id: { notIn: ids } }] };
+    const segments =
+      dir === 'desc' ? [convertedSeg, unconvertedSeg] : [unconvertedSeg, convertedSeg];
+
+    const data: Prisma.ContactGetPayload<{ include: typeof CONTACT_OPERATOR_INCLUDE }>[] = [];
+    let offset = skip;
+    for (const segWhere of segments) {
+      if (data.length >= take) break;
+      const segCount = await this.prisma.contact.count({ where: segWhere });
+      if (offset >= segCount) {
+        offset -= segCount;
+        continue;
+      }
+      const rows = await this.prisma.contact.findMany({
+        where: segWhere,
+        skip: offset,
+        take: take - data.length,
+        orderBy: DEFAULT_ORDER,
+        include: CONTACT_OPERATOR_INCLUDE,
+      });
+      data.push(...rows);
+      offset = 0;
+    }
+    return data;
+  }
+
+  /**
+   * 按富化字段（地区 lastRegion / 来源 channel / 最后访问 IP lastIp）排序的分页：
+   * 均来自 page_views 反查（enrichListRows），非库字段无法用 orderBy 表达。
+   * 询盘量级小（低频动作），全量取行富化后内存排序再切页可接受
+   * （同转化排序的全量反查策略）。空值恒置后，同值保持创建时间倒序；
+   * IP 用 numeric 比较（按段数值序，79.x < 121.x，同客户表口径）。
+   */
+  private async findPageSortedByEnrichment(
+    where: Prisma.ContactWhereInput,
+    sortBy: 'region' | 'channel' | 'lastIp',
+    dir: 'asc' | 'desc',
+    page: number,
+    limit: number,
+  ) {
+    const rows = await this.prisma.contact.findMany({
+      where,
+      orderBy: DEFAULT_ORDER,
+      include: CONTACT_OPERATOR_INCLUDE,
+    });
+    const enriched = await this.enrichListRows(rows);
+    const key = sortBy === 'region' ? 'lastRegion' : sortBy;
+    const numeric = sortBy === 'lastIp';
+    const sign = dir === 'asc' ? 1 : -1;
+    enriched.sort((a, b) => {
+      const av = a[key];
+      const bv = b[key];
+      if (av === bv) return 0; // 稳定排序，同值保持预排的 createdAt 倒序
+      if (av === null) return 1;
+      if (bv === null) return -1;
+      return av.localeCompare(bv, numeric ? 'en' : 'zh-CN', { numeric }) * sign;
+    });
+    const total = enriched.length;
+    const skip = (page - 1) * limit;
+    return {
+      data: enriched.slice(skip, skip + limit),
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
+  }
+
+  /**
+   * 来源渠道筛选：Contact 无渠道字段，按 page_views 首触 trafficSource 反查
+   * 命中的 userId（=contactId，identify 回写）与 visitorId 集合后过滤询盘，
+   * 与列表展示的首触归因口径一致。小公司量级下全量分组聚合可接受（同转化筛选策略）。
+   */
+  private async buildChannelWhere(channel: string): Promise<Prisma.ContactWhereInput> {
+    const [userKeys, visitorKeys] = await Promise.all([
+      this.findFirstChannelKeys('userId', channel),
+      this.findFirstChannelKeys('visitorId', channel),
+    ]);
+    return { OR: [{ id: { in: userKeys } }, { visitorId: { in: visitorKeys } }] };
+  }
+
+  /** 按 key 列分组聚合 page_views，返回首触 trafficSource 命中给定渠道的 key 集合。 */
+  private async findFirstChannelKeys(
+    keyColumn: 'userId' | 'visitorId',
+    channel: string,
+  ): Promise<string[]> {
+    const column = Prisma.raw(`"${keyColumn}"`);
+    const rows = await this.prisma.$queryRaw<Array<{ key: string }>>(Prisma.sql`
+      SELECT ${column} AS "key"
+      FROM "page_views"
+      WHERE "isBot" = false AND ${column} IS NOT NULL
+      GROUP BY ${column}
+      HAVING (ARRAY_AGG("trafficSource" ORDER BY "createdAt" ASC) FILTER (WHERE "trafficSource" IS NOT NULL))[1] = ${channel}
+    `);
+    return rows.map((r) => r.key);
+  }
+
+  /**
+   * 列表行富化：为每条询盘补充转化状态与「最后访问 IP / 地区」（明文 + 脱敏 + ipHash 用于抽屉下钻）。
    * - convertedCustomerId：按 Customer.contactId 反查（批量）。
-   * - lastIp / lastIpMasked / lastIpHash：从 page_views 聚合最近一次非空 IP，
+   * - lastIp / lastIpMasked / lastIpHash / lastRegion / channel / referrerHost：从 page_views
+   *   聚合最近一次非空 IP、地区与首触来源（与访客中心「来源」列口径一致），
    *   关联口径为 userId=contactId（identify 回写）或 visitorId=contact.visitorId（会话来源）。
    *   与客户表口径一致，列表明文展示 IP。
    */
@@ -232,12 +413,18 @@ export class ContactService {
       const viaVisitor = c.visitorId ? visitorIpMap.get(c.visitorId) : undefined;
       // 两条关联口径都可能命中，取最近一次访问的那条
       const best = pickLatestIp(viaUser, viaVisitor);
+      const regionLabel = best
+        ? formatGeoLabel({ country: best.country, region: best.region, city: best.city })
+        : '未知';
       return {
         ...c,
         convertedCustomerId: convertedMap.get(c.id) ?? null,
         lastIp: best?.lastIp ?? null,
         lastIpMasked: best?.lastIpMasked ?? null,
         lastIpHash: best?.lastIpHash ?? null,
+        lastRegion: regionLabel === '未知' ? null : regionLabel,
+        channel: best?.channel ?? null,
+        referrerHost: best?.referrerHost ?? null,
       };
     });
   }

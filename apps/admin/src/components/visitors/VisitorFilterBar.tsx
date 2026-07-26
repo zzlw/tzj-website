@@ -15,6 +15,10 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
 } from '@tzj/ui';
 import { Download, Search, X } from 'lucide-react';
 
@@ -131,17 +135,31 @@ export function VisitorFilterBar({
         ) : null}
 
         {onExport ? (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={onExport}
-            disabled={exportDisabled}
-            className="ml-auto h-9 gap-1 px-3 text-xs"
-          >
-            <Download className="h-3.5 w-3.5" />
-            {exportLabel}
-          </Button>
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              {/* 禁用态按钮不触发 hover，用 span 包裹保证 Tooltip 仍可弹出 */}
+              <TooltipTrigger asChild>
+                <span className="ml-auto inline-flex">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={onExport}
+                    disabled={exportDisabled}
+                    className="h-9 gap-1 px-3 text-xs"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    {exportLabel}
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              {/* 数据治理提示（参考 GA4 / CRM 导出惯例）：说明导出范围 + 使用限制，与 analytics-export 的脱敏白名单事实一致 */}
+              <TooltipContent side="bottom" align="end" className="max-w-[260px]">
+                导出当前筛选结果（已脱敏，不含姓名、联系方式、IP 等个人信息），
+                仅限内部数据分析使用，请勿对外传播。
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         ) : null}
       </div>
 

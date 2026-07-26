@@ -1,8 +1,18 @@
-import { Body, Controller, Get, Put } from '@nestjs/common';
+import { Body, Controller, Get, Put, Req } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import type { SiteMediaSettings, SiteNotificationSettings, SitePublicSettings } from '@tzj/types';
+import type {
+  SecurityAuthSettings,
+  SiteMediaSettings,
+  SiteNotificationSettings,
+  SitePublicSettings,
+} from '@tzj/types';
+import type { Request } from 'express';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
+import type { AuthUser } from '../auth/roles';
+import { extractClientIp } from '../common/utils/client-ip';
 import { SettingsService } from './settings.service';
 
 @ApiTags('settings')
@@ -63,5 +73,32 @@ export class SettingsController {
   @ApiOperation({ summary: '更新媒体处理设置（水印等）' })
   updateSiteMedia(@Body() body: SiteMediaSettings) {
     return this.settingsService.updateSiteMediaSettings(body);
+  }
+
+  // 安全策略（强制 2FA 开关）：用 @Roles('admin') 而非 settings.manage，
+  // 口径对齐既有 POST /auth/2fa/force-disable（同为安全策略，admin 专属）
+  @Roles('admin')
+  @ApiBearerAuth()
+  @Get('security/auth')
+  @ApiOperation({ summary: '获取安全策略设置（强制 2FA 开关，admin 专属）' })
+  getSecurityAuth() {
+    return this.settingsService.getSecurityAuthSettings();
+  }
+
+  @Roles('admin')
+  @ApiBearerAuth()
+  @Put('security/auth')
+  @ApiOperation({ summary: '更新安全策略设置（置 true 需操作者自身已启用 2FA）' })
+  updateSecurityAuth(
+    @CurrentUser() user: AuthUser,
+    @Body() body: SecurityAuthSettings,
+    @Req() req: Request & { id?: string },
+  ) {
+    return this.settingsService.updateSecurityAuthSettings(body, {
+      id: user.id,
+      ip: extractClientIp(req),
+      userAgent: req.headers['user-agent'],
+      traceId: req.id,
+    });
   }
 }

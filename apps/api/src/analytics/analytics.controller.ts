@@ -104,6 +104,11 @@ export class AnalyticsController {
     description: '身份状态（true=已识别 / false=匿名）',
   })
   @ApiQuery({ name: 'keyPage', required: false, description: '关键页触达（contact/case/any）' })
+  @ApiQuery({
+    name: 'converted',
+    required: false,
+    description: '转化状态（true=已转客户 / false=未转化）',
+  })
   listVisitors(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
@@ -114,6 +119,7 @@ export class AnalyticsController {
     @Query('deviceType') deviceType?: string,
     @Query('identified') identified?: string,
     @Query('keyPage') keyPage?: string,
+    @Query('converted') converted?: string,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: string,
   ) {
@@ -127,6 +133,47 @@ export class AnalyticsController {
       deviceType,
       identified,
       keyPage,
+      converted,
+      sortBy,
+      sortOrder,
+    });
+  }
+
+  @RequirePermissions('analytics.view')
+  @ApiBearerAuth()
+  @Get('visitors/export')
+  @ApiOperation({
+    summary: '「按访客」全量导出（同 listVisitors 筛选/排序，去分页上限 5000，附转化标签）',
+  })
+  @ApiQuery({ name: 'from', required: false, description: 'YYYY-MM-DD' })
+  @ApiQuery({ name: 'to', required: false, description: 'YYYY-MM-DD' })
+  @ApiQuery({ name: 'q', required: false })
+  @ApiQuery({ name: 'channel', required: false })
+  @ApiQuery({ name: 'deviceType', required: false })
+  @ApiQuery({ name: 'identified', required: false })
+  @ApiQuery({ name: 'keyPage', required: false })
+  @ApiQuery({ name: 'converted', required: false })
+  exportVisitors(
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('q') q?: string,
+    @Query('channel') channel?: string,
+    @Query('deviceType') deviceType?: string,
+    @Query('identified') identified?: string,
+    @Query('keyPage') keyPage?: string,
+    @Query('converted') converted?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string,
+  ) {
+    return this.analyticsService.exportVisitors({
+      from,
+      to,
+      q,
+      channel,
+      deviceType,
+      identified,
+      keyPage,
+      converted,
       sortBy,
       sortOrder,
     });
@@ -272,6 +319,37 @@ export class AnalyticsController {
     return this.analyticsService.listVisitorDetails({
       page,
       limit,
+      from,
+      to,
+      q,
+      channel,
+      deviceType,
+      sortBy,
+      sortOrder,
+    });
+  }
+
+  @RequirePermissions('analytics.view')
+  @ApiBearerAuth()
+  @Get('visitor-details/export')
+  @ApiOperation({
+    summary: '「按 IP」全量导出（同 listVisitorDetails 筛选/排序，去分页上限 5000）',
+  })
+  @ApiQuery({ name: 'from', required: false, description: 'YYYY-MM-DD' })
+  @ApiQuery({ name: 'to', required: false, description: 'YYYY-MM-DD' })
+  @ApiQuery({ name: 'q', required: false })
+  @ApiQuery({ name: 'channel', required: false })
+  @ApiQuery({ name: 'deviceType', required: false })
+  exportVisitorDetails(
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('q') q?: string,
+    @Query('channel') channel?: string,
+    @Query('deviceType') deviceType?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string,
+  ) {
+    return this.analyticsService.exportVisitorDetails({
       from,
       to,
       q,

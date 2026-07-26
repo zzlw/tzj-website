@@ -40,6 +40,13 @@ export class ContactController {
   @ApiQuery({ name: 'isRead', required: false })
   @ApiQuery({ name: 'isHandled', required: false })
   @ApiQuery({ name: 'search', required: false })
+  @ApiQuery({ name: 'source', required: false, description: '来源: website|admin|api' })
+  @ApiQuery({
+    name: 'channel',
+    required: false,
+    description: '首触来源渠道: direct|organic|paid|social|email|referral|other',
+  })
+  @ApiQuery({ name: 'converted', required: false, description: '是否已转化为客户: true|false' })
   @ApiQuery({ name: 'sortBy', required: false })
   @ApiQuery({ name: 'sortOrder', required: false })
   findAll(
@@ -48,6 +55,9 @@ export class ContactController {
     @Query('isRead') isRead?: string,
     @Query('isHandled') isHandled?: string,
     @Query('search') search?: string,
+    @Query('source') source?: string,
+    @Query('channel') channel?: string,
+    @Query('converted') converted?: string,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: string,
   ) {
@@ -57,6 +67,9 @@ export class ContactController {
       isRead: isRead !== undefined ? isRead === 'true' : undefined,
       isHandled: isHandled !== undefined ? isHandled === 'true' : undefined,
       search,
+      source,
+      channel,
+      converted: converted !== undefined ? converted === 'true' : undefined,
       sortBy,
       sortOrder,
     });

@@ -17,17 +17,24 @@ import {
   TablePagination,
   TooltipProvider,
 } from '@tzj/ui';
-import { ArrowLeft, Plus, Search, Trash2, UserCog } from 'lucide-react';
+import { LockOpen, Plus, Search, Trash2, UserCog } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
+import { Can } from '@/components/Can';
 import { useSession } from '@/components/session';
+import { TwoFactorPolicyCard } from '@/components/users/TwoFactorPolicyCard';
 import { type RoleOption, useRoleOptions } from '@/features/access';
 import { formatDate } from '@/features/constants';
-import { useList, useRemove } from '@/features/hooks';
+import { useList, useRemove, useUpdate } from '@/features/hooks';
 import type { UserItem } from '@/features/types';
 import { roleLabel } from '@/features/users';
 import { notifyError, notifySuccess } from '@/lib/notify';
 import { intField, stringField, useUrlState } from '@/lib/use-url-state';
+
+// 锁定中：lockedUntil 存在且尚未到期（到期后后端允许登录，列表不再标记）
+function isLocked(r: UserItem): boolean {
+  return Boolean(r.lockedUntil && new Date(r.lockedUntil) > new Date());
+}
 
 const COLUMNS = (roleOptions: RoleOption[]): DataTableColumn<UserItem>[] => [
   {
@@ -57,14 +64,40 @@ const COLUMNS = (roleOptions: RoleOption[]): DataTableColumn<UserItem>[] => [
   {
     key: 'isActive',
     header: '状态',
+    cell: (r) => (
+      <div className="flex items-center gap-1.5">
+        {r.isActive ? (
+          <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
+            启用
+          </Badge>
+        ) : (
+          <Badge variant="outline" className="border-zinc-200 bg-zinc-50 text-zinc-600">
+            停用
+          </Badge>
+        )}
+        {isLocked(r) && (
+          <Badge
+            variant="outline"
+            className="border-amber-200 bg-amber-50 text-amber-700"
+            title={`锁定至 ${formatDate(r.lockedUntil as string)}`}
+          >
+            已锁定
+          </Badge>
+        )}
+      </div>
+    ),
+  },
+  {
+    key: 'twoFactorEnabled',
+    header: '两步验证',
     cell: (r) =>
-      r.isActive ? (
+      r.twoFactorEnabled ? (
         <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
-          启用
+          已启用
         </Badge>
       ) : (
         <Badge variant="outline" className="border-zinc-200 bg-zinc-50 text-zinc-600">
-          停用
+          未启用
         </Badge>
       ),
   },
@@ -100,12 +133,23 @@ export default function UsersPage() {
 
   const { data, isLoading, isError, error } = useList<UserItem>('users', params);
   const removeMut = useRemove('users');
+  const updateMut = useUpdate<UserItem>('users');
   const { data: roleOptions = [] } = useRoleOptions();
 
   const columns = useMemo(() => COLUMNS(roleOptions), [roleOptions]);
 
   const rows = data?.data ?? [];
   const pagination = data?.pagination;
+
+  async function handleUnlock(r: UserItem) {
+    try {
+      // 复用编辑接口：lockedUntil 传 null 即解锁
+      await updateMut.mutateAsync({ id: r.id, payload: { lockedUntil: null } });
+      notifySuccess(`账号「${r.username}」已解锁`);
+    } catch (e) {
+      notifyError(e, '解锁失败');
+    }
+  }
 
   async function handleDeleteConfirm() {
     if (!deleteTarget) return;
@@ -132,6 +176,10 @@ export default function UsersPage() {
           </Button>
         }
       />
+
+      <Can allow={['admin']}>
+        <TwoFactorPolicyCard />
+      </Can>
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <form
@@ -188,6 +236,19 @@ export default function UsersPage() {
         pinActions
         renderActions={(r) => (
           <div className="flex justify-end gap-1">
+            {isLocked(r) && (
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8 text-amber-600 hover:text-amber-700"
+                onClick={() => void handleUnlock(r)}
+                disabled={updateMut.isPending}
+                aria-label="解锁"
+                title="解锁"
+              >
+                <LockOpen className="h-4 w-4" />
+              </Button>
+            )}
             <Button size="icon" variant="ghost" className="h-8 w-8" asChild>
               <Link href={`/users/${r.id}/edit`} aria-label="编辑">
                 <UserCog className="h-4 w-4" />

@@ -55,6 +55,8 @@ export function deviceColumns<T extends DeviceColumnFields>(): DataTableColumn<T
     {
       key: 'device',
       header: '设备',
+      // 环境维度均可排序：服务端按聚合代表值排序（与展示同源），见 API analytics-list.ts
+      sortable: true,
       cell: (r) => {
         const model = formatDeviceModel(r.deviceModel, r.deviceVendor);
         return (
@@ -72,24 +74,29 @@ export function deviceColumns<T extends DeviceColumnFields>(): DataTableColumn<T
     {
       key: 'os',
       header: '系统',
+      sortable: true,
       className: 'whitespace-nowrap',
       cell: (r) => [r.os, r.osVersion].filter(Boolean).join(' ') || MUTED_DASH,
     },
     {
       key: 'browser',
       header: '浏览器',
+      sortable: true,
       className: 'whitespace-nowrap',
       cell: (r) => [r.browser, r.browserVersion].filter(Boolean).join(' ') || MUTED_DASH,
     },
     {
       key: 'browserSupport',
       header: '兼容性',
+      // 服务端按三态等级排序（asc：不支持→支持→未知），SQL 口径与 lib/browser-support 一致
+      sortable: true,
       className: 'whitespace-nowrap',
       cell: (r) => <BrowserSupportBadge browser={r.browser} version={r.browserVersion} />,
     },
     {
       key: 'clientApp',
       header: '访问软件',
+      sortable: true,
       cell: (r) =>
         r.clientApp ? <span className="whitespace-nowrap">{r.clientApp}</span> : MUTED_DASH,
     },

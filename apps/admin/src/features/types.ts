@@ -169,6 +169,12 @@ export interface ContactItem extends BaseEntity {
   lastIpMasked?: string | null;
   /** 最近一次访问 IP 的哈希（用于打开 IP 详情抽屉下钻）。 */
   lastIpHash?: string | null;
+  /** 最近一次访问的入库地区标签（省 · 市，无则 null）。 */
+  lastRegion?: string | null;
+  /** 首触来源渠道（与访客中心「来源」列口径一致，无浏览轨迹则 null）。 */
+  channel?: string | null;
+  /** 首触引荐域名。 */
+  referrerHost?: string | null;
 }
 
 export interface UserItem extends BaseEntity {
@@ -179,6 +185,7 @@ export interface UserItem extends BaseEntity {
   avatar?: string | null;
   role: string;
   isActive: boolean;
+  twoFactorEnabled?: boolean;
   lockedUntil?: string | null;
   lastLoginAt?: string | null;
 }
@@ -214,16 +221,11 @@ export interface AuthProfile {
   phone?: string | null;
 }
 
-export interface AuditLogUser {
-  id: string;
-  username: string;
-  nickname?: string | null;
-}
-
 export interface AuditLogItem {
   id: string;
   userId?: string | null;
-  user?: AuditLogUser | null;
+  /** 操作人关联账号（含资料卡字段，与内容列表「最后操作人」同构） */
+  user?: ContentOperatorUser | null;
   action: string;
   resource: string;
   resourceId?: string | null;
@@ -265,6 +267,10 @@ export interface CustomerItem extends BaseEntity {
   lastIpMasked?: string | null;
   /** 最后访问 IP 的 hash（用于点击下钻 IP 详情抽屉，原始 IP 不外泄）。 */
   lastIpHash?: string | null;
+  /** 首触来源渠道（流量归因维度，后端富化；区别于业务维度的 source 客户来源）。 */
+  channel?: string | null;
+  /** 首触引荐域名（来源渠道列的副行展示）。 */
+  referrerHost?: string | null;
 }
 
 export interface DocFolderTreeNode {

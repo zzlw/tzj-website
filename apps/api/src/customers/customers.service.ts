@@ -81,9 +81,21 @@ interface FindAllParams {
   level?: string;
   source?: string;
   customerType?: string;
+  channel?: string;
   sortBy?: string;
   sortOrder?: string;
 }
+
+/** 来源渠道筛选白名单（与访客中心/询盘 trafficSource 口径一致；区别于业务维度的 Customer.source）。 */
+const CHANNEL_VALUES = new Set([
+  'direct',
+  'organic',
+  'paid',
+  'social',
+  'email',
+  'referral',
+  'other',
+]);
 
 const SORTABLE: Record<
   string,
@@ -91,18 +103,63 @@ const SORTABLE: Record<
 > = {
   name: { field: 'name', dir: 'asc' },
   company: { field: 'company', dir: 'asc' },
+  // 枚举类列（类型/来源/等级/阶段）按字段码排序，主要用于聚拢同类（同内容模块 caseType/status 约定）
+  customerType: { field: 'customerType', dir: 'asc' },
   source: { field: 'source', dir: 'asc' },
+  level: { field: 'level', dir: 'asc' },
+  stage: { field: 'stage', dir: 'asc' },
   region: { field: 'region', dir: 'asc' },
   amount: { field: 'amount', dir: 'desc' },
   lastContactAt: { field: 'lastContactAt', dir: 'desc' },
   nextFollowAt: { field: 'nextFollowAt', dir: 'asc' },
   createdAt: { field: 'createdAt', dir: 'desc' },
   updatedAt: { field: 'updatedAt', dir: 'desc' },
+  // 创建人列（sortKey=createdById）：按 ID 聚拢同一创建人，与内容模块白名单口径一致
+  createdById: { field: 'createdById', dir: 'asc' },
 };
 
 const DEFAULT_ORDER: Prisma.CustomerOrderByWithRelationInput = {
   updatedAt: 'desc',
 };
+
+/** 列表行（含 owner 等关联展示字段），富化方法与排序路径共用。 */
+type CustomerListRow = Prisma.CustomerGetPayload<{ include: typeof CUSTOMER_INCLUDE }>;
+
+/** 排序白名单 → Prisma orderBy 数组；「联系方式」列 = 电话优先、邮箱次之（与列展示主/副行一致），空值恒置后。 */
+function buildOrderInput(
+  sortBy: string | undefined,
+  dir: 'asc' | 'desc',
+): Prisma.CustomerOrderByWithRelationInput[] {
+  if (sortBy === 'contact') {
+    return [
+      { phone: { sort: dir, nulls: 'last' } },
+      { email: { sort: dir, nulls: 'last' } },
+      { updatedAt: 'desc' },
+    ];
+  }
+  // 归属列：按关联坐席用户名排序（展示为昵称/用户名），公海（owner 为空）由 DB 默认规则置前/置后
+  if (sortBy === 'owner') {
+    return [{ owner: { username: dir } }, { updatedAt: 'desc' }];
+  }
+  if (sortBy && SORTABLE[sortBy]) {
+    // Prisma 多字段排序必须传数组（单对象多 key 会在运行时报 Invalid orderBy）
+    return [{ [SORTABLE[sortBy].field]: dir }, { updatedAt: 'desc' }];
+  }
+  return [DEFAULT_ORDER];
+}
+
+/** 空值恒置后的字符串比较（同值返 0 保持预排序）；numeric 用于 IP 按段数值序（79.x < 121.x）。 */
+function compareNullable(
+  a: string | null,
+  b: string | null,
+  sign: number,
+  numeric: boolean,
+): number {
+  if (a === b) return 0;
+  if (a === null) return 1;
+  if (b === null) return -1;
+  return a.localeCompare(b, numeric ? 'en' : 'zh-CN', { numeric }) * sign;
+}
 
 @Injectable()
 export class CustomersService {
@@ -132,6 +189,7 @@ export class CustomersService {
       level,
       source,
       customerType,
+      channel,
       sortBy,
       sortOrder,
     } = params;
@@ -172,26 +230,39 @@ export class CustomersService {
     }
 
     const dir: 'asc' | 'desc' = sortOrder === 'asc' ? 'asc' : 'desc';
-    // Prisma 多字段排序必须传数组（单对象多 key 会在运行时报 Invalid orderBy）
-    const orderInput: Prisma.CustomerOrderByWithRelationInput[] =
-      sortBy && SORTABLE[sortBy]
-        ? [{ [SORTABLE[sortBy].field]: dir }, { updatedAt: 'desc' }]
-        : [DEFAULT_ORDER];
+
+    // 来源渠道筛选与「最后访问 IP / 来源渠道」排序都依赖富化字段（page_views 反查聚合，
+    // 且访客 ID 需经会话/询盘链路解析，无法用 where/orderBy 表达），
+    // 走全量富化后内存筛选/排序再切页（客户量级小，同询盘表地区/渠道策略）。
+    const channelFilter = channel && CHANNEL_VALUES.has(channel) ? channel : undefined;
+    if (channelFilter || sortBy === 'lastIp' || sortBy === 'channel') {
+      return this.findPageEnriched(where, { channelFilter, sortBy, dir, page, limit });
+    }
 
     const [data, total] = await Promise.all([
       this.prisma.customer.findMany({
         where,
         skip,
         take: limit,
-        orderBy: orderInput,
+        orderBy: buildOrderInput(sortBy, dir),
         include: CUSTOMER_INCLUDE,
       }),
       this.prisma.customer.count({ where }),
     ]);
 
-    // 反查来源对应的匿名访客 ID，供前端跳转访客详情抽屉（无 Prisma 关系，故当前页批量二次查询后内存映射）：
-    //  - 会话链路：Customer.chatRoomId = ChatRoom.roomId → ChatRoom.visitorId
-    //  - 询盘链路：Customer.contactId = Contact.id → Contact.visitorId（询盘转线索）
+    return {
+      data: await this.enrichRows(data),
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
+  }
+
+  /**
+   * 列表行富化：补充来源访客 ID 与「最后访问 IP」（明文 + 脱敏 + ipHash 供抽屉下钻）。
+   * 访客 ID 反查（无 Prisma 关系，批量二次查询后内存映射）：
+   *  - 会话链路：Customer.chatRoomId = ChatRoom.roomId → ChatRoom.visitorId
+   *  - 询盘链路：Customer.contactId = Contact.id → Contact.visitorId（询盘转线索）
+   */
+  private async enrichRows(data: CustomerListRow[]) {
     const roomIds = data.map((c) => c.chatRoomId).filter((id): id is string => Boolean(id));
     const contactIds = data.map((c) => c.contactId).filter((id): id is string => Boolean(id));
     const [rooms, contacts] = await Promise.all([
@@ -231,7 +302,7 @@ export class CustomersService {
     const ipVisitorMap = new Map(ipByVisitor.map((r) => [r.key, r]));
     const ipUserMap = new Map(ipByUser.map((r) => [r.key, r]));
 
-    const enriched = withVisitor.map((c) => {
+    return withVisitor.map((c) => {
       const viaVisitor = c.visitorId ? ipVisitorMap.get(c.visitorId) : undefined;
       const viaUser = c.contactId ? ipUserMap.get(c.contactId) : undefined;
       const best = pickLatestIp(viaVisitor, viaUser);
@@ -240,11 +311,48 @@ export class CustomersService {
         lastIp: best?.lastIp ?? null,
         lastIpMasked: best?.lastIpMasked ?? null,
         lastIpHash: best?.lastIpHash ?? null,
+        // 首触来源渠道 + 引荐域名（流量归因维度，与询盘/访客中心口径一致；区别于业务维度的 source）
+        channel: best?.channel ?? null,
+        referrerHost: best?.referrerHost ?? null,
       };
     });
+  }
 
+  /**
+   * 富化字段筛选/排序的分页：全量取行富化后内存处理再切页。
+   * - 筛选：来源渠道按列表展示同源的首触归因口径匹配；
+   * - 排序：lastIp / channel 为富化字段内存排序（空值恒置后）；其余 sortBy 由取数 orderBy 预排。
+   */
+  private async findPageEnriched(
+    where: Prisma.CustomerWhereInput,
+    opts: {
+      channelFilter?: string;
+      sortBy?: string;
+      dir: 'asc' | 'desc';
+      page: number;
+      limit: number;
+    },
+  ) {
+    const { channelFilter, sortBy, dir, page, limit } = opts;
+    const rows = await this.prisma.customer.findMany({
+      where,
+      // lastIp/channel 不在白名单，buildOrderInput 回退默认序作为稳定预排；
+      // 渠道筛选 + 库字段排序叠加时，则由这里保留 DB 排序语义
+      orderBy: buildOrderInput(sortBy, dir),
+      include: CUSTOMER_INCLUDE,
+    });
+    let enriched = await this.enrichRows(rows);
+    if (channelFilter) enriched = enriched.filter((c) => c.channel === channelFilter);
+    const sign = dir === 'asc' ? 1 : -1;
+    if (sortBy === 'lastIp') {
+      enriched.sort((a, b) => compareNullable(a.lastIp, b.lastIp, sign, true));
+    } else if (sortBy === 'channel') {
+      enriched.sort((a, b) => compareNullable(a.channel, b.channel, sign, false));
+    }
+    const total = enriched.length;
+    const skip = (page - 1) * limit;
     return {
-      data: enriched,
+      data: enriched.slice(skip, skip + limit),
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     };
   }

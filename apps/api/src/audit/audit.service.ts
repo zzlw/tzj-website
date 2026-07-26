@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client/index';
+import { LAST_OPERATOR_USER_SELECT } from '../common/utils/content-list';
 import { ListSortParams, parseListSort } from '../common/utils/list-sort';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -20,11 +21,8 @@ const AUDIT_SORT_FIELDS = ['createdAt', 'user', 'action', 'resource', 'resourceI
 
 const DEFAULT_AUDIT_ORDER: Prisma.AuditLogOrderByWithRelationInput[] = [{ createdAt: 'desc' }];
 
-const USER_SELECT = {
-  id: true,
-  username: true,
-  nickname: true,
-} as const;
+// 操作人补全资料卡字段（头像/角色/状态等），与内容列表「最后操作人」共用同一 select
+const USER_SELECT = LAST_OPERATOR_USER_SELECT;
 
 @Injectable()
 export class AuditService {

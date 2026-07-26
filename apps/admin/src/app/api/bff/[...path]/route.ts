@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 import { API_BASE, COOKIE } from '@/lib/config';
 import { retryFetch } from '@/lib/fetch-retry';
+import { forwardMetaHeaders } from '@/lib/forward-meta';
 import { applyTokenCookies, refreshAccessToken } from '@/lib/tokenRefresh';
 
 async function proxy(req: NextRequest, path: string[]) {
@@ -22,6 +23,8 @@ async function proxy(req: NextRequest, path: string[]) {
       headers: {
         'Content-Type': req.headers.get('content-type') || 'application/json',
         ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
+        // 透传真实客户端 IP/UA，供 API 侧审计与限流取到浏览器而非 BFF 地址
+        ...forwardMetaHeaders(req),
       },
       body: rawBody,
       cache: 'no-store',

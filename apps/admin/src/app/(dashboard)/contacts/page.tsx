@@ -18,6 +18,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
+  SelectValue,
   SimpleDialog,
   TablePagination,
   Tabs,
@@ -31,19 +32,29 @@ import {
 } from '@tzj/ui';
 import { Eye, Search, Trash2, UserRoundCheck, UserRoundPlus, X } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Can } from '@/components/Can';
 import { CopyableText } from '@/components/CopyableText';
 import { LastOperatorCell } from '@/components/LastOperatorCell';
 import type { VisitorDrawerApi } from '@/components/visitor-drawer/context';
 import { useVisitorDrawer } from '@/components/visitor-drawer/context';
+import { SOURCE_FACET_OPTIONS } from '@/components/visitors/facet-options';
+import { sourceLabel } from '@/features/analytics';
 import { formatDateTime } from '@/features/constants';
 import { ConvertToLeadDialog } from '@/features/contacts/components/ConvertToLeadDialog';
 import { useList, useRemove, useUpdate } from '@/features/hooks';
 import type { ContactItem } from '@/features/types';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { ApiError } from '@/lib/apiClient';
 import { notifyError, notifySuccess } from '@/lib/notify';
-import { enumField, intField, sortField, stringField, useUrlState } from '@/lib/use-url-state';
+import {
+  enumField,
+  intField,
+  sortField,
+  stringField,
+  type UrlFieldSpec,
+  useUrlState,
+} from '@/lib/use-url-state';
 
 const FILTERS = [
   { key: 'unread', label: '未读', params: { isRead: false } },
@@ -147,16 +158,73 @@ const CONTACT_COLUMNS: DataTableColumn<ContactItem>[] = [
     cell: (r) => r.phone || r.email || '—',
   },
   {
+    key: 'region',
+    header: '地区',
+    className: 'whitespace-nowrap text-muted-foreground',
+    // 富化字段：后端全量富化后内存排序分页（空值置后）
+    sortable: true,
+    cell: (r) => r.lastRegion ?? '—',
+  },
+  {
+    key: 'channel',
+    header: '来源渠道',
+    // 与访客中心「来源渠道」列同款：首触渠道 + 引荐域名副行（首触归因）；排序同为富化字段内存排序。
+    // 命名区分：「来源渠道」=流量归因维度；客户表的「客户来源」=业务获客维度，两者语义不同。
+    sortable: true,
+    cell: (r) => (
+      <div className="min-w-[110px]">
+        <div className="text-foreground">{r.channel ? sourceLabel(r.channel) : '—'}</div>
+        {r.referrerHost ? (
+          <div className="mt-0.5 max-w-[160px] truncate text-xs text-muted-foreground">
+            {r.referrerHost}
+          </div>
+        ) : null}
+      </div>
+    ),
+  },
+  {
     key: 'message',
-    header: '留言摘要',
-    className: 'max-w-[260px] truncate text-muted-foreground',
-    cell: (r) => r.message,
+    header: '主题 / 留言',
+    className: 'max-w-[260px]',
+    cell: (r) => (
+      <div>
+        {r.subject && <div className="truncate">{r.subject}</div>}
+        <div
+          className={cn('truncate text-muted-foreground', r.subject && 'mt-0.5 text-xs')}
+          title={r.message}
+        >
+          {r.message}
+        </div>
+      </div>
+    ),
   },
   {
     key: 'status',
     header: '状态',
     sortable: true,
     cell: (r) => <ContactHandleBadge handled={r.isHandled} />,
+  },
+  {
+    key: 'converted',
+    header: '转化状态',
+    // 后端按「已转/未转」两段分页拼接排序（desc=已转客户在前）
+    sortable: true,
+    className: 'whitespace-nowrap',
+    cell: (r) =>
+      r.convertedCustomerId ? (
+        <Link href={`/customers/${r.convertedCustomerId}`}>
+          <Badge
+            variant="outline"
+            className="border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+          >
+            已转客户
+          </Badge>
+        </Link>
+      ) : (
+        <Badge variant="outline" className="border-border bg-muted text-muted-foreground">
+          未转化
+        </Badge>
+      ),
   },
   {
     key: 'createdAt',
@@ -212,6 +280,8 @@ function buildContactColumns(
   const ipCol: DataTableColumn<ContactItem> = {
     key: 'lastIp',
     header: '最后访问 IP',
+    // 富化字段排序：后端全量富化后内存排序（空值置后，IP 按段数值序，同客户表）
+    sortable: true,
     className: 'whitespace-nowrap',
     cell: (r) => (
       <CopyableText
@@ -299,43 +369,183 @@ function ContactRowActions({
   );
 }
 
-/** 搜索栏（回车提交 + 一键清除），自管输入态并与 URL 同步，抽出以降低页面复杂度。 */
-function ContactSearchBar({ value, onSearch }: { value: string; onSearch: (q: string) => void }) {
-  const [input, setInput] = useState(value);
+/** 搜索 + 下拉筛选栏（交互对齐 ResourceListView：300ms 防抖实时检索 + 筛选芯片 + 一键清除）。 */
+
+/** 下拉筛选定义（label 形如「全部××」，芯片前缀自动去掉「全部」）。 */
+interface DropdownFilter {
+  key: 'channel' | 'converted';
+  label: string;
+  options: { value: string; label: string }[];
+}
+
+const CONVERTED_OPTIONS = [
+  { value: 'true', label: '已转客户' },
+  { value: 'false', label: '未转化' },
+] as const;
+
+const DROPDOWN_FILTERS: DropdownFilter[] = [
+  // 渠道选项与访客中心同源（直接访问/自然搜索/付费广告…），按首触渠道过滤
+  { key: 'channel', label: '全部来源渠道', options: SOURCE_FACET_OPTIONS },
+  { key: 'converted', label: '全部转化状态', options: [...CONVERTED_OPTIONS] },
+];
+
+/** 受限字符串 URL 字段：仅接受白名单值，空串省略（同 ResourceListView 的筛选字段口径）。 */
+function filterField(values: readonly string[]): UrlFieldSpec<string> {
+  return {
+    default: '',
+    parse: (raw) => (raw && values.includes(raw) ? raw : ''),
+    serialize: (v) => (v ? v : null),
+  };
+}
+
+interface ContactFilterState {
+  search: string;
+  channel: string;
+  converted: string;
+}
+
+function ContactFilterBar({
+  state,
+  total,
+  onChange,
+}: {
+  state: ContactFilterState;
+  /** 当前命中总数（有活动筛选时展示「找到 N 条结果」） */
+  total?: number;
+  onChange: (patch: Partial<ContactFilterState>) => void;
+}) {
+  const [input, setInput] = useState(state.search);
+
+  // 击键防抖：停止输入 300ms 后才落地检索词（初次挂载恒等于已应用值，跳过写入）。
+  const debounced = useDebouncedValue(input.trim(), 300);
   useEffect(() => {
-    setInput(value);
-  }, [value]);
+    if (debounced !== state.search) onChange({ search: debounced });
+  }, [debounced, state.search, onChange]);
+
+  // 活动筛选芯片：搜索词 + 各下拉选中值，各自可单独移除。
+  const chips: { key: string; label: string; value: string; onRemove: () => void }[] = [];
+  if (state.search) {
+    chips.push({
+      key: '__search__',
+      label: '搜索',
+      value: state.search,
+      onRemove: () => {
+        setInput('');
+        onChange({ search: '' });
+      },
+    });
+  }
+  for (const flt of DROPDOWN_FILTERS) {
+    const v = state[flt.key];
+    if (!v) continue;
+    const opt = flt.options.find((o) => o.value === v);
+    chips.push({
+      key: flt.key,
+      label: flt.label.replace(/^全部/, ''),
+      value: opt?.label ?? v,
+      onRemove: () => onChange({ [flt.key]: '' }),
+    });
+  }
+
   return (
     <Card className="mb-6 border-border/80 py-0 shadow-sm">
-      <CardContent className="p-4">
-        <form
-          className="relative max-w-md"
-          onSubmit={(e) => {
-            e.preventDefault();
-            onSearch(input.trim());
-          }}
-        >
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="搜索联系人、单位、电话、邮箱、留言…"
-            className="pl-9 pr-9"
-          />
-          {input && (
-            <button
+      <CardContent className="flex flex-col gap-3 p-4">
+        <div className="flex flex-wrap gap-3">
+          <form
+            className="relative min-w-[220px] max-w-md flex-1"
+            onSubmit={(e) => {
+              e.preventDefault();
+              onChange({ search: input.trim() });
+            }}
+          >
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="搜索联系人、单位、电话、邮箱、留言…"
+              className="pl-9 pr-9"
+            />
+            {input && (
+              <button
+                type="button"
+                onClick={() => {
+                  setInput('');
+                  onChange({ search: '' });
+                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                aria-label="清除搜索"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </form>
+          {DROPDOWN_FILTERS.map((flt) => (
+            <Select
+              key={flt.key}
+              value={state[flt.key] || '__all__'}
+              onValueChange={(v) => {
+                onChange({ [flt.key]: v && v !== '__all__' ? v : '' });
+              }}
+            >
+              <SelectTrigger className="h-9 w-[160px]">
+                <SelectValue placeholder={flt.label} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">{flt.label}</SelectItem>
+                {flt.options.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ))}
+        </div>
+
+        {chips.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            {total !== undefined && (
+              <span className="mr-1 text-xs text-muted-foreground">
+                找到{' '}
+                <span className="font-medium text-foreground tabular-nums">
+                  {total.toLocaleString('zh-CN')}
+                </span>{' '}
+                条结果
+              </span>
+            )}
+            {chips.map((chip) => (
+              <Badge
+                key={chip.key}
+                variant="outline"
+                className="gap-1 border-border bg-muted/60 font-normal text-muted-foreground"
+              >
+                <span className="text-foreground/60">{chip.label}：</span>
+                {chip.value}
+                <button
+                  type="button"
+                  aria-label={`移除${chip.label}筛选`}
+                  onClick={chip.onRemove}
+                  className="hover:text-foreground"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            ))}
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => {
                 setInput('');
-                onSearch('');
+                onChange({ search: '', channel: '', converted: '' });
               }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              aria-label="清除搜索"
+              className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
             >
-              <X className="h-4 w-4" />
-            </button>
-          )}
-        </form>
+              <X className="h-3.5 w-3.5" />
+              清除全部
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -428,7 +638,7 @@ function ContactDetailDialog({
           <DetailRow label="电话" value={contact.phone ?? '—'} />
           <DetailRow label="邮箱" value={contact.email ?? '—'} />
           <DetailRow label="主题" value={contact.subject ?? '—'} />
-          <DetailRow label="来源" value={contact.source ?? '—'} />
+          <DetailRow label="来源" value={contact.channel ? sourceLabel(contact.channel) : '—'} />
           <DetailRow label="创建时间" value={formatDateTime(contact.createdAt)} />
           <DetailRow label="更新时间" value={formatDateTime(contact.updatedAt)} />
           <div className="flex gap-3">
@@ -474,9 +684,11 @@ export default function ContactsPage() {
     pageSize: intField(10, { min: 1 }),
     tab: enumField(['all', 'unread', 'unhandled'] as const, 'all'),
     search: stringField(),
+    channel: filterField(SOURCE_FACET_OPTIONS.map((o) => o.value)),
+    converted: filterField(CONVERTED_OPTIONS.map((o) => o.value)),
     sort: sortField({ column: 'createdAt', order: 'desc' }),
   });
-  const { page, pageSize, tab, search, sort } = urlState;
+  const { page, pageSize, tab, search, channel, converted, sort } = urlState;
   const [detail, setDetail] = useState<ContactItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ContactItem | null>(null);
   const [convertTarget, setConvertTarget] = useState<ContactItem | null>(null);
@@ -492,13 +704,15 @@ export default function ContactsPage() {
   const params = useMemo(() => {
     const base: Record<string, string | number | boolean> = { page, limit: pageSize };
     if (search.trim()) base.search = search.trim();
+    if (channel) base.channel = channel;
+    if (converted) base.converted = converted === 'true';
     if (sort) {
       base.sortBy = sort.column;
       base.sortOrder = sort.order;
     }
     const f = FILTERS.find((x) => x.key === tab);
     return f ? { ...base, ...f.params } : base;
-  }, [page, pageSize, tab, search, sort]);
+  }, [page, pageSize, tab, search, channel, converted, sort]);
 
   const { data, isLoading, isError, error } = useList<ContactItem>('contact', params);
   const updateMut = useUpdate<ContactItem>('contact');
@@ -506,6 +720,12 @@ export default function ContactsPage() {
 
   const rows = data?.data ?? [];
   const pagination = data?.pagination;
+
+  // 筛选变更统一回到第 1 页；稳定引用避免 FilterBar 防抖 effect 无谓重跑。
+  const handleFilterChange = useCallback(
+    (patch: Partial<ContactFilterState>) => setUrlState({ ...patch, page: 1 }),
+    [setUrlState],
+  );
 
   function openDetail(row: ContactItem) {
     setDetail(row);
@@ -543,7 +763,11 @@ export default function ContactsPage() {
         </TabsList>
       </Tabs>
 
-      <ContactSearchBar value={search} onSearch={(q) => setUrlState({ search: q, page: 1 })} />
+      <ContactFilterBar
+        state={{ search, channel, converted }}
+        total={pagination?.total}
+        onChange={handleFilterChange}
+      />
 
       {isError && <ContactErrorAlert error={error} />}
 

@@ -31,6 +31,8 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConverted: (customerId: string) => void;
+  /** 业务获客来源（Customer.source）：访客/询盘入口默认官网询盘，聊天控制台入口传 'chat' */
+  source?: string;
 }
 
 /** 系统备注：来源访客 + 关联询盘（创建后可手动补充）。 */
@@ -56,14 +58,18 @@ interface LeadFormState {
 }
 
 /** 组装建客 payload：空串归一为 undefined，公海置空 ownerId，去重锚点带 contactId，一级归因带 visitorId。 */
-function buildLeadPayload(form: LeadFormState, seed: VisitorConvertSeed): Record<string, unknown> {
+function buildLeadPayload(
+  form: LeadFormState,
+  seed: VisitorConvertSeed,
+  source: string,
+): Record<string, unknown> {
   return {
     name: form.name.trim(),
     email: form.email || undefined,
     company: form.company || undefined,
     phone: form.phone || undefined,
     customerType: form.customerType || undefined,
-    source: 'website',
+    source,
     level: form.level,
     stage: 'new',
     region: form.region || undefined,
@@ -75,7 +81,13 @@ function buildLeadPayload(form: LeadFormState, seed: VisitorConvertSeed): Record
   };
 }
 
-export function VisitorConvertToLeadDialog({ seed, open, onOpenChange, onConverted }: Props) {
+export function VisitorConvertToLeadDialog({
+  seed,
+  open,
+  onOpenChange,
+  onConverted,
+  source = 'website',
+}: Props) {
   const [name, setName] = useState(seed.name ?? '');
   const [email, setEmail] = useState(seed.email ?? '');
   const [company, setCompany] = useState(seed.company ?? '');
@@ -100,7 +112,8 @@ export function VisitorConvertToLeadDialog({ seed, open, onOpenChange, onConvert
   async function submit() {
     const n = name.trim();
     if (!n) {
-      notifyError(new Error('请填写联系人姓名'));
+      // 传字符串而非 Error：notifyError 仅识别 ApiError/string，普通 Error 会被吞成「操作失败」
+      notifyError('请填写联系人姓名');
       return;
     }
     setSubmitting(true);
@@ -108,6 +121,7 @@ export function VisitorConvertToLeadDialog({ seed, open, onOpenChange, onConvert
       const payload = buildLeadPayload(
         { name: n, email, company, phone, customerType, level, region, dest },
         seed,
+        source,
       );
       const created = await api.create<CustomerItem>('customers', payload);
       notifySuccess(

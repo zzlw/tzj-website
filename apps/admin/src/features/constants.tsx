@@ -80,6 +80,8 @@ export const CUSTOMER_TYPE_OPTIONS: Option[] = [
 
 export const CUSTOMER_SOURCE_OPTIONS: Option[] = [
   { label: '官网询盘', value: 'website' },
+  // 在线客服获客：聊天控制台「转为客户线索」入口默认带此值，与表单询盘区分获客效果
+  { label: '在线客服', value: 'chat' },
   { label: '展会', value: 'exhibition' },
   { label: '转介绍', value: 'referral' },
   { label: '电话开发', value: 'cold-call' },

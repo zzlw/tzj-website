@@ -51,13 +51,27 @@ export function CustomerList({ scope }: { scope: 'mine' | 'public' }) {
         const vid = r.visitorId;
         if (!vid) return <span className="text-muted-foreground">—</span>;
         return (
-          <CopyableText value={vid} display={`#${vid.slice(0, 8)}`} onActivate={() => openPerson(vid)} />
+          <CopyableText
+            value={vid}
+            display={`#${vid.slice(0, 8)}`}
+            // seed 透传客户档案联系信息：抽屉头部秒显，接口返回后由 identity 覆盖
+            onActivate={() =>
+              openPerson(vid, {
+                name: r.name ?? null,
+                company: r.company ?? null,
+                email: r.email ?? null,
+                phone: r.phone ?? null,
+              })
+            }
+          />
         );
       },
     };
     const ipColumn = {
       key: 'lastIp',
       header: '最后访问 IP',
+      // 富化字段排序：后端全量富化后内存排序（空值置后，IP 按段数值序）
+      sortable: true,
       className: 'whitespace-nowrap',
       cell: (r: CustomerItem) => {
         const hash = r.lastIpHash;

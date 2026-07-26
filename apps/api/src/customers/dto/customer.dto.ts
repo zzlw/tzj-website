@@ -53,7 +53,7 @@ export class CreateCustomerDto {
   customerType?: string;
 
   @ApiPropertyOptional({
-    description: '客户来源: website|exhibition|referral|cold-call|existing|other',
+    description: '客户来源: website|chat|exhibition|referral|cold-call|existing|other',
   })
   @IsOptional()
   @IsString()

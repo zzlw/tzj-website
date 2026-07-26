@@ -45,8 +45,8 @@ function OperatorProfileCard({ user }: { user: ContentOperatorUser }) {
           <AvatarFallback className="text-sm font-medium">{initials(nickname)}</AvatarFallback>
         </Avatar>
         <div className="min-w-0 flex-1">
-          <p className="truncate font-semibold text-foreground">{nickname}</p>
-          <p className="truncate text-xs text-muted-foreground">@{user.username}</p>
+          <div className="truncate font-semibold text-foreground">{nickname}</div>
+          <div className="truncate text-xs text-muted-foreground">@{user.username}</div>
         </div>
         {user.isActive ? (
           <Badge

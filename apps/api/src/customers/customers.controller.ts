@@ -70,6 +70,11 @@ export class CustomersController {
   @ApiQuery({ name: 'level', required: false })
   @ApiQuery({ name: 'source', required: false })
   @ApiQuery({ name: 'customerType', required: false })
+  @ApiQuery({
+    name: 'channel',
+    required: false,
+    description: '来源渠道（首触流量归因：direct/organic/paid/…，区别于业务维度的 source）',
+  })
   @ApiQuery({ name: 'sortBy', required: false })
   @ApiQuery({ name: 'sortOrder', required: false })
   findAll(
@@ -81,6 +86,7 @@ export class CustomersController {
     @Query('level') level?: string,
     @Query('source') source?: string,
     @Query('customerType') customerType?: string,
+    @Query('channel') channel?: string,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: string,
     @CurrentUser() user?: AuthUser,
@@ -96,6 +102,7 @@ export class CustomersController {
       level,
       source,
       customerType,
+      channel,
       sortBy,
       sortOrder,
     });

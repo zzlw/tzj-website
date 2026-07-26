@@ -1,12 +1,20 @@
 import { ApiProperty, ApiPropertyOptional, OmitType, PartialType } from '@nestjs/swagger';
-import { IsBoolean, IsDateString, IsEmail, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import {
+  IsBoolean,
+  IsDateString,
+  IsEmail,
+  IsOptional,
+  IsString,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 import { IsStrongPassword } from '../../common/validators/password.validator';
 
 export class CreateUserDto {
   @ApiProperty({ example: 'editor01' })
-  @IsString()
-  @MinLength(2)
-  @MaxLength(64)
+  @IsString({ message: '用户名格式不正确' })
+  @MinLength(2, { message: '用户名至少 2 个字符' })
+  @MaxLength(64, { message: '用户名最多 64 个字符' })
   username!: string;
 
   @ApiProperty({ example: 'Editor@123456' })
@@ -15,26 +23,26 @@ export class CreateUserDto {
 
   @ApiPropertyOptional({ example: '张编辑' })
   @IsOptional()
-  @IsString()
-  @MaxLength(64)
+  @IsString({ message: '昵称格式不正确' })
+  @MaxLength(64, { message: '昵称最多 64 个字符' })
   nickname?: string;
 
   @ApiPropertyOptional({ example: 'editor@example.com' })
   @IsOptional()
-  @IsEmail()
-  @MaxLength(128)
+  @IsEmail({}, { message: '邮箱格式不正确' })
+  @MaxLength(128, { message: '邮箱最多 128 个字符' })
   email?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsString()
-  @MaxLength(32)
+  @IsString({ message: '手机号格式不正确' })
+  @MaxLength(32, { message: '手机号最多 32 个字符' })
   phone?: string;
 
   @ApiProperty({ example: 'editor', description: '角色标识（slug）' })
-  @IsString()
-  @MinLength(2)
-  @MaxLength(64)
+  @IsString({ message: '角色无效' })
+  @MinLength(2, { message: '角色无效' })
+  @MaxLength(64, { message: '角色无效' })
   role!: string;
 }
 
@@ -46,12 +54,12 @@ export class UpdateUserDto extends PartialType(OmitType(CreateUserDto, ['passwor
 
   @ApiPropertyOptional({ description: '是否启用账号' })
   @IsOptional()
-  @IsBoolean()
+  @IsBoolean({ message: '账号状态无效' })
   isActive?: boolean;
 
   @ApiPropertyOptional({ description: '临时锁定截止时间（ISO 8601），传 null 解锁' })
   @IsOptional()
-  @IsDateString()
+  @IsDateString({}, { message: '锁定截止时间格式不正确' })
   lockedUntil?: string | null;
 }
 
@@ -62,6 +70,6 @@ export class ResetUserPasswordDto {
 
   @ApiPropertyOptional({ description: '操作者当前密码（重置其他管理员密码时必填）' })
   @IsOptional()
-  @IsString()
+  @IsString({ message: '密码格式不正确' })
   actorPassword?: string;
 }

@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import type { ResourceConfig } from '@/components/crud/config';
 import { contentAuditColumns } from '@/components/LastOperatorCell';
+import { SOURCE_FACET_OPTIONS } from '@/components/visitors/facet-options';
+import { sourceLabel } from '@/features/analytics';
 import {
   CUSTOMER_LEVEL_OPTIONS,
   CUSTOMER_SOURCE_OPTIONS,
@@ -43,7 +45,9 @@ export const customersConfig: ResourceConfig<CustomerItem> = {
     { key: 'customerType', label: '全部类型', options: CUSTOMER_TYPE_OPTIONS },
     { key: 'stage', label: '全部阶段', options: CUSTOMER_STAGE_OPTIONS },
     { key: 'level', label: '全部等级', options: CUSTOMER_LEVEL_OPTIONS },
-    { key: 'source', label: '全部来源', options: CUSTOMER_SOURCE_OPTIONS },
+    { key: 'source', label: '全部客户来源', options: CUSTOMER_SOURCE_OPTIONS },
+    // 来源渠道（首触流量归因，选项与访客中心/询盘同源），与上方「客户来源」是两个独立维度
+    { key: 'channel', label: '全部来源渠道', options: SOURCE_FACET_OPTIONS },
   ],
   columns: [
     {
@@ -68,6 +72,8 @@ export const customersConfig: ResourceConfig<CustomerItem> = {
     {
       key: 'contact',
       header: '联系方式',
+      // 排序按电话优先、邮箱次之（与主/副行展示一致），空值置后（后端 buildOrderInput）
+      sortable: true,
       className: 'whitespace-nowrap',
       cell: (r) =>
         r.phone || r.email ? (
@@ -87,10 +93,30 @@ export const customersConfig: ResourceConfig<CustomerItem> = {
     },
     {
       key: 'source',
-      header: '来源',
+      header: '客户来源',
+      // 命名区分：「客户来源」=业务获客维度（官网询盘/展会…，手工维护）；
+      // 询盘/访客中心的「来源渠道」=流量归因维度，两者语义不同。
       sortable: true,
       className: 'whitespace-nowrap',
       cell: (r) => (r.source ? labelOf(CUSTOMER_SOURCE_OPTIONS, r.source) : '—'),
+    },
+    {
+      key: 'channel',
+      header: '来源渠道',
+      // 与询盘/访客中心同款：首触渠道 + 引荐域名副行（流量归因维度，自动归因不可编辑）；
+      // 排序为富化字段，后端全量富化后内存排序（空值置后）
+      sortable: true,
+      className: 'whitespace-nowrap',
+      cell: (r) => (
+        <div className="min-w-[110px]">
+          <div className="text-foreground">{r.channel ? sourceLabel(r.channel) : '—'}</div>
+          {r.referrerHost ? (
+            <div className="mt-0.5 max-w-[160px] truncate text-xs text-muted-foreground">
+              {r.referrerHost}
+            </div>
+          ) : null}
+        </div>
+      ),
     },
     {
       key: 'level',

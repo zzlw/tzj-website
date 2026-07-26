@@ -169,3 +169,14 @@ export type {
   SocialPlatformId,
 } from './site-settings.js';
 export type { DependencyStatus, SystemStatusResponse } from './system-status.js';
+export type {
+  LoginResult,
+  MeResult,
+  SecurityAuthSettings,
+  TwoFactorEnableResult,
+  TwoFactorSetupResult,
+  TwoFactorStatusResult,
+  TwoFactorVerifyRequest,
+  TwoFactorVerifyResult,
+} from './auth.js';
+export { TWOFA_ENROLLMENT_REQUIRED } from './auth.js';

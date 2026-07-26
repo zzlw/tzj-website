@@ -23,12 +23,14 @@ import { type FilterFacet, VisitorFilterBar } from '@/components/visitors/Visito
 import {
   type AnalyticsVisitorDetailRow,
   DEFAULT_VISITOR_DETAIL_SORT,
+  fetchVisitorDetailsExport,
   formatLastSeen,
   sourceLabel,
   useAnalyticsVisitorDetails,
 } from '@/features/analytics';
 import { downloadCsv, IP_EXPORT_COLUMNS } from '@/features/analytics-export';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import { notifyError, notifySuccess } from '@/lib/notify';
 import { intField, sortField, stringField, useUrlState } from '@/lib/use-url-state';
 
 // 访客明细（按 IP 聚合）列定义：模块级工厂，收敛内联 cell 的认知复杂度。
@@ -50,6 +52,8 @@ function buildIpDetailColumns(
     {
       key: 'region',
       header: '地区',
+      // 展示时按 IP 重解析，服务端排序取入库 country/region/city 近似（同地区有效聚类）
+      sortable: true,
       cell: (r) => (
         <div className="min-w-0">
           <span>{r.region || '—'}</span>
@@ -63,6 +67,8 @@ function buildIpDetailColumns(
     {
       key: 'channel',
       header: '来源渠道',
+      // 服务端按首触渠道代表值排序（聚合列 trafficSource）
+      sortable: true,
       className: 'max-w-[180px]',
       cell: (r) => (
         <div className="min-w-0">
@@ -186,6 +192,29 @@ export function IpVisitorLens({ dateParams }: { dateParams: { from?: string; to?
   const { data, isLoading, isFetching } = useAnalyticsVisitorDetails(params);
   const loading = isLoading || isFetching;
   const rows = data?.data ?? [];
+
+  // 导出：拉取当前筛选下的全量数据（后端上限 5000 行），而非当前页
+  const [exporting, setExporting] = useState(false);
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const res = await fetchVisitorDetailsExport({
+        ...dateParams,
+        q: q || undefined,
+        channel: channel || undefined,
+        deviceType: deviceType || undefined,
+        sortBy: sort?.column,
+        sortOrder: sort?.order,
+      });
+      downloadCsv('访客明细_按IP', res.data, IP_EXPORT_COLUMNS);
+      notifySuccess(`已导出 ${res.data.length} 条 IP 记录`);
+    } catch {
+      notifyError('导出失败，请稍后重试');
+    } finally {
+      setExporting(false);
+    }
+  }
+
   // 「查看详情」经全局 Provider 打开 IP 抽屉（桥跳转与栈由 Provider 接管，行数据作 seed 占位）
   const columns = buildIpDetailColumns((row) => openIp(row.id, row));
 
@@ -193,8 +222,8 @@ export function IpVisitorLens({ dateParams }: { dateParams: { from?: string; to?
   const facets: FilterFacet[] = [
     {
       key: 'channel',
-      label: '来源',
-      placeholder: '全部来源',
+      label: '来源渠道',
+      placeholder: '全部来源渠道',
       value: channel,
       onChange: (v) => setUrl({ channel: v, page: 1 }),
       options: SOURCE_FACET_OPTIONS,
@@ -217,8 +246,8 @@ export function IpVisitorLens({ dateParams }: { dateParams: { from?: string; to?
           onSearchChange={setSearchInput}
           searchPlaceholder="搜索 IP/地区/城市/浏览器/系统"
           facets={facets}
-          onExport={() => downloadCsv('访客明细_按IP', rows, IP_EXPORT_COLUMNS)}
-          exportDisabled={loading || rows.length === 0}
+          onExport={() => void handleExport()}
+          exportDisabled={loading || exporting || rows.length === 0}
         />
         <DataTable
           columns={columns}

@@ -11,11 +11,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const session = await getSession();
   if (!session) redirect('/login');
 
-  // 从 API 获取最新权限
+  // 从 API 获取最新权限，顺带读强制 2FA 绑定标记
   let permissions: string[] = [];
+  let twoFactorSetupRequired = false;
   try {
-    const me = await apiFetch<{ permissions?: string[] }>('/auth/me');
+    const me = await apiFetch<{ permissions?: string[]; twoFactorSetupRequired?: boolean }>(
+      '/auth/me',
+    );
     permissions = me.permissions ?? [];
+    twoFactorSetupRequired = me.twoFactorSetupRequired === true;
   } catch (error) {
     // 注意：到此说明已通过上面的 session 校验（用户确实已登录），
     // 此时 /auth/me 失败通常是 token 续期边界的瞬时问题（middleware 会在后续请求修正）。
@@ -26,6 +30,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
       permissions = ['*'];
     }
   }
+
+  // 强制 2FA：未绑定用户导向绑定页（redirect 必须在 try/catch 之外，避免 NEXT_REDIRECT 被吞）
+  if (twoFactorSetupRequired) redirect('/enroll-2fa');
 
   const roleLabels: Record<string, string> = { admin: '超级管理员' };
 

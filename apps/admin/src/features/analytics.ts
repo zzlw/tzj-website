@@ -144,8 +144,31 @@ export interface AnalyticsVisitorRow {
   lastIpMasked: string | null;
   lastIpHash: string | null;
   referrerHost: string | null;
+  /** 营销归因（会话首触）：UTM 五参数 + Google Ads 点击 ID */
+  utmSource: string | null;
+  utmMedium: string | null;
+  utmCampaign: string | null;
+  utmContent: string | null;
+  utmTerm: string | null;
+  gclid: string | null;
   touchedContact?: boolean;
   touchedCase?: boolean;
+  /** 最近一条询盘 ID（转化去重锚点，无询盘为 null） */
+  latestContactId?: string | null;
+  /** 已转客户 ID（询盘/访客两条归因链路任一命中；未转化为 null） */
+  convertedCustomerId?: string | null;
+}
+
+/**
+ * 「按访客」全量导出行：列表行 + 转化标签（后端 Contact/Customer 反查），
+ * 供 CSV 导出给 AI 做投放归因与用户画像分析。
+ */
+export interface AnalyticsVisitorExportRow extends AnalyticsVisitorRow {
+  inquirySubmitted: boolean;
+  inquiredAt: string | null;
+  convertedCustomer: boolean;
+  /** 首访至询盘天数（1 位小数，未询盘为 null） */
+  daysToInquiry: number | null;
 }
 
 export interface AnalyticsVisitorActivityView {
@@ -159,6 +182,8 @@ export interface AnalyticsVisitorActivityView {
  * 用 CookieID 认「是谁」、IP 认「在哪」，此处即人物轴下汇总的历史「在哪」。
  */
 export interface AnalyticsVisitorNetwork {
+  /** 明文 IP（内部后台明文展示，无则回退 ipMasked） */
+  ip: string | null;
   ipMasked: string | null;
   region: string;
   pageViews: number;
@@ -354,6 +379,16 @@ export function useAnalyticsVisitors(params?: Params) {
   });
 }
 
+/** 「按访客」全量导出取数（命令式，点击导出时调用；后端上限 5000 行） */
+export function fetchVisitorsExport(params?: Params) {
+  return api.list<AnalyticsVisitorExportRow>('analytics/visitors/export', params);
+}
+
+/** 「按 IP」全量导出取数（命令式，点击导出时调用；后端上限 5000 行） */
+export function fetchVisitorDetailsExport(params?: Params) {
+  return api.list<AnalyticsVisitorDetailRow>('analytics/visitor-details/export', params);
+}
+
 export function useAnalyticsVisitorActivity(visitorId: string | null, params?: Params) {
   return useQuery<AnalyticsVisitorActivity>({
     queryKey: ['analytics', 'visitor-activity', visitorId, params ?? {}],
@@ -439,6 +474,20 @@ export const SOURCE_LABELS: Record<string, string> = {
 
 export function sourceLabel(v: string): string {
   return SOURCE_LABELS[v] ?? v;
+}
+
+/**
+ * 前端裸拼地区标签的统一口径（与后端 formatGeoLabel 语义对齐）：
+ * 内网/本地 IP 入库哨兵值 country='LOCAL' 显示为「本地网络」，
+ * 其余 region · city 优先、回退 country，全空时回退调用方给定的占位符。
+ */
+export function regionLabel(
+  parts: { country?: string | null; region?: string | null; city?: string | null },
+  fallback = '—',
+): string {
+  if (parts.country === 'LOCAL') return '本地网络';
+  const local = [parts.region, parts.city].filter(Boolean).join(' · ');
+  return local || parts.country || fallback;
 }
 
 export function formatShortDate(v: string): string {

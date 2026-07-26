@@ -296,6 +296,14 @@ function DocumentListRow({
   );
 }
 
+/** 上下文感知创建：正在浏览某文件夹时，新建文档回填该文件夹（与侧栏文件夹行的「创建文章」同款）；
+ *  全部文档 / 未分类视图不带参数，留空即落入未分类 */
+function buildNewDocHref(basePath: string, folderId?: string) {
+  return folderId && folderId !== '__none__'
+    ? `${basePath}/new?folder=${folderId}`
+    : `${basePath}/new`;
+}
+
 export function DocumentListView({
   config,
   extraListParams,
@@ -338,6 +346,8 @@ export function DocumentListView({
       folder: folderId,
       tag,
     });
+
+  const newDocHref = buildNewDocHref(config.basePath, folderId);
 
   const params = useMemo(
     () => ({
@@ -423,7 +433,7 @@ export function DocumentListView({
             </Can>
             <Can anyPerm={perms(config, 'create')}>
               <Button asChild>
-                <Link href={`${config.basePath}/new`}>
+                <Link href={newDocHref}>
                   <Plus className="mr-2 h-4 w-4" />
                   新增{config.singular}
                 </Link>
@@ -549,7 +559,7 @@ export function DocumentListView({
           action={
             <Can anyPerm={perms(config, 'create')}>
               <Button variant="outline" size="sm" asChild>
-                <Link href={`${config.basePath}/new`}>
+                <Link href={newDocHref}>
                   <Plus className="mr-2 h-4 w-4" />
                   新建{config.singular}
                 </Link>

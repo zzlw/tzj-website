@@ -26,12 +26,12 @@ import {
 import { Eye, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Can } from '@/components/Can';
+import { LastOperatorCell } from '@/components/LastOperatorCell';
 import {
   AUDIT_ACTION_OPTIONS,
   AUDIT_RESOURCE_OPTIONS,
   auditActionLabel,
   auditResourceLabel,
-  auditUserLabel,
   formatAuditDateTime,
   useAuditLogList,
 } from '@/features/audit';
@@ -115,7 +115,8 @@ export default function AuditLogsPage() {
         sortable: true,
         sortKey: 'user',
         className: 'font-medium',
-        cell: (r) => auditUserLabel(r),
+        // hover 弹出公共账号资料卡，与内容列表「最后操作人」同源
+        cell: (r) => <LastOperatorCell user={r.user} />,
       },
       {
         key: 'action',
@@ -290,7 +291,9 @@ export default function AuditLogsPage() {
         {detailRow ? (
           <div className="space-y-4">
             <DetailBlock label="时间">{formatAuditDateTime(detailRow.createdAt)}</DetailBlock>
-            <DetailBlock label="操作人">{auditUserLabel(detailRow)}</DetailBlock>
+            <DetailBlock label="操作人">
+              <LastOperatorCell user={detailRow.user} profileOnHover={false} />
+            </DetailBlock>
             <DetailBlock label="动作">{auditActionLabel(detailRow.action)}</DetailBlock>
             <DetailBlock label="资源">
               {auditResourceLabel(detailRow.resource)}

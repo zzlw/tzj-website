@@ -1,10 +1,18 @@
-import { createHash } from 'node:crypto';
-import { ConflictException, ForbiddenException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { createHash, randomUUID } from 'node:crypto';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  Logger,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
+import type { MeResult } from '@tzj/types';
 import * as bcrypt from 'bcrypt';
 import { RolesService } from '../access/roles.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { SettingsService } from '../settings/settings.service';
 import type { AuthUser, JwtPayload, Role } from './roles';
 
 export interface RequestMeta {
@@ -28,6 +36,7 @@ export class AuthService {
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
     private readonly rolesService: RolesService,
+    private readonly settings: SettingsService,
   ) {}
 
   async login(username: string, password: string, meta: RequestMeta) {
@@ -59,7 +68,9 @@ export class AuthService {
               lockedUntil: new Date(Date.now() + lockDurationMin * 60_000),
             },
           });
-          this.logger.warn(`用户 ${user.username} 连续 ${attempts} 次登录失败，已锁定 ${lockDurationMin} 分钟`);
+          this.logger.warn(
+            `用户 ${user.username} 连续 ${attempts} 次登录失败，已锁定 ${lockDurationMin} 分钟`,
+          );
         } else {
           await this.prisma.user.update({
             where: { id: user.id },
@@ -72,6 +83,21 @@ export class AuthService {
       throw new UnauthorizedException('用户名或密码错误');
     }
 
+    // 登录成功但已启用 2FA → 返回预鉴权态，不发正式令牌、不建 Session（kill-switch 打开时豁免）
+    if (user.twoFactorEnabled && !this.twoFactorChallengeDisabled()) {
+      const pending = await this.issuePendingToken(user.id, user.username, user.role);
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { failedLoginAttempts: 0, lockedUntil: null },
+      });
+      await this.audit(user.id, 'login_2fa_challenge', 'auth', user.id, meta);
+      return {
+        requires2fa: true as const,
+        pendingToken: pending.token,
+        expiresIn: pending.expiresIn,
+      };
+    }
+
     // 登录成功：重置失败计数
     const tokens = await this.issueTokens(user.id, user.username, user.role as Role);
     await this.persistSession(user.id, tokens.refreshToken, meta);
@@ -82,6 +108,41 @@ export class AuthService {
     });
     await this.audit(user.id, 'login', 'auth', user.id, meta);
 
+    return { requires2fa: false as const, ...tokens, user: await this.toAuthUser(user) };
+  }
+
+  /** 2FA 挡板 kill-switch（TWOFA_CHALLENGE_DISABLED=true 时豁免 login 挑战与 refresh gating，事故止血用） */
+  twoFactorChallengeDisabled(): boolean {
+    return this.config.get<boolean>('TWOFA_CHALLENGE_DISABLED') === true;
+  }
+
+  /** 签发 2FA 预鉴权令牌（仅授予进入 verify 的资格，jti 供单用黑名单） */
+  private async issuePendingToken(userId: string, username: string, role: string) {
+    const secret = this.config.getOrThrow<string>('JWT_SECRET');
+    const expiresIn = this.config.get<number>('TWOFA_PENDING_TTL_SECONDS') ?? 300;
+    const payload: JwtPayload = {
+      sub: userId,
+      username,
+      role,
+      type: 'twofa_pending',
+      jti: randomUUID(),
+    };
+    const token = await this.jwt.signAsync({ ...payload }, { secret, expiresIn });
+    return { token, expiresIn };
+  }
+
+  /** 2FA 校验通过后签发正式令牌（会话标记 twoFactorVerifiedAt，供 TwoFactorService.verify 调用） */
+  async issueVerifiedSession(userId: string, meta: RequestMeta) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !user.isActive) {
+      throw new UnauthorizedException('账号不存在或已停用');
+    }
+    const tokens = await this.issueTokens(user.id, user.username, user.role as Role);
+    await this.persistSession(user.id, tokens.refreshToken, meta, new Date());
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { lastLoginAt: new Date(), failedLoginAttempts: 0, lockedUntil: null },
+    });
     return { ...tokens, user: await this.toAuthUser(user) };
   }
 
@@ -110,8 +171,7 @@ export class AuthService {
       //  安全说明：真正的令牌盗用场景中，攻击者拿到的是「当前有效」令牌（非已撤销令牌），
       //  会走下方正常轮换路径而非此分支。因此此处无需撤销全部会话。
       if (session?.revokedAt) {
-        const graceActive =
-          session.graceUntil && session.graceUntil.getTime() > Date.now();
+        const graceActive = session.graceUntil && session.graceUntil.getTime() > Date.now();
         if (graceActive) {
           const reused = await this.reuseWithinGrace(session, meta);
           if (reused) return reused;
@@ -135,7 +195,17 @@ export class AuthService {
       throw new UnauthorizedException('账号不存在或已停用');
     }
 
-    // 轮换：撤销旧会话（记录继任者 + 宽限截止时间），签发新令牌与新会话
+    // 2FA gating：已启用 2FA 的账号，会话必须已通过二次校验才可续期
+    // （堵 refresh 绕过 2FA 的头号缺口；kill-switch 打开时同步豁免，避免事故期密码登录会话被反复踢出）
+    if (
+      user.twoFactorEnabled &&
+      !session.twoFactorVerifiedAt &&
+      !this.twoFactorChallengeDisabled()
+    ) {
+      throw new UnauthorizedException('会话未完成两步验证，请重新登录');
+    }
+
+    // 轮换：撤销旧会话（记录继任者 + 宽限截止时间），签发新令牌与新会话（继承 2FA 验证标记）
     const tokens = await this.issueTokens(user.id, user.username, user.role as Role);
     const newHash = this.hashToken(tokens.refreshToken);
     await this.prisma.session.update({
@@ -146,7 +216,7 @@ export class AuthService {
         graceUntil: new Date(Date.now() + this.refreshGraceMs()),
       },
     });
-    await this.persistSession(user.id, tokens.refreshToken, meta);
+    await this.persistSession(user.id, tokens.refreshToken, meta, session.twoFactorVerifiedAt);
     return tokens;
   }
 
@@ -163,13 +233,21 @@ export class AuthService {
    * 指向新会话，保证后续复用总能找到可用继任者。宽限期外的复用才判定为盗用。
    */
   private async reuseWithinGrace(
-    session: { id: string; userId: string },
+    session: { id: string; userId: string; twoFactorVerifiedAt: Date | null },
     meta: RequestMeta,
   ): Promise<TokenPair | null> {
     const user = await this.prisma.user.findUnique({ where: { id: session.userId } });
     if (!user || !user.isActive) return null;
+    // 宽限期复用同样受 2FA gating 约束（新建 Session 继承验证标记，避免合法竞态复用者下次 refresh 被误踢）
+    if (
+      user.twoFactorEnabled &&
+      !session.twoFactorVerifiedAt &&
+      !this.twoFactorChallengeDisabled()
+    ) {
+      return null;
+    }
     const tokens = await this.issueTokens(user.id, user.username, user.role as Role);
-    await this.persistSession(user.id, tokens.refreshToken, meta);
+    await this.persistSession(user.id, tokens.refreshToken, meta, session.twoFactorVerifiedAt);
     await this.prisma.session.update({
       where: { id: session.id },
       data: {
@@ -203,10 +281,16 @@ export class AuthService {
     return { success: true };
   }
 
-  async me(userId: string): Promise<AuthUser> {
+  async me(userId: string): Promise<MeResult> {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new UnauthorizedException();
-    return await this.toAuthUser(user);
+    // 强制 2FA 引导标记：开关打开且本人未绑定（kill-switch 打开时不引导，与守卫豁免口径一致）
+    let twoFactorSetupRequired = false;
+    if (!user.twoFactorEnabled && !this.twoFactorChallengeDisabled()) {
+      const { twoFactorRequired } = await this.settings.getSecurityAuthSettings();
+      twoFactorSetupRequired = twoFactorRequired;
+    }
+    return { ...(await this.toAuthUser(user)), twoFactorSetupRequired };
   }
 
   async updateProfile(
@@ -273,7 +357,12 @@ export class AuthService {
     };
   }
 
-  private async persistSession(userId: string, refreshToken: string, meta: RequestMeta) {
+  private async persistSession(
+    userId: string,
+    refreshToken: string,
+    meta: RequestMeta,
+    twoFactorVerifiedAt?: Date | null,
+  ) {
     const refreshTtl = this.config.get<string>('JWT_REFRESH_TTL') ?? '7d';
     await this.prisma.session.create({
       data: {
@@ -282,6 +371,7 @@ export class AuthService {
         userAgent: meta.userAgent?.slice(0, 512),
         ip: meta.ip,
         expiresAt: new Date(Date.now() + this.ttlToSeconds(refreshTtl) * 1000),
+        twoFactorVerifiedAt: twoFactorVerifiedAt ?? null,
       },
     });
   }

@@ -1,6 +1,6 @@
 'use client';
 
-import type { SitePublicSettings } from '@tzj/types';
+import type { LocalizedText, SitePublicSettings } from '@tzj/types';
 import {
   Button,
   Card,
@@ -25,6 +25,7 @@ import {
 } from '@tzj/ui';
 import { Clock, ImagePlus, Loader2, MessageSquareText, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { MarkdownEditor } from '@/components/crud/MarkdownEditor';
 import { MediaPicker } from '@/components/crud/MediaPicker';
 import { useSitePublicSettings, useUpdateSitePublicSettings } from '@/features/site-settings';
 import { ApiError } from '@/lib/apiClient';
@@ -48,6 +49,48 @@ const PROMPT_LOCALES: { key: 'zh-CN' | 'zh-TW' | 'en'; label: string }[] = [
   { key: 'zh-TW', label: '繁體中文' },
   { key: 'en', label: 'English' },
 ];
+
+/** C 端内置默认文案镜像（apps/web ChatWidget i18n 的 offlineHint / noAgentHint），用作编辑器预填与 placeholder */
+const DEFAULT_OFFLINE_PROMPTS: Record<'zh-CN' | 'zh-TW' | 'en', string> = {
+  'zh-CN': '我们已下班，留言后会在工作时间尽快回复。',
+  'zh-TW': '我們已下班，留言後會於工作時間盡快回覆。',
+  en: "We're offline right now. We'll reply during business hours.",
+};
+const DEFAULT_NO_AGENT_PROMPTS: Record<'zh-CN' | 'zh-TW' | 'en', string> = {
+  'zh-CN': '当前没有客服在线，留言后我们会尽快通过邮件或电话回复。',
+  'zh-TW': '目前沒有客服在線，留言後我們會盡快透過郵件或電話回覆。',
+  en: "No agents are online right now. Leave a message and we'll get back to you by email or phone.",
+};
+
+/** 提示语某语言为空时填入默认文案（不覆盖已有内容） */
+function fillPromptDefaults(
+  value: LocalizedText,
+  defaults: Record<'zh-CN' | 'zh-TW' | 'en', string>,
+): LocalizedText {
+  const next: LocalizedText = { ...value };
+  for (const { key } of PROMPT_LOCALES) {
+    if (!next[key]?.trim()) next[key] = defaults[key];
+  }
+  return next;
+}
+
+/** 表单初始化：把空的提示语预填为 C 端内置默认文案，便于在默认基础上直接修改（清空保存仍回退内置默认） */
+function withPromptDefaults(settings: SitePublicSettings): SitePublicSettings {
+  return {
+    ...settings,
+    chatPrompts: {
+      ...settings.chatPrompts,
+      offlineMessage: fillPromptDefaults(
+        settings.chatPrompts.offlineMessage,
+        DEFAULT_OFFLINE_PROMPTS,
+      ),
+      noAgentMessage: fillPromptDefaults(
+        settings.chatPrompts.noAgentMessage,
+        DEFAULT_NO_AGENT_PROMPTS,
+      ),
+    },
+  };
+}
 
 /** 客服在线时间配置：常用业务时区 */
 const TIMEZONES: { id: string; label: string }[] = [
@@ -153,7 +196,8 @@ export default function ChatSettingsPage() {
   const [form, setForm] = useState<SitePublicSettings | null>(null);
 
   useEffect(() => {
-    if (data) setForm(data);
+    // 提示语留空的语言预填默认文案，让编辑器直接展示可修改的内容而非空 placeholder
+    if (data) setForm(withPromptDefaults(data));
   }, [data]);
 
   function patch(fn: (prev: SitePublicSettings) => SitePublicSettings) {
@@ -254,22 +298,26 @@ export default function ChatSettingsPage() {
                 </div>
               </div>
               <div>
-                <Label htmlFor="agent-greeting">首条招呼语</Label>
+                <Label>首条招呼语</Label>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  用户打开聊天时展示的第一句话，支持换行
+                  用户打开聊天时展示的第一句话；支持 Markdown，与客服消息同引擎渲染
                 </p>
-                <Textarea
-                  id="agent-greeting"
-                  className="mt-1.5 text-sm"
-                  rows={3}
-                  value={form.agentProfile.greeting}
-                  onChange={(e) =>
-                    patch((p) => ({
-                      ...p,
-                      agentProfile: { ...p.agentProfile, greeting: e.target.value },
-                    }))
-                  }
-                />
+                {/* 与聊天控制台输入框同源的公共 Markdown 编辑器（Vditor），C 端按 agent 消息 Markdown 渲染 */}
+                <div className="mt-1.5">
+                  <MarkdownEditor
+                    value={form.agentProfile.greeting}
+                    onChange={(greeting) =>
+                      patch((p) => ({
+                        ...p,
+                        agentProfile: { ...p.agentProfile, greeting },
+                      }))
+                    }
+                    minHeight={140}
+                    folder="uploads"
+                    defaultMode="wysiwyg"
+                    placeholder="支持 Markdown / GFM，可插入图片、链接…"
+                  />
+                </div>
               </div>
             </CardContent>
             <CardFooter className="items-center justify-end border-t bg-muted/20 px-6 py-4">
@@ -475,33 +523,36 @@ export default function ChatSettingsPage() {
               <div>
                 <Label>非工作时间（下班）提示</Label>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  启用「客服在线时间」且当前不在服务时段时展示；某语言留空则使用 C
+                  启用「客服在线时间」且当前不在服务时段时展示；支持 Markdown，某语言留空则使用 C
                   端内置多语言默认文案
                 </p>
-                <div className="mt-2 space-y-2">
+                <div className="mt-2 space-y-3">
                   {PROMPT_LOCALES.map(({ key, label }) => (
                     <div key={key} className="flex items-start gap-2">
                       <span className="mt-2 w-16 shrink-0 text-xs text-muted-foreground">
                         {label}
                       </span>
-                      <Textarea
-                        className="text-sm"
-                        rows={2}
-                        placeholder="留空回退到内置默认"
-                        value={form.chatPrompts.offlineMessage[key] ?? ''}
-                        onChange={(e) =>
-                          patch((p) => ({
-                            ...p,
-                            chatPrompts: {
-                              ...p.chatPrompts,
-                              offlineMessage: {
-                                ...p.chatPrompts.offlineMessage,
-                                [key]: e.target.value,
+                      <div className="min-w-0 flex-1">
+                        <MarkdownEditor
+                          value={form.chatPrompts.offlineMessage[key] ?? ''}
+                          onChange={(md) =>
+                            patch((p) => ({
+                              ...p,
+                              chatPrompts: {
+                                ...p.chatPrompts,
+                                offlineMessage: {
+                                  ...p.chatPrompts.offlineMessage,
+                                  [key]: md,
+                                },
                               },
-                            },
-                          }))
-                        }
-                      />
+                            }))
+                          }
+                          minHeight={100}
+                          folder="uploads"
+                          defaultMode="wysiwyg"
+                          placeholder={DEFAULT_OFFLINE_PROMPTS[key]}
+                        />
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -509,33 +560,36 @@ export default function ChatSettingsPage() {
               <div>
                 <Label>无客服在线提示</Label>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  工作时间内但暂无坐席在线（均离线/忙碌）时展示；某语言留空则使用 C
+                  工作时间内但暂无坐席在线（均离线/忙碌）时展示；支持 Markdown，某语言留空则使用 C
                   端内置多语言默认文案
                 </p>
-                <div className="mt-2 space-y-2">
+                <div className="mt-2 space-y-3">
                   {PROMPT_LOCALES.map(({ key, label }) => (
                     <div key={key} className="flex items-start gap-2">
                       <span className="mt-2 w-16 shrink-0 text-xs text-muted-foreground">
                         {label}
                       </span>
-                      <Textarea
-                        className="text-sm"
-                        rows={2}
-                        placeholder="留空回退到内置默认"
-                        value={form.chatPrompts.noAgentMessage[key] ?? ''}
-                        onChange={(e) =>
-                          patch((p) => ({
-                            ...p,
-                            chatPrompts: {
-                              ...p.chatPrompts,
-                              noAgentMessage: {
-                                ...p.chatPrompts.noAgentMessage,
-                                [key]: e.target.value,
+                      <div className="min-w-0 flex-1">
+                        <MarkdownEditor
+                          value={form.chatPrompts.noAgentMessage[key] ?? ''}
+                          onChange={(md) =>
+                            patch((p) => ({
+                              ...p,
+                              chatPrompts: {
+                                ...p.chatPrompts,
+                                noAgentMessage: {
+                                  ...p.chatPrompts.noAgentMessage,
+                                  [key]: md,
+                                },
                               },
-                            },
-                          }))
-                        }
-                      />
+                            }))
+                          }
+                          minHeight={100}
+                          folder="uploads"
+                          defaultMode="wysiwyg"
+                          placeholder={DEFAULT_NO_AGENT_PROMPTS[key]}
+                        />
+                      </div>
                     </div>
                   ))}
                 </div>

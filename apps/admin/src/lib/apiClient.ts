@@ -1,5 +1,11 @@
 import { BASE_PATH } from './config';
 
+// 仅做类型级锚定，不值导入 @tzj/types：admin 的 tsconfig paths 指向该包 TS 源码，
+// 值导入会迫使 Turbopack 打包源码并因 NodeNext 的 .js 后缀相对导入而解析失败。
+// 若 @tzj/types 中该常量字面量变更，此处会编译报错。
+const TWOFA_ENROLLMENT_REQUIRED: typeof import('@tzj/types')['TWOFA_ENROLLMENT_REQUIRED'] =
+  'TWOFA_ENROLLMENT_REQUIRED';
+
 const BFF = `${BASE_PATH}/api/bff`;
 
 export interface Pagination {
@@ -61,6 +67,15 @@ async function request<T>(
   }
 
   if (!res.ok || !body || body.success === false) {
+    // 强制 2FA：开关中途被打开时，停留页面的下一次请求即被引导去绑定页
+    if (
+      res.status === 403 &&
+      body?.error?.code === TWOFA_ENROLLMENT_REQUIRED &&
+      typeof window !== 'undefined' &&
+      !window.location.pathname.endsWith('/enroll-2fa')
+    ) {
+      window.location.assign(`${BASE_PATH}/enroll-2fa`);
+    }
     const raw = body?.error?.message ?? body?.message ?? `请求失败 (${res.status})`;
     const msg = Array.isArray(raw) ? (raw[0] ?? `请求失败 (${res.status})`) : raw;
     throw new ApiError(msg, res.status, body?.error?.code, body?.error?.details);

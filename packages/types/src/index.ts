@@ -31,10 +31,13 @@ export type {
   IntegrationTestResult,
   LocalizedText,
   LoginDto,
+  LoginResult,
+  MeResult,
   NotificationLogItem,
   NotificationTemplate,
   PageViewGeoSource,
   ScreenWatermark,
+  SecurityAuthSettings,
   SiteMediaSettings,
   SiteNotificationSettings,
   SitePublicSettings,
@@ -42,6 +45,11 @@ export type {
   SocialChannelSetting,
   SocialPlatformId,
   SystemStatusResponse,
+  TwoFactorEnableResult,
+  TwoFactorSetupResult,
+  TwoFactorStatusResult,
+  TwoFactorVerifyRequest,
+  TwoFactorVerifyResult,
   UpdateBlogDto,
   UpdateCaseDto,
   UpdateIntegrationDto,
@@ -52,6 +60,7 @@ export type {
   WatermarkMode,
   WatermarkPosition,
 } from './dto/index.js';
+export { TWOFA_ENROLLMENT_REQUIRED } from './dto/index.js';
 // Entities
 export type {
   BaseEntity,
