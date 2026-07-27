@@ -390,6 +390,7 @@ export function ChatWidget({
 
   const {
     connected,
+    authError,
     agentsOnline,
     agentsAway,
     agentLastOnlineAt,
@@ -666,6 +667,33 @@ export function ChatWidget({
       active = false;
     };
   }, [enterChat]);
+
+  // P1-6：访客 token 失效后续期链路——auth-error 时用 localStorage 中的 email+roomId 重新兑换 token
+  useEffect(() => {
+    if (!authError) return;
+    let cancelled = false;
+    (async () => {
+      const rid = roomIdRef.current;
+      const email = clientEmailRef.current;
+      if (!rid || !email) return;
+      try {
+        const { token: newToken } = await fetchVisitorToken(rid, email);
+        if (cancelled) return;
+        setToken(newToken);
+        // 回写 localStorage，确保刷新后也能拿到有效 token
+        try {
+          localStorage.setItem(
+            STORAGE_KEY,
+            JSON.stringify({ email, roomId: rid, token: newToken }),
+          );
+        } catch {}
+      } catch {
+        // 兑换失败（如会话已删除）：清空本地存储，访客下次操作时将自然进入「开始新对话」
+        try { localStorage.removeItem(STORAGE_KEY); } catch {}
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [authError]);
 
   // 注册 socket 业务事件
   useEffect(() => {

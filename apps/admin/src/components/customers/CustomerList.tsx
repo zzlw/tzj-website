@@ -13,7 +13,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@tzj/ui';
-import { Hand, Undo2, Upload, UserPlus } from 'lucide-react';
+import { Hand, Trash2, Undo2, Upload, UserPlus } from 'lucide-react';
+import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { CopyableText } from '@/components/CopyableText';
 import { ResourceListView } from '@/components/crud/ResourceListView';
@@ -35,6 +36,7 @@ export function CustomerList({ scope }: { scope: 'mine' | 'public' }) {
   const qc = useQueryClient();
   const { permissions } = useSession();
   const canManage = permissions.includes('customers.manage') || permissions.includes('*');
+  const canDelete = permissions.includes('customers.delete') || permissions.includes('*');
   const { openPerson, openIp } = useVisitorDrawer();
   const [importOpen, setImportOpen] = useState(false);
 
@@ -205,18 +207,30 @@ export function CustomerList({ scope }: { scope: 'mine' | 'public' }) {
       rowActions={rowActions}
       titleOverride={scope === 'mine' ? '我的客户' : '公海客户'}
       headerActions={
-        canManage ? (
+        canManage || canDelete ? (
           <>
-            <Button variant="outline" onClick={() => setImportOpen(true)}>
-              <Upload className="mr-2 h-4 w-4" />
-              导入 CSV
-            </Button>
-            <ImportCustomersDialog
-              scope={scope}
-              open={importOpen}
-              onOpenChange={setImportOpen}
-              onImported={invalidate}
-            />
+            {canDelete && (
+              <Button asChild variant="outline">
+                <Link href="/customers/trash">
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  回收站
+                </Link>
+              </Button>
+            )}
+            {canManage && (
+              <>
+                <Button variant="outline" onClick={() => setImportOpen(true)}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  导入 CSV
+                </Button>
+                <ImportCustomersDialog
+                  scope={scope}
+                  open={importOpen}
+                  onOpenChange={setImportOpen}
+                  onImported={invalidate}
+                />
+              </>
+            )}
           </>
         ) : undefined
       }

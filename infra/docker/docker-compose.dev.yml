@@ -31,25 +31,6 @@ services:
     networks:
       - tzj-dev
 
-  # ── Redis 7 ─────────────────────────────────────────────────
-  redis:
-    image: redis:7-alpine
-    container_name: tzj_redis_dev
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
-    command: redis-server /usr/local/etc/redis/redis.conf
-    volumes:
-      - redis_data:/data
-      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
-    healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
-      interval: 10s
-      timeout: 3s
-      retries: 5
-    networks:
-      - tzj-dev
-
   # ── MinIO (S3-compatible Object Storage) ───────────────────
   minio:
     image: minio/minio:latest
@@ -81,8 +62,6 @@ services:
 
 volumes:
   pg_data:
-    driver: local
-  redis_data:
     driver: local
   minio_data:
     driver: local

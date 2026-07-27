@@ -1,6 +1,6 @@
 'use client';
 
-import { useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Alert,
   Badge,
@@ -30,12 +30,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@tzj/ui';
-import { Eye, Search, Trash2, UserRoundCheck, UserRoundPlus, X } from 'lucide-react';
+import { Eye, RotateCcw, Search, Trash2, UserRoundCheck, UserRoundPlus, X } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Can } from '@/components/Can';
 import { CopyableText } from '@/components/CopyableText';
 import { LastOperatorCell } from '@/components/LastOperatorCell';
+import { useSession } from '@/components/session';
 import type { VisitorDrawerApi } from '@/components/visitor-drawer/context';
 import { useVisitorDrawer } from '@/components/visitor-drawer/context';
 import { SOURCE_FACET_OPTIONS } from '@/components/visitors/facet-options';
@@ -45,7 +46,7 @@ import { ConvertToLeadDialog } from '@/features/contacts/components/ConvertToLea
 import { useList, useRemove, useUpdate } from '@/features/hooks';
 import type { ContactItem } from '@/features/types';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
-import { ApiError } from '@/lib/apiClient';
+import { ApiError, api } from '@/lib/apiClient';
 import { notifyError, notifySuccess } from '@/lib/notify';
 import {
   enumField,
@@ -298,6 +299,65 @@ function buildContactColumns(
   const contactIdx = cols.findIndex((c) => c.key === 'contact');
   cols.splice(contactIdx + 1, 0, visitorCol, ipCol);
   return cols;
+}
+
+/** 删除确认文案：已转化询盘需告知客户档案侧的联动后果（行内已有转化标记，无需预检接口）。 */
+function contactDeleteDescription(row: ContactItem): string {
+  const base = '询盘将移入回收站，30 天后自动永久清理，期间可恢复。';
+  return row.convertedCustomerId
+    ? `该询盘已转化为客户，删除后客户档案中的关联询盘链接将失效，客户记录本身保留。${base}`
+    : base;
+}
+
+/** 回收站行操作（查看 / 恢复 / 永久删除）；永久删除仅管理员可见（后端同步校验）。 */
+function ContactTrashRowActions({
+  row,
+  isAdmin,
+  onView,
+  onRestore,
+  onPurge,
+}: {
+  row: ContactItem;
+  isAdmin: boolean;
+  onView: (r: ContactItem) => void;
+  onRestore: (r: ContactItem) => void;
+  onPurge: (r: ContactItem) => void;
+}) {
+  return (
+    <div className="flex items-center justify-end gap-1">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onView(row)}>
+            <Eye className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>查看</TooltipContent>
+      </Tooltip>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onRestore(row)}>
+            <RotateCcw className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>恢复</TooltipContent>
+      </Tooltip>
+      {isAdmin && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 hover:text-destructive"
+              onClick={() => onPurge(row)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>永久删除</TooltipContent>
+        </Tooltip>
+      )}
+    </div>
+  );
 }
 
 /** 行操作列（查看 / 转化或查看客户档案 / 删除），抽为独立组件降低页面复杂度。 */
@@ -682,7 +742,7 @@ export default function ContactsPage() {
   const [urlState, setUrlState] = useUrlState({
     page: intField(1, { min: 1 }),
     pageSize: intField(10, { min: 1 }),
-    tab: enumField(['all', 'unread', 'unhandled'] as const, 'all'),
+    tab: enumField(['all', 'unread', 'unhandled', 'trash'] as const, 'all'),
     search: stringField(),
     channel: filterField(SOURCE_FACET_OPTIONS.map((o) => o.value)),
     converted: filterField(CONVERTED_OPTIONS.map((o) => o.value)),
@@ -691,9 +751,14 @@ export default function ContactsPage() {
   const { page, pageSize, tab, search, channel, converted, sort } = urlState;
   const [detail, setDetail] = useState<ContactItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ContactItem | null>(null);
+  const [purgeTarget, setPurgeTarget] = useState<ContactItem | null>(null);
   const [convertTarget, setConvertTarget] = useState<ContactItem | null>(null);
   const { openPerson, openIp } = useVisitorDrawer();
   const queryClient = useQueryClient();
+  const { role, permissions } = useSession();
+  const isAdmin = role === 'admin';
+  const canDelete = permissions.includes('contacts.delete') || permissions.includes('*');
+  const isTrash = tab === 'trash';
 
   // 追加「访客 ID」「最后访问 IP」两列（定义见模块级 buildContactColumns）。
   const columns = useMemo<DataTableColumn<ContactItem>[]>(
@@ -706,6 +771,7 @@ export default function ContactsPage() {
     if (search.trim()) base.search = search.trim();
     if (channel) base.channel = channel;
     if (converted) base.converted = converted === 'true';
+    if (tab === 'trash') base.deleted = true;
     if (sort) {
       base.sortBy = sort.column;
       base.sortOrder = sort.order;
@@ -717,6 +783,23 @@ export default function ContactsPage() {
   const { data, isLoading, isError, error } = useList<ContactItem>('contact', params);
   const updateMut = useUpdate<ContactItem>('contact');
   const removeMut = useRemove('contact');
+  const restoreMut = useMutation({
+    mutationFn: (id: string) => api.post(`contact/${id}/restore`, {}),
+    onSuccess: () => {
+      notifySuccess('询盘已恢复');
+      queryClient.invalidateQueries({ queryKey: ['contact'] });
+    },
+    onError: (e) => notifyError(e, '恢复失败'),
+  });
+  const purgeMut = useMutation({
+    mutationFn: (id: string) => api.remove('contact', id, { purge: true }),
+    onSuccess: () => {
+      setPurgeTarget(null);
+      notifySuccess('已永久删除');
+      queryClient.invalidateQueries({ queryKey: ['contact'] });
+    },
+    onError: (e) => notifyError(e, '永久删除失败'),
+  });
 
   const rows = data?.data ?? [];
   const pagination = data?.pagination;
@@ -729,7 +812,8 @@ export default function ContactsPage() {
 
   function openDetail(row: ContactItem) {
     setDetail(row);
-    if (!row.isRead) {
+    // 回收站行禁止常规更新（后端 409 守卫），不回写已读
+    if (!row.isRead && !isTrash) {
       updateMut.mutate({ id: row.id, payload: { isRead: true } });
     }
   }
@@ -739,7 +823,7 @@ export default function ContactsPage() {
     try {
       await removeMut.mutateAsync(deleteTarget.id);
       setDeleteTarget(null);
-      notifySuccess('询盘已删除');
+      notifySuccess('询盘已移入回收站');
     } catch (e) {
       notifyError(e, '删除失败');
     }
@@ -760,6 +844,7 @@ export default function ContactsPage() {
           <TabsTrigger value="all">全部</TabsTrigger>
           <TabsTrigger value="unread">未读</TabsTrigger>
           <TabsTrigger value="unhandled">待处理</TabsTrigger>
+          {canDelete && <TabsTrigger value="trash">回收站</TabsTrigger>}
         </TabsList>
       </Tabs>
 
@@ -775,16 +860,26 @@ export default function ContactsPage() {
         columns={columns}
         rows={rows}
         loading={isLoading}
-        emptyText="暂无询盘"
-        getRowClassName={(r) => (!r.isRead ? 'bg-primary/[0.03]' : undefined)}
-        renderActions={(r) => (
-          <ContactRowActions
-            row={r}
-            onView={openDetail}
-            onConvert={setConvertTarget}
-            onDelete={setDeleteTarget}
-          />
-        )}
+        emptyText={isTrash ? '回收站为空' : '暂无询盘'}
+        getRowClassName={(r) => (!r.isRead && !isTrash ? 'bg-primary/[0.03]' : undefined)}
+        renderActions={(r) =>
+          isTrash ? (
+            <ContactTrashRowActions
+              row={r}
+              isAdmin={isAdmin}
+              onView={openDetail}
+              onRestore={(row) => restoreMut.mutate(row.id)}
+              onPurge={setPurgeTarget}
+            />
+          ) : (
+            <ContactRowActions
+              row={r}
+              onView={openDetail}
+              onConvert={setConvertTarget}
+              onDelete={setDeleteTarget}
+            />
+          )
+        }
         sort={sort}
         defaultSort={{ column: 'createdAt', order: 'desc' }}
         onSortChange={(s) => setUrlState({ sort: s, page: 1 })}
@@ -810,10 +905,26 @@ export default function ContactsPage() {
         open={deleteTarget !== null}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
         title="删除询盘"
-        description="确认删除该询盘？此操作不可撤销。"
-        confirmLabel="删除"
+        description={deleteTarget ? contactDeleteDescription(deleteTarget) : undefined}
+        confirmLabel="移入回收站"
         onConfirm={handleDeleteConfirm}
         loading={removeMut.isPending}
+      />
+
+      <ConfirmDialog
+        open={purgeTarget !== null}
+        onOpenChange={(open) => !open && setPurgeTarget(null)}
+        title="永久删除询盘"
+        description={
+          purgeTarget
+            ? `确认永久删除「${purgeTarget.name}」的询盘？此操作不可撤销；若仍有客户关联该询盘，关联将被解除并在客户备注中留痕。`
+            : undefined
+        }
+        confirmLabel="永久删除"
+        onConfirm={() => {
+          if (purgeTarget) purgeMut.mutate(purgeTarget.id);
+        }}
+        loading={purgeMut.isPending}
       />
 
       {convertTarget && (

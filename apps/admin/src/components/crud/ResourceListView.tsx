@@ -58,6 +58,13 @@ function chipPrefix(label: string): string {
   return label.replace(/^全部/, '') || label;
 }
 
+/** 删除确认描述：支持 config 覆盖（含按行动态文案，如软删联动后果），默认硬删提示。 */
+function resolveDeleteDescription<T>(config: ResourceConfig<T>, row: T | null): string {
+  const d = config.deleteConfirm?.description;
+  if (typeof d === 'function') return row ? d(row) : '';
+  return d ?? `确认删除该${config.singular}？此操作不可撤销。`;
+}
+
 interface ActiveChip {
   key: string;
   label: string;
@@ -222,7 +229,7 @@ export function ResourceListView<T extends { id: string }>({
     try {
       await removeMut.mutateAsync(deleteTarget.id);
       setDeleteTarget(null);
-      notifySuccess(`${config.singular}已删除`);
+      notifySuccess(config.deleteConfirm?.successMessage ?? `${config.singular}已删除`);
     } catch (e) {
       notifyError(e, '删除失败');
     }
@@ -480,9 +487,9 @@ export function ResourceListView<T extends { id: string }>({
       <ConfirmDialog
         open={deleteTarget !== null}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
-        title={`删除${config.singular}`}
-        description={`确认删除该${config.singular}？此操作不可撤销。`}
-        confirmLabel="删除"
+        title={config.deleteConfirm?.title ?? `删除${config.singular}`}
+        description={resolveDeleteDescription(config, deleteTarget)}
+        confirmLabel={config.deleteConfirm?.confirmLabel ?? '删除'}
         onConfirm={handleDeleteConfirm}
         loading={removeMut.isPending}
       />

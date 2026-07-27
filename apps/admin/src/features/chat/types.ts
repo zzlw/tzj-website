@@ -95,6 +95,8 @@ export interface ChatRoom {
   clientPanelOpen?: boolean;
   /** 已转化客户 ID（坐席将访客转为客户线索后写入） */
   customerId?: string;
+  /** 软删时间（回收站中的会话有值，30 天后自动清理） */
+  deletedAt?: string | null;
   /** 按聊天内容搜索时命中的消息片段（正文命中的会话有值，供高亮 + 跳转） */
   matchedMessage?: ChatRoomMatchedMessage | null;
 }
@@ -145,6 +147,8 @@ export interface ChatRoomStats {
     waiting: number;
     closed: number;
     archived: number;
+    /** 回收站中的会话数（不计入 totalRooms） */
+    deleted?: number;
   };
   totalMessages: number;
 }

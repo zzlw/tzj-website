@@ -12,6 +12,7 @@ import { RolesGuard } from './auth/guards/roles.guard';
 import { TwoFactorEnforcementGuard } from './auth/guards/two-factor-enforcement.guard';
 import { BlogsModule } from './blogs/blogs.module';
 import { CasesModule } from './cases/cases.module';
+import { CleanupModule } from './cleanup/cleanup.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { ClientIpThrottlerGuard } from './common/guards/client-ip-throttler.guard';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
@@ -68,6 +69,7 @@ import { UsersModule } from './users/users.module';
     PreviewModule,
     ContactModule,
     CustomersModule,
+    CleanupModule,
     StorageModule,
     MediaModule,
     PublishingModule,

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client/index';
 // biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
 import { IpLocationService } from '../analytics/ip-location.service';
@@ -23,6 +23,8 @@ interface FindAllParams {
   converted?: boolean;
   sortBy?: string;
   sortOrder?: string;
+  /** true = 查看回收站（已软删），默认仅未删除 */
+  deleted?: boolean;
 }
 
 /** 来源筛选白名单（与 Contact.source 口径一致：website|admin|api）。 */
@@ -190,10 +192,14 @@ export class ContactService {
       converted,
       sortBy,
       sortOrder,
+      deleted,
     } = params;
     const skip = (page - 1) * limit;
 
-    const where: Prisma.ContactWhereInput = {};
+    // 回收站与正常列表互斥（软删范式同媒体库，见 docs/design/deletion-strategy.md）
+    const where: Prisma.ContactWhereInput = deleted
+      ? { deletedAt: { not: null } }
+      : { deletedAt: null };
     if (isRead !== undefined) where.isRead = isRead;
     if (isHandled !== undefined) where.isHandled = isHandled;
     if (source && SOURCE_VALUES.has(source)) where.source = source;
@@ -263,7 +269,7 @@ export class ContactService {
   /** 已转客户的源询盘 ID 全量（转化筛选/排序共用，单次查询）。 */
   private async loadConvertedContactIds(): Promise<string[]> {
     const rows = await this.prisma.customer.findMany({
-      where: { contactId: { not: null } },
+      where: { contactId: { not: null }, deletedAt: null },
       select: { contactId: true },
     });
     return rows.map((r) => r.contactId).filter((v): v is string => Boolean(v));
@@ -392,7 +398,7 @@ export class ContactService {
 
     const [customers, byUser, byVisitor] = await Promise.all([
       this.prisma.customer.findMany({
-        where: { contactId: { in: ids } },
+        where: { contactId: { in: ids }, deletedAt: null },
         select: { id: true, contactId: true },
       }),
       aggregateLastIp(this.prisma, 'userId', ids),
@@ -563,6 +569,12 @@ export class ContactService {
   async update(id: string, dto: UpdateContactDto, operatorId?: string) {
     const item = await this.prisma.contact.findUnique({ where: { id } });
     if (!item) throw new NotFoundException(`联系信息 ID "${id}" 未找到`);
+    if (item.deletedAt) {
+      throw new ConflictException({
+        error: 'CONTACT_TRASHED',
+        message: '该询盘在回收站中，请先恢复后再操作',
+      });
+    }
 
     const data: Prisma.ContactUncheckedUpdateInput = { ...dto };
     if (operatorId) {
@@ -577,10 +589,97 @@ export class ContactService {
     });
   }
 
-  async remove(id: string) {
+  /** 软删除：移入回收站（30 天后由清理任务物理删除），不影响已转化客户。 */
+  async remove(id: string, operatorId?: string) {
     const item = await this.prisma.contact.findUnique({ where: { id } });
     if (!item) throw new NotFoundException(`联系信息 ID "${id}" 未找到`);
-    await this.prisma.contact.delete({ where: { id } });
-    return { deleted: true };
+    if (item.deletedAt) {
+      throw new ConflictException({
+        error: 'CONTACT_ALREADY_TRASHED',
+        message: '该询盘已在回收站中',
+      });
+    }
+
+    const data: Prisma.ContactUncheckedUpdateInput = { deletedAt: new Date() };
+    if (operatorId) {
+      data.lastOperatorId = operatorId;
+      data.lastOperator = await resolveContentAuthor(this.prisma, operatorId);
+    }
+    await this.prisma.contact.update({ where: { id }, data });
+    return { deleted: true, soft: true };
+  }
+
+  /** 从回收站恢复。 */
+  async restore(id: string) {
+    const item = await this.prisma.contact.findUnique({ where: { id } });
+    if (!item) throw new NotFoundException(`联系信息 ID "${id}" 未找到`);
+    if (!item.deletedAt) {
+      throw new ConflictException({
+        error: 'CONTACT_NOT_TRASHED',
+        message: '该询盘不在回收站中',
+      });
+    }
+    return this.prisma.contact.update({
+      where: { id },
+      data: { deletedAt: null },
+      include: CONTACT_OPERATOR_INCLUDE,
+    });
+  }
+
+  /**
+   * 物理清除（仅 admin）：删除询盘行；若有客户仍锚定该询盘，先置空 Customer.contactId
+   * 并在客户备注追加系统说明（溯源断链可解释）。审计快照由本方法显式落库
+   * （全局审计拦截器只记请求级，不含实体内容）。
+   */
+  async purge(id: string, operatorId: string | null) {
+    const item = await this.prisma.contact.findUnique({ where: { id } });
+    if (!item) throw new NotFoundException(`联系信息 ID "${id}" 未找到`);
+    if (!item.deletedAt) {
+      throw new ConflictException({
+        error: 'CONTACT_NOT_TRASHED',
+        message: '请先将询盘移入回收站，再执行永久删除',
+      });
+    }
+
+    const unlinkedCustomerId = await this.prisma.$transaction(async (tx) => {
+      const customer = await tx.customer.findUnique({
+        where: { contactId: id },
+        select: { id: true, notes: true },
+      });
+      if (customer) {
+        const remark = `[系统] 关联询盘已永久删除（原询盘 ID: ${id}，姓名: ${item.name}）`;
+        await tx.customer.update({
+          where: { id: customer.id },
+          data: {
+            contactId: null,
+            notes: customer.notes ? `${customer.notes}\n${remark}` : remark,
+          },
+        });
+      }
+      await tx.contact.delete({ where: { id } });
+      return customer?.id ?? null;
+    });
+
+    // 审计快照：仅记摘要字段（不含 message 正文），供合规追溯
+    await this.prisma.auditLog.create({
+      data: {
+        userId: operatorId,
+        action: 'purge',
+        resource: 'contact',
+        resourceId: id,
+        detail: {
+          snapshot: {
+            name: item.name,
+            email: item.email,
+            phone: item.phone,
+            company: item.company,
+            source: item.source,
+            createdAt: item.createdAt.toISOString(),
+          },
+          unlinkedCustomerId,
+        },
+      },
+    });
+    return { deleted: true, purged: true };
   }
 }

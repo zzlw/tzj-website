@@ -9,7 +9,6 @@ const envSchema = z.object({
   API_PORT: z.coerce.number().default(3001),
 
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
-  REDIS_URL: z.string().optional(),
 
   // Auth
   JWT_SECRET: z.string().min(16, 'JWT_SECRET must be at least 16 characters'),

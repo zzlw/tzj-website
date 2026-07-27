@@ -202,6 +202,8 @@ model Contact {
   lastOperator      String?
   lastOperatorId    String?
   lastOperatorUser  User?    @relation("ContactLastOperator", fields: [lastOperatorId], references: [id], onDelete: SetNull)
+  // 软删除标记：回收站 30 天后由清理任务物理删除（见 docs/design/deletion-strategy.md）
+  deletedAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -210,6 +212,7 @@ model Contact {
   @@index([createdAt])
   @@index([lastOperatorId])
   @@index([visitorId])
+  @@index([deletedAt])
   @@map("contacts")
 }
 
@@ -724,6 +727,9 @@ model Customer {
   createdById       String?
   createdByUser     User?    @relation("CustomerCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
 
+  // 软删除标记：软删时同步置空 contactId/chatRoomId 唯一锚点（原值入审计快照）
+  deletedAt         DateTime?
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -737,6 +743,7 @@ model Customer {
   @@index([chatRoomId])
   @@index([contactId])
   @@index([visitorId])
+  @@index([deletedAt])
   @@map("customers")
 }
 
@@ -870,52 +877,4 @@ model MessageReadReceipt {
 
   @@index([messageId])
   @@map("message_read_receipts")
-}
-
-// ═══════════════════════════════════════════
-// 在线客服 — 工单系统
-// ═══════════════════════════════════════════
-model Ticket {
-  id             String    @id @default(cuid())
-  ticketId       String    @unique
-  subject        String
-  message        String
-  category       String    @default("general-inquiry")
-  priority       String    @default("medium")
-  status         String    @default("open")
-  isAnonymous    Boolean   @default(false)
-  anonymousEmail String?
-  anonymousName  String?
-  assignedTo     String?
-  lastUpdated    DateTime  @default(now())
-  resolvedAt     DateTime?
-  isInternal     Boolean   @default(false)
-  tags           String[]  @default([])
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-
-  comments       Comment[]
-
-  @@map("tickets")
-}
-
-model Comment {
-  id              String   @id @default(cuid())
-  message         String
-  author          String
-  isInternal      Boolean  @default(false)
-  isAnonymous     Boolean  @default(false)
-  userRole        String?
-  isSystemMessage Boolean  @default(false)
-  attachments     String[] @default([])
-  editedAt        DateTime?
-  editedBy        String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  ticketId        String
-  ticket          Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-
-  @@index([ticketId])
-  @@map("comments")
 }

@@ -28,7 +28,6 @@ export interface SystemStatusResponse {
   dependencies: {
     database: DependencyStatus;
     storage: DependencyStatus;
-    redis: DependencyStatus;
     email: DependencyStatus;
   };
 }

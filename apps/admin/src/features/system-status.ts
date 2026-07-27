@@ -15,7 +15,6 @@ export function useSystemStatus() {
 export const DEPENDENCY_LABELS: Record<keyof SystemStatusResponse['dependencies'], string> = {
   database: 'PostgreSQL',
   storage: '对象存储',
-  redis: 'Redis',
   email: '邮件服务',
 };
 

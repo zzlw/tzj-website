@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "node scripts/generate-placeholders.mjs && next dev --port 3001",
+    "dev": "node scripts/generate-placeholders.mjs && node -e \"try{require('child_process').execSync('lsof -ti:3001|xargs kill -9',{stdio:'ignore'})}catch{}\" && next dev --port 3001",
     "build": "node scripts/generate-placeholders.mjs && next build",
     "start": "next start --port 3001",
     "lint": "next lint",
@@ -14,13 +14,11 @@
   "dependencies": {
     "@tzj/types": "workspace:*",
     "@tzj/ui": "workspace:*",
-    "class-variance-authority": "catalog:",
     "clsx": "catalog:",
     "lucide-react": "catalog:",
     "next": "catalog:",
     "next-intl": "catalog:",
     "next-view-transitions": "catalog:",
-    "radix-ui": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "shadcn": "catalog:",

@@ -35,6 +35,8 @@ export interface GetChatRoomsParams {
   take?: number;
   /** 按分析访客 ID 筛选（访客档案抽屉用） */
   visitorId?: string;
+  /** 回收站视图：仅返回已软删会话（需 chat.delete 权限） */
+  deleted?: boolean;
 }
 
 export function getChatRooms(params: GetChatRoomsParams = {}): Promise<ChatRoomsResponseData> {
@@ -46,6 +48,7 @@ export function getChatRooms(params: GetChatRoomsParams = {}): Promise<ChatRooms
   if (params.cursor) qs.set('cursor', params.cursor);
   if (params.take) qs.set('take', String(params.take));
   if (params.visitorId) qs.set('visitorId', params.visitorId);
+  if (params.deleted) qs.set('deleted', 'true');
   const query = qs.toString();
   return request<ChatRoomsResponseData>(`/chat-rooms${query ? `?${query}` : ''}`);
 }
@@ -64,6 +67,21 @@ export function batchChatRooms(
 
 export function getChatRoom(roomId: string): Promise<ChatRoom> {
   return request<ChatRoom>(`/chat-rooms/${encodeURIComponent(roomId)}`);
+}
+
+/** 单会话软删除：移入回收站（仅已关闭/已归档会话，需 chat.delete 权限） */
+export function deleteChatRoom(roomId: string): Promise<{ message: string }> {
+  return request(`/chat-rooms/${encodeURIComponent(roomId)}`, { method: 'DELETE' });
+}
+
+/** 从回收站恢复会话（需 chat.delete 权限） */
+export function restoreChatRoom(roomId: string): Promise<{ message: string }> {
+  return request(`/chat-rooms/${encodeURIComponent(roomId)}/restore`, { method: 'POST' });
+}
+
+/** 永久删除会话（仅管理员，需先在回收站中；含附件物理清除） */
+export function purgeChatRoom(roomId: string): Promise<{ message: string }> {
+  return request(`/chat-rooms/${encodeURIComponent(roomId)}/purge`, { method: 'DELETE' });
 }
 
 /** 访客档案：IP 重解析地区 + 运营商 + 站内行为/营销归因（对齐「访客分析」）。 */

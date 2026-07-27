@@ -12,7 +12,7 @@ type AnyMeta = {
   socketCount: number;
 };
 
-/** 用内存替代 Redis 的 ChatPresenceStore，仅实现 gateway 实际调用到的方法。 */
+/** 内存模拟的 ChatPresenceStore，仅实现 gateway 实际调用到的方法。 */
 class FakePresence {
   private metas = new Map<string, AnyMeta>();
   private counts = new Map<string, number>();
@@ -77,7 +77,7 @@ function makeGateway(presence: FakePresence) {
     to: () => ({ emit: () => {} }),
     fetchSockets: async () => [],
   };
-  const gateway: any = new ChatGateway({} as any, {} as any, presence as any, null as any, null);
+  const gateway: any = new ChatGateway({} as any, {} as any, presence as any, null as any);
   gateway.server = server;
   return { gateway, emits };
 }

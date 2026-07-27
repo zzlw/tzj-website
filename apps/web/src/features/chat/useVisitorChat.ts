@@ -41,6 +41,8 @@ type ChatNotificationCounts = {
 
 export interface UseVisitorChatResult {
   connected: boolean;
+  /** P1-6：服务端 auth-error 信号（token 失效），上层应重新兑换 token 并通过 token prop 传入触发重连 */
+  authError: boolean;
   /** 当前在线（非离线）坐席数；-1 表示尚未收到服务端信号 */
   agentsOnline: number;
   /** 当前离开（away）坐席数 */
@@ -86,6 +88,7 @@ export function useVisitorChat(token: string | null): UseVisitorChatResult {
   const tokenRef = useRef<string | null>(token ?? null);
   const authedTokenRef = useRef<string | null>(null);
   const [connected, setConnected] = useState(false);
+  const [authError, setAuthError] = useState(false);
   const [agentsOnline, setAgentsOnline] = useState(-1);
   const [agentsAway, setAgentsAway] = useState(0);
   const [agentLastOnlineAt, setAgentLastOnlineAt] = useState<number | null>(null);
@@ -112,6 +115,7 @@ export function useVisitorChat(token: string | null): UseVisitorChatResult {
     const sock = socketRef.current;
     if (token && token !== authedTokenRef.current && sock) {
       authedTokenRef.current = token;
+      setAuthError(false);
       sock.auth = { token };
       if (sock.connected) {
         sock.disconnect();
@@ -151,14 +155,11 @@ export function useVisitorChat(token: string | null): UseVisitorChatResult {
       });
       sock.on('disconnect', () => setConnected(false));
       sock.on('connect_error', () => setConnected(false));
-      // 鉴权失败：保持断开，由上层重新换取 token 后重连
+      // 鉴权失败：保持断开，由上层重新换取 token 后通过 token prop 变化驱动重连。
+      // P1-6 修复：不再用原 token 重连（死循环），而是通知上层重新兑换。
       sock.on('auth-error', () => {
         setConnected(false);
-        // 服务端 auth-error + disconnect(true) 会禁止 Socket.IO 自动重连。
-        // 延迟 1s 后显式重连，此时上层已拉取到新 token 并更新了 sock.auth。
-        setTimeout(() => {
-          if (!sock.connected) sock.connect();
-        }, 1000);
+        setAuthError(true);
       });
 
       sock.on(
@@ -281,6 +282,7 @@ export function useVisitorChat(token: string | null): UseVisitorChatResult {
   return useMemo(
     () => ({
       connected,
+      authError,
       agentsOnline,
       agentsAway,
       agentLastOnlineAt,
@@ -301,6 +303,6 @@ export function useVisitorChat(token: string | null): UseVisitorChatResult {
     }),
     // 函数均为 useCallback([]) 稳定引用；状态项为唯一变动项。
     // 稳定化返回对象，避免消费方因「每次渲染新对象」而重装监听器。
-    [connected, agentsOnline, agentsAway, agentLastOnlineAt, on, off, joinRoom, leaveRoom, sendMessage, markRead, sendTyping, sendStopTyping, requestNotificationCounts, reportActive, reportIdle, reportPanelState, setAgentsOnline, setAgentsAway],
+    [connected, authError, agentsOnline, agentsAway, agentLastOnlineAt, on, off, joinRoom, leaveRoom, sendMessage, markRead, sendTyping, sendStopTyping, requestNotificationCounts, reportActive, reportIdle, reportPanelState, setAgentsOnline, setAgentsAway],
   );
 }

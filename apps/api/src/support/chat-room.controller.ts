@@ -15,6 +15,7 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
 import type { AuthUser } from '../auth/roles';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
 // biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
@@ -153,10 +154,20 @@ export class ChatRoomController {
   @ApiBearerAuth()
   @Get()
   @ApiOperation({ summary: '聊天室列表（管理端）' })
-  async getChatRooms(@Query() filters: GetChatRoomsDto) {
+  async getChatRooms(@Req() req: Request, @Query() filters: GetChatRoomsDto) {
     try {
-      return await this.chatRoomService.getChatRooms(filters);
+      const deleted = filters.deleted === 'true' || filters.deleted === '1';
+      // 回收站视图需更高权限（chat.delete），与删除/恢复操作同口径
+      if (deleted) {
+        const user = (req as { user?: AuthUser }).user;
+        const perms = user ? await this.rolesService.getPermissionsForSlug(user.role) : [];
+        if (!perms.includes('chat.delete')) {
+          throw new ForbiddenException('查看会话回收站需要 chat.delete 权限');
+        }
+      }
+      return await this.chatRoomService.getChatRooms({ ...filters, deleted });
     } catch (e) {
+      if (e instanceof HttpException) throw e;
       throw new HttpException(errMsg(e), HttpStatus.BAD_REQUEST);
     }
   }
@@ -209,33 +220,7 @@ export class ChatRoomController {
     }
   }
 
-  @RequirePermissions('chat.view')
-  @ApiBearerAuth()
-  @Get('notifications/counts')
-  @ApiOperation({ summary: '通知计数' })
-  async getNotificationCounts(
-    @Query('userEmail') userEmail?: string,
-    @Query('userType') userType?: 'client' | 'agent',
-  ) {
-    try {
-      return await this.chatRoomService.getNotificationCounts(userEmail, userType);
-    } catch (e) {
-      throw new HttpException(errMsg(e), HttpStatus.BAD_REQUEST);
-    }
-  }
 
-  @RequirePermissions('chat.view')
-  @ApiBearerAuth()
-  @Get('unread/count')
-  @ApiOperation({ summary: '未读消息数' })
-  async getUnreadMessageCount(@Query('agentEmail') agentEmail?: string) {
-    try {
-      const count = await this.chatRoomService.getUnreadMessageCount(agentEmail);
-      return { unreadCount: count };
-    } catch (e) {
-      throw new HttpException(errMsg(e), HttpStatus.BAD_REQUEST);
-    }
-  }
 
   @RequirePermissions('chat.view')
   @ApiBearerAuth()
@@ -262,27 +247,7 @@ export class ChatRoomController {
     }
   }
 
-  @Public()
-  @Get('client/:clientEmail/history')
-  @ApiOperation({ summary: '访客历史聊天室' })
-  async getAllChatRoomsForClient(@Param('clientEmail') clientEmail: string) {
-    try {
-      return await this.chatRoomService.getAllChatRoomsForClient(clientEmail);
-    } catch (e) {
-      throw new HttpException(errMsg(e), HttpStatus.BAD_REQUEST);
-    }
-  }
 
-  @Public()
-  @Get('client/:clientEmail')
-  @ApiOperation({ summary: '访客聊天室查询' })
-  async getChatRoomByClientEmail(@Param('clientEmail') clientEmail: string) {
-    try {
-      return await this.chatRoomService.getChatRoomByClientEmail(clientEmail);
-    } catch (e) {
-      throw new HttpException(errMsg(e), HttpStatus.BAD_REQUEST);
-    }
-  }
 
   /**
    * 访客获取自己的会话详情（含消息）。
@@ -296,9 +261,10 @@ export class ChatRoomController {
   async getVisitorRoomById(
     @Param('clientEmail') clientEmail: string,
     @Param('roomId') roomId: string,
+    @Query('beforeMessageId') beforeMessageId?: string,
   ) {
     try {
-      const room = await this.chatRoomService.getChatRoomById(roomId);
+      const room = await this.chatRoomService.getChatRoomById(roomId, beforeMessageId);
       if (room.clientEmail !== clientEmail) {
         throw new HttpException('无权访问该会话', HttpStatus.FORBIDDEN);
       }
@@ -326,9 +292,12 @@ export class ChatRoomController {
   @ApiBearerAuth()
   @Get(':roomId')
   @ApiOperation({ summary: '聊天室详情' })
-  async getChatRoomById(@Param('roomId') roomId: string) {
+  async getChatRoomById(
+    @Param('roomId') roomId: string,
+    @Query('beforeMessageId') beforeMessageId?: string,
+  ) {
     try {
-      return await this.chatRoomService.getChatRoomById(roomId);
+      return await this.chatRoomService.getChatRoomById(roomId, beforeMessageId);
     } catch (e) {
       throw new HttpException(errMsg(e), HttpStatus.NOT_FOUND);
     }
@@ -336,10 +305,15 @@ export class ChatRoomController {
 
   @Public()
   @Post(':roomId/messages')
-  @ApiOperation({ summary: '发送消息（访客/坐席）' })
+  @ApiOperation({ summary: '发送消息（访客 REST 兜底路径，强制 sender=client）' })
   async sendMessage(@Param('roomId') roomId: string, @Body() sendMessageDto: SendMessageDto) {
     try {
-      return await this.chatRoomService.sendMessage(roomId, sendMessageDto);
+      // BUG-1 修复：REST 公开端点只许访客发消息，坐席走 socket。
+      // 强制覆盖 sender 为 'client'，杜绝通过 REST 伪造坐席消息。
+      return await this.chatRoomService.sendMessage(roomId, {
+        ...sendMessageDto,
+        sender: 'client',
+      });
     } catch (e) {
       throw new HttpException(errMsg(e), HttpStatus.BAD_REQUEST);
     }
@@ -409,46 +383,50 @@ export class ChatRoomController {
     }
   }
 
-  @Public()
-  @Get(':roomId/unread-count')
-  @ApiOperation({ summary: '未读消息数（单房间）' })
-  async getUnreadCount(
-    @Param('roomId') roomId: string,
-    @Query('userEmail') userEmail: string,
-    @Query('userType') userType: 'client' | 'agent',
-  ) {
-    try {
-      const count = await this.chatRoomService.getUnreadCountForUser(roomId, userEmail, userType);
-      return { unreadCount: count };
-    } catch (e) {
-      throw new HttpException(errMsg(e), HttpStatus.BAD_REQUEST);
-    }
-  }
 
-  @Public()
-  @Put(':roomId/notifications/reset')
-  @ApiOperation({ summary: '重置通知计数' })
-  async resetNotificationCount(
-    @Param('roomId') roomId: string,
-    @Body() body: { userType: 'client' | 'agent' },
-  ) {
+
+  @RequirePermissions('chat.delete')
+  @ApiBearerAuth()
+  @Delete(':roomId')
+  @ApiOperation({ summary: '删除聊天室（移入回收站，30 天后自动清理）' })
+  async deleteChatRoom(@Param('roomId') roomId: string) {
     try {
-      await this.chatRoomService.resetNotificationCount(roomId, body.userType);
-      return { message: 'Notification count reset successfully' };
+      await this.chatRoomService.softDeleteChatRoom(roomId);
+      return { message: '会话已移入回收站' };
     } catch (e) {
+      if (e instanceof HttpException) throw e;
       throw new HttpException(errMsg(e), HttpStatus.BAD_REQUEST);
     }
   }
 
   @RequirePermissions('chat.delete')
   @ApiBearerAuth()
-  @Delete(':roomId')
-  @ApiOperation({ summary: '删除聊天室' })
-  async deleteChatRoom(@Param('roomId') roomId: string) {
+  @Post(':roomId/restore')
+  @ApiOperation({ summary: '从回收站恢复聊天室' })
+  async restoreChatRoom(@Param('roomId') roomId: string) {
     try {
-      await this.chatRoomService.deleteChatRoom(roomId);
-      return { message: 'Chat room deleted successfully' };
+      await this.chatRoomService.restoreChatRoom(roomId);
+      return { message: '会话已恢复' };
     } catch (e) {
+      if (e instanceof HttpException) throw e;
+      throw new HttpException(errMsg(e), HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  @RequirePermissions('chat.delete')
+  @ApiBearerAuth()
+  @Delete(':roomId/purge')
+  @ApiOperation({ summary: '永久删除聊天室（仅管理员，需先在回收站中；含附件物理清除）' })
+  async purgeChatRoom(@Param('roomId') roomId: string, @CurrentUser() user: AuthUser) {
+    // 物理清除不新增权限点，收敛为管理员专属（见 docs/design/deletion-strategy.md §3.4）
+    if (user.role !== 'admin') {
+      throw new ForbiddenException('永久删除仅限管理员操作');
+    }
+    try {
+      await this.chatRoomService.purgeChatRoom(roomId, user.id);
+      return { message: '会话已永久删除' };
+    } catch (e) {
+      if (e instanceof HttpException) throw e;
       throw new HttpException(errMsg(e), HttpStatus.BAD_REQUEST);
     }
   }

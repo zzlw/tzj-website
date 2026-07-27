@@ -3,6 +3,7 @@ import {
   Controller,
   DefaultValuePipe,
   Delete,
+  ForbiddenException,
   Get,
   Headers,
   Param,
@@ -49,6 +50,7 @@ export class ContactController {
   @ApiQuery({ name: 'converted', required: false, description: '是否已转化为客户: true|false' })
   @ApiQuery({ name: 'sortBy', required: false })
   @ApiQuery({ name: 'sortOrder', required: false })
+  @ApiQuery({ name: 'deleted', required: false, description: '回收站视图: true 仅看已软删' })
   findAll(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
@@ -60,6 +62,7 @@ export class ContactController {
     @Query('converted') converted?: string,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: string,
+    @Query('deleted') deleted?: string,
   ) {
     return this.contactService.findAll({
       page,
@@ -72,6 +75,7 @@ export class ContactController {
       converted: converted !== undefined ? converted === 'true' : undefined,
       sortBy,
       sortOrder,
+      deleted: deleted === 'true' || deleted === '1',
     });
   }
 
@@ -113,8 +117,28 @@ export class ContactController {
   @RequirePermissions('contacts.delete')
   @ApiBearerAuth()
   @Delete(':id')
-  @ApiOperation({ summary: '删除联系信息' })
-  remove(@Param('id') id: string) {
-    return this.contactService.remove(id);
+  @ApiOperation({ summary: '删除联系信息（软删除，移入回收站）' })
+  remove(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    return this.contactService.remove(id, user.id);
+  }
+
+  @RequirePermissions('contacts.delete')
+  @ApiBearerAuth()
+  @Post(':id/restore')
+  @ApiOperation({ summary: '从回收站恢复询盘' })
+  restore(@Param('id') id: string) {
+    return this.contactService.restore(id);
+  }
+
+  @RequirePermissions('contacts.delete')
+  @ApiBearerAuth()
+  @Delete(':id/purge')
+  @ApiOperation({ summary: '永久删除询盘（仅管理员，需先在回收站中）' })
+  purge(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    // 物理清除不新增权限点，收敛为管理员专属（见 docs/design/deletion-strategy.md §3.4）
+    if (user.role !== 'admin') {
+      throw new ForbiddenException('永久删除仅限管理员操作');
+    }
+    return this.contactService.purge(id, user.id);
   }
 }

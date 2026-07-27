@@ -50,7 +50,6 @@ export class SystemService {
       dependencies: {
         database: ready.checks.database as SystemStatusResponse['dependencies']['database'],
         storage: ready.checks.storage as SystemStatusResponse['dependencies']['storage'],
-        redis: ready.checks.redis as SystemStatusResponse['dependencies']['redis'],
         email: ready.checks.email as SystemStatusResponse['dependencies']['email'],
       },
     };

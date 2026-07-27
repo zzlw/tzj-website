@@ -8,9 +8,12 @@ import { toast } from '@tzj/ui';
 import {
   type BatchChatRoomAction,
   batchChatRooms,
+  deleteChatRoom,
   getChatRoom,
   getChatRooms,
   getChatStats,
+  purgeChatRoom,
+  restoreChatRoom,
 } from './api';
 import { useChatPresence } from './ChatPresenceProvider';
 import { ChatArea } from './components/ChatArea';
@@ -34,7 +37,7 @@ const BUCKET_QUERY_KEY = 'bucket';
 const MINE_QUERY_KEY = 'mine';
 const PAGE_SIZE = 20;
 
-const VALID_BUCKETS: BucketKey[] = ['all', 'waiting', 'active', 'closed', 'archived'];
+const VALID_BUCKETS: BucketKey[] = ['all', 'waiting', 'active', 'closed', 'archived', 'deleted'];
 
 /** 从 URL ?bucket= 读取初始分桶，非法/缺省回退到 all（全部） */
 function readInitialBucket(search?: string | null): BucketKey {
@@ -45,13 +48,15 @@ function readInitialBucket(search?: string | null): BucketKey {
 /** 各分桶对应的后端 status 过滤。
  * 业内最佳实践：归档是冷存终态，退出日常工作列表——
  * 「全部」桶 = 可操作范围（waiting/active/closed），「已关闭」桶仅含 closed，
- * 归档会话仅在独立的「已归档」桶中可达。 */
+ * 归档会话仅在独立的「已归档」桶中可达。
+ * 回收站（deleted）不走 status 过滤，fetchBucket 改传 deleted=true。 */
 const BUCKET_STATUSES: Record<BucketKey, string> = {
   all: 'waiting,active,closed',
   waiting: 'waiting',
   active: 'active',
   closed: 'closed',
   archived: 'archived',
+  deleted: '',
 };
 
 function byRecency(a: ChatRoom, b: ChatRoom): number {
@@ -129,6 +134,7 @@ export function ChatMessenger() {
     active: emptyBucket(),
     closed: emptyBucket(),
     archived: emptyBucket(),
+    deleted: emptyBucket(),
   });
   const [bucketCounts, setBucketCounts] = useState<Record<BucketKey, number>>({
     all: 0,
@@ -136,6 +142,7 @@ export function ChatMessenger() {
     active: 0,
     closed: 0,
     archived: 0,
+    deleted: 0,
   });
   const [activeBucket, setActiveBucket] = useState<BucketKey>(() =>
     readInitialBucket(searchParams.toString()),
@@ -303,6 +310,7 @@ export function ChatMessenger() {
       const active = stats.statusBreakdown.active ?? 0;
       const closed = stats.statusBreakdown.closed ?? 0;
       const archived = stats.statusBreakdown.archived ?? 0;
+      const deleted = stats.statusBreakdown.deleted ?? 0;
       setBucketCounts({
         // 「全部」= 可操作范围，不含归档冷存
         all: waiting + active + closed,
@@ -310,6 +318,7 @@ export function ChatMessenger() {
         active,
         closed,
         archived,
+        deleted,
       });
     } catch {
       /* 忽略 */
@@ -327,7 +336,9 @@ export function ChatMessenger() {
     }));
     try {
       const data = await getChatRooms({
-        status: BUCKET_STATUSES[bucket],
+        // 回收站桶不走 status 过滤，改传 deleted=true（仅 chat.delete 权限可查，后端把关）
+        status: bucket === 'deleted' ? undefined : BUCKET_STATUSES[bucket],
+        deleted: bucket === 'deleted' || undefined,
         search: searchRef.current || undefined,
         // 后台刷新始终从第一页拉取（刷新已有数据 + 捕获新会话），
         // 不使用当前 cursor（否则会「偷跑」下一页，改变分页状态）。
@@ -457,7 +468,15 @@ export function ChatMessenger() {
       //         解决切换菜单后 HTTP 鉴权丢失导致计数为 0 的问题）。
       if (payload?.statusBreakdown) {
         const { waiting, active, closed, archived } = payload.statusBreakdown;
-        setBucketCounts({ all: waiting + active + closed, waiting, active, closed, archived });
+        // socket 推送不含回收站计数（网关 statusBreakdown 无 deleted），保留本地已知值
+        setBucketCounts((prev) => ({
+          ...prev,
+          all: waiting + active + closed,
+          waiting,
+          active,
+          closed,
+          archived,
+        }));
       }
       let hasNewRooms = false;
       if (payload?.rooms?.length) {
@@ -1350,6 +1369,60 @@ export function ChatMessenger() {
     setLoadingMore(false);
   }, [activeBucket, fetchBucket, loadingMore]);
 
+  /* ── 单会话删除/恢复（回收站，仅 chat.delete 权限入口可见） ── */
+  const refetchAfterTrashOp = useCallback(async () => {
+    // 删除/恢复后刷新受影响的桶：已关闭/已归档/全部 + 回收站（已加载时）+ 计数
+    await Promise.all([
+      fetchBucket('all'),
+      fetchBucket('closed'),
+      fetchBucket('archived'),
+      bucketsRef.current.deleted.loaded ? fetchBucket('deleted') : Promise.resolve(),
+      fetchStats(),
+    ]);
+  }, [fetchBucket, fetchStats]);
+
+  const handleDeleteRoom = useCallback(async () => {
+    const roomId = selectedIdRef.current;
+    if (!roomId) return;
+    try {
+      await deleteChatRoom(roomId);
+      toast.success('会话已移入回收站');
+      // 关闭详情面板：会话已离开日常工作桶，避免停留在已删除会话上继续操作
+      setSelectedId(null);
+      await refetchAfterTrashOp();
+    } catch {
+      toast.error('删除失败，仅已结束（已关闭/已归档）的会话可移入回收站');
+    }
+  }, [refetchAfterTrashOp]);
+
+  const handleRestoreRoom = useCallback(async () => {
+    const roomId = selectedIdRef.current;
+    if (!roomId) return;
+    try {
+      await restoreChatRoom(roomId);
+      toast.success('会话已恢复');
+      // 乐观更新：清除本地软删标记，ChatHeader 菜单立即切回「移入回收站」
+      patchRoom(roomId, { deletedAt: null });
+      await refetchAfterTrashOp();
+    } catch {
+      toast.error('恢复失败，请重试');
+    }
+  }, [refetchAfterTrashOp, patchRoom]);
+
+  const handlePurgeRoom = useCallback(async () => {
+    const roomId = selectedIdRef.current;
+    if (!roomId) return;
+    try {
+      await purgeChatRoom(roomId);
+      toast.success('会话已永久删除');
+      // 会话行已物理清除，关闭详情面板并刷新列表
+      setSelectedId(null);
+      await refetchAfterTrashOp();
+    } catch {
+      toast.error('永久删除失败，仅管理员可操作且会话需先在回收站中');
+    }
+  }, [refetchAfterTrashOp]);
+
   const toggleSelect = useCallback((roomId: string) => {
     setSelectedRoomIds((prev) => {
       const n = new Set(prev);
@@ -1368,17 +1441,21 @@ export function ChatMessenger() {
       const ids = [...selectedRoomIds];
       if (ids.length === 0) return;
 
-      // 正在对话（ChatArea 已打开）的会话不允许被批量删除：
-      // 删除是软删除，并不阻断客户继续发消息，但前端会因重拉列表把该房间移出本地
-      // 状态，导致 ChatArea 卸载、new-message 无处落地 → 代理「收不到」客户消息。
-      // 故跳过当前打开的会话，使其继续留在列表与聊天窗口、消息照常收发；
-      // 其余勾选的会话照常删除。
+      // 删除与单会话「移入回收站」同口径：仅已结束（已关闭/已归档）的会话可删除。
+      // 进行中会话一律跳过：① 软删不阻断客户发消息，前端重拉列表后 ChatArea 卸载、
+      // new-message 无处落地 → 坐席「收不到」客户消息；② 回收站内必须保持「已结束」
+      // 不变量，否则会出现仍可收发消息的已删除会话。客户端预过滤 + 即时提示，
+      // 服务端 softDeleteRooms 的 where 守卫作双保险。
       let targets = ids;
       if (action === 'delete') {
-        const openId = selectedIdRef.current;
-        if (openId && ids.includes(openId)) {
-          targets = ids.filter((id) => id !== openId);
-          toast.warning('当前正在对话的会话已跳过删除，请先结束会话再删除');
+        const allRooms = Object.values(bucketsRef.current).flatMap((b) => b.rooms);
+        const notEnded = targets.filter((id) => {
+          const r = allRooms.find((x) => x.roomId === id);
+          return r && r.status !== 'closed' && r.status !== 'archived';
+        });
+        if (notEnded.length > 0) {
+          targets = targets.filter((id) => !notEnded.includes(id));
+          toast.warning(`${notEnded.length} 个进行中会话已跳过：请先结束会话再删除`);
         }
       }
       // 归档仅适用于已关闭会话（业内最佳实践：解决是归档的前置条件，
@@ -1418,6 +1495,13 @@ export function ChatMessenger() {
             patchRoom(openId, { status: 'closed' });
           }
         }
+        // 当前打开的已结束会话被批量删除 → 关闭详情面板，避免停留在已删除会话上
+        if (action === 'delete') {
+          const openId = selectedIdRef.current;
+          if (openId && targets.includes(openId)) {
+            setSelectedId(null);
+          }
+        }
       } catch {
         toast.error('批量操作失败，请重试');
         return; // 失败时保留勾选状态，方便用户直接重试
@@ -1430,6 +1514,8 @@ export function ChatMessenger() {
         fetchBucket('active'),
         fetchBucket('closed'),
         fetchBucket('archived'),
+        // 批量删除会改变回收站内容，已加载时一并刷新
+        bucketsRef.current.deleted.loaded ? fetchBucket('deleted') : Promise.resolve(),
         fetchStats(),
       ]);
     },
@@ -1469,6 +1555,12 @@ export function ChatMessenger() {
     );
   }
 
+  // 删除相关入口（批量删除/回收站/单会话删除）统一由 chat.delete 权限控制
+  const canDelete =
+    session.permissions.includes('chat.delete') || session.permissions.includes('*');
+  // 永久删除收敛为管理员专属（不新增权限点，见 docs/design/deletion-strategy.md §3.4）
+  const canPurge = session.role === 'admin';
+
   return (
     <div className="border-border/50 relative grid min-h-0 flex-1 w-full grid-rows-[minmax(0,1fr)_minmax(0,1fr)] gap-3 overflow-hidden rounded-2xl border p-3 sm:gap-4 sm:p-4 lg:grid-rows-[1fr] lg:[grid-template-columns:minmax(280px,30%)_1fr] lg:gap-4 lg:rounded-3xl lg:p-5">
       <div
@@ -1500,7 +1592,7 @@ export function ChatMessenger() {
         currentAgentEmail={agentEmail}
         mineOnly={mineOnly}
         onMineOnlyChange={handleMineOnlyChange}
-        canDelete={session.permissions.includes('chat.delete') || session.permissions.includes('*')}
+        canDelete={canDelete}
       />
       {selectedRoom ? (
         <ChatArea
@@ -1518,6 +1610,11 @@ export function ChatMessenger() {
           clientTyping={clientTyping}
           clientTypingText={clientTypingText}
           highlightMessageId={highlightMessageId}
+          canDelete={canDelete}
+          canPurge={canPurge}
+          onDelete={handleDeleteRoom}
+          onRestore={handleRestoreRoom}
+          onPurge={handlePurgeRoom}
         />
       ) : (
         <div className="border-border/40 bg-background/60 flex min-h-0 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed p-8 backdrop-blur lg:rounded-3xl">

@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Logger } from '@nestjs/common';
+import { BadRequestException, Logger } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
 import {
   ConnectedSocket,
@@ -9,8 +9,6 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { createAdapter } from '@socket.io/redis-adapter';
-import type { RedisClientType } from 'redis';
 import type { Server, Socket, RemoteSocket } from 'socket.io';
 import { extractSocketIp } from '../common/utils/client-ip';
 // biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
@@ -70,8 +68,7 @@ interface RateBucket {
  *  - 房间归属：client 只能加入 / 收发属于自己（room.clientEmail === token.email）的会话；
  *    agent 须为已校验的坐席令牌，且只能执行坐席动作。
  *
- * 可靠性（P1 H1）：配置 REDIS_URL 时启用 Socket.IO Redis Adapter + Redis presence，
- * 支持多实例 / 滚动发布；未配置则回退单实例内存模式。
+ * 单实例内存模式（≤100 用户规模）。
  */
 @WebSocketGateway({
   namespace: '/chat',
@@ -125,25 +122,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly chatAuth: ChatAuthService,
     private readonly presence: ChatPresenceStore,
     private readonly ipBanService: IpBanService,
-    @Inject('CHAT_REDIS')
-    private readonly redis: { pub: RedisClientType; sub: RedisClientType } | null,
   ) {}
 
-  /** 配置 Redis Adapter（多实例消息广播）+ 启动等待队列周期性扫描。 */
-  afterInit(server: Server) {
-    // 命名空间网关下，NestJS 传入的 `server` 实为 `Namespace`（其 `.adapter` 是
-    // 实例属性、不可调用），需取 root `Server`（Namespace.server）来设置 Adapter，
-    // 它会遍历所有命名空间重新初始化 adapter，使 /chat 命名空间生效。
-    const ioServer = (server as unknown as { server?: Server }).server ?? server;
-    if (this.redis?.pub && this.redis?.sub) {
-      try {
-        ioServer.adapter(createAdapter(this.redis.pub, this.redis.sub));
-        this.logger.log('Socket.IO Redis Adapter 已启用（多实例模式）');
-      } catch (error) {
-        this.logger.error(`Redis Adapter 启用失败，回退单实例：${(error as Error).message}`);
-      }
-    }
-    // 业内最佳实践（LiveChat/Intercom）：即时分配 + 周期性兜底扫描。
+  /** 启动等待队列周期性扫描。 */
+  afterInit(_server: Server) {
+    // 业内最佳实践（LiveChat/Intercom）：即时分配 + 周期性兆底扫描。
     // 若建房时因瞬态原因（presence 刷新延迟、坐席刚好切标签等）分配失败，
     // 10s 内自动补分配，确保访客不会长时间卡在「未分配」。
     this.waitingQueueSweep = setInterval(() => void this.drainWaitingQueue(), 10_000);
@@ -345,7 +328,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return room;
   }
 
-  // ── Presence（Redis / 内存） ─────────────────────────
+  // ── Presence（内存） ─────────────────────────────
 
   /** 连接时登记 socket 并恢复/初始化在线状态（多实例安全：状态持久于 store）。 */
   private async handleConnectPresence(
@@ -412,7 +395,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
   }
 
-  /** 广播某用户的在线状态变化（含聚合坐席态），多实例经 Redis Adapter 自动扩散。 */
+  /** 广播某用户的在线状态变化（含聚合坐席态）。 */
   private async broadcastPresenceFor(userKey: string): Promise<void> {
     const meta = await this.presence.getMeta(userKey);
     if (!meta) return;
@@ -613,7 +596,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
     try {
-      client.emit('agent-registered', { userEmail: auth.email });
       client.emit('my-presence', {
         status: await this.presence.getPresence(`${auth.email}:agent`),
       });
@@ -712,8 +694,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (!room) return;
 
     await client.join(roomId);
-    client.to(roomId).emit('user-joined', { userEmail: auth.email, userType: auth.type });
-    client.emit('joined-room', { roomId, userEmail: auth.email, userType: auth.type });
 
     const myStatus = await this.presence.getPresence(`${auth.email}:${auth.type}`);
     client.to(roomId).emit('presence-changed', {
@@ -772,7 +752,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         userEmail: auth.email,
         userType: auth.type,
       });
-      client.emit('left-room', { roomId });
     } catch (error) {
       this.logger.error('Error leaving room:', error);
       client.emit('error', { message: 'Failed to leave room' });
@@ -938,24 +917,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  @SubscribeMessage('reset-notification-count')
-  async handleResetNotificationCount(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() data: { roomId: string },
-  ) {
-    const auth = this.getAuth(client);
-    if (!auth) return;
-    const { roomId } = data;
-    if (!roomId) return;
-    try {
-      await this.chatRoomService.resetNotificationCount(roomId, auth.type);
-      client.emit('notification-count-reset', { roomId, userType: auth.type });
-      await this.broadcastNotificationCounts();
-    } catch (error) {
-      this.logger.error('Error resetting notification count:', error);
-      client.emit('error', { message: 'Failed to reset notification count' });
-    }
-  }
+
 
   /**
    * 关闭会话 + 完整通知链路（系统消息落库 → 广播 new-message + room-status-changed）。
@@ -1164,19 +1126,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  @SubscribeMessage('get-room-info')
-  async handleGetRoomInfo(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() data: { roomId: string },
-  ) {
-    const auth = this.getAuth(client);
-    if (!auth) return;
-    const { roomId } = data;
-    if (!roomId) return;
-    const room = await this.roomOrError(client, roomId, auth);
-    if (!room) return;
-    client.emit('room-info', room);
-  }
+
 
   // ── 输入指示器（P1 H2） ───────────────────────────────
 
@@ -1294,19 +1244,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     })();
   }
 
-  @SubscribeMessage('get-presence')
-  handleGetPresence(@ConnectedSocket() client: Socket) {
-    const auth = this.getAuth(client);
-    if (!auth) return;
-    void (async () => {
-      const status = await this.presence.getPresence(`${auth.email}:${auth.type}`);
-      client.emit('presence-changed', {
-        userEmail: auth.email,
-        userType: auth.type,
-        status,
-      });
-    })();
-  }
+
 
   @SubscribeMessage('set-presence')
   async handleSetPresence(
@@ -1361,7 +1299,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       // 生产环境真实 ChatRoomService 恒有此方法，守卫永不触发，行为无变化。
       if (!this.chatRoomService?.getAgentRosterDetails) return;
       const allAgents = await this.presence.getAgentSummaries();
-      // 仅保留有活跃 socket 连接的坐席（排除 Redis 中的僵尸/离线记录）
+      // 仅保留有活跃 socket 连接的坐席（排除僵尸/离线记录）
       const agents = allAgents.filter((a) => a.socketCount > 0);
       const emails = agents.map((a) => a.email);
       const details = await this.chatRoomService.getAgentRosterDetails(emails);

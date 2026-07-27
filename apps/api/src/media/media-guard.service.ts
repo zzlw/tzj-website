@@ -39,7 +39,7 @@ export class MediaGuardService {
   }
 
   /** 素材在站点上可能出现的 Web 路径变体（/media/*、根目录资源等）。 */
-  webPathVariants(asset: Pick<MediaAsset, 'key' | 'url'>): string[] {
+  private webPathVariants(asset: Pick<MediaAsset, 'key' | 'url'>): string[] {
     const variants = new Set<string>();
     variants.add(asset.url);
     variants.add(asset.key);
@@ -55,10 +55,6 @@ export class MediaGuardService {
     return [...variants];
   }
 
-  isSiteResourceFolder(folder: string): boolean {
-    return PROTECTED_MEDIA_FOLDERS.has(folder);
-  }
-
   /** 固定 key 的站点静态资源（content/hero.mp4 等，非带时间戳的上传）。 */
   isStaticSiteAsset(asset: Pick<MediaAsset, 'key' | 'url'>): boolean {
     if (!asset.key.startsWith('content/')) return false;
@@ -68,7 +64,7 @@ export class MediaGuardService {
     return staticPaths.has(`/media/${rest}`) || staticPaths.has(`/${rest}`);
   }
 
-  isInStaticManifest(asset: Pick<MediaAsset, 'key' | 'url' | 'folder'>): boolean {
+  private isInStaticManifest(asset: Pick<MediaAsset, 'key' | 'url' | 'folder'>): boolean {
     return this.isStaticSiteAsset(asset);
   }
 
@@ -88,7 +84,7 @@ export class MediaGuardService {
     return values.some((v) => this.textReferencesAsset(v, asset));
   }
 
-  async findReferences(
+  private async findReferences(
     asset: Pick<MediaAsset, 'id' | 'key' | 'url' | 'folder'>,
   ): Promise<MediaReference[]> {
     const refs: MediaReference[] = [];

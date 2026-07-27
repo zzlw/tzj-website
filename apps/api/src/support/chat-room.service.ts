@@ -1,4 +1,10 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import type { Prisma } from '@prisma/client/index';
 // biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
 import { IpLocationService } from '../analytics/ip-location.service';
@@ -204,6 +210,8 @@ export interface ChatRoomListItem {
   notes?: string | null;
   createdAt: Date | string;
   updatedAt: Date | string;
+  /** 软删时间（回收站视图展示剩余保留期用，未删为 null） */
+  deletedAt?: Date | string | null;
   messageCount: number;
   lastMessage: ChatRoomLastMessage | null;
   // 访客画像（列表轻量展示用）
@@ -289,6 +297,7 @@ type ChatRoomScalars = {
   landingPath?: string | null;
   createdAt: Date | string;
   updatedAt: Date | string;
+  deletedAt?: Date | string | null;
 };
 
 type RawRoomFull = ChatRoomScalars & { messages: RawMessage[] };
@@ -336,7 +345,8 @@ const ROOM_WITH_MESSAGES = {
         orderBy: { createdAt: 'asc' as const },
       },
     },
-    orderBy: { timestamp: 'asc' as const },
+    orderBy: { timestamp: 'desc' as const },
+    take: 200,
   },
 } as const;
 
@@ -367,6 +377,7 @@ export class ChatRoomService {
   private mapRoom(raw: RawRoomFull): ChatRoomResult {
     return {
       ...raw,
+      // P1-1：DB 返回最近 200 条（desc），reverse 恢复升序以保持前端渲染顺序不变
       messages: (raw.messages ?? []).map((m: RawMessage) => ({
         messageId: m.messageId,
         content: m.content ?? '',
@@ -380,7 +391,7 @@ export class ChatRoomService {
           userType: r.userType as ChatMessageUserType,
           readAt: r.readAt,
         })),
-      })),
+      })).reverse(),
     };
   }
 
@@ -419,6 +430,7 @@ export class ChatRoomService {
       notes: raw.notes,
       createdAt: raw.createdAt,
       updatedAt: raw.updatedAt,
+      deletedAt: raw.deletedAt,
       messageCount: raw._count?.messages ?? 0,
       lastMessage: last
         ? {
@@ -691,9 +703,9 @@ export class ChatRoomService {
    *  3. 在未满坐席中选负载最低者；平局随机取其一（公平性）
    *  4. 所有坐席均满或无连接 → 返回 null（会话留在 waiting 队列，待坐席空闲后接入）
    */
-  async pickAvailableAgentEmail(): Promise<string | null> {
+  private async pickAvailableAgentEmail(): Promise<string | null> {
     const agents = await this.presence.getAgentSummaries();
-    // 有活跃 socket 的坐席（排除 Redis 僵尸记录）：优先 online，无 online 时兜底 away
+    // 有活跃 socket 的坐席（排除僵尸记录）：优先 online，无 online 时兆底 away
     const withSocket = agents.filter((a) => a.socketCount > 0);
     const online = withSocket.filter((a) => a.status === 'online').map((a) => a.email);
     const away = withSocket.filter((a) => a.status === 'away').map((a) => a.email);
@@ -827,10 +839,30 @@ export class ChatRoomService {
 
   /* ==================== 查询单个 ==================== */
 
-  async getChatRoomById(roomId: string): Promise<ChatRoomResult> {
+  async getChatRoomById(roomId: string, beforeMessageId?: string): Promise<ChatRoomResult> {
+    // P1-1：“加载更早”参数——传入时取指定消息之前的更早一页
+    let messagesInclude: Record<string, unknown> = ROOM_WITH_MESSAGES.messages;
+    if (beforeMessageId) {
+      // 查出游标消息的 timestamp
+      const cursorMsg = await this.prisma.chatMessage.findFirst({
+        where: { room: { roomId }, messageId: beforeMessageId },
+        select: { timestamp: true, id: true },
+      });
+      if (cursorMsg) {
+        messagesInclude = {
+          ...ROOM_WITH_MESSAGES.messages,
+          where: {
+            OR: [
+              { timestamp: { lt: cursorMsg.timestamp } },
+              { timestamp: cursorMsg.timestamp, id: { lt: cursorMsg.id } },
+            ],
+          },
+        };
+      }
+    }
     const room = await this.prisma.chatRoom.findUnique({
       where: { roomId },
-      include: ROOM_WITH_MESSAGES,
+      include: { messages: messagesInclude },
     });
     if (!room) {
       throw new NotFoundException(`Chat room with ID ${roomId} not found`);
@@ -991,15 +1023,6 @@ export class ChatRoomService {
     return !activeRoom;
   }
 
-  async getAllChatRoomsForClient(clientEmail: string): Promise<ChatRoomResult[]> {
-    const rooms = await this.prisma.chatRoom.findMany({
-      where: { clientEmail },
-      orderBy: { lastActivity: 'desc' },
-      include: ROOM_WITH_MESSAGES,
-    });
-    return rooms.map((r) => this.mapRoom(r));
-  }
-
   /* ==================== 列表查询 ==================== */
 
   /**
@@ -1015,6 +1038,8 @@ export class ChatRoomService {
     cursor?: string;
     take?: number;
     visitorId?: string;
+    /** true 时仅查回收站（已软删）会话，忽略 status 过滤；权限由 controller 把关 */
+    deleted?: boolean;
   }): Promise<{ rooms: ChatRoomListItem[]; nextCursor: string | null }> {
     const take = Math.min(Math.max(filters.take ?? 20, 1), 100);
     const statuses = filters.status
@@ -1024,8 +1049,11 @@ export class ChatRoomService {
           .filter(Boolean)
       : undefined;
 
-    const base: Prisma.ChatRoomWhereInput = { deletedAt: null };
-    if (statuses && statuses.length) base.status = { in: statuses };
+    // 回收站视图：仅已软删会话，不叠加状态过滤（删除前必为 closed/archived，无需再分桶）
+    const base: Prisma.ChatRoomWhereInput = filters.deleted
+      ? { deletedAt: { not: null } }
+      : { deletedAt: null };
+    if (!filters.deleted && statuses && statuses.length) base.status = { in: statuses };
     if (filters.clientEmail) base.clientEmail = filters.clientEmail;
     if (filters.assignedAgentEmail) base.assignedAgentEmail = filters.assignedAgentEmail;
     if (filters.visitorId) base.visitorId = filters.visitorId;
@@ -1036,8 +1064,8 @@ export class ChatRoomService {
     if (filters.search && filters.search.trim()) {
       const q = filters.search.trim();
       const orClauses: Prisma.ChatRoomWhereInput[] = [
-        { clientName: { contains: q } },
-        { clientEmail: { contains: q } },
+        { clientName: { contains: q, mode: 'insensitive' } },
+        { clientEmail: { contains: q, mode: 'insensitive' } },
       ];
       const hits = await this.messageSearch.searchRooms(q, { limit: 200 });
       if (hits.length) {
@@ -1373,23 +1401,6 @@ export class ChatRoomService {
     };
   }
 
-  async getUnreadCountForUser(
-    roomId: string,
-    userEmail: string,
-    userType: 'client' | 'agent',
-  ): Promise<number> {
-    const oppositeSender = userType === 'client' ? 'agent' : 'client';
-    const messages = await this.prisma.chatMessage.findMany({
-      where: {
-        room: { roomId },
-        sender: oppositeSender,
-      },
-      include: { readReceipts: true },
-    });
-
-    return messages.filter((m) => !m.readReceipts.some((r) => r.userEmail === userEmail)).length;
-  }
-
   /* ==================== 通知计数 ==================== */
 
   /**
@@ -1411,7 +1422,7 @@ export class ChatRoomService {
     // 对方发送者：agent 看 client 消息，client 看 agent 消息
     const oppositeSender = userType === 'agent' ? 'client' : 'agent';
 
-    // 一次性查出所有相关房间的未读消息（LEFT JOIN 回执过滤已读）
+    // P1-2：改为带过滤的关系计数，避免逐条物化未读消息行
     const rooms = await this.prisma.chatRoom.findMany({
       where: {
         deletedAt: null,
@@ -1423,24 +1434,27 @@ export class ChatRoomService {
         roomId: true,
         clientEmail: true,
         status: true,
-        messages: {
-          where: {
-            sender: oppositeSender,
-            ...(userType === 'client' && userEmail
-              ? {
-                  readReceipts: {
-                    none: { userEmail, userType: 'client' },
-                  },
-                }
-              : userType === 'agent'
-                ? {
-                    readReceipts: {
-                      none: { userType: 'agent' },
-                    },
-                  }
-                : {}),
+        _count: {
+          select: {
+            messages: {
+              where: {
+                sender: oppositeSender,
+                ...(userType === 'client' && userEmail
+                  ? {
+                      readReceipts: {
+                        none: { userEmail, userType: 'client' },
+                      },
+                    }
+                  : userType === 'agent'
+                    ? {
+                        readReceipts: {
+                          none: { userType: 'agent' },
+                        },
+                      }
+                    : {}),
+              },
+            },
           },
-          select: { id: true },
         },
       },
     });
@@ -1456,7 +1470,7 @@ export class ChatRoomService {
     for (const room of rooms) {
       // client 类型只计算属于自己的会话
       if (userType === 'client' && room.clientEmail !== userEmail) continue;
-      const unread = room.messages.length;
+      const unread = room._count.messages;
       totalUnread += unread;
       // 始终返回所有房间（含 unread=0），确保前端能正确重置已清空的徽标
       roomCounts.push({
@@ -1468,15 +1482,6 @@ export class ChatRoomService {
     }
 
     return { totalUnread, roomCounts };
-  }
-
-  async resetNotificationCount(roomId: string, userType: 'client' | 'agent'): Promise<void> {
-    const data: Prisma.ChatRoomUpdateInput =
-      userType === 'client'
-        ? { unreadCountForClient: 0, lastReadByClient: new Date() }
-        : { unreadCountForAgent: 0, lastReadByAgent: new Date() };
-
-    await this.prisma.chatRoom.update({ where: { roomId }, data });
   }
 
   /* ==================== 更新 & 删除 ==================== */
@@ -1548,19 +1553,6 @@ export class ChatRoomService {
     return this.getChatRoomById(roomId);
   }
 
-  async getUnreadMessageCount(agentEmail?: string): Promise<number> {
-    const roomFilter: Prisma.ChatRoomWhereInput = { status: { in: ['active', 'waiting'] } };
-    if (agentEmail) {
-      roomFilter.assignedAgentEmail = agentEmail;
-    }
-    const where: Prisma.ChatMessageWhereInput = {
-      room: roomFilter,
-      sender: 'client',
-      isRead: false,
-    };
-    return this.prisma.chatMessage.count({ where });
-  }
-
   /* ==================== 统计 ==================== */
 
   async getChatRoomStats(): Promise<{
@@ -1570,22 +1562,26 @@ export class ChatRoomService {
       waiting: number;
       closed: number;
       archived: number;
+      /** 回收站中的会话数（不计入 totalRooms） */
+      deleted: number;
     };
     totalMessages: number;
   }> {
     const nonDeleted = { deletedAt: null };
-    const [totalRooms, active, waiting, closed, archived, totalMessages] = await Promise.all([
-      this.prisma.chatRoom.count({ where: nonDeleted }),
-      this.prisma.chatRoom.count({ where: { ...nonDeleted, status: 'active' } }),
-      this.prisma.chatRoom.count({ where: { ...nonDeleted, status: 'waiting' } }),
-      this.prisma.chatRoom.count({ where: { ...nonDeleted, status: 'closed' } }),
-      this.prisma.chatRoom.count({ where: { ...nonDeleted, status: 'archived' } }),
-      this.prisma.chatMessage.count(),
-    ]);
+    const [totalRooms, active, waiting, closed, archived, deleted, totalMessages] =
+      await Promise.all([
+        this.prisma.chatRoom.count({ where: nonDeleted }),
+        this.prisma.chatRoom.count({ where: { ...nonDeleted, status: 'active' } }),
+        this.prisma.chatRoom.count({ where: { ...nonDeleted, status: 'waiting' } }),
+        this.prisma.chatRoom.count({ where: { ...nonDeleted, status: 'closed' } }),
+        this.prisma.chatRoom.count({ where: { ...nonDeleted, status: 'archived' } }),
+        this.prisma.chatRoom.count({ where: { deletedAt: { not: null } } }),
+        this.prisma.chatMessage.count(),
+      ]);
 
     return {
       totalRooms,
-      statusBreakdown: { active, waiting, closed, archived },
+      statusBreakdown: { active, waiting, closed, archived, deleted },
       totalMessages,
     };
   }
@@ -1624,11 +1620,18 @@ export class ChatRoomService {
     return { closed: closedRes.count, archived: archivedRes.count };
   }
 
-  /** 批量软删除（仅打标，列表过滤；物理删除走独立清理任务） */
+  /** 批量软删除（仅打标，列表过滤；物理删除走独立清理任务）。
+      与单删 softDeleteChatRoom 同口径：仅已结束（closed/archived）会话可入回收站，
+      进行中会话由 where 直接过滤——否则会破坏「回收站内必为已结束」的不变量，
+      导致回收站出现仍可收发消息的「进行中」会话。 */
   async softDeleteRooms(roomIds: string[]): Promise<number> {
     if (roomIds.length === 0) return 0;
     const res = await this.prisma.chatRoom.updateMany({
-      where: { roomId: { in: roomIds }, deletedAt: null },
+      where: {
+        roomId: { in: roomIds },
+        deletedAt: null,
+        status: { in: ['closed', 'archived'] },
+      },
       data: { deletedAt: new Date() },
     });
     return res.count;
@@ -1653,13 +1656,122 @@ export class ChatRoomService {
     return res.count;
   }
 
-  /* ==================== 删除 ==================== */
+  /* ==================== 删除 / 恢复 ==================== */
 
-  async deleteChatRoom(roomId: string): Promise<void> {
-    try {
-      await this.prisma.chatRoom.delete({ where: { roomId } });
-    } catch {
-      throw new NotFoundException(`Chat room with ID ${roomId} not found`);
+  /**
+   * 单会话软删除：移入回收站（30 天后由清理任务物理删除）。
+   * 仅允许 closed/archived 会话，进行中会话须先关闭（与批量删除前端跳过保护同口径）。
+   */
+  async softDeleteChatRoom(roomId: string): Promise<{ deleted: true; soft: true }> {
+    const room = await this.prisma.chatRoom.findUnique({ where: { roomId } });
+    if (!room) throw new NotFoundException(`Chat room with ID ${roomId} not found`);
+    if (room.deletedAt) {
+      throw new ConflictException({
+        error: 'CHAT_ROOM_ALREADY_TRASHED',
+        message: '该会话已在回收站中',
+      });
     }
+    if (room.status !== 'closed' && room.status !== 'archived') {
+      throw new ConflictException({
+        error: 'CHAT_ROOM_NOT_ENDED',
+        message: '仅已结束（已关闭/已归档）的会话可移入回收站，请先关闭会话',
+      });
+    }
+    await this.prisma.chatRoom.update({
+      where: { roomId },
+      data: { deletedAt: new Date() },
+    });
+    return { deleted: true, soft: true };
+  }
+
+  /** 从回收站恢复：清除软删标记，会话回到原状态桶（closed/archived）。 */
+  async restoreChatRoom(roomId: string): Promise<{ restored: true }> {
+    const room = await this.prisma.chatRoom.findUnique({ where: { roomId } });
+    if (!room) throw new NotFoundException(`Chat room with ID ${roomId} not found`);
+    if (!room.deletedAt) {
+      throw new ConflictException({
+        error: 'CHAT_ROOM_NOT_TRASHED',
+        message: '该会话不在回收站中',
+      });
+    }
+    await this.prisma.chatRoom.update({
+      where: { roomId },
+      data: { deletedAt: null },
+    });
+    return { restored: true };
+  }
+
+  /**
+   * 物理清除（仅 admin / 到期清理任务）：先删 S3 附件对象，再删会话行
+   * （messages/attachments/readReceipts 由外键级联删除），并置空 Customer.chatRoomId 断链。
+   * 审计快照由本方法显式落库（userId 为 null 表示系统任务）。
+   */
+  async purgeChatRoom(
+    roomId: string,
+    operatorId: string | null,
+  ): Promise<{ deleted: true; purged: true }> {
+    const room = await this.prisma.chatRoom.findUnique({ where: { roomId } });
+    if (!room) throw new NotFoundException(`Chat room with ID ${roomId} not found`);
+    if (!room.deletedAt) {
+      throw new ConflictException({
+        error: 'CHAT_ROOM_NOT_TRASHED',
+        message: '请先将会话移入回收站，再执行永久删除',
+      });
+    }
+
+    // 附件对象先于库行删除：库删失败时下次重试，S3 delete 幂等不受影响
+    const attachments = await this.prisma.chatAttachment.findMany({
+      where: { message: { chatRoomId: room.id } },
+      select: { key: true },
+    });
+    for (const a of attachments) {
+      await this.s3.delete(a.key).catch(() => undefined);
+    }
+    // 该会话「已上传未发送」的占位文件一并回收（本有过期任务兜底，这里顺手清干净）
+    const pendings = await this.prisma.chatPendingUpload.findMany({
+      where: { roomId },
+      select: { id: true, key: true },
+    });
+    for (const p of pendings) {
+      await this.s3.delete(p.key).catch(() => undefined);
+    }
+
+    const messageCount = await this.prisma.chatMessage.count({ where: { chatRoomId: room.id } });
+    await this.prisma.$transaction(async (tx) => {
+      // 反向关联断链：客户档案不再指向已清除的会话（原值入下方审计快照）
+      await tx.customer.updateMany({
+        where: { chatRoomId: room.roomId },
+        data: { chatRoomId: null },
+      });
+      if (pendings.length > 0) {
+        await tx.chatPendingUpload.deleteMany({ where: { id: { in: pendings.map((p) => p.id) } } });
+      }
+      await tx.chatRoom.delete({ where: { id: room.id } });
+    });
+
+    // 审计快照：仅记摘要字段，供合规追溯
+    await this.prisma.auditLog.create({
+      data: {
+        userId: operatorId,
+        action: 'purge',
+        resource: 'chat-rooms',
+        resourceId: room.roomId,
+        detail: {
+          snapshot: {
+            roomId: room.roomId,
+            clientEmail: room.clientEmail,
+            clientName: room.clientName,
+            status: room.status,
+            assignedAgentEmail: room.assignedAgentEmail,
+            customerId: room.customerId,
+            visitorId: room.visitorId,
+            messageCount,
+            attachmentCount: attachments.length,
+            createdAt: room.createdAt.toISOString(),
+          },
+        },
+      },
+    });
+    return { deleted: true, purged: true };
   }
 }

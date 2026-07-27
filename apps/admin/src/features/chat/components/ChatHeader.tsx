@@ -4,6 +4,7 @@ import {
   Avatar,
   AvatarFallback,
   Button,
+  ConfirmDialog,
   cn,
   Popover,
   PopoverContent,
@@ -13,7 +14,16 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@tzj/ui';
-import { ArrowLeftRight, Check, Eye, MoreVertical, UserCheck, XCircle } from 'lucide-react';
+import {
+  ArrowLeftRight,
+  Check,
+  Eye,
+  MoreVertical,
+  RotateCcw,
+  Trash2,
+  UserCheck,
+  XCircle,
+} from 'lucide-react';
 import { useState } from 'react';
 import { LastOperatorCell } from '@/components/LastOperatorCell';
 import type { ChatRoom, ChatRoomStatusKey, PresenceStatus } from '../types';
@@ -182,18 +192,147 @@ function TransferPopover({
   );
 }
 
+/**
+ * 已结束会话的「更多操作」菜单（仅 chat.delete 权限渲染）：
+ * - 未删除 → 移入回收站（二次确认，30 天后自动清理）
+ * - 回收站中 → 恢复会话（可逆操作，无需确认）；管理员额外可永久删除（二次确认）
+ */
+function MoreActionsMenu({
+  trashed,
+  clientName,
+  canPurge,
+  onDelete,
+  onRestore,
+  onPurge,
+}: {
+  trashed: boolean;
+  clientName: string;
+  /** 是否可永久删除（仅管理员，不新增权限点） */
+  canPurge?: boolean;
+  onDelete?: () => void;
+  onRestore?: () => void;
+  onPurge?: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [purgeConfirmOpen, setPurgeConfirmOpen] = useState(false);
+  return (
+    <>
+      <Popover open={open} onOpenChange={setOpen}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="inline-flex">
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label="更多操作"
+                  className="border-border/40 bg-background/60 text-muted-foreground hover:bg-muted/60 focus-visible:ring-primary/40 focus-visible:ring-offset-background size-8 rounded-full border transition focus-visible:ring-2 focus-visible:ring-offset-2 sm:size-10"
+                >
+                  <MoreVertical className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                </Button>
+              </PopoverTrigger>
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>更多操作</TooltipContent>
+        </Tooltip>
+        <PopoverContent align="end" className="w-44 p-1.5">
+          {trashed ? (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  onRestore?.();
+                }}
+                className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm transition hover:bg-muted"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                恢复会话
+              </button>
+              {canPurge && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false);
+                    setPurgeConfirmOpen(true);
+                  }}
+                  className="text-destructive flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm transition hover:bg-destructive/10"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  永久删除
+                </button>
+              )}
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                setConfirmOpen(true);
+              }}
+              className="text-destructive flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm transition hover:bg-destructive/10"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              移入回收站
+            </button>
+          )}
+        </PopoverContent>
+      </Popover>
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="删除会话"
+        description={`确认将「${clientName}」的会话移入回收站？回收站中的会话将在 30 天后自动永久删除（含聊天记录与附件），期间可随时恢复。`}
+        confirmLabel="移入回收站"
+        onConfirm={() => {
+          setConfirmOpen(false);
+          onDelete?.();
+        }}
+      />
+      <ConfirmDialog
+        open={purgeConfirmOpen}
+        onOpenChange={setPurgeConfirmOpen}
+        title="永久删除会话"
+        description={`确认永久删除「${clientName}」的会话？聊天记录与附件将被立即物理清除，此操作不可撤销；若客户档案关联了该会话，关联将被解除。`}
+        confirmLabel="永久删除"
+        onConfirm={() => {
+          setPurgeConfirmOpen(false);
+          onPurge?.();
+        }}
+      />
+    </>
+  );
+}
+
 export function ChatHeader({
   room,
   onClose,
   onlineAgents = [],
   currentAgentEmail,
   onTransfer,
+  canDelete = false,
+  canPurge = false,
+  onDelete,
+  onRestore,
+  onPurge,
 }: {
   room: ChatRoom;
   onClose: () => void;
   onlineAgents?: OnlineAgent[];
   currentAgentEmail?: string;
   onTransfer?: (email: string, note?: string) => void;
+  /** 是否有删除权限（chat.delete），无权限时隐藏「更多操作」菜单 */
+  canDelete?: boolean;
+  /** 是否可永久删除（仅管理员） */
+  canPurge?: boolean;
+  /** 移入回收站（已经由菜单内 ConfirmDialog 二次确认） */
+  onDelete?: () => void;
+  /** 从回收站恢复 */
+  onRestore?: () => void;
+  /** 永久删除（已经由菜单内 ConfirmDialog 二次确认） */
+  onPurge?: () => void;
 }) {
   const meta = statusMeta[room.status];
   const presence = presenceMeta[room.clientPresence ?? 'offline'];
@@ -206,7 +345,15 @@ export function ChatHeader({
   );
   // 提炼重复判断/取名逻辑为变量，降低渲染层认知复杂度
   const ended = room.status === 'closed' || room.status === 'archived';
-  const transferTip = ended ? '会话已结束，不可转接' : '转接给其他坐席';
+  // 回收站中的会话一律只读：接管/转接/结束等会话操作全部封禁，
+  // 仅保留查看资料与「恢复/永久删除」入口（历史脏数据可能存在非已结束
+  // 的已删会话，故不能只依赖 status 门控）
+  const trashed = !!room.deletedAt;
+  const transferTip = trashed
+    ? '会话已在回收站，不可转接'
+    : ended
+      ? '会话已结束，不可转接'
+      : '转接给其他坐席';
   const assignedAgentName =
     room.assignedAgentUser?.nickname?.trim() ||
     room.assignedAgentUser?.username ||
@@ -264,7 +411,10 @@ export function ChatHeader({
           <ConvertLeadButton room={room} />
           {/* 显式接管（业内最佳实践 Intercom/Zendesk）：查看别人的会话是只读浏览，
             要接手必须点「接管」——防止点一下就把同事的会话抢走 */}
-          {!ended && room.assignedAgentEmail && room.assignedAgentEmail !== currentAgentEmail && (
+          {!ended &&
+            !trashed &&
+            room.assignedAgentEmail &&
+            room.assignedAgentEmail !== currentAgentEmail && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -283,12 +433,24 @@ export function ChatHeader({
           )}
           {/* 转接（P1 H3）：选择其他在线坐席将会话重新分配，含备注 + 二次确认 */}
           <TransferPopover
-            ended={ended}
+            ended={ended || trashed}
             tip={transferTip}
             candidates={transferCandidates}
             onTransfer={onTransfer}
           />
-          {!ended ? (
+          {trashed ? (
+            /* 回收站中：无论原状态如何，只提供恢复/永久删除入口（仅 chat.delete 权限可见） */
+            canDelete ? (
+              <MoreActionsMenu
+                trashed
+                clientName={name}
+                canPurge={canPurge}
+                onDelete={onDelete}
+                onRestore={onRestore}
+                onPurge={onPurge}
+              />
+            ) : null
+          ) : !ended ? (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -304,22 +466,17 @@ export function ChatHeader({
               </TooltipTrigger>
               <TooltipContent>结束会话</TooltipContent>
             </Tooltip>
-          ) : (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  aria-label="更多操作"
-                  className="border-border/40 bg-background/60 text-muted-foreground hover:bg-muted/60 focus-visible:ring-primary/40 focus-visible:ring-offset-background size-8 rounded-full border transition focus-visible:ring-2 focus-visible:ring-offset-2 sm:size-10"
-                >
-                  <MoreVertical className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>更多操作</TooltipContent>
-            </Tooltip>
-          )}
+          ) : canDelete ? (
+            /* 已结束且未删除：移入回收站入口（仅 chat.delete 权限可见） */
+            <MoreActionsMenu
+              trashed={false}
+              clientName={name}
+              canPurge={canPurge}
+              onDelete={onDelete}
+              onRestore={onRestore}
+              onPurge={onPurge}
+            />
+          ) : null}
         </div>
       </TooltipProvider>
     </header>

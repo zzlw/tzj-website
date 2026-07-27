@@ -169,6 +169,11 @@ export class GetChatRoomsDto {
   @IsOptional()
   @IsString()
   visitorId?: string;
+
+  /** 回收站视图：'true'/'1' 时仅返回已软删会话（需 chat.delete 权限，controller 二次校验） */
+  @IsOptional()
+  @IsString()
+  deleted?: string;
 }
 
 /** 批量操作（关闭 / 归档 / 软删除） */

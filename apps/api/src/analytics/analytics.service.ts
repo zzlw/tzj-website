@@ -1428,7 +1428,10 @@ export class AnalyticsService {
     const emails = [...new Set(rows.map((r) => r.email).filter((v): v is string => !!v))];
 
     const contacts = await this.prisma.contact.findMany({
-      where: { OR: [{ id: { in: visitorKeys } }, ...buildContactMatchOr(visitorKeys, emails)] },
+      where: {
+        deletedAt: null,
+        OR: [{ id: { in: visitorKeys } }, ...buildContactMatchOr(visitorKeys, emails)],
+      },
       orderBy: { createdAt: 'desc' },
       select: { id: true, visitorId: true, email: true, createdAt: true },
     });
@@ -1436,7 +1439,7 @@ export class AnalyticsService {
     const customerOr: Prisma.CustomerWhereInput[] = [{ visitorId: { in: visitorKeys } }];
     if (contacts.length) customerOr.push({ contactId: { in: contacts.map((c) => c.id) } });
     const customers = await this.prisma.customer.findMany({
-      where: { OR: customerOr },
+      where: { deletedAt: null, OR: customerOr },
       select: { id: true, contactId: true, visitorId: true },
     });
 
@@ -1495,7 +1498,7 @@ export class AnalyticsService {
     }
 
     const contacts = await this.prisma.contact.findMany({
-      where: { OR: or },
+      where: { deletedAt: null, OR: or },
       select: { id: true, visitorId: true, email: true, createdAt: true },
       orderBy: { createdAt: 'asc' },
     });
@@ -1721,7 +1724,10 @@ export class AnalyticsService {
     const contacts =
       visitorKeys.length || emails.length
         ? await this.prisma.contact.findMany({
-            where: { OR: [{ id: { in: visitorKeys } }, { email: { in: emails } }] },
+            where: {
+              deletedAt: null,
+              OR: [{ id: { in: visitorKeys } }, { email: { in: emails } }],
+            },
             orderBy: { createdAt: 'desc' },
             select: { id: true, name: true, email: true, phone: true, company: true },
           })
@@ -1734,7 +1740,7 @@ export class AnalyticsService {
     if (visitorKeys.length) orConds.push({ visitorId: { in: visitorKeys } });
     const customer = orConds.length
       ? await this.prisma.customer.findFirst({
-          where: { OR: orConds },
+          where: { deletedAt: null, OR: orConds },
           select: { id: true, name: true, email: true, phone: true, company: true },
         })
       : null;
@@ -1795,14 +1801,14 @@ export class AnalyticsService {
     if (contactIds.length === 0 && emails.length === 0) return { data: [] };
 
     const contacts = await this.prisma.contact.findMany({
-      where: { OR: [{ id: { in: contactIds } }, { email: { in: emails } }] },
+      where: { deletedAt: null, OR: [{ id: { in: contactIds } }, { email: { in: emails } }] },
       orderBy: { createdAt: 'desc' },
       take: 50,
     });
     if (contacts.length === 0) return { data: [] };
 
     const customers = await this.prisma.customer.findMany({
-      where: { contactId: { in: contacts.map((c) => c.id) } },
+      where: { contactId: { in: contacts.map((c) => c.id) }, deletedAt: null },
       select: { id: true, contactId: true },
     });
     const customerByContact = new Map(customers.map((c) => [c.contactId, c.id]));

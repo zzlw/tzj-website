@@ -260,39 +260,4 @@ export class SettingsService {
 
     return next;
   }
-
-  async seedSiteNotificationSettings(): Promise<void> {
-    const existing = await this.prisma.setting.findUnique({
-      where: { key: SITE_NOTIFICATIONS_SETTING_KEY },
-    });
-    if (existing) return;
-
-    await this.prisma.setting.create({
-      data: {
-        key: SITE_NOTIFICATIONS_SETTING_KEY,
-        group: 'site',
-        label: '邮件通知设置',
-        sortOrder: 1,
-        value: DEFAULT_SITE_NOTIFICATION_SETTINGS as object,
-      },
-    });
-  }
-
-  /** 初始化默认设置（seed / 首次部署） */
-  async seedSitePublicSettings(): Promise<void> {
-    const existing = await this.prisma.setting.findUnique({
-      where: { key: SITE_PUBLIC_SETTING_KEY },
-    });
-    if (existing) return;
-
-    await this.prisma.setting.create({
-      data: {
-        key: SITE_PUBLIC_SETTING_KEY,
-        group: 'site',
-        label: '官网公开设置',
-        sortOrder: 0,
-        value: DEFAULT_SITE_PUBLIC_SETTINGS as object,
-      },
-    });
-  }
 }

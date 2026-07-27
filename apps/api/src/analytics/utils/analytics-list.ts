@@ -224,17 +224,21 @@ export function visitorBaseFilterSql(params: { q?: string; identified?: string }
  * 口径与 loadVisitorLeadStatuses 的 JS 归因一致（改动需同步）：
  * 行身份键（visitorId / userId=identify 回写的 contactId / email）命中
  * Customer.visitorId / Customer.contactId / 客户源询盘的 visitorId / email 任一即视为已转客户。
+ * 软删的客户/询盘不参与归因（与 JS 侧 deletedAt: null 过滤同口径）。
  * IN 列表中的 NULL 项永不匹配，无需逐键判空。
  */
 export function visitorConvertedFlagSql(): Prisma.Sql {
   return Prisma.sql`EXISTS (
     SELECT 1
     FROM "customers" cu
-    LEFT JOIN "contacts" ct ON ct."id" = cu."contactId"
-    WHERE cu."visitorId" IN (COALESCE(grouped."visitorId", grouped."mergeKey"), grouped."userId", grouped."email")
-       OR cu."contactId" IN (COALESCE(grouped."visitorId", grouped."mergeKey"), grouped."userId", grouped."email")
-       OR ct."visitorId" IN (COALESCE(grouped."visitorId", grouped."mergeKey"), grouped."userId", grouped."email")
-       OR ct."email" IN (COALESCE(grouped."visitorId", grouped."mergeKey"), grouped."userId", grouped."email")
+    LEFT JOIN "contacts" ct ON ct."id" = cu."contactId" AND ct."deletedAt" IS NULL
+    WHERE cu."deletedAt" IS NULL
+      AND (
+        cu."visitorId" IN (COALESCE(grouped."visitorId", grouped."mergeKey"), grouped."userId", grouped."email")
+        OR cu."contactId" IN (COALESCE(grouped."visitorId", grouped."mergeKey"), grouped."userId", grouped."email")
+        OR ct."visitorId" IN (COALESCE(grouped."visitorId", grouped."mergeKey"), grouped."userId", grouped."email")
+        OR ct."email" IN (COALESCE(grouped."visitorId", grouped."mergeKey"), grouped."userId", grouped."email")
+      )
   )`;
 }
 

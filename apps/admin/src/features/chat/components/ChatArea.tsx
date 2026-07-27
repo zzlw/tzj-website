@@ -29,6 +29,16 @@ interface Props {
   clientTypingText?: string;
   /** 搜索跳转的目标消息 id：进入会话后滚动定位并瞬时高亮 */
   highlightMessageId?: string | null;
+  /** 是否有删除权限（chat.delete），透传给 ChatHeader 的「更多操作」菜单 */
+  canDelete?: boolean;
+  /** 是否可永久删除（仅管理员） */
+  canPurge?: boolean;
+  /** 移入回收站 */
+  onDelete?: () => void;
+  /** 从回收站恢复 */
+  onRestore?: () => void;
+  /** 永久删除 */
+  onPurge?: () => void;
 }
 
 export function ChatArea({
@@ -45,6 +55,11 @@ export function ChatArea({
   clientTyping,
   clientTypingText,
   highlightMessageId,
+  canDelete,
+  canPurge,
+  onDelete,
+  onRestore,
+  onPurge,
 }: Props) {
   // 真正可滚动的元素是 Radix ScrollArea 的 Viewport（带 data-radix-scroll-area-viewport）。
   // @tzj/ui 的 ScrollArea 没有透出 viewport ref，所以从内容 div 用 closest() 反向找到。
@@ -189,6 +204,11 @@ export function ChatArea({
         onlineAgents={onlineAgents}
         currentAgentEmail={currentAgentEmail}
         onTransfer={onTransfer}
+        canDelete={canDelete}
+        canPurge={canPurge}
+        onDelete={onDelete}
+        onRestore={onRestore}
+        onPurge={onPurge}
       />
 
      {/* 消息滚动区 + 「↓ 新消息」浮动按钮
@@ -260,13 +280,17 @@ export function ChatArea({
         contactName={room.clientName || room.clientEmail}
         quickReplies={quickReplies}
         onQuickReply={onQuickReply}
-        disabled={room.status === 'closed' || room.status === 'archived' || notMyRoom}
+        disabled={
+          !!room.deletedAt || room.status === 'closed' || room.status === 'archived' || notMyRoom
+        }
         disabledHint={
-          room.status === 'archived'
-            ? '会话已归档，无法继续发送'
-            : notMyRoom
-              ? '该会话由其他坐席负责 · 仅查看，如需回复请先转接或认领'
-              : undefined
+          room.deletedAt
+            ? '会话已在回收站，仅可查看；如需继续请先恢复会话'
+            : room.status === 'archived'
+              ? '会话已归档，无法继续发送'
+              : notMyRoom
+                ? '该会话由其他坐席负责 · 仅查看，如需回复请先转接或认领'
+                : undefined
         }
       />
     </div>

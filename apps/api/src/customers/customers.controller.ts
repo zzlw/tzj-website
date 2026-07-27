@@ -3,6 +3,7 @@ import {
   Controller,
   DefaultValuePipe,
   Delete,
+  ForbiddenException,
   Get,
   Param,
   ParseIntPipe,
@@ -77,6 +78,7 @@ export class CustomersController {
   })
   @ApiQuery({ name: 'sortBy', required: false })
   @ApiQuery({ name: 'sortOrder', required: false })
+  @ApiQuery({ name: 'deleted', required: false, description: '回收站视图: true 仅看已软删' })
   findAll(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(12), ParseIntPipe) limit: number,
@@ -89,6 +91,7 @@ export class CustomersController {
     @Query('channel') channel?: string,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: string,
+    @Query('deleted') deleted?: string,
     @CurrentUser() user?: AuthUser,
   ) {
     return this.customersService.findAll({
@@ -105,6 +108,7 @@ export class CustomersController {
       channel,
       sortBy,
       sortOrder,
+      deleted: deleted === 'true' || deleted === '1',
     });
   }
 
@@ -143,9 +147,29 @@ export class CustomersController {
   @RequirePermissions('customers.delete')
   @ApiBearerAuth()
   @Delete(':id')
-  @ApiOperation({ summary: '删除客户' })
-  remove(@Param('id') id: string) {
-    return this.customersService.remove(id);
+  @ApiOperation({ summary: '删除客户（软删除，移入回收站；仅归属坐席本人或管理员）' })
+  remove(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    return this.customersService.remove(id, user.id, user.role === 'admin');
+  }
+
+  @RequirePermissions('customers.delete')
+  @ApiBearerAuth()
+  @Post(':id/restore')
+  @ApiOperation({ summary: '从回收站恢复客户' })
+  restore(@Param('id') id: string) {
+    return this.customersService.restore(id);
+  }
+
+  @RequirePermissions('customers.delete')
+  @ApiBearerAuth()
+  @Delete(':id/purge')
+  @ApiOperation({ summary: '永久删除客户（仅管理员，需先在回收站中）' })
+  purge(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    // 物理清除不新增权限点，收敛为管理员专属（见 docs/design/deletion-strategy.md §3.4）
+    if (user.role !== 'admin') {
+      throw new ForbiddenException('永久删除仅限管理员操作');
+    }
+    return this.customersService.purge(id, user.id);
   }
 
   @RequirePermissions('customers.manage')

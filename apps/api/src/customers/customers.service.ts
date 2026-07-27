@@ -64,7 +64,10 @@ async function findDuplicateCustomer(tx: Prisma.TransactionClient, dto: CreateCu
   const where = dedupeWhere(dto);
   let existing = where ? await tx.customer.findUnique({ where }) : null;
   if (!existing && dto.visitorId) {
-    existing = await tx.customer.findFirst({ where: { visitorId: dto.visitorId } });
+    // 软删客户不参与兼底去重（其唯一锚点已置空，允许同访客重新转化）
+    existing = await tx.customer.findFirst({
+      where: { visitorId: dto.visitorId, deletedAt: null },
+    });
   }
   if (!existing) return null;
   return tx.customer.findUnique({ where: { id: existing.id }, include: CUSTOMER_INCLUDE });
@@ -84,6 +87,8 @@ interface FindAllParams {
   channel?: string;
   sortBy?: string;
   sortOrder?: string;
+  /** true = 查看回收站（已软删），默认仅未删除 */
+  deleted?: boolean;
 }
 
 /** 来源渠道筛选白名单（与访客中心/询盘 trafficSource 口径一致；区别于业务维度的 Customer.source）。 */
@@ -192,10 +197,13 @@ export class CustomersService {
       channel,
       sortBy,
       sortOrder,
+      deleted,
     } = params;
     const skip = (page - 1) * limit;
 
     const where: Prisma.CustomerWhereInput = this.scopeWhere(scope, canViewAll, currentUserId);
+    // 回收站与正常列表互斥（软删范式同媒体库，见 docs/design/deletion-strategy.md）
+    where.deletedAt = deleted ? { not: null } : null;
     if (stage) where.stage = stage;
     if (level) where.level = level;
     if (source) where.source = source;
@@ -377,11 +385,11 @@ export class CustomersService {
   /** 私海 / 公海 / 总量计数（用于菜单徽标与概览） */
   async summary(currentUserId: string, canViewAll: boolean) {
     const [mine, publicCount, total] = await Promise.all([
-      this.prisma.customer.count({ where: { ownerId: currentUserId } }),
-      this.prisma.customer.count({ where: { ownerId: null } }),
+      this.prisma.customer.count({ where: { ownerId: currentUserId, deletedAt: null } }),
+      this.prisma.customer.count({ where: { ownerId: null, deletedAt: null } }),
       canViewAll
-        ? this.prisma.customer.count()
-        : this.prisma.customer.count({ where: { ownerId: currentUserId } }),
+        ? this.prisma.customer.count({ where: { deletedAt: null } })
+        : this.prisma.customer.count({ where: { ownerId: currentUserId, deletedAt: null } }),
     ]);
     return { mine, public: publicCount, total: canViewAll ? total : mine };
   }
@@ -457,7 +465,7 @@ export class CustomersService {
       .filter((e): e is string => Boolean(e));
     const existing = emails.length
       ? await this.prisma.customer.findMany({
-          where: { email: { in: [...new Set(emails)] } },
+          where: { email: { in: [...new Set(emails)] }, deletedAt: null },
           select: { email: true },
         })
       : [];
@@ -529,6 +537,7 @@ export class CustomersService {
   async update(id: string, dto: UpdateCustomerDto, operatorId: string) {
     const item = await this.prisma.customer.findUnique({ where: { id } });
     if (!item) throw new NotFoundException(`客户 ID "${id}" 未找到`);
+    this.assertNotTrashed(item);
 
     const data: Prisma.CustomerUncheckedUpdateInput = { ...dto };
     if (dto.lastContactAt !== undefined) {
@@ -547,17 +556,137 @@ export class CustomersService {
     });
   }
 
-  async remove(id: string) {
+  /** 回收站行禁止常规操作（编辑/认领/退回/转移），需先恢复。 */
+  private assertNotTrashed(item: { deletedAt: Date | null }) {
+    if (item.deletedAt) {
+      throw new ConflictException({
+        error: 'CUSTOMER_TRASHED',
+        message: '该客户在回收站中，请先恢复后再操作',
+      });
+    }
+  }
+
+  /**
+   * 软删除：移入回收站（30 天后由清理任务物理删除）。
+   * 同步置空 chatRoomId/contactId 唯一锚点（受 @unique 约束，不置空会堵死同源重新转化），
+   * 原值写入审计快照；恢复时不回填（见 docs/design/deletion-strategy.md §3.2）。
+   * 权限：仅归属坐席本人或管理员可删（公海客户仅管理员）。
+   */
+  async remove(id: string, operatorId: string, isAdmin: boolean) {
     const item = await this.prisma.customer.findUnique({ where: { id } });
     if (!item) throw new NotFoundException(`客户 ID "${id}" 未找到`);
-    await this.prisma.customer.delete({ where: { id } });
-    return { deleted: true };
+    if (item.deletedAt) {
+      throw new ConflictException({
+        error: 'CUSTOMER_ALREADY_TRASHED',
+        message: '该客户已在回收站中',
+      });
+    }
+    if (!isAdmin && item.ownerId !== operatorId) {
+      throw new ForbiddenException('只能删除自己私海中的客户');
+    }
+
+    await this.prisma.customer.update({
+      where: { id },
+      data: {
+        deletedAt: new Date(),
+        chatRoomId: null,
+        contactId: null,
+        lastOperatorId: operatorId,
+        lastOperator: await resolveContentAuthor(this.prisma, operatorId),
+      },
+    });
+
+    // 锚点原值入审计快照（全局拦截器只记请求级），供恢复后人工回溯来源
+    if (item.chatRoomId || item.contactId) {
+      await this.prisma.auditLog.create({
+        data: {
+          userId: operatorId,
+          action: 'soft-delete',
+          resource: 'customers',
+          resourceId: id,
+          detail: {
+            unlinkedAnchors: {
+              chatRoomId: item.chatRoomId,
+              contactId: item.contactId,
+              visitorId: item.visitorId,
+            },
+          },
+        },
+      });
+    }
+    return { deleted: true, soft: true };
+  }
+
+  /** 从回收站恢复（锚点不回填，来源可经审计日志回溯）。 */
+  async restore(id: string) {
+    const item = await this.prisma.customer.findUnique({ where: { id } });
+    if (!item) throw new NotFoundException(`客户 ID "${id}" 未找到`);
+    if (!item.deletedAt) {
+      throw new ConflictException({
+        error: 'CUSTOMER_NOT_TRASHED',
+        message: '该客户不在回收站中',
+      });
+    }
+    return this.prisma.customer.update({
+      where: { id },
+      data: { deletedAt: null },
+      include: CUSTOMER_INCLUDE,
+    });
+  }
+
+  /**
+   * 物理清除（仅 admin）：删除客户行；若仍有会话反向指向该客户（ChatRoom.customerId），
+   * 先置空断链。审计快照由本方法显式落库。
+   */
+  async purge(id: string, operatorId: string | null) {
+    const item = await this.prisma.customer.findUnique({ where: { id } });
+    if (!item) throw new NotFoundException(`客户 ID "${id}" 未找到`);
+    if (!item.deletedAt) {
+      throw new ConflictException({
+        error: 'CUSTOMER_NOT_TRASHED',
+        message: '请先将客户移入回收站，再执行永久删除',
+      });
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      // 反向关联断链：会话页「查看客户」不再指向已清除的客户
+      await tx.chatRoom.updateMany({
+        where: { customerId: id },
+        data: { customerId: null },
+      });
+      await tx.customer.delete({ where: { id } });
+    });
+
+    // 审计快照：仅记摘要字段，供合规追溯
+    await this.prisma.auditLog.create({
+      data: {
+        userId: operatorId,
+        action: 'purge',
+        resource: 'customers',
+        resourceId: id,
+        detail: {
+          snapshot: {
+            name: item.name,
+            company: item.company,
+            phone: item.phone,
+            email: item.email,
+            stage: item.stage,
+            level: item.level,
+            ownerId: item.ownerId,
+            visitorId: item.visitorId,
+            createdAt: item.createdAt.toISOString(),
+          },
+        },
+      },
+    });
+    return { deleted: true, purged: true };
   }
 
   /** 认领：仅可从公海（ownerId 为空）认领到本人私海 */
   async claim(id: string, operatorId: string) {
     const item = await this.prisma.customer.findUnique({ where: { id } });
     if (!item) throw new NotFoundException(`客户 ID "${id}" 未找到`);
+    this.assertNotTrashed(item);
     if (item.ownerId && item.ownerId !== operatorId) {
       throw new ConflictException('该客户已被其他坐席认领，如需接收请使用「转移」');
     }
@@ -577,6 +706,7 @@ export class CustomersService {
   async release(id: string, operatorId: string, isAdmin: boolean) {
     const item = await this.prisma.customer.findUnique({ where: { id } });
     if (!item) throw new NotFoundException(`客户 ID "${id}" 未找到`);
+    this.assertNotTrashed(item);
     if (!isAdmin && item.ownerId !== operatorId) {
       throw new ForbiddenException('只能退回自己私海中的客户');
     }
@@ -595,6 +725,7 @@ export class CustomersService {
   async transfer(id: string, dto: TransferCustomerDto, operatorId: string, isAdmin: boolean) {
     const item = await this.prisma.customer.findUnique({ where: { id } });
     if (!item) throw new NotFoundException(`客户 ID "${id}" 未找到`);
+    this.assertNotTrashed(item);
     if (!isAdmin && item.ownerId !== operatorId) {
       throw new ForbiddenException('只能转移自己私海中的客户');
     }

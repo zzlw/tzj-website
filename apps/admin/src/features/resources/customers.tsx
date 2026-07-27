@@ -239,6 +239,16 @@ export const customersConfig: ResourceConfig<CustomerItem> = {
   schema,
   autoSlug: false,
   defaultSort: { column: 'updatedAt', order: 'desc' },
+  // 对齐后端路由权限（DELETE /customers/:id 需 customers.delete），避免按 content.delete 误展示入口
+  permissions: { delete: 'customers.delete' },
+  // 软删除：说明回收站去向与访客转化状态回退后果（固定文案，见 docs/design/deletion-strategy.md §3.2-B）
+  deleteConfirm: {
+    title: '删除客户',
+    description:
+      '客户将移入回收站，30 天后自动永久清理，期间可恢复。删除后，访客中心该访客将回退为「未转化」，且可被再次转化；恢复后不回填原询盘/会话关联。',
+    confirmLabel: '移入回收站',
+    successMessage: '客户已移入回收站',
+  },
   // 列多且追加了访客 ID / IP 等列，横向易溢出，固定操作列到右侧保持可见。
   pinActions: true,
   defaults: {

@@ -88,4 +88,11 @@ export interface ResourceConfig<T> {
   extraActions?: (row: T) => ReactNode;
   /** 固定操作列到右侧（列多、横向溢出时保持可见）。 */
   pinActions?: boolean;
+  /** 删除确认弹窗文案覆盖（软删除资源用：说明回收站去向与联动后果）。 */
+  deleteConfirm?: {
+    title?: string;
+    description?: string | ((row: T) => string);
+    confirmLabel?: string;
+    successMessage?: string;
+  };
 }

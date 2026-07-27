@@ -175,6 +175,8 @@ export interface ContactItem extends BaseEntity {
   channel?: string | null;
   /** 首触引荐域名。 */
   referrerHost?: string | null;
+  /** 软删时间（回收站行非空；30 天后自动永久清理）。 */
+  deletedAt?: string | null;
 }
 
 export interface UserItem extends BaseEntity {
@@ -271,6 +273,8 @@ export interface CustomerItem extends BaseEntity {
   channel?: string | null;
   /** 首触引荐域名（来源渠道列的副行展示）。 */
   referrerHost?: string | null;
+  /** 软删时间（回收站行非空；30 天后自动永久清理）。 */
+  deletedAt?: string | null;
 }
 
 export interface DocFolderTreeNode {

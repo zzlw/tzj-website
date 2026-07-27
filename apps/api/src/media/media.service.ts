@@ -50,7 +50,7 @@ export class MediaService {
   }
 
   /** 禁止普通上传写入站点静态目录。 */
-  normalizeUploadFolder(folder: string | undefined): string {
+  private normalizeUploadFolder(folder: string | undefined): string {
     const dir = (folder || 'uploads').replace(/^\/+|\/+$/g, '');
     this.assertUploadFolderAllowed(dir);
     return dir;

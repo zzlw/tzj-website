@@ -55,10 +55,29 @@ export function ChatPresenceProvider({
   }, []);
 
   // 首次拉取 + 每 10 分钟刷新（token 有效期 15 分钟，留出余量）
+  // P1-5：追加 visibilitychange 监听，电脑休眠唤醒后主动补一次刷新，
+  // 避免 15 分钟窗口错过后静默掉线。加 30s 节流防止频繁切 tab 打请求。
+  const lastFetchRef = useRef(0);
   useEffect(() => {
     void fetchToken();
-    const id = setInterval(() => void fetchToken(), 10 * 60 * 1000);
-    return () => clearInterval(id);
+    lastFetchRef.current = Date.now();
+    const id = setInterval(() => {
+      void fetchToken();
+      lastFetchRef.current = Date.now();
+    }, 10 * 60 * 1000);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible' && Date.now() - lastFetchRef.current > 30_000) {
+        void fetchToken();
+        lastFetchRef.current = Date.now();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      clearInterval(id);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
   }, [fetchToken]);
 
   // 鉴权失败 → 立即重新兑换 token 并触发重连

@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import type { DependencyStatus } from '@tzj/types';
 import { IntegrationsService } from '../integrations/integrations.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -15,7 +14,6 @@ export class HealthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly s3: S3Service,
-    private readonly config: ConfigService,
     private readonly integrations: IntegrationsService,
   ) {}
 
@@ -24,14 +22,13 @@ export class HealthService {
   }
 
   async ready(): Promise<HealthProbeResult> {
-    const [database, storage, redis, email] = await Promise.all([
+    const [database, storage, email] = await Promise.all([
       this.checkDatabase(),
       this.checkStorage(),
-      this.checkRedis(),
       this.checkEmail(),
     ]);
 
-    const checks = { database, storage, redis, email };
+    const checks = { database, storage, email };
     const values = Object.values(checks);
     const status = values.every((v) => v === 'up' || v === 'skipped')
       ? 'healthy'
@@ -73,12 +70,6 @@ export class HealthService {
     }
   }
 
-  private async checkRedis(): Promise<DependencyStatus> {
-    const url = this.config.get<string>('REDIS_URL')?.trim();
-    if (!url) return 'skipped';
-    // Redis 已在 compose 中预留，业务层尚未接入；标记为 skipped 避免误报
-    return 'skipped';
-  }
 
   private async checkEmail(): Promise<DependencyStatus> {
     try {

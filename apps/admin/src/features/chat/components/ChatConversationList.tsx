@@ -143,7 +143,7 @@ export interface BucketView {
   loaded: boolean;
 }
 
-export type BucketKey = 'all' | 'waiting' | 'active' | 'closed' | 'archived';
+export type BucketKey = 'all' | 'waiting' | 'active' | 'closed' | 'archived' | 'deleted';
 
 interface Props {
   buckets: Record<BucketKey, BucketView>;
@@ -216,6 +216,7 @@ export function ChatConversationList({
     if (activeBucket === 'waiting') return '暂无待处理会话';
     if (activeBucket === 'active') return '暂无进行中的会话';
     if (activeBucket === 'archived') return '暂无已归档的会话';
+    if (activeBucket === 'deleted') return '回收站为空';
     return '暂无已关闭的会话';
   }, [search, activeBucket]);
 
@@ -341,8 +342,8 @@ export function ChatConversationList({
         </div>
       )}
 
-      {activeBucket === 'archived' ? (
-        /* 归档视图（LiveChat Archive 模式）：冷存浏览态，隐藏日常 Tab/搜索，
+      {activeBucket === 'archived' || activeBucket === 'deleted' ? (
+        /* 冷存视图（归档 / 回收站，LiveChat Archive 模式）：隐藏日常 Tab/搜索，
            提供显式返回路径；搜索仍生效（URL 持久化），有搜索词时提示结果已过滤 */
         <div className="flex items-center gap-2 rounded-xl border border-border/40 bg-muted/30 px-3 py-2">
           <button
@@ -354,11 +355,20 @@ export function ChatConversationList({
             返回
           </button>
           <span className="h-3 w-px bg-border/60" aria-hidden />
-          <Archive className="text-muted-foreground h-3.5 w-3.5" />
-          <span className="text-xs font-medium">已归档</span>
-          <span className="bg-muted text-muted-foreground rounded-full px-1.5 text-[0.65rem] font-semibold">
-            {bucketCounts.archived ?? 0}
+          {activeBucket === 'archived' ? (
+            <Archive className="text-muted-foreground h-3.5 w-3.5" />
+          ) : (
+            <Trash2 className="text-muted-foreground h-3.5 w-3.5" />
+          )}
+          <span className="text-xs font-medium">
+            {activeBucket === 'archived' ? '已归档' : '回收站'}
           </span>
+          <span className="bg-muted text-muted-foreground rounded-full px-1.5 text-[0.65rem] font-semibold">
+            {bucketCounts[activeBucket] ?? 0}
+          </span>
+          {activeBucket === 'deleted' && (
+            <span className="text-muted-foreground text-[0.65rem]">30 天后自动清理</span>
+          )}
           {search.trim() && (
             <span className="text-muted-foreground ml-auto text-[0.65rem]">已按搜索过滤</span>
           )}
@@ -436,6 +446,23 @@ export function ChatConversationList({
                 </span>
               )}
             </button>
+            {/* 回收站入口（仅 chat.delete 权限可见，与删除/恢复操作同口径） */}
+            {canDelete && (
+              <button
+                type="button"
+                onClick={() => onBucketChange('deleted')}
+                title="会话回收站"
+                aria-label={`会话回收站 ${bucketCounts.deleted ?? 0} 个`}
+                className="border-border/50 text-muted-foreground relative flex shrink-0 items-center justify-center rounded-full border p-1.5 transition hover:bg-muted"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                {(bucketCounts.deleted ?? 0) > 0 && (
+                  <span className="bg-muted text-muted-foreground absolute -top-1 -right-1 inline-flex min-h-[0.875rem] min-w-[0.875rem] items-center justify-center rounded-full px-1 text-[0.55rem] font-semibold ring-2 ring-background">
+                    {bucketCounts.deleted}
+                  </span>
+                )}
+              </button>
+            )}
           </div>
         </>
       )}
@@ -449,7 +476,8 @@ export function ChatConversationList({
         renderRow={(room: ChatRoom) => {
           const isActive = room.roomId === selectedId;
           const unread = room.unreadCountForAgent;
-          const isArchived = room.status === 'archived';
+          const isDeleted = !!room.deletedAt;
+          const isArchived = room.status === 'archived' && !isDeleted;
           return (
             <button
               type="button"
@@ -533,6 +561,11 @@ export function ChatConversationList({
               {isArchived && (
                 <span className="text-muted-foreground shrink-0 self-center text-[0.6rem]">
                   已归档
+                </span>
+              )}
+              {isDeleted && (
+                <span className="text-destructive/70 shrink-0 self-center text-[0.6rem]">
+                  已删除
                 </span>
               )}
             </button>
