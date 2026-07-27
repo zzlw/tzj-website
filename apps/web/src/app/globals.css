@@ -205,6 +205,13 @@ html[data-header-hidden] .product-line-nav {
   }
 }
 
+/* 滚动条槽位常驻：搜索浮层/语言抽屉/移动菜单锁 body 滚动时滚动条消失，
+   页面宽度会跳 ~15px 闪一线；预留槽位让视口宽度恒定（macOS overlay 滚动条无影响）。
+   下方 body[data-scroll-locked] 取消 Radix 二次补偿的规则即以此为前提 */
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   font-family: var(--font-sans);
   background-color: var(--background);
@@ -218,6 +225,21 @@ body {
 body[data-scroll-locked] {
   margin-right: 0 !important;
   padding-right: 0 !important;
+}
+
+/* fixed 定位的站点头部回补 —— 仅限不支持 scrollbar-gutter 的旧浏览器：
+   支持 gutter 的现代浏览器（Chrome/Firefox/Safari 18.2+）预留槽位后 fixed 元素宽度也保持稳定，
+   再加 padding 会变成过度补偿（内容左移 15px）；旧浏览器无槽位，锁滚动时头部会加宽，
+   按两种锁机制分别回补右侧内边距：
+   - html[data-scroll-lock]：自定义浮层（搜索/语言抽屉/移动菜单，useBodyScrollLock 写入 --scroll-lock-gap）
+   - body[data-scroll-locked]：Radix RemoveScroll（其自身暴露 --removed-body-scroll-bar-size） */
+@supports not (scrollbar-gutter: stable) {
+  html[data-scroll-lock] .site-header {
+    padding-right: var(--scroll-lock-gap, 0px);
+  }
+  body[data-scroll-locked] .site-header {
+    padding-right: var(--removed-body-scroll-bar-size, 0px);
+  }
 }
 
 /* 标题统一使用展示字体（放入 base 层，确保 text-white 等工具类可覆盖默认色） */

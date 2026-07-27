@@ -10,6 +10,7 @@ import { ProductMegaMenu, ProductMobileAccordion } from '@/components/layout/Pro
 import { TopBar } from '@/components/layout/TopBar';
 import { useSearch } from '@/components/search/SearchProvider';
 import { Container } from '@/components/ui';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useScrollHeaderHide } from '@/hooks/useScrollHeaderHide';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { buildNavItems, type NavItem, UTILITY_LINK_KEYS } from '@/lib/navigation';
@@ -144,12 +145,7 @@ export function Header({
     return () => ro.disconnect();
   }, []);
 
-  useEffect(() => {
-    document.body.style.overflow = menuOpen ? 'hidden' : '';
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [menuOpen]);
+  useBodyScrollLock(menuOpen);
 
   const openRoot = () => {
     triggerRef.current = menuButtonRef.current;

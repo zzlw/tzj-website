@@ -3,6 +3,7 @@
 import { X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useId, useRef } from 'react';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { cn } from '@/lib/utils';
 import { SearchBar } from './SearchBar';
 
@@ -21,16 +22,7 @@ export function SearchOverlay({ open, onOpenChange }: SearchOverlayProps) {
     onOpenChange(false);
   }, [onOpenChange]);
 
-  useEffect(() => {
-    if (!open) return;
-
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [open]);
+  useBodyScrollLock(open);
 
   useEffect(() => {
     if (!open) return;
@@ -61,7 +53,8 @@ export function SearchOverlay({ open, onOpenChange }: SearchOverlayProps) {
         aria-labelledby={`${dialogId}-title`}
         inert={!open}
         className={cn(
-          'fixed inset-x-0 top-0 z-[81] px-4 pt-[10vh] transition-all duration-300 md:pt-[14vh] md:px-6',
+          // w-screen 而非 inset-x-0：宽度不随滚动条出没变化，关闭渐隐期间面板不横跳
+          'fixed left-0 top-0 z-[81] w-screen px-4 pt-[10vh] transition-all duration-300 md:pt-[14vh] md:px-6',
           open
             ? 'pointer-events-auto translate-y-0 opacity-100'
             : 'pointer-events-none -translate-y-2 opacity-0',

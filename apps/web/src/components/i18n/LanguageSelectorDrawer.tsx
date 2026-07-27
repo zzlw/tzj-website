@@ -4,7 +4,8 @@ import { ScrollArea } from '@tzj/ui';
 import { X } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect } from 'react';
-import { Link, usePathname, useRouter } from '@/i18n/navigation';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import { usePathname, useRouter } from '@/i18n/navigation';
 import type { AppLocale } from '@/i18n/routing';
 import { LANGUAGE_MARKETS, type LanguageMarket, type LanguageOption } from '@/lib/locale-config';
 import { cn } from '@/lib/utils';
@@ -21,16 +22,15 @@ export function LanguageSelectorDrawer({ open, onOpenChange }: LanguageSelectorD
   const pathname = usePathname();
   const router = useRouter();
 
+  useBodyScrollLock(open);
+
   useEffect(() => {
     if (!open) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onOpenChange(false);
     };
     document.addEventListener('keydown', onKey);
     return () => {
-      document.body.style.overflow = prev;
       document.removeEventListener('keydown', onKey);
     };
   }, [open, onOpenChange]);
