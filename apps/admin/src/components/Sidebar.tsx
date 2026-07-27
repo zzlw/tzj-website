@@ -21,11 +21,15 @@ import {
   SidebarMenuItem,
   SidebarRail,
   SidebarSeparator,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   useSidebar,
 } from '@tzj/ui';
 import type { LucideIcon } from 'lucide-react';
 import {
   Activity,
+  AudioLines,
   BarChart3,
   BookOpen,
   CalendarDays,
@@ -63,6 +67,8 @@ type NavItemDef = {
   anyPerm?: readonly string[];
   /** 当前路径在此前缀下时不激活（避免 /documents 误匹配 /documents/mine） */
   activeExcludePrefix?: string;
+  /** 未上线的预告项：渲染 SOON 徽标与畅想 tooltip，不可点击 */
+  soon?: { tagline: string; description: string; footer: string };
 };
 
 const NAV_GROUPS: Array<{
@@ -72,6 +78,22 @@ const NAV_GROUPS: Array<{
   {
     label: '概览',
     items: [{ label: '仪表盘', href: '/', icon: LayoutDashboard }],
+  },
+  {
+    label: '智能',
+    items: [
+      {
+        label: '灵犀',
+        href: '/lingxi',
+        icon: AudioLines,
+        soon: {
+          tagline: '实时语音智能体',
+          description:
+            '与后台对话，像与人交谈。接入自研多模态大模型与 GPT-Live 实时语音引擎：张口即问、毫秒应答——语音查询盘、口述写文章、聊着天调出报表。你负责说，剩下的交给灵犀。',
+          footer: 'Coming Soon · Powered by GPT-Live',
+        },
+      },
+    ],
   },
   {
     label: '内容',
@@ -159,6 +181,45 @@ const sidebarCollapseText =
   'min-w-0 transition-opacity duration-300 ease-in-out motion-reduce:transition-none group-data-[collapsible=icon]:hidden';
 
 function NavItem({ item, pathname }: { item: NavItemDef; pathname: string }) {
+  if (item.soon) {
+    return (
+      <SidebarMenuItem>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <SidebarMenuButton className="cursor-default">
+              <item.icon className="lingxi-icon" />
+              <span>{item.label}</span>
+              <span
+                className={cn(
+                  'ml-auto rounded-sm border border-primary/30 bg-primary/10 px-1.5 py-px text-[10px] font-semibold tracking-wider text-primary',
+                  sidebarCollapseText,
+                )}
+              >
+                SOON
+              </span>
+            </SidebarMenuButton>
+          </TooltipTrigger>
+          <TooltipContent
+            side="right"
+            sideOffset={12}
+            className="max-w-[272px] bg-foreground px-4 py-3.5 text-background"
+          >
+            <div className="flex items-center gap-1.5 text-[13px] font-semibold">
+              <item.icon className="lingxi-icon size-3.5 text-primary" />
+              {item.label} · {item.soon.tagline}
+            </div>
+            <p className="mt-1.5 text-xs leading-relaxed text-background/70">
+              {item.soon.description}
+            </p>
+            <div className="mt-2 text-[10px] font-medium uppercase tracking-[0.18em] text-primary">
+              {item.soon.footer}
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      </SidebarMenuItem>
+    );
+  }
+
   return (
     <SidebarMenuItem>
       <SidebarMenuButton asChild isActive={isActive(pathname, item)} tooltip={item.label}>
@@ -182,7 +243,7 @@ function SidebarBrand() {
             </div>
             <div className={cn('grid flex-1 text-left text-sm leading-tight', sidebarCollapseText)}>
               <span className="truncate font-semibold">拓之迹</span>
-              <span className="truncate text-xs text-muted-foreground">内容管理后台</span>
+              <span className="truncate text-xs text-sidebar-foreground/60">内容管理后台</span>
             </div>
           </Link>
         </SidebarMenuButton>
@@ -225,7 +286,7 @@ function SidebarNavUser({ username, roleLabel }: { username: string; roleLabel: 
                 className={cn('grid flex-1 text-left text-sm leading-tight', sidebarCollapseText)}
               >
                 <span className="truncate font-medium">{username}</span>
-                <span className="truncate text-xs text-muted-foreground">{roleLabel}</span>
+                <span className="truncate text-xs text-sidebar-foreground/60">{roleLabel}</span>
               </div>
               <ChevronsUpDown className={cn('ml-auto size-4 shrink-0', sidebarCollapseText)} />
             </SidebarMenuButton>

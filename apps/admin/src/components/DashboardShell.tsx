@@ -66,8 +66,14 @@ export function DashboardShell({
           <SidebarTrigger className="-ml-1" />
           <p className="flex-1 text-sm text-muted-foreground">河南拓之迹 · 企业内容管理系统</p>
         </header>
-        <ScrollArea className="min-h-0 flex-1">
-          <main className="w-full px-4 py-5 sm:px-6 lg:px-8">{children}</main>
+        {/* 冷灰画布（canvas）：比 surface 深一档、肉眼可辨，白卡浮起的同时
+            也作为深色侧栏→浅色内容的明度过渡台阶 */}
+        <ScrollArea className="min-h-0 flex-1 bg-canvas">
+          {/* 超宽屏收敛内容宽度，避免表格/卡片无限拉伸导致扫读动线过长；
+              上限取 1920px，主流 2K/27寸大屏仍可铺满，仅约束更宽的带鱼屏 */}
+          <main className="mx-auto w-full max-w-[1920px] px-4 py-6 sm:px-6 lg:px-8">
+            {children}
+          </main>
         </ScrollArea>
       </SidebarInset>
     </SidebarProvider>

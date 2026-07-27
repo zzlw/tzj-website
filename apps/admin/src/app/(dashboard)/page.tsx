@@ -71,42 +71,14 @@ function formatDateLong(d = new Date()): string {
   });
 }
 
+/* 内容库统计卡：图标底统一中性灰，hover 时着品牌红——收敛早期的五色彩虹底，
+   与全站「白/深灰/品牌红」工业色系对齐 */
 const CONTENT_STATS = [
-  {
-    label: '工程案例',
-    key: 'cases',
-    icon: FolderOpen,
-    href: '/cases',
-    color: 'text-blue-600 bg-blue-500/10',
-  },
-  {
-    label: '新闻',
-    key: 'news',
-    icon: Newspaper,
-    href: '/news',
-    color: 'text-violet-600 bg-violet-500/10',
-  },
-  {
-    label: '博客',
-    key: 'blogs',
-    icon: BookOpen,
-    href: '/blog',
-    color: 'text-emerald-600 bg-emerald-500/10',
-  },
-  {
-    label: '展会',
-    key: 'trade-shows',
-    icon: CalendarDays,
-    href: '/trade-shows',
-    color: 'text-orange-600 bg-orange-500/10',
-  },
-  {
-    label: '媒体素材',
-    key: 'media',
-    icon: Images,
-    href: '/media',
-    color: 'text-pink-600 bg-pink-500/10',
-  },
+  { label: '工程案例', key: 'cases', icon: FolderOpen, href: '/cases' },
+  { label: '新闻', key: 'news', icon: Newspaper, href: '/news' },
+  { label: '博客', key: 'blogs', icon: BookOpen, href: '/blog' },
+  { label: '展会', key: 'trade-shows', icon: CalendarDays, href: '/trade-shows' },
+  { label: '媒体素材', key: 'media', icon: Images, href: '/media' },
 ] as const;
 
 const QUICK_ACTIONS = [
@@ -287,7 +259,8 @@ export default async function DashboardPage() {
     <div>
       <PageHeader title="仪表盘" description="内容运营、询盘与官网访问的一站式概览" />
 
-      <Card className="mb-8 overflow-hidden border-border/80 bg-gradient-to-br from-primary/[0.06] via-background to-background shadow-sm">
+      {/* 欢迎区：去渐变底，改用左侧品牌红竖线作为工业风签名笔触 */}
+      <Card className="mb-8 overflow-hidden border-border/80 border-l-[3px] border-l-primary shadow-sm">
         <CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm text-muted-foreground">{formatDateLong()}</p>
@@ -320,17 +293,12 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
           {visibleContentStats.map((stat) => (
             <Link key={stat.key} href={stat.href} className="group">
-              <Card className="border-border/80 transition-colors hover:border-primary/40 hover:bg-accent/30">
+              <Card className="border-border/80 transition-[border-color,box-shadow] duration-200 hover:border-primary/40 hover:shadow-md motion-reduce:transition-none">
                 <CardContent className="p-4">
-                  <div
-                    className={cn(
-                      'mb-3 flex h-9 w-9 items-center justify-center rounded-lg',
-                      stat.color,
-                    )}
-                  >
+                  <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-muted-foreground transition-colors duration-200 group-hover:bg-primary/10 group-hover:text-primary">
                     <stat.icon className="h-4 w-4" />
                   </div>
-                  <div className="text-2xl font-semibold tabular-nums tracking-tight">
+                  <div className="text-2xl font-semibold tabular-nums tracking-tight transition-colors duration-200 group-hover:text-primary motion-reduce:transition-none">
                     {values[stat.key]}
                   </div>
                   <div className="mt-1 text-xs text-muted-foreground">{stat.label}</div>
@@ -348,7 +316,7 @@ export default async function DashboardPage() {
             <Link key={item.label} href={item.href} className="group">
               <Card
                 className={cn(
-                  'h-full border-border/80 transition-colors hover:border-primary/40',
+                  'h-full border-border/80 transition-[border-color,box-shadow] duration-200 hover:border-primary/40 hover:shadow-md motion-reduce:transition-none',
                   item.accent && 'border-amber-200/80 bg-amber-50/40',
                 )}
               >
@@ -364,7 +332,9 @@ export default async function DashboardPage() {
                     <item.icon className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
-                    <div className="text-2xl font-semibold tabular-nums">{item.value}</div>
+                    <div className="text-2xl font-semibold tabular-nums transition-colors duration-200 group-hover:text-primary motion-reduce:transition-none">
+                      {item.value}
+                    </div>
                     <div className="text-xs font-medium text-foreground/80">{item.label}</div>
                     <div className="mt-0.5 text-[11px] text-muted-foreground">{item.hint}</div>
                   </div>

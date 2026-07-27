@@ -7,30 +7,34 @@
 @source "../../../../packages/ui/src";
 
 @theme {
-  /* Admin — 对齐 C 端 Rosenbauer 工业浅色风格：白底 / 深字 / 品牌红 / 锐利直角 */
+  /* Admin — 对齐 C 端 Rosenbauer 工业风骨架：浅色工作区 / 深色操控台侧栏 / 品牌红点睛。
+     中性色统一注入冷色温（微蓝调 slate 系），告别 0 饱和度死灰 */
   --color-background: #ffffff;
-  --color-foreground: #1c1c1c;
+  --color-foreground: #1a1d21;
   --color-primary: #e3000f;
   --color-primary-hover: #c8000c;
   --color-primary-foreground: #ffffff;
-  --color-surface: #f7f7f7;
-  --color-surface-hover: #efefef;
-  --color-border: #e8e8e8;
-  --color-border-strong: #d4d4d4;
-  --color-muted-foreground: #5b6166;
-  --color-secondary-text: #5b6166;
+  --color-surface: #f6f7f9;
+  --color-surface-hover: #edeff2;
+  /* 内容区画布：比 surface 深一档、肉眼可辨的冷灰，白卡片浮其上；
+     也把侧栏→内容的明度落差收窄一档，避免黑白硬碰 */
+  --color-canvas: #eef1f4;
+  --color-border: #e5e7eb;
+  --color-border-strong: #d1d5db;
+  --color-muted-foreground: #57616e;
+  --color-secondary-text: #57616e;
   --color-card: #ffffff;
-  --color-card-foreground: #1c1c1c;
+  --color-card-foreground: #1a1d21;
   --color-popover: #ffffff;
-  --color-popover-foreground: #1c1c1c;
-  --color-secondary: #f7f7f7;
-  --color-secondary-foreground: #1c1c1c;
-  --color-muted: #f7f7f7;
-  --color-accent: #e0e0e0;
-  --color-accent-foreground: #1c1c1c;
+  --color-popover-foreground: #1a1d21;
+  --color-secondary: #f6f7f9;
+  --color-secondary-foreground: #1a1d21;
+  --color-muted: #f6f7f9;
+  --color-accent: #e2e5e9;
+  --color-accent-foreground: #1a1d21;
   --color-destructive: #e3000f;
   --color-destructive-foreground: #ffffff;
-  --color-input: #e8e8e8;
+  --color-input: #e5e7eb;
   --color-ring: #d4000e;
 
   /* 与 C 端一致的锐利边角 */
@@ -44,6 +48,16 @@
   --radius-3xl: 1rem;
 
   --font-sans: "Inter", "Noto Sans SC", system-ui, sans-serif;
+
+  /* 柔和阴影刻度：卡片层收敛到 ≤6% 透明度的弥散阴影，浮层（md+）稍强以保层级，
+     替换 Tailwind 默认的 10% 重阴影，贴合工业浅色风的克制质感 */
+  --shadow-2xs: 0 1px 2px 0 rgb(0 0 0 / 0.03);
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.04);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.03);
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.04);
+  --shadow-md: 0 2px 8px -1px rgb(0 0 0 / 0.06), 0 1px 3px -2px rgb(0 0 0 / 0.04);
+  --shadow-lg: 0 8px 24px -4px rgb(0 0 0 / 0.08), 0 2px 8px -2px rgb(0 0 0 / 0.04);
+  --shadow-xl: 0 16px 40px -8px rgb(0 0 0 / 0.1);
 
   --color-sidebar: hsl(var(--sidebar-background));
   --color-sidebar-foreground: hsl(var(--sidebar-foreground));
@@ -64,14 +78,15 @@
 :root {
   color-scheme: light;
 
-  /* shadcn Sidebar 主题变量 */
-  --sidebar-background: 0 0% 98%;
-  --sidebar-foreground: 240 5.3% 26.1%;
+  /* shadcn Sidebar 主题变量 — 石墨蓝操控台：深但不黑（明度 15%，蓝调更明显），
+     与冷灰画布之间留出明度台阶，品牌红在暗底上仍是唯一彩色锚点 */
+  --sidebar-background: 218 16% 15%;
+  --sidebar-foreground: 218 12% 78%;
   --sidebar-primary: 0 72% 47%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 0 0% 94%;
-  --sidebar-accent-foreground: 0 0% 11%;
-  --sidebar-border: 0 0% 91%;
+  --sidebar-accent: 218 14% 22%;
+  --sidebar-accent-foreground: 0 0% 98%;
+  --sidebar-border: 218 14% 20%;
   --sidebar-ring: 0 72% 47%;
 }
 
@@ -96,11 +111,16 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* 侧边栏内容区滚动条 — 细窄、半透明、hover 加深，避免原生滚动条又粗又丑。
+/* 文本选区着品牌红淡彩，细节处呼应 Rosenbauer 色系 */
+::selection {
+  background: color-mix(in srgb, var(--color-primary) 14%, transparent);
+}
+
+/* 侧边栏内容区滚动条 — 细窄、半透明、hover 加深（深色底用白色半透明）。
    展开态用 6px 细滚动条；折叠（纯 icon）态内容通常无需滚动，隐藏滚动条以保持整洁。 */
 [data-sidebar="content"] {
   scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--color-border-strong) 80%, transparent) transparent;
+  scrollbar-color: rgb(255 255 255 / 0.14) transparent;
 }
 [data-sidebar="content"]::-webkit-scrollbar {
   width: 6px;
@@ -109,11 +129,11 @@ body {
   background: transparent;
 }
 [data-sidebar="content"]::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--color-border-strong) 70%, transparent);
+  background: rgb(255 255 255 / 0.12);
   border-radius: 9999px;
 }
 [data-sidebar="content"]:hover::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--color-muted-foreground) 55%, transparent);
+  background: rgb(255 255 255 / 0.24);
 }
 /* 折叠态：隐藏滚动条（纯 icon 宽度仅 3rem，滚动条占比过大且不优雅） */
 [data-collapsible="icon"] [data-sidebar="content"] {
@@ -122,6 +142,23 @@ body {
 [data-collapsible="icon"] [data-sidebar="content"]::-webkit-scrollbar {
   width: 0;
   height: 0;
+}
+
+/* 激活菜单项的品牌红指示条 —— 与仪表盘欢迎卡的红色签名笔触同源，
+   深色侧栏上红色指示条是唯一的彩色锚点，一眼定位当前位置 */
+[data-sidebar="menu-button"][data-active="true"] {
+  position: relative;
+}
+[data-sidebar="menu-button"][data-active="true"]::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  translate: 0 -50%;
+  height: 55%;
+  width: 3px;
+  border-radius: 9999px;
+  background: var(--color-primary);
 }
 
 /* Vditor Markdown 编辑器 — 浅色主题适配 Admin */
@@ -365,4 +402,49 @@ body {
 .chat-md-reset.vditor-reset a {
   text-decoration: underline;
   text-underline-offset: 2px;
+}
+
+/* 灵犀声波图标：lucide AudioLines 的 6 根竖线错峰伸缩，模拟实时收音波形。
+   transform-box: fill-box 让每根线绕自身中心缩放；hover 菜单项时波形提速，像被唤醒 */
+.lingxi-icon path {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: lingxi-wave 1.6s ease-in-out infinite;
+}
+.lingxi-icon path:nth-child(1) {
+  animation-delay: -0.9s;
+}
+.lingxi-icon path:nth-child(2) {
+  animation-delay: -0.6s;
+}
+.lingxi-icon path:nth-child(3) {
+  animation-delay: -0.3s;
+}
+.lingxi-icon path:nth-child(4) {
+  animation-delay: -1.2s;
+}
+.lingxi-icon path:nth-child(5) {
+  animation-delay: -0.15s;
+}
+.lingxi-icon path:nth-child(6) {
+  animation-delay: -0.75s;
+}
+:hover > .lingxi-icon path,
+button:hover .lingxi-icon path {
+  animation-duration: 0.7s;
+  stroke: var(--color-primary);
+}
+@keyframes lingxi-wave {
+  0%,
+  100% {
+    transform: scaleY(0.4);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lingxi-icon path {
+    animation: none;
+  }
 }
