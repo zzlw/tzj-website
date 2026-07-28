@@ -1,9 +1,10 @@
 'use client';
 
 import type { ScreenWatermark as ScreenWatermarkConfig } from '@tzj/types';
-import { ScrollArea, SidebarInset, SidebarProvider, SidebarTrigger } from '@tzj/ui';
+import { ScrollArea, Separator, SidebarInset, SidebarProvider, SidebarTrigger } from '@tzj/ui';
 import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
+import { Breadcrumbs } from './Breadcrumbs';
 import { ScreenWatermark } from './ScreenWatermark';
 import { AppSidebar } from './Sidebar';
 
@@ -64,7 +65,11 @@ export function DashboardShell({
       <SidebarInset className="flex min-h-0 flex-col overflow-hidden">
         <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border bg-background/80 px-4 backdrop-blur-md sm:px-6">
           <SidebarTrigger className="-ml-1" />
-          <p className="flex-1 text-sm text-muted-foreground">河南拓之迹 · 企业内容管理系统</p>
+          <Separator orientation="vertical" className="mr-1 h-4" />
+          <Breadcrumbs />
+          <p className="ml-auto hidden shrink-0 text-xs text-muted-foreground md:block">
+            河南拓之迹 · 企业内容管理系统
+          </p>
         </header>
         {/* 冷灰画布（canvas）：比 surface 深一档、肉眼可辨，白卡浮起的同时
             也作为深色侧栏→浅色内容的明度过渡台阶 */}

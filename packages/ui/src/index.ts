@@ -12,6 +12,16 @@ export { Avatar, AvatarFallback, AvatarImage } from './components/avatar';
 
 // Components — Badge
 export { Badge, type BadgeProps } from './components/badge';
+// Components — Breadcrumb
+export {
+  Breadcrumb,
+  BreadcrumbEllipsis,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from './components/breadcrumb';
 // Components — Button
 export {
   Button,
