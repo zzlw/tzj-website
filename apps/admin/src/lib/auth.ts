@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import { API_BASE, COOKIE, type Role, type SessionUser } from './config';
+import { API_BASE, COOKIE, type SessionUser } from './config';
 import { retryFetch } from './fetch-retry';
 
 /** 解析 JWT payload（不校验签名，仅用于读取 UI 展示信息，真正校验在 API）。 */
@@ -36,13 +36,24 @@ export interface Pagination {
   totalPages: number;
 }
 
+/** API 响应错误（携带 HTTP 状态码，供调用方区分 401 令牌失效与其他失败）。 */
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
 /** 携带 Bearer 请求 API，401 时自动轮换一次；返回统一响应信封（含分页）。 */
 async function rawRequest(
   path: string,
   init: RequestInit = {},
 ): Promise<{ data: unknown; pagination?: Pagination }> {
   const store = await cookies();
-  let token = store.get(COOKIE.access)?.value;
+  const token = store.get(COOKIE.access)?.value;
 
   const doFetch = (bearer?: string) =>
     retryFetch(`${API_BASE}${path}`, {
@@ -55,7 +66,7 @@ async function rawRequest(
       cache: 'no-store',
     });
 
-  let res = await doFetch(token);
+  const res = await doFetch(token);
 
   // 重要：此处不再用 refresh token 自动续期。
   // 原因：Server Component（如 dashboard layout）内无法写 cookie，续期后的新 refresh token 无法持久化，
@@ -66,7 +77,7 @@ async function rawRequest(
   if (!res.ok) {
     const errBody = await res.json().catch(() => ({}));
     const message = errBody?.error?.message || errBody?.message || `API ${res.status}`;
-    throw new Error(Array.isArray(message) ? message.join(', ') : message);
+    throw new ApiError(Array.isArray(message) ? message.join(', ') : message, res.status);
   }
 
   const body = await res.json();

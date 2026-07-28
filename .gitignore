@@ -132,3 +132,9 @@ apps/web/public/**/*.svg
 
 # ── API seed 生成物（upload-media.ts 输出，本地可重新生成）──
 apps/api/src/seed/media-map.json
+
+# ── 视觉回归截图（B1 迁移期产物，本地可重新抓取）──
+apps/admin/.visual-regression/
+
+# ── UAT/验证过程截图（本地调试产物）──
+.qoder/*.png

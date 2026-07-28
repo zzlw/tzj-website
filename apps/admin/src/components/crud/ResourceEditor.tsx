@@ -75,7 +75,7 @@ export function ResourceEditor<T extends { id: string }>({
     <div>
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" asChild>
+          <Button variant="ghost" size="icon-sm" className="shrink-0" asChild>
             <Link href={config.basePath} aria-label="返回列表">
               <ArrowLeft className="h-4 w-4" />
             </Link>
@@ -104,8 +104,8 @@ export function ResourceEditor<T extends { id: string }>({
         </Alert>
       )}
 
-      <Card className="border-border/80 shadow-sm">
-        <CardContent className="p-6">
+      <Card className="border-border/80">
+        <CardContent>
           {isEdit && isLoading ? (
             <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
               加载中…

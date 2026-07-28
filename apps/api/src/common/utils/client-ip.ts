@@ -35,7 +35,8 @@ export function isTrustedProxyIp(ip: string | undefined): boolean {
 export function extractClientIp(req: Request): string | undefined {
   const remote = req.socket?.remoteAddress ? normalizeIp(req.socket.remoteAddress) : undefined;
   const forwarded = req.headers['x-forwarded-for'];
-  const raw = typeof forwarded === 'string' ? forwarded : Array.isArray(forwarded) ? forwarded[0] : undefined;
+  const raw =
+    typeof forwarded === 'string' ? forwarded : Array.isArray(forwarded) ? forwarded[0] : undefined;
   if (raw?.trim() && isTrustedProxyIp(remote)) {
     const candidate = normalizeIp(raw.split(',')[0]?.trim() ?? '');
     if (isValidIp(candidate)) return candidate;
@@ -54,7 +55,8 @@ export function extractSocketIp(handshake: {
 }): string | undefined {
   const remote = handshake.address ? normalizeIp(handshake.address) : undefined;
   const forwarded = handshake.headers?.['x-forwarded-for'];
-  const raw = typeof forwarded === 'string' ? forwarded : Array.isArray(forwarded) ? forwarded[0] : undefined;
+  const raw =
+    typeof forwarded === 'string' ? forwarded : Array.isArray(forwarded) ? forwarded[0] : undefined;
   if (raw?.trim() && isTrustedProxyIp(remote)) {
     const candidate = normalizeIp(raw.split(',')[0]?.trim() ?? '');
     if (isValidIp(candidate)) return candidate;

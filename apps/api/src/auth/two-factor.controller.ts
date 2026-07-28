@@ -4,8 +4,8 @@ import { Throttle } from '@nestjs/throttler';
 import type { Request } from 'express';
 import { extractClientIp } from '../common/utils/client-ip';
 import type { RequestMeta } from './auth.service';
-import { CurrentUser } from './decorators/current-user.decorator';
 import { AllowUnenrolled } from './decorators/allow-unenrolled.decorator';
+import { CurrentUser } from './decorators/current-user.decorator';
 import { Public } from './decorators/public.decorator';
 import { Roles } from './decorators/roles.decorator';
 import {

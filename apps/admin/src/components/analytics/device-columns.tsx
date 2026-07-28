@@ -29,8 +29,8 @@ const MUTED_DASH = <span className="text-muted-foreground">—</span>;
 
 /** 兼容性徽标样式：支持=绿 / 不支持=红 / 未知=灰，与表内其它状态徽标同一视觉语汇。 */
 const SUPPORT_BADGE_CLASS: Record<BrowserSupportStatus, string> = {
-  supported: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-  unsupported: 'border-rose-200 bg-rose-50 text-rose-700',
+  supported: 'border-success/30 bg-success-muted text-success-foreground',
+  unsupported: 'border-destructive/30 bg-destructive/10 text-destructive',
   unknown: 'border-border bg-muted text-muted-foreground',
 };
 

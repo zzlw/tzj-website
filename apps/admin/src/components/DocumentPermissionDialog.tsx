@@ -208,7 +208,7 @@ export function DocumentPermissionDialog({
             <div className="flex items-end gap-2">
               {/* Target type */}
               <div className="w-[110px] space-y-1">
-                <label className="text-xs text-muted-foreground">授权对象</label>
+                <span className="block text-xs text-muted-foreground">授权对象</span>
                 <Select
                   onValueChange={(v) => {
                     setAddType(v as PermissionTargetType);
@@ -231,7 +231,7 @@ export function DocumentPermissionDialog({
                     </SelectItem>
                     <SelectItem value="role">
                       <span className="flex items-center gap-1.5">
-                        <Badge variant="outline" className="h-4 px-1 text-[10px]">
+                        <Badge variant="outline" className="h-4 px-1 text-xs">
                           R
                         </Badge>
                         角色
@@ -252,7 +252,7 @@ export function DocumentPermissionDialog({
               {/* Target selector */}
               {!addType && (
                 <div className="flex-1 space-y-1">
-                  <label className="text-xs text-muted-foreground">选择目标</label>
+                  <span className="block text-xs text-muted-foreground">选择目标</span>
                   <div className="flex h-9 items-center rounded-md border px-3 text-sm text-muted-foreground">
                     请先选择授权对象类型
                   </div>
@@ -261,7 +261,7 @@ export function DocumentPermissionDialog({
 
               {addType === 'user' && (
                 <div className="flex-1 space-y-1">
-                  <label className="text-xs text-muted-foreground">选择用户</label>
+                  <span className="block text-xs text-muted-foreground">选择用户</span>
                   <Select onValueChange={setAddTarget}>
                     <SelectTrigger className="h-9">
                       {addTarget ? (
@@ -287,7 +287,7 @@ export function DocumentPermissionDialog({
 
               {addType === 'role' && (
                 <div className="flex-1 space-y-1">
-                  <label className="text-xs text-muted-foreground">选择角色</label>
+                  <span className="block text-xs text-muted-foreground">选择角色</span>
                   <Select onValueChange={setAddTarget}>
                     <SelectTrigger className="h-9">
                       {addTarget ? (
@@ -313,7 +313,7 @@ export function DocumentPermissionDialog({
 
               {addType === 'public' && (
                 <div className="flex-1 space-y-1">
-                  <label className="text-xs text-muted-foreground">公开访问</label>
+                  <span className="block text-xs text-muted-foreground">公开访问</span>
                   <div className="flex h-9 items-center gap-1.5 rounded-md border px-3 text-sm text-muted-foreground">
                     <Globe className="h-3.5 w-3.5" />
                     所有人可访问
@@ -323,7 +323,7 @@ export function DocumentPermissionDialog({
 
               {/* Role selector */}
               <div className="w-[110px] space-y-1">
-                <label className="text-xs text-muted-foreground">权限</label>
+                <span className="block text-xs text-muted-foreground">权限</span>
                 <Select onValueChange={(v) => setAddRole(v as PermissionRole)}>
                   <SelectTrigger className="h-9">
                     {addRole ? (
@@ -387,7 +387,7 @@ export function DocumentPermissionDialog({
                           ) : perm.targetType === 'user' ? (
                             <Users className="h-3.5 w-3.5 text-muted-foreground" />
                           ) : (
-                            <Badge variant="outline" className="h-4 px-1 text-[10px]">
+                            <Badge variant="outline" className="h-4 px-1 text-xs">
                               R
                             </Badge>
                           )}
@@ -397,7 +397,7 @@ export function DocumentPermissionDialog({
                           <span className="truncate text-sm">
                             {perm.targetName ?? TARGET_LABELS[perm.targetType]}
                           </span>
-                          <Badge variant="secondary" className="shrink-0 text-[10px]">
+                          <Badge variant="secondary" className="shrink-0 text-xs">
                             {TARGET_LABELS[perm.targetType]}
                           </Badge>
                         </div>
@@ -405,7 +405,7 @@ export function DocumentPermissionDialog({
                       <div className="flex items-center gap-1.5">
                         <Badge
                           variant={perm.role === 'editor' ? 'default' : 'outline'}
-                          className="text-[11px]"
+                          className="text-xs"
                         >
                           {ROLE_LABELS[perm.role] ?? perm.role}
                         </Badge>
@@ -413,8 +413,8 @@ export function DocumentPermissionDialog({
                           <TooltipTrigger asChild>
                             <Button
                               variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 transition-opacity"
+                              size="icon-xs"
+                              className="transition-opacity"
                               disabled={removeMut.isPending}
                               onClick={() => removeMut.mutate(perm.id)}
                             >

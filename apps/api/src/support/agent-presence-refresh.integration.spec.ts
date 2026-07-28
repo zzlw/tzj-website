@@ -77,10 +77,7 @@ type PresenceGateway = {
     auth: { email: string; type: 'client' | 'agent' },
   ): Promise<void>;
   handleDisconnect(client: FakeSocket): Promise<void>;
-  setStatusAndBroadcast(
-    userKey: string,
-    status: 'online' | 'away' | 'offline',
-  ): Promise<void>;
+  setStatusAndBroadcast(userKey: string, status: 'online' | 'away' | 'offline'): Promise<void>;
   handleSetPresence(
     client: FakeSocket,
     data: { status: 'online' | 'away' | 'offline' },
@@ -115,7 +112,10 @@ describe('agent presence: refresh-after-idle race', () => {
   const presenceChangedTo = (socks: FakeSocket[], status: string) =>
     socks
       .flatMap((s) => s.received)
-      .some((e) => e.event === 'presence-changed' && (e.payload as { status: string }).status === status);
+      .some(
+        (e) =>
+          e.event === 'presence-changed' && (e.payload as { status: string }).status === status,
+      );
 
   it('1) 刷新竞态：旧 socket 仍在（prevCount=1）且空闲已 offline，新连接必须恢复 online', async () => {
     // 首次连接 → 在线

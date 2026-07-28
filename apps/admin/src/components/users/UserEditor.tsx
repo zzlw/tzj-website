@@ -16,7 +16,6 @@ import {
   FALLBACK_ROLE_OPTIONS,
   updateUserSchema,
   userCreateDefaults,
-  userEditDefaults,
 } from '@/features/users';
 import { notifyError, notifySuccess } from '@/lib/notify';
 
@@ -86,7 +85,7 @@ export function UserEditor({ id }: { id?: string }) {
     <div>
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" asChild>
+          <Button variant="ghost" size="icon-sm" className="shrink-0" asChild>
             <Link href="/users" aria-label="返回列表">
               <ArrowLeft className="h-4 w-4" />
             </Link>
@@ -110,7 +109,7 @@ export function UserEditor({ id }: { id?: string }) {
       )}
 
       <Card>
-        <CardContent className="pt-6">
+        <CardContent>
           {isEdit && isLoading ? (
             <p className="py-12 text-center text-sm text-muted-foreground">加载中…</p>
           ) : defaults ? (

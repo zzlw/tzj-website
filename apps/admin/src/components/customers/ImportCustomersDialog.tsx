@@ -181,7 +181,7 @@ export function ImportCustomersDialog({ scope, open, onOpenChange, onImported }:
           <div className="space-y-2">
             <div className="text-muted-foreground text-sm">
               解析到 <b className="text-foreground">{rows.length}</b> 行，可导入{' '}
-              <b className="text-emerald-600">{validRows.length}</b> 行
+              <b className="text-success-foreground">{validRows.length}</b> 行
               {invalidCount > 0 ? (
                 <>
                   ，<b className="text-destructive">{invalidCount}</b> 行有误将跳过
@@ -211,7 +211,7 @@ export function ImportCustomersDialog({ scope, open, onOpenChange, onImported }:
                       <td className="px-2 py-1.5">{r.data.email || '—'}</td>
                       <td className="px-2 py-1.5">
                         {r.errors.length === 0 ? (
-                          <span className="text-emerald-600">✓</span>
+                          <span className="text-success-foreground">✓</span>
                         ) : (
                           <span className="text-destructive">{r.errors.join('；')}</span>
                         )}

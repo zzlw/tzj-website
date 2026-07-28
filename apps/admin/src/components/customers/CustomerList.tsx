@@ -136,8 +136,8 @@ export function CustomerList({ scope }: { scope: 'mine' | 'public' }) {
           <TooltipTrigger asChild>
             <Button
               variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-emerald-600 hover:text-emerald-700"
+              size="icon-sm"
+              className="text-success hover:text-success-foreground"
               disabled={claimMut.isPending}
               onClick={() => claimMut.mutate(row.id)}
             >
@@ -156,8 +156,8 @@ export function CustomerList({ scope }: { scope: 'mine' | 'public' }) {
           <TooltipTrigger asChild>
             <Button
               variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-destructive"
+              size="icon-sm"
+              className="text-muted-foreground hover:text-destructive"
               disabled={releaseMut.isPending}
               onClick={() => releaseMut.mutate(row.id)}
             >
@@ -168,12 +168,7 @@ export function CustomerList({ scope }: { scope: 'mine' | 'public' }) {
         </Tooltip>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              disabled={transferMut.isPending}
-            >
+            <Button variant="ghost" size="icon-sm" disabled={transferMut.isPending}>
               <UserPlus className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>

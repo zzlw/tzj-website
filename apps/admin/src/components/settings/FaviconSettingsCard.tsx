@@ -80,6 +80,7 @@ export function FaviconSettingsCard() {
       </CardHeader>
       <CardContent className="space-y-4">
         {/* 预览区域 */}
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: 拖拽上传是鼠标增强操作，键盘用户经下方上传按钮选文件 */}
         <div
           className={`relative flex items-center justify-center rounded-lg border-2 border-dashed p-6 transition-colors ${
             dragOver ? 'border-primary bg-primary/5' : 'border-border bg-muted/20'

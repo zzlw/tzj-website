@@ -3,7 +3,7 @@
  * dev.mjs — Monorepo 开发启动编排
  *
  * 策略：
- *   1. 启动前清理 API 端口上的残留进程（防止 EADDRINUSE 导致新代码无法生效）
+ *   1. 启动前清理 API/web/admin 端口上的残留进程（防止 EADDRINUSE 导致新代码无法生效）
  *   2. 先启动 API（NestJS），等待端口就绪
  *   3. 再启动 web + admin（Next.js）
  *   4. 统一进程组管理，Ctrl+C 时一并终止
@@ -15,6 +15,8 @@ import { execSync, spawn } from 'node:child_process';
 import net from 'node:net';
 
 const API_PORT = process.env.API_PORT || '4000';
+const WEB_PORT = process.env.WEB_PORT || '3001';
+const ADMIN_PORT = process.env.ADMIN_PORT || '3002';
 const POLL_INTERVAL_MS = 200;
 const TIMEOUT_MS = 60_000;
 
@@ -72,8 +74,10 @@ function run(cmd, args, opts = {}) {
 
 // ── 主流程 ────────────────────────────────────────────────
 
-// Step 0: 清理端口残留进程（这是「跑旧代码」的根因）
-killPortOccupants(API_PORT);
+// Step 0: 清理三个端口的残留进程（这是「跑旧代码」与 EADDRINUSE 启动失败的根因）
+for (const port of [API_PORT, WEB_PORT, ADMIN_PORT]) {
+  killPortOccupants(port);
+}
 
 console.log('⏳ 正在启动 API 服务...');
 const apiProc = run('pnpm', ['--filter', '@tzj/api', 'dev']);

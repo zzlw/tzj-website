@@ -76,9 +76,11 @@ export function TagsInput({
 
   return (
     <div className={cn('relative space-y-2', className)}>
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: 点击容器仅将焦点委托给内部 input，键盘用户直接 Tab 到 input */}
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: 同上，焦点委托容器 */}
       <div
         className={cn(
-          'flex min-h-10 flex-wrap items-center gap-1.5 rounded-md border border-input bg-background px-2 py-1.5 shadow-sm transition-colors',
+          'flex min-h-10 flex-wrap items-center gap-1.5 rounded-md border border-input bg-background px-2 py-1.5 shadow-xs transition-colors',
           focused && 'ring-2 ring-ring ring-offset-2 ring-offset-background',
           disabled && 'cursor-not-allowed opacity-60',
         )}

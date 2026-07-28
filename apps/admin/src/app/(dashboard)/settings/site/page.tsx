@@ -11,6 +11,7 @@ import type {
 import {
   Button,
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardFooter,
@@ -241,7 +242,7 @@ export default function SiteSettingsPage() {
       />
 
       <div className="space-y-6">
-        <Card>
+        <Card className="pb-0">
           <CardHeader>
             <CardTitle>联系方式</CardTitle>
             <CardDescription>展示于页脚、联系页与结构化数据</CardDescription>
@@ -323,7 +324,7 @@ export default function SiteSettingsPage() {
               />
             </div>
           </CardContent>
-          <CardFooter className="items-center justify-end border-t bg-muted/20 px-6 py-4">
+          <CardFooter className="items-center justify-end border-t bg-muted/20 px-6 pt-4! pb-4">
             <ModuleSaveButton
               pending={updateSettings.isPending}
               onClick={() => savePublicSettings('联系方式已保存')}
@@ -331,22 +332,20 @@ export default function SiteSettingsPage() {
           </CardFooter>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
-            <div className="space-y-1">
-              <CardTitle className="flex items-center gap-2">
-                <Mail className="h-4 w-4" />
-                邮件通知
-              </CardTitle>
-              <CardDescription>
-                新询盘自动邮件提醒相关负责人；若访客填写了邮箱，可发送自动确认邮件。需先在
-                <a href="/settings/integrations" className="mx-1 text-primary hover:underline">
-                  集成与凭证
-                </a>
-                中启用「阿里云邮件推送」。
-              </CardDescription>
-            </div>
-            <div className="flex shrink-0 items-center gap-2">
+        <Card className="pb-0">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Mail className="h-4 w-4" />
+              邮件通知
+            </CardTitle>
+            <CardDescription>
+              新询盘自动邮件提醒相关负责人；若访客填写了邮箱，可发送自动确认邮件。需先在
+              <a href="/settings/integrations" className="mx-1 text-primary hover:underline">
+                集成与凭证
+              </a>
+              中启用「阿里云邮件推送」。
+            </CardDescription>
+            <CardAction className="flex items-center gap-2">
               <Label htmlFor="notify-enabled" className="text-sm text-muted-foreground">
                 启用
               </Label>
@@ -357,7 +356,7 @@ export default function SiteSettingsPage() {
                   setNotifyForm((prev) => (prev ? { ...prev, enabled } : prev))
                 }
               />
-            </div>
+            </CardAction>
           </CardHeader>
           <CardContent
             className={`space-y-4 ${notifyForm.enabled ? '' : 'pointer-events-none opacity-50'}`}
@@ -486,7 +485,7 @@ export default function SiteSettingsPage() {
               </div>
             )}
           </CardContent>
-          <CardFooter className="items-center justify-end border-t bg-muted/20 px-6 py-4">
+          <CardFooter className="items-center justify-end border-t bg-muted/20 px-6 pt-4! pb-4">
             <ModuleSaveButton
               pending={updateNotifications.isPending}
               onClick={onSaveNotifications}
@@ -498,7 +497,7 @@ export default function SiteSettingsPage() {
 
         <FaviconSettingsCard />
 
-        <Card>
+        <Card className="pb-0">
           <CardHeader>
             <CardTitle>备案信息</CardTitle>
             <CardDescription>展示于页脚，链接至工信部备案查询</CardDescription>
@@ -528,7 +527,7 @@ export default function SiteSettingsPage() {
               />
             </div>
           </CardContent>
-          <CardFooter className="items-center justify-end border-t bg-muted/20 px-6 py-4">
+          <CardFooter className="items-center justify-end border-t bg-muted/20 px-6 pt-4! pb-4">
             <ModuleSaveButton
               pending={updateSettings.isPending}
               onClick={() => savePublicSettings('备案信息已保存')}
@@ -536,7 +535,7 @@ export default function SiteSettingsPage() {
           </CardFooter>
         </Card>
 
-        <Card>
+        <Card className="pb-0">
           <CardHeader>
             <CardTitle>访客分析</CardTitle>
             <CardDescription>控制官网 C 端访客地区数据的采集方式</CardDescription>
@@ -568,7 +567,7 @@ export default function SiteSettingsPage() {
               className="mt-2 text-xs text-muted-foreground"
             />
           </CardContent>
-          <CardFooter className="items-center justify-end border-t bg-muted/20 px-6 py-4">
+          <CardFooter className="items-center justify-end border-t bg-muted/20 px-6 pt-4! pb-4">
             <ModuleSaveButton
               pending={updateSettings.isPending}
               onClick={() => savePublicSettings('访客分析设置已保存')}
@@ -576,33 +575,33 @@ export default function SiteSettingsPage() {
           </CardFooter>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-start justify-between gap-4">
-            <div>
-              <CardTitle>社交媒体</CardTitle>
-              <CardDescription>
-                按用途分组展示：客服微信归「联系/客服」，抖音/公众号等归「社媒关注」
-              </CardDescription>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() =>
-                patch((p) => ({
-                  ...p,
-                  social: {
-                    channels: [
-                      ...p.social.channels,
-                      newChannel('wechat', p.social.channels.length),
-                    ],
-                  },
-                }))
-              }
-            >
-              <Plus className="mr-1 h-4 w-4" />
-              添加渠道
-            </Button>
+        <Card className="pb-0">
+          <CardHeader>
+            <CardTitle>社交媒体</CardTitle>
+            <CardDescription>
+              按用途分组展示：客服微信归「联系/客服」，抖音/公众号等归「社媒关注」
+            </CardDescription>
+            <CardAction>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  patch((p) => ({
+                    ...p,
+                    social: {
+                      channels: [
+                        ...p.social.channels,
+                        newChannel('wechat', p.social.channels.length),
+                      ],
+                    },
+                  }))
+                }
+              >
+                <Plus className="mr-1 h-4 w-4" />
+                添加渠道
+              </Button>
+            </CardAction>
           </CardHeader>
           <ImagePreviewProvider>
             <CardContent className="space-y-4">
@@ -812,7 +811,7 @@ export default function SiteSettingsPage() {
               ))}
             </CardContent>
           </ImagePreviewProvider>
-          <CardFooter className="items-center justify-end border-t bg-muted/20 px-6 py-4">
+          <CardFooter className="items-center justify-end border-t bg-muted/20 px-6 pt-4! pb-4">
             <ModuleSaveButton
               pending={updateSettings.isPending}
               onClick={() => savePublicSettings('社交媒体已保存')}

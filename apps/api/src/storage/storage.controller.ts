@@ -24,11 +24,10 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
-import type { Request } from 'express';
 import { Public } from '../auth/decorators/public.decorator';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
-import { S3Service } from './s3.service';
 import type { UploadResult } from './s3.service';
+import { S3Service } from './s3.service';
 
 @ApiTags('storage')
 @Controller('storage')

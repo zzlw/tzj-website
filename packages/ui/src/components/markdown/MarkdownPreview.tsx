@@ -96,6 +96,8 @@ export function MarkdownPreview({
 
   return (
     <>
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: 图片点击放大是鼠标增强操作，渲染容器本身非交互控件 */}
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: 同上，事件委托容器 */}
       <div
         ref={ref}
         onClick={handleClick}

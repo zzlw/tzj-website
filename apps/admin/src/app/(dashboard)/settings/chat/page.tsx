@@ -4,6 +4,7 @@ import type { LocalizedText, SitePublicSettings } from '@tzj/types';
 import {
   Button,
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardFooter,
@@ -239,7 +240,7 @@ export default function ChatSettingsPage() {
 
       <ImagePreviewProvider>
         <div className="space-y-6">
-          <Card>
+          <Card className="pb-0">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <ImagePlus className="h-4 w-4" />
@@ -320,7 +321,7 @@ export default function ChatSettingsPage() {
                 </div>
               </div>
             </CardContent>
-            <CardFooter className="items-center justify-end border-t bg-muted/20 px-6 py-4">
+            <CardFooter className="items-center justify-end border-t bg-muted/20 px-6 pt-4! pb-4">
               <ModuleSaveButton
                 pending={updateSettings.isPending}
                 onClick={() => savePublicSettings('客服资料已保存')}
@@ -328,19 +329,17 @@ export default function ChatSettingsPage() {
             </CardFooter>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
-              <div className="space-y-1">
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  客服在线时间
-                </CardTitle>
-                <CardDescription>
-                  非工作时间（含节假日）时，访客端聊天自动提示「已离线 ·
-                  留言后回复」。关闭则始终显示在线。
-                </CardDescription>
-              </div>
-              <div className="flex shrink-0 items-center gap-2">
+          <Card className="pb-0">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                客服在线时间
+              </CardTitle>
+              <CardDescription>
+                非工作时间（含节假日）时，访客端聊天自动提示「已离线 ·
+                留言后回复」。关闭则始终显示在线。
+              </CardDescription>
+              <CardAction className="flex items-center gap-2">
                 <Label htmlFor="bh-enabled" className="text-sm text-muted-foreground">
                   启用
                 </Label>
@@ -354,7 +353,7 @@ export default function ChatSettingsPage() {
                     }))
                   }
                 />
-              </div>
+              </CardAction>
             </CardHeader>
             <CardContent
               className={`space-y-4 ${form.businessHours.enabled ? '' : 'pointer-events-none opacity-50'}`}
@@ -501,7 +500,7 @@ export default function ChatSettingsPage() {
                 />
               </div>
             </CardContent>
-            <CardFooter className="items-center justify-end border-t bg-muted/20 px-6 py-4">
+            <CardFooter className="items-center justify-end border-t bg-muted/20 px-6 pt-4! pb-4">
               <ModuleSaveButton
                 pending={updateSettings.isPending}
                 onClick={() => savePublicSettings('客服在线时间已保存')}
@@ -509,7 +508,7 @@ export default function ChatSettingsPage() {
             </CardFooter>
           </Card>
 
-          <Card>
+          <Card className="pb-0">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MessageSquareText className="h-4 w-4" />
@@ -595,7 +594,7 @@ export default function ChatSettingsPage() {
                 </div>
               </div>
             </CardContent>
-            <CardFooter className="items-center justify-end border-t bg-muted/20 px-6 py-4">
+            <CardFooter className="items-center justify-end border-t bg-muted/20 px-6 pt-4! pb-4">
               <ModuleSaveButton
                 pending={updateSettings.isPending}
                 onClick={() => savePublicSettings('自动提示语已保存')}

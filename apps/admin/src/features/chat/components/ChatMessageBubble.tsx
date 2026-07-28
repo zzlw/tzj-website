@@ -50,7 +50,7 @@ function isEmojiOnlyMessage(text: string, max = 3): boolean {
 
 /** 搜索跳转命中时的瞬时高亮环形描边（抽出为无分支辅助函数，避免叠加组件认知复杂度） */
 function highlightRing(active?: boolean): string {
-  return active ? 'ring-2 ring-amber-400/80 ring-offset-2 ring-offset-background' : '';
+  return active ? 'ring-2 ring-warning/70 ring-offset-2 ring-offset-background' : '';
 }
 
 export function ChatMessageBubble({
@@ -70,7 +70,7 @@ export function ChatMessageBubble({
       >
         <span
           className={cn(
-            'text-muted-foreground rounded-full bg-muted/60 px-3 py-1 text-[0.7rem] leading-relaxed transition-shadow duration-300',
+            'text-muted-foreground rounded-full bg-muted/60 px-3 py-1 text-xs leading-relaxed transition-shadow duration-300',
             highlightRing(highlighted),
           )}
         >
@@ -107,7 +107,7 @@ export function ChatMessageBubble({
       >
         <p
           className={cn(
-            'text-[0.7rem] font-medium',
+            'text-xs font-medium',
             isAgent ? 'text-primary-foreground/80' : 'text-foreground/70',
           )}
         >
@@ -158,7 +158,7 @@ export function ChatMessageBubble({
                     <p className="truncate text-xs font-medium">{a.fileName}</p>
                     <p
                       className={cn(
-                        'text-[0.65rem]',
+                        'text-xs',
                         isAgent ? 'text-primary-foreground/70' : 'text-muted-foreground',
                       )}
                     >
@@ -193,7 +193,7 @@ export function ChatMessageBubble({
         )}
         <div
           className={cn(
-            'mt-1.5 flex items-center justify-end gap-1 text-[0.65rem]',
+            'mt-1.5 flex items-center justify-end gap-1 text-xs',
             isAgent ? 'text-primary-foreground/80' : 'text-muted-foreground',
           )}
         >

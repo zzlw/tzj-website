@@ -128,6 +128,17 @@ export type {
 } from './analytics.js';
 export { BLOCK_IP_DURATION_LABELS } from './analytics.js';
 export type {
+  LoginResult,
+  MeResult,
+  SecurityAuthSettings,
+  TwoFactorEnableResult,
+  TwoFactorSetupResult,
+  TwoFactorStatusResult,
+  TwoFactorVerifyRequest,
+  TwoFactorVerifyResult,
+} from './auth.js';
+export { TWOFA_ENROLLMENT_REQUIRED } from './auth.js';
+export type {
   InfrastructureSecretStatus,
   IntegrationAdminItem,
   IntegrationDef,
@@ -169,14 +180,3 @@ export type {
   SocialPlatformId,
 } from './site-settings.js';
 export type { DependencyStatus, SystemStatusResponse } from './system-status.js';
-export type {
-  LoginResult,
-  MeResult,
-  SecurityAuthSettings,
-  TwoFactorEnableResult,
-  TwoFactorSetupResult,
-  TwoFactorStatusResult,
-  TwoFactorVerifyRequest,
-  TwoFactorVerifyResult,
-} from './auth.js';
-export { TWOFA_ENROLLMENT_REQUIRED } from './auth.js';

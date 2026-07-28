@@ -120,8 +120,8 @@ function buildIpDetailColumns(
         <Button
           type="button"
           variant="ghost"
-          size="sm"
-          className="text-muted-foreground hover:text-foreground h-7 gap-1 px-2 text-xs"
+          size="xs"
+          className="text-muted-foreground hover:text-foreground"
           onClick={() => onView(r)}
         >
           <Eye className="h-3.5 w-3.5" />
@@ -239,8 +239,8 @@ export function IpVisitorLens({ dateParams }: { dateParams: { from?: string; to?
   ];
 
   return (
-    <Card className="border-border/80 shadow-sm">
-      <CardContent className="space-y-3 pt-6">
+    <Card className="border-border/80">
+      <CardContent className="space-y-3">
         <VisitorFilterBar
           search={searchInput}
           onSearchChange={setSearchInput}

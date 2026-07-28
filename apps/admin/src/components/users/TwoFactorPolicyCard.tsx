@@ -40,10 +40,10 @@ export function TwoFactorPolicyCard() {
   }
 
   return (
-    <Card className="mb-4">
+    <Card className="mb-4 py-0">
       <CardContent className="flex flex-wrap items-center gap-4 py-4">
         {required ? (
-          <ShieldCheck className="h-5 w-5 shrink-0 text-green-600" />
+          <ShieldCheck className="h-5 w-5 shrink-0 text-success" />
         ) : (
           <ShieldAlert className="h-5 w-5 shrink-0 text-muted-foreground" />
         )}

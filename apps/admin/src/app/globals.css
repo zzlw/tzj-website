@@ -1,56 +1,22 @@
 @import "tailwindcss";
 @import "@tzj/ui/globals.css";
 @import "tw-animate-css";
+/* 配色预设（theme-presets.css）经 layout.tsx 以 JS 导入：
+   纯运行时变量文件，无 Tailwind 指令，避开 Turbopack 对 Tailwind 管道内相对 @import 的解析缺陷 */
 
 /* Tailwind v4 默认只扫描本 app；显式纳入共享 UI 包源码，
    否则 Dialog 等仅在 @tzj/ui 中使用的工具类（inset-0/translate 等）不会被生成 */
 @source "../../../../packages/ui/src";
 
+/* 暗色模式由 next-themes 在 <html> 上切换 .dark 类驱动 */
+@custom-variant dark (&:is(.dark *));
+
 @theme {
-  /* Admin — 对齐 C 端 Rosenbauer 工业风骨架：浅色工作区 / 深色操控台侧栏 / 品牌红点睛。
-     中性色统一注入冷色温（微蓝调 slate 系），告别 0 饱和度死灰 */
-  --color-background: #ffffff;
-  --color-foreground: #1a1d21;
-  --color-primary: #e3000f;
-  --color-primary-hover: #c8000c;
-  --color-primary-foreground: #ffffff;
-  --color-surface: #f6f7f9;
-  --color-surface-hover: #edeff2;
-  /* 内容区画布：比 surface 深一档、肉眼可辨的冷灰，白卡片浮其上；
-     也把侧栏→内容的明度落差收窄一档，避免黑白硬碰 */
-  --color-canvas: #eef1f4;
-  --color-border: #e5e7eb;
-  --color-border-strong: #d1d5db;
-  --color-muted-foreground: #57616e;
-  --color-secondary-text: #57616e;
-  --color-card: #ffffff;
-  --color-card-foreground: #1a1d21;
-  --color-popover: #ffffff;
-  --color-popover-foreground: #1a1d21;
-  --color-secondary: #f6f7f9;
-  --color-secondary-foreground: #1a1d21;
-  --color-muted: #f6f7f9;
-  --color-accent: #e2e5e9;
-  --color-accent-foreground: #1a1d21;
-  --color-destructive: #e3000f;
-  --color-destructive-foreground: #ffffff;
-  --color-input: #e5e7eb;
-  --color-ring: #d4000e;
-
-  /* 与 C 端一致的锐利边角 */
-  --radius-sm: 2px;
-  --radius-md: 2px;
-  --radius-lg: 4px;
-  --radius-xl: 4px;
-  /* 桥梁档位：锐利小刻度(xl=4px) → 大圆角(ui 3xl+/4xl+) 间补 2xl/3xl，
-     消除 xl→2xl 断崖，保持刻度单调递增（4→8→16→32…） */
-  --radius-2xl: 8px;
-  --radius-3xl: 1rem;
-
-  --font-sans: "Inter", "Noto Sans SC", system-ui, sans-serif;
+  /* Inter 由根 layout 的 next/font 注入（--font-sans-latin），中文回退系统黑体 */
+  --font-sans: var(--font-sans-latin), "Noto Sans SC", system-ui, sans-serif;
 
   /* 柔和阴影刻度：卡片层收敛到 ≤6% 透明度的弥散阴影，浮层（md+）稍强以保层级，
-     替换 Tailwind 默认的 10% 重阴影，贴合工业浅色风的克制质感 */
+     替换 Tailwind 默认的 10% 重阴影，贴合后台浅色风的克制质感 */
   --shadow-2xs: 0 1px 2px 0 rgb(0 0 0 / 0.03);
   --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.04);
   --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.03);
@@ -58,36 +24,207 @@
   --shadow-md: 0 2px 8px -1px rgb(0 0 0 / 0.06), 0 1px 3px -2px rgb(0 0 0 / 0.04);
   --shadow-lg: 0 8px 24px -4px rgb(0 0 0 / 0.08), 0 2px 8px -2px rgb(0 0 0 / 0.04);
   --shadow-xl: 0 16px 40px -8px rgb(0 0 0 / 0.1);
-
-  --color-sidebar: hsl(var(--sidebar-background));
-  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
-  --color-sidebar-primary: hsl(var(--sidebar-primary));
-  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
-  --color-sidebar-accent: hsl(var(--sidebar-accent));
-  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
-  --color-sidebar-border: hsl(var(--sidebar-border));
-  --color-sidebar-ring: hsl(var(--sidebar-ring));
-
-  --color-chart-1: #e3000f;
-  --color-chart-2: #1c1c1c;
-  --color-chart-3: #5b6166;
-  --color-chart-4: #2563eb;
-  --color-chart-5: #d97706;
 }
 
-:root {
-  color-scheme: light;
+/* 运行时主题机制（对齐 next-shadcn-dashboard-starter）：
+   工具类通过 @theme inline 直接引用原始变量（--background 等），
+   原始变量由 :root / .dark / .theme-* 预设类在运行时切换，
+   从而实现多主题预设 + 明暗模式，无需重新编译。 */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-canvas: var(--canvas);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-secondary-text: var(--secondary-text);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
 
-  /* shadcn Sidebar 主题变量 — 石墨蓝操控台：深但不黑（明度 15%，蓝调更明显），
-     与冷灰画布之间留出明度台阶，品牌红在暗底上仍是唯一彩色锚点 */
-  --sidebar-background: 218 16% 15%;
-  --sidebar-foreground: 218 12% 78%;
-  --sidebar-primary: 0 72% 47%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 218 14% 22%;
-  --sidebar-accent-foreground: 0 0% 98%;
-  --sidebar-border: 218 14% 20%;
-  --sidebar-ring: 0 72% 47%;
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-muted: var(--success-muted);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-muted: var(--warning-muted);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-info-muted: var(--info-muted);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* 圆角随主题可变：由单一 --radius 派生，预设可覆盖 --radius（如 brand 预设的锐利工业风），
+     刻度保持单调递增；4xl+ 大圆角沿用 @tzj/ui 共享基准（聊天等大容器专用） */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 14px);
+}
+
+/* 默认主题（Default）— starter 中性 zinc 体系；品牌红沉淀为 .theme-brand 预设（theme-presets.css） */
+:root {
+  --radius: 0.625rem;
+
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.141 0.005 285.823);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.141 0.005 285.823);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.141 0.005 285.823);
+  --primary: oklch(0.21 0.006 285.885);
+  --primary-hover: oklch(0.274 0.006 286.033);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.967 0.001 286.375);
+  --secondary-foreground: oklch(0.21 0.006 285.885);
+  --muted: oklch(0.967 0.001 286.375);
+  --muted-foreground: oklch(0.552 0.016 285.938);
+  --secondary-text: oklch(0.552 0.016 285.938);
+  --accent: oklch(0.941 0.003 286.2);
+  --accent-foreground: oklch(0.21 0.006 285.885);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(0.92 0.004 286.32);
+  --border-strong: oklch(0.871 0.006 286.286);
+  --input: oklch(0.92 0.004 286.32);
+  --ring: oklch(0.705 0.015 286.067);
+  /* 内容区画布：比 surface 深一档，白卡浮其上 */
+  --canvas: oklch(0.956 0.002 286.35);
+  --surface: oklch(0.985 0 0);
+  --surface-hover: oklch(0.967 0.001 286.375);
+
+  /* 语义状态令牌（A3 先行落地，B2 并入主题体系：仅搬运不重定义） */
+  --success: oklch(0.7 0.15 162);
+  --success-foreground: oklch(0.48 0.11 164);
+  --success-muted: oklch(0.98 0.021 166);
+  --warning: oklch(0.77 0.17 70);
+  --warning-foreground: oklch(0.52 0.14 58);
+  --warning-muted: oklch(0.99 0.022 95);
+  --info: oklch(0.68 0.15 237);
+  --info-foreground: oklch(0.47 0.12 242);
+  --info-muted: oklch(0.98 0.013 237);
+
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.141 0.005 285.823);
+  --sidebar-primary: oklch(0.21 0.006 285.885);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.941 0.003 286.2);
+  --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
+  --sidebar-border: oklch(0.92 0.004 286.32);
+  --sidebar-ring: oklch(0.705 0.015 286.067);
+}
+
+.dark {
+  --background: oklch(0.141 0.005 285.823);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.21 0.006 285.885);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.21 0.006 285.885);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.92 0.004 286.32);
+  --primary-hover: oklch(0.871 0.006 286.286);
+  --primary-foreground: oklch(0.21 0.006 285.885);
+  --secondary: oklch(0.274 0.006 286.033);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.274 0.006 286.033);
+  --muted-foreground: oklch(0.705 0.015 286.067);
+  --secondary-text: oklch(0.705 0.015 286.067);
+  --accent: oklch(0.274 0.006 286.033);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(1 0 0 / 10%);
+  --border-strong: oklch(1 0 0 / 20%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.552 0.016 285.938);
+  /* 暗色画布比背景再深一档，卡片（card 0.21）浮起 */
+  --canvas: oklch(0.12 0.005 285.8);
+  --surface: oklch(0.21 0.006 285.885);
+  --surface-hover: oklch(0.274 0.006 286.033);
+
+  --success: oklch(0.696 0.17 162.48);
+  --success-foreground: oklch(0.79 0.14 164);
+  --success-muted: oklch(0.26 0.04 164);
+  --warning: oklch(0.769 0.188 70.08);
+  --warning-foreground: oklch(0.84 0.16 84);
+  --warning-muted: oklch(0.27 0.05 80);
+  --info: oklch(0.68 0.15 237);
+  --info-foreground: oklch(0.75 0.12 240);
+  --info-muted: oklch(0.27 0.05 240);
+
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+
+  --sidebar: oklch(0.21 0.006 285.885);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.92 0.004 286.32);
+  --sidebar-primary-foreground: oklch(0.21 0.006 285.885);
+  --sidebar-accent: oklch(0.274 0.006 286.033);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.552 0.016 285.938);
+}
+
+/* 明暗切换的 View Transition 圆形揭示波纹（原生 API + 能力检测降级，见 ThemeModeToggle） */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-new(root) {
+  animation: theme-reveal 0.45s ease-in-out;
+}
+@keyframes theme-reveal {
+  from {
+    clip-path: circle(0% at var(--theme-x, 50%) var(--theme-y, 50%));
+  }
+  to {
+    clip-path: circle(150% at var(--theme-x, 50%) var(--theme-y, 50%));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-new(root) {
+    animation: none;
+  }
 }
 
 /* 后台壳层：禁止 body 滚动，滚动交给内部 ScrollArea（overlay 风格自定义滚动条） */
@@ -105,22 +242,22 @@ body[data-scroll-locked] {
 
 body {
   font-family: var(--font-sans);
-  background-color: var(--color-background);
-  color: var(--color-foreground);
+  background-color: var(--background);
+  color: var(--foreground);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* 文本选区着品牌红淡彩，细节处呼应 Rosenbauer 色系 */
+/* 文本选区着主题主色淡彩 */
 ::selection {
-  background: color-mix(in srgb, var(--color-primary) 14%, transparent);
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
 }
 
-/* 侧边栏内容区滚动条 — 细窄、半透明、hover 加深（深色底用白色半透明）。
+/* 侧边栏内容区滚动条 — 细窄、半透明、hover 加深（颜色基于侧栏前景色混合，深/浅侧栏通用）。
    展开态用 6px 细滚动条；折叠（纯 icon）态内容通常无需滚动，隐藏滚动条以保持整洁。 */
 [data-sidebar="content"] {
   scrollbar-width: thin;
-  scrollbar-color: rgb(255 255 255 / 0.14) transparent;
+  scrollbar-color: color-mix(in srgb, var(--sidebar-foreground) 18%, transparent) transparent;
 }
 [data-sidebar="content"]::-webkit-scrollbar {
   width: 6px;
@@ -129,11 +266,11 @@ body {
   background: transparent;
 }
 [data-sidebar="content"]::-webkit-scrollbar-thumb {
-  background: rgb(255 255 255 / 0.12);
+  background: color-mix(in srgb, var(--sidebar-foreground) 16%, transparent);
   border-radius: 9999px;
 }
 [data-sidebar="content"]:hover::-webkit-scrollbar-thumb {
-  background: rgb(255 255 255 / 0.24);
+  background: color-mix(in srgb, var(--sidebar-foreground) 30%, transparent);
 }
 /* 折叠态：隐藏滚动条（纯 icon 宽度仅 3rem，滚动条占比过大且不优雅） */
 [data-collapsible="icon"] [data-sidebar="content"] {
@@ -144,8 +281,7 @@ body {
   height: 0;
 }
 
-/* 激活菜单项的品牌红指示条 —— 与仪表盘欢迎卡的红色签名笔触同源，
-   深色侧栏上红色指示条是唯一的彩色锚点，一眼定位当前位置 */
+/* 激活菜单项的主色指示条 —— 随主题预设变色，一眼定位当前位置 */
 [data-sidebar="menu-button"][data-active="true"] {
   position: relative;
 }
@@ -158,7 +294,7 @@ body {
   height: 55%;
   width: 3px;
   border-radius: 9999px;
-  background: var(--color-primary);
+  background: var(--primary);
 }
 
 /* Vditor Markdown 编辑器 — 浅色主题适配 Admin */
@@ -166,14 +302,14 @@ body {
   --panel-background-color: #ffffff;
   --toolbar-background-color: #f7f7f7;
   --textarea-background-color: #ffffff;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
   font-family: var(--font-sans);
   /* vditor 自身不带背景，全屏时若无背景会透出底层页面 */
   background-color: #ffffff;
 }
 .markdown-editor .vditor-toolbar {
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--border);
   background-color: #f7f7f7;
   /* 工具栏居中：改用 flex 布局（覆盖 vditor 的 float 排布） */
   display: flex;
@@ -253,7 +389,7 @@ body {
   background: #ffffff;
 }
 .markdown-editor .vditor-counter {
-  color: var(--color-muted-foreground);
+  color: var(--muted-foreground);
   background: transparent;
 }
 
@@ -271,10 +407,10 @@ body {
 
 /* 内部文档阅读页 Markdown 预览 */
 .markdown-preview.vditor-reset {
-  color: var(--color-foreground);
+  color: var(--foreground);
 }
 .markdown-preview-article.vditor-reset {
-  color: var(--color-foreground);
+  color: var(--foreground);
   line-height: 1.75;
 }
 .markdown-preview-article.vditor-reset h1 {
@@ -288,7 +424,7 @@ body {
   font-weight: 600;
   margin: 1.5rem 0 0.75rem;
   padding-bottom: 0.25rem;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--border);
 }
 .markdown-preview-article.vditor-reset h3 {
   font-size: 1.125rem;
@@ -306,8 +442,8 @@ body {
 .markdown-preview-article.vditor-reset blockquote {
   margin: 1rem 0;
   padding-left: 1rem;
-  border-left: 3px solid var(--color-border);
-  color: var(--color-muted-foreground);
+  border-left: 3px solid var(--border);
+  color: var(--muted-foreground);
 }
 .markdown-preview.vditor-reset img,
 .markdown-preview-article.vditor-reset img {
@@ -317,7 +453,7 @@ body {
 }
 .markdown-preview.vditor-reset pre,
 .markdown-preview-article.vditor-reset pre {
-  background: var(--color-muted);
+  background: var(--muted);
   border-radius: 0.5rem;
   margin: 1rem 0;
 }
@@ -329,11 +465,11 @@ body {
 }
 .markdown-preview-article.vditor-reset th,
 .markdown-preview-article.vditor-reset td {
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--border);
   padding: 0.5rem 0.75rem;
 }
 .markdown-preview-article.vditor-reset th {
-  background: var(--color-muted);
+  background: var(--muted);
   font-weight: 600;
 }
 
@@ -432,7 +568,7 @@ body {
 :hover > .lingxi-icon path,
 button:hover .lingxi-icon path {
   animation-duration: 0.7s;
-  stroke: var(--color-primary);
+  stroke: var(--primary);
 }
 @keyframes lingxi-wave {
   0%,

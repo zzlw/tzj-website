@@ -62,7 +62,7 @@ export default function VisitorsPage() {
         description="逐访客明细与下钻：可「按访客」（身份/意向/聊天）或「按 IP」（网络/地理/关联访客）两个视角查看。聚合统计看板见「访客分析」。"
       />
 
-      <Card className="mb-6 border-border/80 py-0 shadow-sm">
+      <Card className="mb-6 border-border/80 py-0">
         <CardContent className="flex flex-wrap items-center gap-3 p-4">
           <DateRangePicker
             className="h-9 w-[280px]"

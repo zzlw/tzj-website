@@ -929,8 +929,9 @@ export function DocFolderSidebar({ basePath = '/documents' }: { basePath?: strin
 
   return (
     <TooltipProvider delayDuration={400}>
-      <Card className="w-60 shrink-0 self-start overflow-hidden border-border/80 py-0 shadow-sm">
-        <CardHeader className="border-b border-border/60 px-3 py-3">
+      <Card className="w-60 shrink-0 gap-0 self-start overflow-hidden border-border/80 py-0">
+        {/* pb-3! 对抗新 CardHeader 的 [.border-b]:pb-6（双 class 选择器），保持紧凑 12px */}
+        <CardHeader className="border-b border-border/60 px-3 pt-3 pb-3!">
           <CardTitle className="text-sm font-medium">文件夹</CardTitle>
         </CardHeader>
         <CardContent className="max-h-[min(70vh,560px)] space-y-0.5 overflow-y-auto overflow-x-hidden p-2">

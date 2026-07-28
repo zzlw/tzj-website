@@ -346,7 +346,11 @@ export function IpBlockPanel({ from, to }: { from?: string; to?: string }) {
         title="封禁 IP"
         footer={
           <>
-            <Button variant="outline" onClick={() => setBanTarget(null)} disabled={blockMut.isPending}>
+            <Button
+              variant="outline"
+              onClick={() => setBanTarget(null)}
+              disabled={blockMut.isPending}
+            >
               取消
             </Button>
             <Button
@@ -369,7 +373,7 @@ export function IpBlockPanel({ from, to }: { from?: string; to?: string }) {
               {banTarget.ip ?? banTarget.ipMasked ?? '—'}
             </p>
             {!banTarget.ip && (
-              <p className="text-xs text-amber-600">
+              <p className="text-xs text-warning-foreground">
                 该记录缺少完整 IP，无法直接封禁，请改用上方表单手动输入。
               </p>
             )}

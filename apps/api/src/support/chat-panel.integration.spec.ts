@@ -46,7 +46,13 @@ describe('chat-panel: engagement 信号与在线态解耦（业内最佳实践�
   beforeAll(() => {
     server = new FakeServer();
     presence = new ChatPresenceStore(null);
-    gateway = new ChatGateway(null as never, null as never, presence, null as never, null) as unknown as ChatGateway;
+    gateway = new ChatGateway(
+      null as never,
+      null as never,
+      presence,
+      null as never,
+      null,
+    ) as unknown as ChatGateway;
     gateway.server = server as never;
   });
 
@@ -74,9 +80,7 @@ describe('chat-panel: engagement 信号与在线态解耦（业内最佳实践�
     // engagement 信号已记录
     expect((await presence.getMeta(USER_KEY))?.chatPanelOpen).toBe(true);
     // 不应广播任何 presence-changed（面板开关不属 presence 变化）
-    expect(
-      server.emitted.some((e) => e.event === 'presence-changed'),
-    ).toBe(false);
+    expect(server.emitted.some((e) => e.event === 'presence-changed')).toBe(false);
   });
 
   it('3) 关闭聊天面板：chatPanelOpen=false，在线态仍保持 online', async () => {

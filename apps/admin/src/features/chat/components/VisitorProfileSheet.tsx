@@ -39,8 +39,8 @@ import { ChatMessageBubble } from './ChatMessageBubble';
 import { MatchedSnippet } from './message-search-highlight';
 
 const statusMeta: Record<ChatRoomStatusKey, { label: string; dot: string }> = {
-  waiting: { label: '等待中', dot: 'bg-sky-500' },
-  active: { label: '进行中', dot: 'bg-emerald-500' },
+  waiting: { label: '等待中', dot: 'bg-info' },
+  active: { label: '进行中', dot: 'bg-success' },
   closed: { label: '已关闭', dot: 'bg-zinc-400' },
   archived: { label: '已归档', dot: 'bg-zinc-300' },
 };
@@ -72,7 +72,7 @@ function AssigneeTag({ room }: { room: ChatRoom }) {
     room.assignedAgentUser?.nickname?.trim() || room.assignedAgentEmail.split('@')[0] || '坐席';
   return (
     <span
-      className="inline-flex shrink-0 items-center rounded-full bg-sky-500/10 px-1.5 py-0.5 text-[0.6rem] font-medium text-sky-600"
+      className="inline-flex shrink-0 items-center rounded-full bg-info/10 px-1.5 py-0.5 text-xs font-medium text-info-foreground"
       title={room.assignedAgentEmail}
     >
       {name}
@@ -312,16 +312,22 @@ function InquiryStatusBadges({ inquiry }: { inquiry: AnalyticsVisitorInquiry }) 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       {inquiry.isHandled ? (
-        <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
+        <Badge
+          variant="outline"
+          className="border-success/30 bg-success-muted text-success-foreground"
+        >
           已处理
         </Badge>
       ) : (
-        <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
+        <Badge
+          variant="outline"
+          className="border-warning/40 bg-warning-muted text-warning-foreground"
+        >
           待处理
         </Badge>
       )}
       {inquiry.convertedCustomerId ? (
-        <Badge variant="outline" className="border-sky-200 bg-sky-50 text-sky-700">
+        <Badge variant="outline" className="border-info/30 bg-info-muted text-info-foreground">
           已转线索
         </Badge>
       ) : null}
@@ -401,7 +407,7 @@ async function fetchVisitorRooms(
 /** 已识别 / 匿名 身份徐章 */
 function VisitorStatusBadge({ identified }: { identified: boolean }) {
   return identified ? (
-    <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
+    <Badge variant="outline" className="border-success/30 bg-success-muted text-success-foreground">
       已识别
     </Badge>
   ) : (
@@ -438,8 +444,7 @@ function VisitorSheetHeader({
           <Button
             type="button"
             variant="ghost"
-            size="icon"
-            className="h-7 w-7"
+            size="icon-xs"
             aria-label="返回会话列表"
             onClick={onBack}
           >
@@ -474,13 +479,7 @@ function VisitorSheetHeader({
               已转客户 · 查看档案
             </Link>
           ) : (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-7 text-xs"
-              onClick={onConvertClick}
-            >
+            <Button type="button" variant="outline" size="xs" onClick={onConvertClick}>
               <UserRoundPlus className="mr-1.5 h-3.5 w-3.5" />
               转为客户线索
             </Button>

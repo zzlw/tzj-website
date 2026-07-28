@@ -19,10 +19,9 @@ function parseInlineLinks(text: string): ReactNode[] {
   const linkRe = /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g;
   const nodes: ReactNode[] = [];
   let lastIndex = 0;
-  let match: RegExpExecArray | null;
   let key = 0;
 
-  while ((match = linkRe.exec(text)) !== null) {
+  for (const match of text.matchAll(linkRe)) {
     if (match.index > lastIndex) {
       nodes.push(text.slice(lastIndex, match.index));
     }

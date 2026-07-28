@@ -1,6 +1,6 @@
 import { cva, type VariantProps } from 'class-variance-authority';
 import { AlertCircle, CheckCircle2, Info, XCircle } from 'lucide-react';
-import type { HTMLAttributes, ReactNode } from 'react';
+import type { HTMLAttributes } from 'react';
 import { cn } from '../../lib/utils';
 
 const alertVariants = cva(
@@ -9,9 +9,9 @@ const alertVariants = cva(
     variants: {
       variant: {
         default: 'bg-surface text-foreground',
-        success: 'border-green-500/50 text-green-400 [&>svg]:text-green-400',
-        warning: 'border-yellow-500/50 text-yellow-400 [&>svg]:text-yellow-400',
-        destructive: 'border-red-500/50 text-red-400 [&>svg]:text-red-400',
+        success: 'border-success/50 text-success [&>svg]:text-success',
+        warning: 'border-warning/50 text-warning [&>svg]:text-warning',
+        destructive: 'border-destructive/50 text-destructive [&>svg]:text-destructive',
       },
     },
     defaultVariants: {
@@ -35,7 +35,12 @@ const iconMap = {
 function Alert({ className, variant, title, icon = 'info', children, ...props }: AlertProps) {
   const IconComponent = iconMap[icon];
   return (
-    <div role="alert" className={cn(alertVariants({ variant }), className)} {...props}>
+    <div
+      role="alert"
+      data-slot="alert"
+      className={cn(alertVariants({ variant }), className)}
+      {...props}
+    >
       <IconComponent className="h-4 w-4" />
       {title && <h5 className="mb-1 font-medium leading-none tracking-tight">{title}</h5>}
       {children && <div className="text-sm [&_p]:leading-relaxed">{children}</div>}

@@ -4,6 +4,7 @@ import type { ScreenWatermark } from '@tzj/types';
 import {
   Button,
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardFooter,
@@ -56,19 +57,17 @@ export function ScreenWatermarkSettingsCard({
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-start justify-between space-y-0">
-        <div>
-          <CardTitle className="flex items-center gap-2">
-            <ShieldAlert className="h-4 w-4 text-muted-foreground" />
-            后台水印（防截图溯源）
-          </CardTitle>
-          <CardDescription className="mt-1.5 max-w-2xl">
-            开启后，后台所有页面叠加带「登录账号 +
-            日期」的半透明平铺水印，使任何截图都可追溯到具体员工，
-            震慑内部信息外泄。水印不影响操作；浏览器无法真正阻止截图，此为溯源型明水印。
-          </CardDescription>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <ShieldAlert className="h-4 w-4 text-muted-foreground" />
+          后台水印（防截图溯源）
+        </CardTitle>
+        <CardDescription className="max-w-2xl">
+          开启后，后台所有页面叠加带「登录账号 +
+          日期」的半透明平铺水印，使任何截图都可追溯到具体员工，
+          震慑内部信息外泄。水印不影响操作；浏览器无法真正阻止截图，此为溯源型明水印。
+        </CardDescription>
+        <CardAction className="flex items-center gap-2">
           <Label htmlFor="screen-wm-enabled" className="text-sm text-muted-foreground">
             启用
           </Label>
@@ -77,7 +76,7 @@ export function ScreenWatermarkSettingsCard({
             checked={value.enabled}
             onCheckedChange={(enabled) => onChange({ ...value, enabled })}
           />
-        </div>
+        </CardAction>
       </CardHeader>
       <CardContent className={`space-y-5 ${value.enabled ? '' : 'pointer-events-none opacity-50'}`}>
         <div>

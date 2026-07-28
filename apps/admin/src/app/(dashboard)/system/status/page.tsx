@@ -22,9 +22,15 @@ import {
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; className: string }> = {
-    healthy: { label: '健康', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-    degraded: { label: '降级', className: 'bg-amber-50 text-amber-700 border-amber-200' },
-    down: { label: '故障', className: 'bg-red-50 text-red-700 border-red-200' },
+    healthy: {
+      label: '健康',
+      className: 'bg-success-muted text-success-foreground border-success/30',
+    },
+    degraded: {
+      label: '降级',
+      className: 'bg-warning-muted text-warning-foreground border-warning/40',
+    },
+    down: { label: '故障', className: 'bg-destructive/10 text-destructive border-destructive/30' },
   };
   const item = map[status] ?? { label: status, className: '' };
   return (
@@ -35,10 +41,13 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 function MeterBar({ value }: { value: number }) {
+  // 正常区间用中性色，接近阈值才转警示/危险色，避免品牌红造成"告警"错觉。
+  const fillClass =
+    value >= 90 ? 'bg-destructive' : value >= 75 ? 'bg-warning' : 'bg-muted-foreground/60';
   return (
     <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
       <div
-        className="h-full rounded-full bg-primary transition-all"
+        className={`h-full rounded-full transition-all ${fillClass}`}
         style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
       />
     </div>
@@ -87,7 +96,7 @@ export default function SystemStatusPage() {
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader>
             <CardDescription>整体状态</CardDescription>
             <CardTitle className="flex items-center gap-2 text-lg">
               <Server className="h-4 w-4 text-muted-foreground" />
@@ -105,12 +114,12 @@ export default function SystemStatusPage() {
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader>
             <CardDescription>进程内存</CardDescription>
             <CardTitle className="text-lg">堆内存</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            <p className="text-2xl font-semibold">
+            <p className="text-2xl font-semibold tabular-nums">
               {data.process.memory.heapUsedMb}
               <span className="text-sm font-normal text-muted-foreground">
                 {' '}
@@ -125,12 +134,12 @@ export default function SystemStatusPage() {
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader>
             <CardDescription>CPU 负载（1/5/15 分钟）</CardDescription>
             <CardTitle className="text-lg">系统负载</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-semibold">{data.process.cpu.loadAvg1m}</p>
+            <p className="text-2xl font-semibold tabular-nums">{data.process.cpu.loadAvg1m}</p>
             <p className="mt-1 text-xs text-muted-foreground">
               {data.process.cpu.loadAvg5m} · {data.process.cpu.loadAvg15m}
             </p>
@@ -141,14 +150,14 @@ export default function SystemStatusPage() {
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader>
             <CardDescription>磁盘（数据目录）</CardDescription>
             <CardTitle className="text-lg">存储空间</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             {data.disk ? (
               <>
-                <p className="text-2xl font-semibold">{data.disk.usedPercent}%</p>
+                <p className="text-2xl font-semibold tabular-nums">{data.disk.usedPercent}%</p>
                 <MeterBar value={data.disk.usedPercent} />
                 <p className="text-xs text-muted-foreground">
                   剩余 {data.disk.freeGb} GB / 共 {data.disk.totalGb} GB

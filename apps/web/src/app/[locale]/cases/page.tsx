@@ -5,7 +5,7 @@ import { ContentListShell, ContentPaginationShell } from '@/components/content/C
 import { ContentPagination } from '@/components/content/ContentPagination';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { RelatedLinks } from '@/components/sections/blocks';
-import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
+import { StatBandI18n } from '@/components/sections/blocks-i18n';
 import { Container, PageHero, RbButton } from '@/components/ui';
 import { getCases } from '@/lib/api';
 import { caseTypeLabel, formatContentDate } from '@/lib/content-labels';

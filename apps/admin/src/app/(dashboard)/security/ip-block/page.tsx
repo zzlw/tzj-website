@@ -16,7 +16,7 @@ export default function SecurityIpBlockPage() {
         description="管理官网访问黑名单。封禁后该 IP 的页面浏览将不再写入统计（静默丢弃）。IP 以哈希存储，列表仅显示脱敏地址。"
       />
 
-      <Card className="mb-6 border-border/80 py-0 shadow-sm">
+      <Card className="mb-6 border-border/80 py-0">
         <CardContent className="flex flex-wrap items-center gap-3 p-4">
           <DateRangePicker
             className="h-9 w-[280px]"

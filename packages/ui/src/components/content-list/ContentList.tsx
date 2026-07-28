@@ -10,7 +10,7 @@ export interface ContentListProps {
 /** 内容浏览列表容器（带分隔线的 Card）。 */
 export function ContentList({ children, className }: ContentListProps) {
   return (
-    <Card className={cn('overflow-hidden border-border/80 py-0 shadow-sm', className)}>
+    <Card className={cn('overflow-hidden border-border/80 py-0', className)}>
       <div className="divide-y divide-border/60">{children}</div>
     </Card>
   );

@@ -65,17 +65,17 @@ const FILTERS = [
 const CONTACT_STATUS = {
   pending: {
     label: '待处理',
-    dot: 'bg-amber-500',
+    dot: 'bg-warning',
     trigger:
-      'border-amber-300/80 bg-amber-50 text-amber-800 hover:bg-amber-50 focus:ring-amber-200/60',
-    badge: 'border-amber-200 bg-amber-50 text-amber-700',
+      'border-warning/40 bg-warning-muted text-warning-foreground hover:bg-warning-muted focus:ring-warning/30',
+    badge: 'border-warning/40 bg-warning-muted text-warning-foreground',
   },
   handled: {
     label: '已处理',
-    dot: 'bg-emerald-500',
+    dot: 'bg-success',
     trigger:
-      'border-emerald-300/80 bg-emerald-50 text-emerald-800 hover:bg-emerald-50 focus:ring-emerald-200/60',
-    badge: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+      'border-success/40 bg-success-muted text-success-foreground hover:bg-success-muted focus:ring-success/30',
+    badge: 'border-success/30 bg-success-muted text-success-foreground',
   },
 } as const;
 
@@ -216,7 +216,7 @@ const CONTACT_COLUMNS: DataTableColumn<ContactItem>[] = [
         <Link href={`/customers/${r.convertedCustomerId}`}>
           <Badge
             variant="outline"
-            className="border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+            className="border-success/30 bg-success-muted text-success-foreground hover:bg-success/15"
           >
             已转客户
           </Badge>
@@ -327,7 +327,7 @@ function ContactTrashRowActions({
     <div className="flex items-center justify-end gap-1">
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onView(row)}>
+          <Button variant="ghost" size="icon-sm" onClick={() => onView(row)}>
             <Eye className="h-4 w-4" />
           </Button>
         </TooltipTrigger>
@@ -335,7 +335,7 @@ function ContactTrashRowActions({
       </Tooltip>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onRestore(row)}>
+          <Button variant="ghost" size="icon-sm" onClick={() => onRestore(row)}>
             <RotateCcw className="h-4 w-4" />
           </Button>
         </TooltipTrigger>
@@ -346,8 +346,8 @@ function ContactTrashRowActions({
           <TooltipTrigger asChild>
             <Button
               variant="ghost"
-              size="icon"
-              className="h-8 w-8 hover:text-destructive"
+              size="icon-sm"
+              className="hover:text-destructive"
               onClick={() => onPurge(row)}
             >
               <Trash2 className="h-4 w-4" />
@@ -376,7 +376,7 @@ function ContactRowActions({
     <div className="flex items-center justify-end gap-1">
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onView(row)}>
+          <Button variant="ghost" size="icon-sm" onClick={() => onView(row)}>
             <Eye className="h-4 w-4" />
           </Button>
         </TooltipTrigger>
@@ -385,7 +385,7 @@ function ContactRowActions({
       {row.convertedCustomerId ? (
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button asChild variant="ghost" size="icon" className="h-8 w-8">
+            <Button asChild variant="ghost" size="icon-sm">
               <Link href={`/customers/${row.convertedCustomerId}`}>
                 <UserRoundCheck className="h-4 w-4 text-primary" />
               </Link>
@@ -397,12 +397,7 @@ function ContactRowActions({
         <Can perm="contacts.manage">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => onConvert(row)}
-              >
+              <Button variant="ghost" size="icon-sm" onClick={() => onConvert(row)}>
                 <UserRoundPlus className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
@@ -415,8 +410,8 @@ function ContactRowActions({
           <TooltipTrigger asChild>
             <Button
               variant="ghost"
-              size="icon"
-              className="h-8 w-8 hover:text-destructive"
+              size="icon-sm"
+              className="hover:text-destructive"
               onClick={() => onDelete(row)}
             >
               <Trash2 className="h-4 w-4" />
@@ -508,7 +503,7 @@ function ContactFilterBar({
   }
 
   return (
-    <Card className="mb-6 border-border/80 py-0 shadow-sm">
+    <Card className="mb-6 border-border/80 py-0">
       <CardContent className="flex flex-col gap-3 p-4">
         <div className="flex flex-wrap gap-3">
           <form

@@ -4,7 +4,7 @@
   --color-background: #0a0a0b;
   --color-primary: #c61516;
   --color-primary-hover: #a81213;
-  --color-primary-foreground: #FFFFFF;
+  --color-primary-foreground: #ffffff;
   --color-surface: #141416;
   --color-surface-hover: #1f1f22;
   --color-border: #27272a;
@@ -25,6 +25,18 @@
   --color-destructive-foreground: #fafafa;
   --color-input: #27272a;
   --color-ring: #c61516;
+
+  /* 语义状态令牌 — 成功/警示/提示三组，禁止在业务代码直接使用 Tailwind palette（emerald/amber/sky 等）。
+     oklch 直写，色相沿用冷灰色温调校；-foreground 用于文字（浅底深字），-muted 用于淡彩底。 */
+  --color-success: oklch(0.7 0.15 162);
+  --color-success-foreground: oklch(0.48 0.11 164);
+  --color-success-muted: oklch(0.98 0.021 166);
+  --color-warning: oklch(0.77 0.17 70);
+  --color-warning-foreground: oklch(0.52 0.14 58);
+  --color-warning-muted: oklch(0.99 0.022 95);
+  --color-info: oklch(0.68 0.15 237);
+  --color-info-foreground: oklch(0.47 0.12 242);
+  --color-info-muted: oklch(0.98 0.013 237);
 
   --radius-sm: 0.25rem;
   --radius-md: 0.5rem;

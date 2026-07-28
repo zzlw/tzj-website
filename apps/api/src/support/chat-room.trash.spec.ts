@@ -55,7 +55,9 @@ function buildService(rooms: FakeRoom[]) {
         let count = 0;
         for (const r of store.values()) {
           const matchRoom = !where.roomId?.in || where.roomId.in.includes(r.roomId);
-          const matchDeleted = where.deletedAt === undefined || (where.deletedAt === null ? r.deletedAt === null : true);
+          const matchDeleted =
+            where.deletedAt === undefined ||
+            (where.deletedAt === null ? r.deletedAt === null : true);
           const matchStatus = !where.status?.in || where.status.in.includes(r.status);
           if (matchRoom && matchDeleted && matchStatus) {
             Object.assign(r, data);

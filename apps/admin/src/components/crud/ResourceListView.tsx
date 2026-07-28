@@ -22,7 +22,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@tzj/ui';
-import { Eye, Pencil, Plus, Search, Send, Trash2, Undo2, X } from 'lucide-react';
+import { BookOpen, Eye, Pencil, Plus, Search, Send, Trash2, Undo2, X } from 'lucide-react';
 import Link from 'next/link';
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import { Can } from '@/components/Can';
@@ -265,7 +265,7 @@ export function ResourceListView<T extends { id: string }>({
       />
 
       {(config.searchable || config.filters?.length) && (
-        <Card className="mb-6 border-border/80 py-0 shadow-sm">
+        <Card className="mb-6 border-border/80 py-0">
           <CardContent className="flex flex-col gap-3 p-4">
             <div className="flex flex-wrap gap-3">
               {config.searchable && (
@@ -353,9 +353,9 @@ export function ResourceListView<T extends { id: string }>({
                 <Button
                   type="button"
                   variant="ghost"
-                  size="sm"
+                  size="xs"
                   onClick={clearAllFilters}
-                  className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
+                  className="text-muted-foreground hover:text-foreground"
                 >
                   <X className="h-3.5 w-3.5" />
                   清除全部
@@ -389,9 +389,9 @@ export function ResourceListView<T extends { id: string }>({
             {config.detailPath && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                  <Button variant="ghost" size="icon-sm" asChild>
                     <Link href={config.detailPath(row)}>
-                      <Eye className="h-4 w-4" />
+                      <BookOpen className="h-4 w-4" />
                     </Link>
                   </Button>
                 </TooltipTrigger>
@@ -401,12 +401,7 @@ export function ResourceListView<T extends { id: string }>({
             {config.previewPath && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => handlePreview(row)}
-                  >
+                  <Button variant="ghost" size="icon-sm" onClick={() => handlePreview(row)}>
                     <Eye className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
@@ -419,12 +414,7 @@ export function ResourceListView<T extends { id: string }>({
               <Can anyPerm={perms(config, 'publish')}>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => handleTogglePublish(row)}
-                    >
+                    <Button variant="ghost" size="icon-sm" onClick={() => handleTogglePublish(row)}>
                       {(row as { status?: string }).status === 'published' ? (
                         <Undo2 className="h-4 w-4" />
                       ) : (
@@ -443,7 +433,7 @@ export function ResourceListView<T extends { id: string }>({
             <Can anyPerm={perms(config, 'edit')}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                  <Button variant="ghost" size="icon-sm" asChild>
                     <Link href={`${config.basePath}/${row.id}/edit`}>
                       <Pencil className="h-4 w-4" />
                     </Link>
@@ -457,8 +447,8 @@ export function ResourceListView<T extends { id: string }>({
                 <TooltipTrigger asChild>
                   <Button
                     variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                    size="icon-sm"
+                    className="text-muted-foreground hover:text-destructive"
                     onClick={() => setDeleteTarget(row)}
                   >
                     <Trash2 className="h-4 w-4" />

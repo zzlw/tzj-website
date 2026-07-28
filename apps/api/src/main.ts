@@ -37,7 +37,7 @@ async function bootstrap() {
   // 全局验证管道（调试模式：暂时关闭 forbidNonWhitelisted）
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: false,       // TODO: 开启前先修复 MoveDocumentDto 装饰器问题
+      whitelist: false, // TODO: 开启前先修复 MoveDocumentDto 装饰器问题
       forbidNonWhitelisted: false,
       transform: true,
       transformOptions: { enableImplicitConversion: true },

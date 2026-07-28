@@ -99,7 +99,6 @@ function SortableHeader({
         }
         onSortChange(defaultSort ?? null);
       }}
-      aria-sort={active ? (sort!.order === 'asc' ? 'ascending' : 'descending') : 'none'}
     >
       {label}
       <Icon className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden />
@@ -190,7 +189,7 @@ export function DataTable<T extends { id: string }>({
   }, [rows, loading, colCount]);
 
   return (
-    <Card className="overflow-hidden border-border/80 py-0 shadow-sm">
+    <Card className="overflow-hidden border-border/80 py-0">
       <Table containerRef={scrollRef}>
         <TableHeader>
           {table.getHeaderGroups().map((hg) => (
@@ -221,8 +220,10 @@ export function DataTable<T extends { id: string }>({
         <TableBody>
           {loading ? (
             Array.from({ length: skeletonRows }).map((_, i) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: 骨架屏占位行同质且不重排，索引 key 安全
               <TableRow key={`skeleton-${i}`}>
                 {Array.from({ length: colCount }).map((__, j) => (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: 同上，骨架屏占位单元格
                   <TableCell key={j}>
                     <Skeleton className="h-4 w-full max-w-[12rem]" />
                   </TableCell>

@@ -49,12 +49,15 @@ function TouchedBadges({
   return (
     <div className="mt-3 flex flex-wrap gap-1 border-t pt-3">
       {touchedContact ? (
-        <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
+        <Badge
+          variant="outline"
+          className="border-warning/40 bg-warning-muted text-warning-foreground"
+        >
           触达联系页
         </Badge>
       ) : null}
       {touchedCase ? (
-        <Badge variant="outline" className="border-sky-200 bg-sky-50 text-sky-700">
+        <Badge variant="outline" className="border-info/30 bg-info-muted text-info-foreground">
           浏览案例/方案
         </Badge>
       ) : null}

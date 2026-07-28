@@ -1,6 +1,14 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, Skeleton } from '@tzj/ui';
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Skeleton,
+} from '@tzj/ui';
 import { ArrowRight, BarChart3 } from 'lucide-react';
 import Link from 'next/link';
 import { DonutChart, HorizontalBarChart, TrendChart } from '@/components/analytics/AnalyticsCharts';
@@ -63,24 +71,24 @@ export function DashboardAnalyticsPanel() {
   }));
 
   return (
-    <Card className="mb-8 border-border/80 shadow-sm">
-      <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-4">
-        <div>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
-            官网访客
-          </CardTitle>
-          <CardDescription>
-            近 7 天访问趋势、热门页面与来源分布（数据来自官网 C 端埋点）
-          </CardDescription>
-        </div>
-        <Link
-          href="/analytics"
-          className="inline-flex shrink-0 items-center gap-1 text-sm text-primary hover:underline"
-        >
-          详细分析
-          <ArrowRight className="h-3.5 w-3.5" />
-        </Link>
+    <Card className="mb-8 border-border/80">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          官网访客
+        </CardTitle>
+        <CardDescription>
+          近 7 天访问趋势、热门页面与来源分布（数据来自官网 C 端埋点）
+        </CardDescription>
+        <CardAction>
+          <Link
+            href="/analytics"
+            className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+          >
+            详细分析
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </CardAction>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

@@ -67,7 +67,10 @@ const COLUMNS = (roleOptions: RoleOption[]): DataTableColumn<UserItem>[] => [
     cell: (r) => (
       <div className="flex items-center gap-1.5">
         {r.isActive ? (
-          <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
+          <Badge
+            variant="outline"
+            className="border-success/30 bg-success-muted text-success-foreground"
+          >
             启用
           </Badge>
         ) : (
@@ -78,7 +81,7 @@ const COLUMNS = (roleOptions: RoleOption[]): DataTableColumn<UserItem>[] => [
         {isLocked(r) && (
           <Badge
             variant="outline"
-            className="border-amber-200 bg-amber-50 text-amber-700"
+            className="border-warning/40 bg-warning-muted text-warning-foreground"
             title={`锁定至 ${formatDate(r.lockedUntil as string)}`}
           >
             已锁定
@@ -92,7 +95,10 @@ const COLUMNS = (roleOptions: RoleOption[]): DataTableColumn<UserItem>[] => [
     header: '两步验证',
     cell: (r) =>
       r.twoFactorEnabled ? (
-        <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
+        <Badge
+          variant="outline"
+          className="border-success/30 bg-success-muted text-success-foreground"
+        >
           已启用
         </Badge>
       ) : (
@@ -238,9 +244,9 @@ export default function UsersPage() {
           <div className="flex justify-end gap-1">
             {isLocked(r) && (
               <Button
-                size="icon"
+                size="icon-sm"
                 variant="ghost"
-                className="h-8 w-8 text-amber-600 hover:text-amber-700"
+                className="text-warning-foreground hover:text-warning-foreground/80"
                 onClick={() => void handleUnlock(r)}
                 disabled={updateMut.isPending}
                 aria-label="解锁"
@@ -249,16 +255,16 @@ export default function UsersPage() {
                 <LockOpen className="h-4 w-4" />
               </Button>
             )}
-            <Button size="icon" variant="ghost" className="h-8 w-8" asChild>
+            <Button size="icon-sm" variant="ghost" asChild>
               <Link href={`/users/${r.id}/edit`} aria-label="编辑">
                 <UserCog className="h-4 w-4" />
               </Link>
             </Button>
             {r.username !== currentUsername && (
               <Button
-                size="icon"
+                size="icon-sm"
                 variant="ghost"
-                className="h-8 w-8 text-destructive hover:text-destructive"
+                className="text-destructive hover:text-destructive"
                 onClick={() => setDeleteTarget(r)}
                 aria-label="删除"
               >

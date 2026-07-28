@@ -117,13 +117,15 @@ export function computeSiblingIds(
   const overItemIndex = items.findIndex(({ id }) => id === overId);
   const reordered = arrayMove(items, activeItemIndex, overItemIndex);
   const active = items[activeItemIndex];
-  return reordered
-    // 注意：跨父级移动时被拖节点的 parentId 仍是旧值，需按 newParentId 视为已归属目标父级，
-    // 否则它会被过滤掉，导致 newIndex 为 -1、排序序列缺失该节点。
-    .filter(
-      (item) =>
-        item.type === active?.type &&
-        (item.id === activeId ? true : item.parentId === newParentId),
-    )
-    .map((item) => item.id);
+  return (
+    reordered
+      // 注意：跨父级移动时被拖节点的 parentId 仍是旧值，需按 newParentId 视为已归属目标父级，
+      // 否则它会被过滤掉，导致 newIndex 为 -1、排序序列缺失该节点。
+      .filter(
+        (item) =>
+          item.type === active?.type &&
+          (item.id === activeId ? true : item.parentId === newParentId),
+      )
+      .map((item) => item.id)
+  );
 }

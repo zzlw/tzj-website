@@ -152,7 +152,7 @@ export default function AuditLogsPage() {
     <TooltipProvider>
       <PageHeader title="操作日志" description="查看后台账号的操作记录，便于追溯与审计。" />
 
-      <Card className="mb-6 border-border/80 py-0 shadow-sm">
+      <Card className="mb-6 border-border/80 py-0">
         <CardContent className="flex flex-wrap items-center gap-3 p-4">
           <form
             className="relative min-w-[220px] flex-1"
@@ -253,8 +253,7 @@ export default function AuditLogsPage() {
               <Button
                 type="button"
                 variant="ghost"
-                size="icon"
-                className="h-8 w-8"
+                size="icon-sm"
                 aria-label="查看详情"
                 onClick={() => setDetailId(r.id)}
               >

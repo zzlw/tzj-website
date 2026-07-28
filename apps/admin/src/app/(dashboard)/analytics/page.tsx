@@ -2,6 +2,7 @@
 
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -66,8 +67,8 @@ function StatCard({
   loading?: boolean;
 }) {
   return (
-    <Card className="border-border/80 shadow-sm">
-      <CardHeader className="pb-2">
+    <Card className="border-border/80">
+      <CardHeader>
         <CardDescription>{label}</CardDescription>
         <CardTitle className="text-3xl tabular-nums">
           {loading ? <Skeleton className="h-9 w-20" /> : value.toLocaleString('zh-CN')}
@@ -216,7 +217,7 @@ function SourcesSection({ params }: { params: { from?: string; to?: string } }) 
 
   return (
     <div className="mb-6 grid gap-6 lg:grid-cols-2">
-      <Card className="border-border/80 shadow-sm">
+      <Card className="border-border/80">
         <CardHeader>
           <CardTitle className="text-base">流量来源</CardTitle>
           <CardDescription>按渠道分组（UTM 媒介 / gclid / 引荐域名推断）的 PV 占比</CardDescription>
@@ -226,7 +227,7 @@ function SourcesSection({ params }: { params: { from?: string; to?: string } }) 
         </CardContent>
       </Card>
 
-      <Card className="border-border/80 shadow-sm">
+      <Card className="border-border/80">
         <CardHeader>
           <CardTitle className="text-base">热门广告系列</CardTitle>
           <CardDescription>带 utm_campaign 标记的访问排行（Top 15）</CardDescription>
@@ -355,7 +356,7 @@ export default function AnalyticsPage() {
         description="官网 C 端访问统计：页面浏览量、独立访客、热门页面与来源（first-party，隐私友好）。"
       />
 
-      <Card className="mb-6 border-border/80 py-0 shadow-sm">
+      <Card className="mb-6 border-border/80 py-0">
         <CardContent className="flex flex-wrap items-center gap-3 p-4">
           <DateRangePicker
             className="h-9 w-[280px]"
@@ -369,7 +370,7 @@ export default function AnalyticsPage() {
       </Card>
 
       <Can anyPerm={['security.view', 'security.manage']}>
-        <Card className="mb-6 border-border/80 shadow-sm">
+        <Card className="mb-6 border-border/80 py-0">
           <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
             <div className="flex items-start gap-3">
               <ShieldBan className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
@@ -415,20 +416,20 @@ export default function AnalyticsPage() {
         />
       </div>
 
-      <Card className="mb-6 border-border/80 shadow-sm">
-        <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
-          <div className="space-y-1.5">
-            <CardTitle className="text-base">访问趋势</CardTitle>
-            <CardDescription>
-              {GRANULARITY_LABELS[granularity]} PV（面积）与 UV（折线）对比
-            </CardDescription>
-          </div>
-          <GranularitySwitch
-            value={granularity}
-            from={from}
-            to={to}
-            onChange={(g) => setDate({ g: g === defaultGranularity(from, to) ? '' : g })}
-          />
+      <Card className="mb-6 border-border/80">
+        <CardHeader>
+          <CardTitle className="text-base">访问趋势</CardTitle>
+          <CardDescription>
+            {GRANULARITY_LABELS[granularity]} PV（面积）与 UV（折线）对比
+          </CardDescription>
+          <CardAction>
+            <GranularitySwitch
+              value={granularity}
+              from={from}
+              to={to}
+              onChange={(g) => setDate({ g: g === defaultGranularity(from, to) ? '' : g })}
+            />
+          </CardAction>
         </CardHeader>
         <CardContent>
           <TrendChart
@@ -440,7 +441,7 @@ export default function AnalyticsPage() {
       </Card>
 
       <div className="mb-6 grid gap-6 lg:grid-cols-2">
-        <Card className="border-border/80 shadow-sm">
+        <Card className="border-border/80">
           <CardHeader>
             <CardTitle className="text-base">访客地区</CardTitle>
             <CardDescription>
@@ -456,7 +457,7 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-border/80 shadow-sm">
+        <Card className="border-border/80">
           <CardHeader>
             <CardTitle className="text-base">热门页面</CardTitle>
             <CardDescription>访问量最高的页面路径（Top 8）</CardDescription>
@@ -472,7 +473,7 @@ export default function AnalyticsPage() {
       </div>
 
       <div className="mb-6 grid gap-6 lg:grid-cols-3">
-        <Card className="border-border/80 shadow-sm">
+        <Card className="border-border/80">
           <CardHeader>
             <CardTitle className="text-base">设备分布</CardTitle>
           </CardHeader>
@@ -481,7 +482,7 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-border/80 shadow-sm">
+        <Card className="border-border/80">
           <CardHeader>
             <CardTitle className="text-base">浏览器分布</CardTitle>
           </CardHeader>
@@ -490,7 +491,7 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-border/80 shadow-sm">
+        <Card className="border-border/80">
           <CardHeader>
             <CardTitle className="text-base">浏览器兼容性分布</CardTitle>
             <CardDescription>

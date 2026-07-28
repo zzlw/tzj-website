@@ -30,12 +30,12 @@ function MediaStatusBadges({ asset }: { asset: MediaAsset }) {
   return (
     <div className="absolute bottom-1 left-1 z-10 flex flex-wrap gap-1">
       {asset.isSiteResource ? (
-        <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+        <Badge variant="secondary" className="h-5 px-1.5 text-xs">
           站点资源
         </Badge>
       ) : null}
       {asset.usageCount && asset.usageCount > 0 ? (
-        <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+        <Badge variant="secondary" className="h-5 px-1.5 text-xs">
           使用中 · {asset.usageCount}
         </Badge>
       ) : null}
@@ -92,43 +92,44 @@ export function MediaCard({
     </>
   );
 
-  const thumb = (
-    <div
-      role={isImage ? undefined : 'button'}
-      tabIndex={isImage ? undefined : 0}
-      onClick={isImage ? undefined : handleActivate}
-      onKeyDown={
-        isImage
-          ? undefined
-          : (e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                handleActivate();
-              }
-            }
-      }
-      className="relative block aspect-square w-full cursor-pointer overflow-hidden bg-muted/30 text-left outline-none transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-      aria-label={isImage ? undefined : `预览 ${asset.filename}`}
-    >
+  const thumbCls =
+    'relative block aspect-square w-full cursor-pointer overflow-hidden bg-muted/30 text-left outline-none transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
+  const thumbBody = (
+    <>
       {thumbInner}
       {mode === 'active' ? <MediaStatusBadges asset={asset} /> : null}
-    </div>
+    </>
+  );
+  // 图片由 ImagePreview 包裹接管交互；非图片用真按钮承载点击/键盘激活
+  const thumb = isImage ? (
+    <div className={thumbCls}>{thumbBody}</div>
+  ) : (
+    <button
+      type="button"
+      onClick={handleActivate}
+      className={thumbCls}
+      aria-label={`预览 ${asset.filename}`}
+    >
+      {thumbBody}
+    </button>
   );
 
   return (
-    <Card className="group overflow-hidden border-border/80 py-0 shadow-sm transition-colors hover:border-primary/30">
+    <Card className="group gap-0 overflow-hidden border-border/80 py-0 transition-colors hover:border-primary/30">
       <div className="relative">
         {isImage ? <ImagePreview src={asset.url}>{thumb}</ImagePreview> : thumb}
         <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex justify-end gap-1 p-2 opacity-0 transition-opacity group-hover:opacity-100 group-hover:pointer-events-auto">
+          {/* biome-ignore lint/a11y/useKeyWithClickEvents: 仅阻断冒泡避免触发缩略图预览，非交互控件 */}
+          {/* biome-ignore lint/a11y/noStaticElementInteractions: 同上，冒泡阻断容器 */}
           <div className="flex gap-1" onClick={stop}>
             {mode === 'active' ? (
               <>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
-                      size="icon"
+                      size="icon-xs"
                       variant="secondary"
-                      className="h-7 w-7 cursor-pointer bg-background/80 backdrop-blur-sm"
+                      className="cursor-pointer bg-background/80 backdrop-blur-sm"
                       onClick={() => onCopy(asset.url)}
                     >
                       {copiedUrl === asset.url ? (
@@ -143,9 +144,9 @@ export function MediaCard({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
-                      size="icon"
+                      size="icon-xs"
                       variant="secondary"
-                      className="h-7 w-7 cursor-pointer bg-background/80 backdrop-blur-sm"
+                      className="cursor-pointer bg-background/80 backdrop-blur-sm"
                       onClick={() => downloadMediaAsset(asset)}
                     >
                       <Download className="h-3.5 w-3.5" />
@@ -157,9 +158,9 @@ export function MediaCard({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
-                        size="icon"
+                        size="icon-xs"
                         variant="secondary"
-                        className="h-7 w-7 cursor-pointer bg-background/80 backdrop-blur-sm"
+                        className="cursor-pointer bg-background/80 backdrop-blur-sm"
                         onClick={() => openInNewTab(asset.url)}
                       >
                         <ExternalLink className="h-3.5 w-3.5" />
@@ -173,9 +174,9 @@ export function MediaCard({
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
-                          size="icon"
+                          size="icon-xs"
                           variant="secondary"
-                          className="h-7 w-7 cursor-pointer bg-background/80 backdrop-blur-sm hover:border-primary/60 hover:bg-primary hover:text-primary-foreground"
+                          className="cursor-pointer bg-background/80 backdrop-blur-sm hover:border-primary/60 hover:bg-primary hover:text-primary-foreground"
                           onClick={() => onReplaceSite?.(asset)}
                         >
                           <RefreshCw className="h-3.5 w-3.5" />
@@ -190,10 +191,10 @@ export function MediaCard({
                     <TooltipTrigger asChild>
                       <span>
                         <Button
-                          size="icon"
+                          size="icon-xs"
                           variant="secondary"
                           disabled={!canDelete}
-                          className="h-7 w-7 cursor-pointer bg-background/80 backdrop-blur-sm hover:bg-destructive hover:text-destructive-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                          className="cursor-pointer bg-background/80 backdrop-blur-sm hover:bg-destructive hover:text-destructive-foreground disabled:cursor-not-allowed disabled:opacity-40"
                           onClick={() => canDelete && onDelete(asset)}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -216,9 +217,9 @@ export function MediaCard({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
-                        size="icon"
+                        size="icon-xs"
                         variant="secondary"
-                        className="h-7 w-7 cursor-pointer bg-background/80 backdrop-blur-sm"
+                        className="cursor-pointer bg-background/80 backdrop-blur-sm"
                         onClick={() => onRestore?.(asset)}
                       >
                         <RotateCcw className="h-3.5 w-3.5" />
@@ -231,9 +232,9 @@ export function MediaCard({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
-                        size="icon"
+                        size="icon-xs"
                         variant="secondary"
-                        className="h-7 w-7 cursor-pointer bg-background/80 backdrop-blur-sm hover:bg-destructive hover:text-destructive-foreground"
+                        className="cursor-pointer bg-background/80 backdrop-blur-sm hover:bg-destructive hover:text-destructive-foreground"
                         onClick={() => onPurge?.(asset)}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -251,7 +252,7 @@ export function MediaCard({
         <p className="truncate text-xs font-medium" title={asset.filename}>
           {asset.filename}
         </p>
-        <p className="mt-0.5 text-[10px] text-muted-foreground">{formatFileSize(asset.size)}</p>
+        <p className="mt-0.5 text-xs text-muted-foreground">{formatFileSize(asset.size)}</p>
       </CardContent>
     </Card>
   );

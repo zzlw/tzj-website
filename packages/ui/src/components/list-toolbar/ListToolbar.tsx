@@ -31,7 +31,7 @@ export function ListToolbar({
   }
 
   return (
-    <Card className={cn('mb-4 border-border/80 py-0 shadow-sm', className)}>
+    <Card className={cn('mb-4 border-border/80 py-0', className)}>
       <CardContent className="flex flex-wrap items-center gap-3 p-4">
         <form className="relative min-w-[220px] flex-1" onSubmit={handleSubmit}>
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

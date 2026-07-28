@@ -9,7 +9,6 @@ import { type ButtonProps, buttonVariants } from '../button';
 /** shadcn/ui Pagination 原语 — https://ui.shadcn.com/docs/components/pagination */
 const Pagination = ({ className, ...props }: ComponentProps<'nav'>) => (
   <nav
-    role="navigation"
     aria-label="pagination"
     className={cn('mx-auto flex w-full justify-center', className)}
     {...props}

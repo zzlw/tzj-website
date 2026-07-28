@@ -216,9 +216,13 @@ tzj-uploads-dev/
 
 ## 设计令牌规范 (Design Tokens)
 
+### 分层架构（B2 多主题后）
+
+- **web（C 端）**：维持编译期 `@theme` 直写——ui 共享基准在前、app 覆盖在后，视觉不变，不加载主题切换器。
+- **admin（B 端）**：运行时主题机制——工具类经 `@theme inline` 映射到原始变量（oklch），`:root` / `.dark` / `.theme-*` 运行时切换；10 套配色预设（含品牌红 `theme-brand`）+ 明暗模式 + cookie 持久化。默认主题为中性 zinc 体系，品牌红沉淀为预设之一。细则见 CONVENTIONS.md「Admin 多主题机制」。
+
 ### 圆角刻度 (Border Radius)
 
-- Tailwind v4 通过 `@theme` 中的 `--radius-*` 命名空间自动生成 `rounded-*` 工具类；各 app 在共享 `packages/ui/src/globals.css` 之上，可在自身 `@theme` 覆盖品牌值（导入顺序：ui 在前，app 在后，app 覆盖优先）。
 - 共享基准刻度（`packages/ui/src/globals.css`）：
 
   | token | sm | md | lg | xl | 2xl | 3xl | 4xl | 6xl | 8xl |
@@ -226,15 +230,16 @@ tzj-uploads-dev/
   | 值(rem) | 0.25 | 0.5 | 0.75 | 1 | 1 | 1.5 | 2 | 3 | 4 |
   | 值(px) | 4 | 8 | 12 | 16 | 16 | 24 | 32 | 48 | 64 |
 
-- 各 app 覆盖现状：
-  - **admin（B 端工业后台）**：覆盖 `sm/md/lg/xl` 为锐利风（2/2/4/4px），并补 `2xl=8px`、`3xl=16px` 作桥梁档消除 `xl→2xl` 断崖；`4xl+` 走共享基准（32/48/64px），全程单调递增、无断档。
+- 各 app 现状：
+  - **admin**：由单一运行时 `--radius` 派生（sm=-4px / md=-2px / lg=基准 / xl=+4px / 2xl=+8px / 3xl=+14px），默认 0.625rem；主题预设可覆盖 `--radius` 整体缩放（如 `theme-brand` 的 0.375rem 锐利工业风）；`4xl+` 走共享基准。旧版「逐档枚举覆盖 + 单调递增审查」对 admin 废止（派生机制天然单调）。
   - **web（C 端 Rosenbauer 工业风）**：`sm~xl` 锐利（2/2/4/4px）、`2xl=6px`、`3xl=16px`（作"桥梁"，避免断崖）、`4xl/6xl/8xl` 大圆角（32/48/64px）。
-- **禁止事项（Constitutional）**：app 覆盖圆角时，相邻大刻度之间必须保持**单调、可预期的递增**，禁止出现"锐利小圆角 → 大圆角"的断崖（如 web 曾出现的 `3xl=8px → 4xl=32px`，落差 24px）。若需锐利工业风，仅覆盖到 `2xl` 及以下；`4xl+` 大圆角档应连续，中间用 `3xl` 等档位作过渡桥梁。
+- **禁止事项（Constitutional，适用于 web 等枚举式覆盖）**：app 覆盖圆角时，相邻大刻度之间必须保持**单调、可预期的递增**，禁止出现"锐利小圆角 → 大圆角"的断崖。若需锐利工业风，仅覆盖到 `2xl` 及以下；`4xl+` 大圆角档应连续，中间用 `3xl` 等档位作过渡桥梁。
 
 ### 所有权
 
-- `packages/ui/src/globals.css` 的圆角基准 — A1 维护（共享令牌，改动需评审）
-- `apps/*/src/app/globals.css` 的品牌圆角覆盖 — A2 维护，但须遵守上方"禁止事项"
+- `packages/ui/src/globals.css` 的圆角基准与语义状态令牌 — A1 维护（共享令牌，改动需评审）
+- `apps/admin/src/app/globals.css` + `theme-presets.css` 的运行时主题层 — A2 维护，预设必须同时提供明暗两套值
+- `apps/web/src/app/globals.css` 的品牌覆盖 — A2 维护，须遵守上方"禁止事项"
 
 ---
 

@@ -256,7 +256,7 @@ export function HorizontalBarChart({
           axisLine={false}
           tickLine={false}
         />
-        <Tooltip content={<ChartTooltip />} cursor={{ fill: 'var(--color-muted)', opacity: 0.4 }} />
+        <Tooltip content={<ChartTooltip />} cursor={{ fill: 'var(--muted)', opacity: 0.4 }} />
         <Bar dataKey={valueKey} name="访问量" radius={[0, 2, 2, 0]} maxBarSize={24}>
           {items.map((entry, index) => (
             <Cell key={entry.name} fill={CHART_COLORS[index % CHART_COLORS.length]} />

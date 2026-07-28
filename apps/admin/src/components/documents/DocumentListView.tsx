@@ -27,16 +27,13 @@ import {
   TablePagination,
   TagChip,
   TagFilterBar,
-  Tooltip,
-  TooltipContent,
   TooltipProvider,
-  TooltipTrigger,
 } from '@tzj/ui';
 import {
-  Eye,
   FileText,
   FolderInput,
   FolderOpen,
+  Lock,
   MoreHorizontal,
   Pencil,
   Pin,
@@ -106,7 +103,6 @@ function DocumentRowActions({
   onMove: () => void;
   onDelete: () => void;
 }) {
-  const readHref = config.detailPath?.(doc) ?? `/documents/mine/${doc.id}`;
   const editHref = `${config.basePath}/${doc.id}/edit`;
   const [permOpen, setPermOpen] = useState(false);
 
@@ -114,7 +110,7 @@ function DocumentRowActions({
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8">
+          <Button variant="ghost" size="icon-sm">
             <MoreHorizontal className="h-4 w-4" />
             <span className="sr-only">更多操作</span>
           </Button>
@@ -130,21 +126,7 @@ function DocumentRowActions({
           </Can>
           <Can anyPerm={perms(config, 'edit')}>
             <DropdownMenuItem onClick={() => setPermOpen(true)}>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="mr-2 h-4 w-4"
-              >
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-              </svg>
+              <Lock className="mr-2 h-4 w-4" />
               权限管理
             </DropdownMenuItem>
           </Can>
@@ -179,7 +161,7 @@ function DocumentRowActions({
 
 function PinnedBadge() {
   return (
-    <Badge className="gap-1 border-transparent bg-amber-500 text-white shadow-sm hover:bg-amber-500">
+    <Badge className="gap-1 border-transparent bg-warning text-white shadow-sm hover:bg-warning">
       <Pin className="h-3 w-3 fill-current" />
       置顶
     </Badge>
@@ -216,7 +198,7 @@ function DocumentListRow({
       icon={pinned ? <Pin className="h-5 w-5 fill-current" /> : <FileText className="h-5 w-5" />}
       title={highlightKeyword(doc.title, search)}
       description={highlightKeyword(summary, search)}
-      badges={<>{pinned ? <PinnedBadge /> : null}</>}
+      badges={pinned ? <PinnedBadge /> : null}
       tags={
         doc.tags?.length
           ? doc.tags.map((tag) => (
@@ -267,7 +249,7 @@ function DocumentListRow({
             {doc.visibility === 'public' && (
               <Badge
                 variant="outline"
-                className="h-5 px-1.5 text-[10px] border-green-600 text-green-700 dark:border-green-500 dark:text-green-400"
+                className="h-5 px-1.5 text-xs border-success text-success-foreground dark:border-success dark:text-success"
               >
                 全局可见
               </Badge>
@@ -275,7 +257,7 @@ function DocumentListRow({
             {doc.visibility === 'partial' && (
               <Badge
                 variant="outline"
-                className="h-5 px-1.5 text-[10px] border-blue-600 text-blue-700 dark:border-blue-500 dark:text-blue-400"
+                className="h-5 px-1.5 text-xs border-info text-info-foreground"
               >
                 部分人可见
               </Badge>
@@ -283,7 +265,7 @@ function DocumentListRow({
             {doc.visibility === 'private' && (
               <Badge
                 variant="outline"
-                className="h-5 px-1.5 text-[10px] border-gray-600 text-gray-700 dark:border-gray-500 dark:text-gray-400"
+                className="h-5 px-1.5 text-xs border-border text-muted-foreground"
               >
                 仅自己可见
               </Badge>
@@ -504,9 +486,9 @@ export function DocumentListView({
           <Button
             type="button"
             variant="ghost"
-            size="sm"
+            size="xs"
             onClick={clearAllFilters}
-            className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground"
           >
             <X className="h-3.5 w-3.5" />
             清除全部
@@ -515,7 +497,7 @@ export function DocumentListView({
       ) : null}
 
       {tagStats?.length || activeTag ? (
-        <Card className="mb-4 border-border/80 py-0 shadow-sm">
+        <Card className="mb-4 border-border/80 py-0">
           <CardContent className="p-4">
             <TagFilterBar
               tags={tagStats ?? []}
@@ -533,7 +515,7 @@ export function DocumentListView({
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 text-muted-foreground"
+              className="text-muted-foreground"
               onClick={() => setTagsManageOpen(true)}
             >
               <Tags className="mr-1.5 h-3.5 w-3.5" />
@@ -573,8 +555,8 @@ export function DocumentListView({
             <>
               <ContentListSectionHeader
                 title="置顶"
-                icon={<Pin className="h-3.5 w-3.5 fill-current text-amber-600" />}
-                className="bg-amber-50/80 dark:bg-amber-950/30"
+                icon={<Pin className="h-3.5 w-3.5 fill-current text-warning" />}
+                className="bg-warning-muted/80 dark:bg-warning/10"
               />
               {pinnedRows.map((doc) => (
                 <DocumentListRow

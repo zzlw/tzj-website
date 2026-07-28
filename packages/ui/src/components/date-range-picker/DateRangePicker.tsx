@@ -106,6 +106,7 @@ function DateRangePicker({
           <CalendarIcon className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" />
           <span className="flex-1 truncate">{label ?? placeholder}</span>
           {hasValue ? (
+            // biome-ignore lint/a11y/useKeyWithClickEvents: 嵌套在触发按钮内的清除角标，故意不可聚焦（tabIndex=-1），键盘用户经日历面板清除
             <span
               role="button"
               aria-label="清除日期范围"
@@ -123,11 +124,7 @@ function DateRangePicker({
           ) : null}
         </Button>
       </PopoverTrigger>
-      <PopoverContent
-        className="w-auto p-0"
-        align="start"
-        onOpenAutoFocus={(e) => e.preventDefault()}
-      >
+      <PopoverContent className="w-auto p-0" align="start" initialFocus={false}>
         <Calendar
           mode="range"
           locale={zhCN}

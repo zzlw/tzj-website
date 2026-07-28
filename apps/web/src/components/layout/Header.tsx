@@ -260,6 +260,7 @@ export function Header({
                   const isActive = item.label === activeTopLabel;
                   return (
                     <button
+                      type="button"
                       key={item.label}
                       onClick={(e) => openTop(item, e.currentTarget)}
                       aria-current={isActive ? 'page' : undefined}
@@ -318,6 +319,7 @@ export function Header({
               </button>
 
               <button
+                type="button"
                 ref={menuButtonRef}
                 onClick={openRoot}
                 className={`h-10 w-10 items-center justify-center text-neutral-900 transition-colors hover:text-primary ${
@@ -361,6 +363,7 @@ export function Header({
         <div className="flex h-16 shrink-0 items-center px-5 lg:hidden">
           {path.length > 0 ? (
             <button
+              type="button"
               onClick={back}
               className="inline-flex items-center gap-1.5 font-display text-sm font-bold text-neutral-700 transition-colors hover:text-primary"
             >
@@ -511,6 +514,7 @@ export function Header({
                 const isLastChild = idx === (current.children?.length ?? 0) - 1;
                 return hasChildren(child) ? (
                   <button
+                    type="button"
                     key={child.label}
                     onClick={() => drillInto(child)}
                     className={`flex items-center justify-between py-5 text-left transition-colors hover:text-primary ${
@@ -541,6 +545,7 @@ export function Header({
               <nav aria-label={tHeader('mainNav')}>
                 {NAV_ITEMS.map((item) => (
                   <button
+                    type="button"
                     key={item.label}
                     onClick={() => (hasChildren(item) ? drillInto(item) : go(item.href))}
                     className="pointer group flex w-full items-center justify-between border-b border-neutral-300 px-6 py-5 text-left transition-colors hover:text-primary"

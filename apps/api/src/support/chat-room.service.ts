@@ -378,20 +378,22 @@ export class ChatRoomService {
     return {
       ...raw,
       // P1-1：DB 返回最近 200 条（desc），reverse 恢复升序以保持前端渲染顺序不变
-      messages: (raw.messages ?? []).map((m: RawMessage) => ({
-        messageId: m.messageId,
-        content: m.content ?? '',
-        sender: m.sender as ChatMessageSender,
-        senderEmail: m.senderEmail ?? undefined,
-        timestamp: m.timestamp,
-        isRead: m.isRead,
-        attachments: mapAttachments(m.attachments ?? [], this.s3),
-        readBy: (m.readReceipts ?? []).map((r: RawReadReceipt) => ({
-          userEmail: r.userEmail,
-          userType: r.userType as ChatMessageUserType,
-          readAt: r.readAt,
-        })),
-      })).reverse(),
+      messages: (raw.messages ?? [])
+        .map((m: RawMessage) => ({
+          messageId: m.messageId,
+          content: m.content ?? '',
+          sender: m.sender as ChatMessageSender,
+          senderEmail: m.senderEmail ?? undefined,
+          timestamp: m.timestamp,
+          isRead: m.isRead,
+          attachments: mapAttachments(m.attachments ?? [], this.s3),
+          readBy: (m.readReceipts ?? []).map((r: RawReadReceipt) => ({
+            userEmail: r.userEmail,
+            userType: r.userType as ChatMessageUserType,
+            readAt: r.readAt,
+          })),
+        }))
+        .reverse(),
     };
   }
 

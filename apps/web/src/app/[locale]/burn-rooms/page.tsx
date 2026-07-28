@@ -1,7 +1,7 @@
 import { Check } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { RelatedLinks } from '@/components/sections/blocks';
-import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
+import { StatBandI18n } from '@/components/sections/blocks-i18n';
 import { Container, RbButton, RbLink, SectionHeading, VideoHero } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 

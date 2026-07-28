@@ -118,6 +118,7 @@ export function TablePagination({
 
           {pageItems.map((item, index) =>
             item === 'ellipsis' ? (
+              // biome-ignore lint/suspicious/noArrayIndexKey: 省略号占位项无身份，索引 key 安全
               <PaginationItem key={`ellipsis-${index}`}>
                 <PaginationEllipsis />
               </PaginationItem>

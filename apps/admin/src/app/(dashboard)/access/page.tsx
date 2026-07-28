@@ -5,6 +5,7 @@ import {
   Badge,
   Button,
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -164,7 +165,7 @@ export default function AccessPage() {
           <div className="flex items-center gap-2">
             <span className="font-medium">{role.label}</span>
             {role.system ? (
-              <Badge variant="secondary" className="text-[10px]">
+              <Badge variant="secondary" className="text-xs">
                 系统
               </Badge>
             ) : null}
@@ -172,7 +173,7 @@ export default function AccessPage() {
           <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
             {role.description || '—'}
           </p>
-          <p className="mt-1 text-[10px] text-muted-foreground">
+          <p className="mt-1 text-xs text-muted-foreground">
             {role.userCount} 个启用账号 · {role.slug}
           </p>
         </div>
@@ -215,14 +216,14 @@ export default function AccessPage() {
         ) : (
           <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
             <Card className="h-fit">
-              <CardHeader className="pb-3">
+              <CardHeader>
                 <CardTitle className="text-base">角色列表</CardTitle>
                 <CardDescription>选择角色查看权限明细</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3 p-2 pt-0">
+              <CardContent className="space-y-3 px-2">
                 {systemRoles.length > 0 ? (
                   <div>
-                    <p className="px-3 pb-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                    <p className="px-3 pb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                       系统角色
                     </p>
                     <div className="space-y-0.5">{systemRoles.map(renderRoleItem)}</div>
@@ -230,7 +231,7 @@ export default function AccessPage() {
                 ) : null}
                 {customRoles.length > 0 ? (
                   <div>
-                    <p className="px-3 pb-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                    <p className="px-3 pb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                       自定义角色
                     </p>
                     <div className="space-y-0.5">{customRoles.map(renderRoleItem)}</div>
@@ -244,17 +245,15 @@ export default function AccessPage() {
             </Card>
 
             <Card>
-              <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
-                <div>
-                  <CardTitle className="text-base">{selected?.label ?? '—'} · 权限明细</CardTitle>
-                  <CardDescription>
-                    {selected?.system
-                      ? '系统预置角色，权限由平台定义，不可修改。'
-                      : '自定义角色。修改权限后，使用该角色的账号需重新登录生效。'}
-                  </CardDescription>
-                </div>
+              <CardHeader>
+                <CardTitle className="text-base">{selected?.label ?? '—'} · 权限明细</CardTitle>
+                <CardDescription>
+                  {selected?.system
+                    ? '系统预置角色，权限由平台定义，不可修改。'
+                    : '自定义角色。修改权限后，使用该角色的账号需重新登录生效。'}
+                </CardDescription>
                 {selected && !selected.system ? (
-                  <div className="flex shrink-0 gap-2">
+                  <CardAction className="flex gap-2">
                     <Button variant="outline" size="sm" onClick={() => openEdit(selected)}>
                       <Pencil className="mr-1.5 h-3.5 w-3.5" />
                       编辑
@@ -280,7 +279,7 @@ export default function AccessPage() {
                         </TooltipContent>
                       ) : null}
                     </Tooltip>
-                  </div>
+                  </CardAction>
                 ) : null}
               </CardHeader>
               <CardContent className="space-y-6">

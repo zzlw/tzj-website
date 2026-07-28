@@ -29,7 +29,8 @@ export function SocialQrImage({ qr, platform, label, className }: SocialQrImageP
   const showPlaceholder = !src || index >= candidates.length;
 
   return (
-    <div className={className} aria-label={label}>
+    // 内部 img 已携带 alt 文本，容器不另设 aria 属性
+    <div className={className}>
       {showPlaceholder ? (
         <SocialQrPlaceholder platform={platform} />
       ) : (

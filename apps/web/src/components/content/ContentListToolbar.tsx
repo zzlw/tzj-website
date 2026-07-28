@@ -98,7 +98,7 @@ export function ContentListToolbar({
           <PopoverContent
             align="end"
             sideOffset={4}
-            className="w-[var(--radix-popover-trigger-width)] rounded-none border-neutral-300 p-1 shadow-md"
+            className="w-[var(--anchor-width)] rounded-none border-neutral-300 p-1 shadow-md"
           >
             <div role="listbox" aria-label={t('sort.ariaLabel')} className="flex flex-col">
               {sortOptions.map((o) => {

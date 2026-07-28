@@ -1,7 +1,7 @@
-import { Slot } from '@radix-ui/react-slot';
 import { ChevronRight, MoreHorizontal } from 'lucide-react';
 import type { ComponentPropsWithoutRef } from 'react';
 import { forwardRef } from 'react';
+import { Slot } from '../../lib/slot';
 import { cn } from '../../lib/utils';
 
 /** shadcn/ui Breadcrumb — https://ui.shadcn.com/docs/components/breadcrumb */

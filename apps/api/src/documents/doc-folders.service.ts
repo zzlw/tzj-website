@@ -210,7 +210,7 @@ function buildFolderTree(
   }
   const sortNodes = (list: DocFolderTreeNode[]) => {
     list.sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name));
-    list.forEach((n) => sortNodes(n.children));
+    for (const n of list) sortNodes(n.children);
   };
   sortNodes(roots);
   return roots;

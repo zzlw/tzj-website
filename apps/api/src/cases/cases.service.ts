@@ -45,8 +45,16 @@ export class CasesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll(params: FindAllParams) {
-    const { page, limit, caseType, status, search, includeUnpublished = false, sortBy, sortOrder } =
-      params;
+    const {
+      page,
+      limit,
+      caseType,
+      status,
+      search,
+      includeUnpublished = false,
+      sortBy,
+      sortOrder,
+    } = params;
     const skip = (page - 1) * limit;
 
     const where: Prisma.CaseWhereInput = {

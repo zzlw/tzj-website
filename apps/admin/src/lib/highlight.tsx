@@ -16,10 +16,7 @@ export function highlightKeyword(text: string, keyword?: string | null): ReactNo
   while (hit !== -1) {
     if (hit > idx) parts.push(text.slice(idx, hit));
     parts.push(
-      <mark
-        key={hit}
-        className="rounded-sm bg-amber-200/70 px-0.5 text-inherit dark:bg-amber-500/30"
-      >
+      <mark key={hit} className="rounded-sm bg-warning/25 px-0.5 text-inherit dark:bg-warning/30">
         {text.slice(hit, hit + q.length)}
       </mark>,
     );

@@ -1,7 +1,7 @@
 import { Flame, Handshake, HardHat } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { CtaBand, FeatureGrid, RelatedLinks } from '@/components/sections/blocks';
-import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
+import { StatBandI18n } from '@/components/sections/blocks-i18n';
 import { Container, PageHero, SectionHeading } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 

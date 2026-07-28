@@ -30,6 +30,7 @@ export {
 // Components — Card
 export {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardFooter,

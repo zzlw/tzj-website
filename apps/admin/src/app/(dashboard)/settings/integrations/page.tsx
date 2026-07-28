@@ -5,6 +5,7 @@ import {
   Badge,
   Button,
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -75,12 +76,13 @@ function IntegrationSetupGuide({ item }: { item: IntegrationAdminItem }) {
 
   return (
     <Collapsible className="rounded-lg border bg-muted/30">
-      <CollapsibleTrigger className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-medium hover:bg-muted/50 [&[data-state=open]>svg.chevron]:rotate-180">
+      <CollapsibleTrigger className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-medium hover:bg-muted/50 [&[data-panel-open]>svg.chevron]:rotate-180">
         <span className="flex min-w-0 flex-1 items-center gap-2">
           <BookOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
           配置教程
         </span>
         {(item.updatedAt || item.updatedBy) && (
+          // biome-ignore lint/a11y/noStaticElementInteractions: 仅阻断冒泡避免误触折叠切换，非交互控件
           <span
             className="hidden shrink-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs font-normal text-muted-foreground sm:inline-flex"
             onClick={(e) => e.stopPropagation()}
@@ -193,24 +195,24 @@ function IntegrationCard({ item }: { item: IntegrationAdminItem }) {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
-        <div className="space-y-1">
-          <CardTitle className="flex flex-wrap items-center gap-2 text-lg">
-            <Plug className="h-4 w-4 text-muted-foreground" />
-            {item.label}
-            {item.secretsConfigured && <Badge variant="secondary">DB 已配置</Badge>}
-            {item.envFallbackActive && <Badge variant="outline">Env 兜底</Badge>}
-          </CardTitle>
-          <CardDescription>{item.description}</CardDescription>
-        </div>
-        <Can perm="integrations.manage">
-          <div className="flex items-center gap-2">
-            <Label htmlFor={`enabled-${item.slug}`} className="text-sm text-muted-foreground">
-              启用
-            </Label>
-            <Switch id={`enabled-${item.slug}`} checked={enabled} onCheckedChange={setEnabled} />
-          </div>
-        </Can>
+      <CardHeader>
+        <CardTitle className="flex flex-wrap items-center gap-2 text-lg">
+          <Plug className="h-4 w-4 text-muted-foreground" />
+          {item.label}
+          {item.secretsConfigured && <Badge variant="secondary">DB 已配置</Badge>}
+          {item.envFallbackActive && <Badge variant="outline">Env 兜底</Badge>}
+        </CardTitle>
+        <CardDescription>{item.description}</CardDescription>
+        <CardAction>
+          <Can perm="integrations.manage">
+            <div className="flex items-center gap-2">
+              <Label htmlFor={`enabled-${item.slug}`} className="text-sm text-muted-foreground">
+                启用
+              </Label>
+              <Switch id={`enabled-${item.slug}`} checked={enabled} onCheckedChange={setEnabled} />
+            </div>
+          </Can>
+        </CardAction>
       </CardHeader>
       <CardContent className="space-y-4">
         <IntegrationSetupGuide item={item} />
@@ -358,13 +360,13 @@ export default function IntegrationsSettingsPage() {
                 <div className="flex items-center gap-1.5">
                   {item.configured ? (
                     <>
-                      <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                      <span className="text-emerald-700">已配置</span>
+                      <CheckCircle2 className="h-4 w-4 text-success" />
+                      <span className="text-success-foreground">已配置</span>
                     </>
                   ) : (
                     <>
-                      <XCircle className="h-4 w-4 text-amber-600" />
-                      <span className="text-amber-700">未配置</span>
+                      <XCircle className="h-4 w-4 text-warning" />
+                      <span className="text-warning-foreground">未配置</span>
                     </>
                   )}
                 </div>

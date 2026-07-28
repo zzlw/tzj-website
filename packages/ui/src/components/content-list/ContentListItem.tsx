@@ -46,7 +46,7 @@ export function ContentListItem({
       className={cn(
         'group relative flex gap-3 px-4 py-4 transition-colors sm:gap-4 sm:px-5',
         pinned
-          ? 'border-l-4 border-l-amber-500 bg-amber-50/70 hover:bg-amber-100/60 active:bg-amber-100/80 dark:bg-amber-950/25 dark:hover:bg-amber-950/40'
+          ? 'border-l-4 border-l-warning bg-warning-muted/70 hover:bg-warning-muted active:bg-warning-muted dark:bg-warning/10 dark:hover:bg-warning/15'
           : clickable && 'hover:bg-muted/40 active:bg-muted/50',
         clickable && 'cursor-pointer',
         className,
@@ -69,7 +69,7 @@ export function ContentListItem({
           className={cn(
             'relative z-0 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border',
             pinned
-              ? 'border-amber-300/80 bg-amber-100 text-amber-700 shadow-sm dark:border-amber-700/50 dark:bg-amber-950/50 dark:text-amber-400'
+              ? 'border-warning/40 bg-warning-muted text-warning-foreground shadow-sm dark:border-warning/40 dark:bg-warning/15 dark:text-warning'
               : 'border-border/60 bg-muted/50 text-muted-foreground',
             clickable && 'pointer-events-none',
           )}
@@ -84,7 +84,7 @@ export function ContentListItem({
             className={cn(
               'text-base font-semibold leading-snug transition-colors',
               pinned
-                ? 'text-amber-950 group-hover:text-amber-800 dark:text-amber-100 dark:group-hover:text-amber-50'
+                ? 'text-warning-foreground group-hover:text-warning-foreground/80 dark:text-warning dark:group-hover:text-warning/90'
                 : 'text-foreground group-hover:text-primary',
             )}
           >

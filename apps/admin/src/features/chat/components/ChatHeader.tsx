@@ -32,15 +32,15 @@ import { ConvertLeadButton } from './ConvertLeadButton';
 import { VisitorInfoButton } from './VisitorInfoButton';
 
 const statusMeta: Record<ChatRoomStatusKey, { label: string; dot: string }> = {
-  waiting: { label: '等待中', dot: 'bg-sky-500' },
-  active: { label: '进行中', dot: 'bg-emerald-500' },
+  waiting: { label: '等待中', dot: 'bg-info' },
+  active: { label: '进行中', dot: 'bg-success' },
   closed: { label: '已关闭', dot: 'bg-zinc-400' },
   archived: { label: '已归档', dot: 'bg-zinc-300' },
 };
 
 const presenceMeta: Record<PresenceStatus, { label: string; dot: string }> = {
-  online: { label: '在线', dot: 'bg-emerald-500' },
-  away: { label: '离开', dot: 'bg-amber-500' },
+  online: { label: '在线', dot: 'bg-success' },
+  away: { label: '离开', dot: 'bg-warning' },
   offline: { label: '离线', dot: 'bg-zinc-400' },
 };
 
@@ -392,10 +392,10 @@ export function ChatHeader({
               </>
             )}
             {!room.assignedAgentEmail && room.status === 'waiting' && (
-              <span className="text-amber-500">· 未分配</span>
+              <span className="text-warning-foreground">· 未分配</span>
             )}
             {room.clientPanelOpen && room.clientPresence === 'online' && (
-              <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[0.6rem] font-medium text-emerald-600">
+              <span className="inline-flex items-center gap-0.5 rounded-full bg-success/10 px-1.5 py-0.5 text-xs font-medium text-success-foreground">
                 <Eye className="h-2.5 w-2.5" />
                 正在查看对话
               </span>
@@ -415,22 +415,22 @@ export function ChatHeader({
             !trashed &&
             room.assignedAgentEmail &&
             room.assignedAgentEmail !== currentAgentEmail && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  aria-label="接管会话"
-                  onClick={() => currentAgentEmail && onTransfer?.(currentAgentEmail)}
-                  className="border-border/40 bg-background/60 text-muted-foreground hover:bg-muted/60 focus-visible:ring-primary/40 focus-visible:ring-offset-background size-8 rounded-full border transition focus-visible:ring-2 focus-visible:ring-offset-2 sm:size-10"
-                >
-                  <UserCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>当前负责人：{assignedAgentName}，点击接管</TooltipContent>
-            </Tooltip>
-          )}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label="接管会话"
+                    onClick={() => currentAgentEmail && onTransfer?.(currentAgentEmail)}
+                    className="border-border/40 bg-background/60 text-muted-foreground hover:bg-muted/60 focus-visible:ring-primary/40 focus-visible:ring-offset-background size-8 rounded-full border transition focus-visible:ring-2 focus-visible:ring-offset-2 sm:size-10"
+                  >
+                    <UserCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>当前负责人：{assignedAgentName}，点击接管</TooltipContent>
+              </Tooltip>
+            )}
           {/* 转接（P1 H3）：选择其他在线坐席将会话重新分配，含备注 + 二次确认 */}
           <TransferPopover
             ended={ended || trashed}

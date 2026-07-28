@@ -38,7 +38,10 @@ const envSchema = z.object({
   /** 加密 integration secrets 与 2FA TOTP Secret；2FA 强依赖，必填 fail-fast（否则 enable 运行期才爆） */
   SECRETS_ENCRYPTION_KEY: z
     .string()
-    .min(32, 'SECRETS_ENCRYPTION_KEY must be at least 32 characters (required by 2FA TOTP secret encryption)'),
+    .min(
+      32,
+      'SECRETS_ENCRYPTION_KEY must be at least 32 characters (required by 2FA TOTP secret encryption)',
+    ),
   ALIYUN_CAPTCHA_ACCESS_KEY_ID: z.string().optional(),
   ALIYUN_CAPTCHA_ACCESS_KEY_SECRET: z.string().optional(),
   ALIYUN_CAPTCHA_REGION: z.string().optional(),

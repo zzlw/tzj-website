@@ -2,30 +2,25 @@ import {
   Badge,
   Button,
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-  cn,
-  PageHeader,
+  Skeleton,
 } from '@tzj/ui';
 import {
   ArrowRight,
-  BarChart3,
-  BookOpen,
-  CalendarDays,
-  FolderOpen,
-  Images,
+  FileText,
   Inbox,
   Mail,
   MessageSquare,
-  Newspaper,
   PenLine,
   Plus,
-  ScrollText,
   Users,
 } from 'lucide-react';
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { DashboardAnalyticsPanel } from '@/components/dashboard/DashboardAnalyticsPanel';
 import { auditActionLabel, auditResourceLabel, auditUserLabel } from '@/features/audit-labels';
 import type { AuditLogItem, ContactItem } from '@/features/types';
@@ -71,117 +66,245 @@ function formatDateLong(d = new Date()): string {
   });
 }
 
-/* 内容库统计卡：图标底统一中性灰，hover 时着品牌红——收敛早期的五色彩虹底，
-   与全站「白/深灰/品牌红」工业色系对齐 */
-const CONTENT_STATS = [
-  { label: '工程案例', key: 'cases', icon: FolderOpen, href: '/cases' },
-  { label: '新闻', key: 'news', icon: Newspaper, href: '/news' },
-  { label: '博客', key: 'blogs', icon: BookOpen, href: '/blog' },
-  { label: '展会', key: 'trade-shows', icon: CalendarDays, href: '/trade-shows' },
-  { label: '媒体素材', key: 'media', icon: Images, href: '/media' },
+const CONTENT_LINKS = [
+  { label: '工程案例', key: 'cases', href: '/cases' },
+  { label: '新闻', key: 'news', href: '/news' },
+  { label: '博客', key: 'blogs', href: '/blog' },
+  { label: '展会', key: 'trade-shows', href: '/trade-shows' },
+  { label: '媒体素材', key: 'media', href: '/media' },
 ] as const;
 
+/* 快捷入口唯一保留处：欢迎行右侧，按权限过滤后取前 2 个 */
 const QUICK_ACTIONS = [
   { label: '新建文档', href: '/documents/mine/new', icon: PenLine, perm: 'docs.create' },
   { label: '新建案例', href: '/cases/new', icon: Plus, perm: 'content.create' },
   { label: '处理询盘', href: '/contacts', icon: MessageSquare },
-  { label: '访客分析', href: '/analytics', icon: BarChart3, perm: 'analytics.view' },
-  { label: '上传素材', href: '/media', icon: Images },
 ] as const;
 
 function ContactStatusBadge({ handled }: { handled: boolean }) {
   return handled ? (
-    <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
+    <Badge variant="outline" className="border-success/30 bg-success-muted text-success-foreground">
       已处理
     </Badge>
   ) : (
-    <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700">
+    <Badge variant="outline" className="border-warning/40 bg-warning-muted text-warning-foreground">
       待处理
     </Badge>
   );
 }
 
-interface OpsAlert {
+/* ── 指标区：待处理/未读/客户/内容总数 4 张静态卡 + 内容库链接行 ── */
+
+interface Metric {
   label: string;
   value: number;
-  href: string;
   icon: typeof Inbox;
-  accent: boolean;
-  hint: string;
 }
 
-/** 核心指标卡片（询盘漏斗 + 客户）：抽为纯函数，避免抬高 DashboardPage 认知复杂度。 */
-function buildOpsAlerts(args: {
-  pendingTotal: number;
-  unreadTotal: number;
-  contactsTotal: number;
-  customersTotal: number;
-  canCustomers: boolean;
-}): OpsAlert[] {
-  const { pendingTotal, unreadTotal, contactsTotal, customersTotal, canCustomers } = args;
-  const alerts: OpsAlert[] = [
-    {
-      label: '待处理询盘',
-      value: pendingTotal,
-      href: '/contacts',
-      icon: Inbox,
-      accent: pendingTotal > 0,
-      hint: pendingTotal > 0 ? '需尽快跟进' : '暂无积压',
-    },
-    {
-      label: '未读询盘',
-      value: unreadTotal,
-      href: '/contacts',
-      icon: Mail,
-      accent: unreadTotal > 0,
-      hint: '新到未查看',
-    },
-    {
-      label: '询盘总数',
-      value: contactsTotal,
-      href: '/contacts',
-      icon: MessageSquare,
-      accent: false,
-      hint: '累计客户咨询',
-    },
+async function MetricsSection({ canCustomers }: { canCustomers: boolean }) {
+  const [cases, news, blogs, tradeShows, media, pendingTotal, unreadTotal, customersTotal] =
+    await Promise.all([
+      countOf('cases'),
+      countOf('news'),
+      countOf('blogs'),
+      countOf('trade-shows'),
+      countOf('media'),
+      countOf('contact', '&isHandled=false'),
+      countOf('contact', '&isRead=false'),
+      canCustomers
+        ? apiFetch<{ total?: number }>('/customers/summary')
+            .then((r) => r?.total ?? 0)
+            .catch(() => 0)
+        : Promise.resolve(0),
+    ]);
+
+  const contentValues: Record<string, number> = {
+    cases,
+    news,
+    blogs,
+    'trade-shows': tradeShows,
+    media,
+  };
+
+  const metrics: Metric[] = [
+    { label: '待处理询盘', value: pendingTotal, icon: Inbox },
+    { label: '未读询盘', value: unreadTotal, icon: Mail },
+    ...(canCustomers ? [{ label: '客户总数', value: customersTotal, icon: Users }] : []),
+    { label: '内容总数', value: cases + news + blogs + tradeShows, icon: FileText },
   ];
-  if (canCustomers) {
-    alerts.push({
-      label: '客户总数',
-      value: customersTotal,
-      href: '/customers',
-      icon: Users,
-      accent: false,
-      hint: '已建档客户',
-    });
-  }
-  return alerts;
+
+  return (
+    <section className="mb-8">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {metrics.map((m) => (
+          <Card key={m.label} className="py-0">
+            <CardContent className="flex items-center justify-between p-4">
+              <div>
+                <p className="text-xs text-muted-foreground">{m.label}</p>
+                <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight">{m.value}</p>
+              </div>
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                <m.icon className="h-4 w-4" />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+        <span className="text-xs">内容库</span>
+        {CONTENT_LINKS.map((item) => (
+          <Link
+            key={item.key}
+            href={item.href}
+            className="inline-flex items-center gap-1 transition-colors hover:text-foreground"
+          >
+            {item.label}
+            <span className="font-medium tabular-nums text-foreground">
+              {contentValues[item.key]}
+            </span>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
 }
 
-/** 欢迎区运营一句话：优先提醒待处理，其次未读，都无则报内容库规模。抽出以收敛嵌套三元分支。 */
-function HeroSummary({
-  pendingTotal,
-  unreadTotal,
-  publishedCount,
-}: {
-  pendingTotal: number;
-  unreadTotal: number;
-  publishedCount: number;
-}) {
-  if (pendingTotal > 0) {
-    return (
-      <>
-        当前有 <span className="font-medium text-amber-700">{pendingTotal} 条待处理询盘</span>
-        {unreadTotal > 0 ? `、${unreadTotal} 条未读` : ''}
-        ，建议优先跟进。
-      </>
-    );
-  }
-  if (unreadTotal > 0) {
-    return <>有 {unreadTotal} 条未读询盘，暂无待处理事项。</>;
-  }
-  return <>内容库共 {publishedCount} 篇已发布内容，运营状态良好。</>;
+function MetricsSkeleton() {
+  return (
+    <section className="mb-8" aria-busy="true">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }, (_, i) => i).map((i) => (
+          <Skeleton key={i} className="h-[88px]" />
+        ))}
+      </div>
+      <Skeleton className="mt-3 h-5 w-96 max-w-full" />
+    </section>
+  );
 }
+
+/* ── 动态区：最新询盘 + 最近操作双栏 ── */
+
+async function ActivitySection({ canAudit }: { canAudit: boolean }) {
+  const [contacts, auditLogs] = await Promise.all([
+    fetchList<ContactItem>('contact', 'limit=6'),
+    canAudit
+      ? fetchList<AuditLogItem>('audit-logs', 'limit=8&sortBy=createdAt&sortOrder=desc')
+      : Promise.resolve([]),
+  ]);
+
+  return (
+    <div className={canAudit ? 'grid gap-6 lg:grid-cols-2' : 'grid gap-6'}>
+      <Card className="pb-0">
+        <CardHeader>
+          <CardTitle className="text-base">最新询盘</CardTitle>
+          <CardDescription>最近收到的客户咨询</CardDescription>
+          <CardAction>
+            <Link
+              href="/contacts"
+              className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+            >
+              查看全部
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </CardAction>
+        </CardHeader>
+        <CardContent className="p-0">
+          {contacts.length === 0 ? (
+            <div className="px-6 py-12 text-center text-sm text-muted-foreground">暂无询盘</div>
+          ) : (
+            <div className="divide-y divide-border">
+              {contacts.map((c) => (
+                <Link
+                  key={c.id}
+                  href="/contacts"
+                  className="flex items-start justify-between gap-4 px-6 py-4 transition-colors hover:bg-muted/30"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {!c.isRead ? (
+                        <Badge
+                          variant="outline"
+                          className="border-primary/30 bg-primary/10 px-1.5 py-0 text-xs text-primary"
+                        >
+                          新
+                        </Badge>
+                      ) : null}
+                      <ContactStatusBadge handled={c.isHandled} />
+                      <span className="truncate text-sm font-medium text-foreground">
+                        {c.name}
+                        {c.company ? ` · ${c.company}` : ''}
+                      </span>
+                    </div>
+                    <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{c.message}</p>
+                  </div>
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {formatTime(c.createdAt)}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {canAudit ? (
+        <Card className="pb-0">
+          <CardHeader>
+            <CardTitle className="text-base">最近操作</CardTitle>
+            <CardDescription>后台账号的关键操作记录</CardDescription>
+            <CardAction>
+              <Link
+                href="/audit-logs"
+                className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+              >
+                操作日志
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </CardAction>
+          </CardHeader>
+          <CardContent className="p-0">
+            {auditLogs.length === 0 ? (
+              <div className="px-6 py-12 text-center text-sm text-muted-foreground">
+                暂无操作记录
+              </div>
+            ) : (
+              <div className="divide-y divide-border">
+                {auditLogs.map((log) => (
+                  <div key={log.id} className="flex items-start justify-between gap-4 px-6 py-3.5">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm text-foreground">
+                        <span className="font-medium">{auditUserLabel(log)}</span>
+                        <span className="text-muted-foreground">
+                          {' '}
+                          {auditActionLabel(log.action)}
+                          {auditResourceLabel(log.resource)}
+                        </span>
+                      </p>
+                    </div>
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      {formatTime(log.createdAt)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ) : null}
+    </div>
+  );
+}
+
+function ActivitySkeleton() {
+  return (
+    <div className="grid gap-6 lg:grid-cols-2" aria-busy="true">
+      <Skeleton className="h-72" />
+      <Skeleton className="h-72" />
+    </div>
+  );
+}
+
+/* ── 页面壳：欢迎行即时渲染，数据区块逐块流式吐出 ── */
 
 export default async function DashboardPage() {
   const me = await apiFetch<{
@@ -201,292 +324,40 @@ export default async function DashboardPage() {
   const canCustomers =
     hasPermission(permissions, 'customers.view') || hasPermission(permissions, 'customers.manage');
 
-  const [
-    cases,
-    news,
-    blogs,
-    tradeShows,
-    media,
-    contactsTotal,
-    pendingTotal,
-    unreadTotal,
-    contacts,
-    auditLogs,
-    customersTotal,
-  ] = await Promise.all([
-    countOf('cases'),
-    countOf('news'),
-    countOf('blogs'),
-    countOf('trade-shows'),
-    countOf('media'),
-    countOf('contact'),
-    countOf('contact', '&isHandled=false'),
-    countOf('contact', '&isRead=false'),
-    fetchList<ContactItem>('contact', 'limit=6'),
-    canAudit
-      ? fetchList<AuditLogItem>('audit-logs', 'limit=8&sortBy=createdAt&sortOrder=desc')
-      : Promise.resolve([]),
-    canCustomers
-      ? apiFetch<{ total?: number }>('/customers/summary')
-          .then((r) => r?.total ?? 0)
-          .catch(() => 0)
-      : Promise.resolve(0),
-  ]);
-
-  const values: Record<string, number> = {
-    cases,
-    news,
-    blogs,
-    'trade-shows': tradeShows,
-    media,
-  };
-
-  const visibleContentStats = CONTENT_STATS;
-
-  const visibleQuickActions = QUICK_ACTIONS.filter(
+  const primaryActions = QUICK_ACTIONS.filter(
     (a) => !('perm' in a && a.perm) || hasPermission(permissions, a.perm),
-  );
-
-  const opsAlerts = buildOpsAlerts({
-    pendingTotal,
-    unreadTotal,
-    contactsTotal,
-    customersTotal,
-    canCustomers,
-  });
+  ).slice(0, 2);
 
   return (
     <div>
-      <PageHeader title="仪表盘" description="内容运营、询盘与官网访问的一站式概览" />
-
-      {/* 欢迎区：去渐变底，改用左侧品牌红竖线作为工业风签名笔触 */}
-      <Card className="mb-8 overflow-hidden border-border/80 border-l-[3px] border-l-primary shadow-sm">
-        <CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm text-muted-foreground">{formatDateLong()}</p>
-            <h2 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
-              你好，{displayName}
-            </h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              <HeroSummary
-                pendingTotal={pendingTotal}
-                unreadTotal={unreadTotal}
-                publishedCount={cases + news + blogs + tradeShows}
-              />
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {visibleQuickActions.slice(0, 3).map((action) => (
-              <Button key={action.href} variant="secondary" size="sm" asChild>
-                <Link href={action.href}>
-                  <action.icon className="mr-1.5 h-3.5 w-3.5" />
-                  {action.label}
-                </Link>
-              </Button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      <section className="mb-8">
-        <h3 className="mb-3 text-sm font-medium text-muted-foreground">内容库</h3>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-          {visibleContentStats.map((stat) => (
-            <Link key={stat.key} href={stat.href} className="group">
-              <Card className="border-border/80 transition-[border-color,box-shadow] duration-200 hover:border-primary/40 hover:shadow-md motion-reduce:transition-none">
-                <CardContent className="p-4">
-                  <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-muted-foreground transition-colors duration-200 group-hover:bg-primary/10 group-hover:text-primary">
-                    <stat.icon className="h-4 w-4" />
-                  </div>
-                  <div className="text-2xl font-semibold tabular-nums tracking-tight transition-colors duration-200 group-hover:text-primary motion-reduce:transition-none">
-                    {values[stat.key]}
-                  </div>
-                  <div className="mt-1 text-xs text-muted-foreground">{stat.label}</div>
-                </CardContent>
-              </Card>
-            </Link>
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-sm text-muted-foreground">{formatDateLong()} · 内容、询盘与访问概览</p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
+            你好，{displayName}
+          </h1>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {primaryActions.map((action) => (
+            <Button key={action.href} variant="secondary" size="sm" asChild>
+              <Link href={action.href}>
+                <action.icon className="mr-1.5 h-3.5 w-3.5" />
+                {action.label}
+              </Link>
+            </Button>
           ))}
         </div>
-      </section>
+      </div>
 
-      <section className="mb-8">
-        <h3 className="mb-3 text-sm font-medium text-muted-foreground">核心指标</h3>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {opsAlerts.map((item) => (
-            <Link key={item.label} href={item.href} className="group">
-              <Card
-                className={cn(
-                  'h-full border-border/80 transition-[border-color,box-shadow] duration-200 hover:border-primary/40 hover:shadow-md motion-reduce:transition-none',
-                  item.accent && 'border-amber-200/80 bg-amber-50/40',
-                )}
-              >
-                <CardContent className="flex items-center gap-4 p-4">
-                  <div
-                    className={cn(
-                      'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg',
-                      item.accent
-                        ? 'bg-amber-500/15 text-amber-700'
-                        : 'bg-muted text-muted-foreground',
-                    )}
-                  >
-                    <item.icon className="h-4 w-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-2xl font-semibold tabular-nums transition-colors duration-200 group-hover:text-primary motion-reduce:transition-none">
-                      {item.value}
-                    </div>
-                    <div className="text-xs font-medium text-foreground/80">{item.label}</div>
-                    <div className="mt-0.5 text-[11px] text-muted-foreground">{item.hint}</div>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
-      </section>
+      <Suspense fallback={<MetricsSkeleton />}>
+        <MetricsSection canCustomers={canCustomers} />
+      </Suspense>
 
       {canAnalytics ? <DashboardAnalyticsPanel /> : null}
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="border-border/80 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <div>
-              <CardTitle className="text-base">最新询盘</CardTitle>
-              <CardDescription>最近收到的客户咨询</CardDescription>
-            </div>
-            <Link
-              href="/contacts"
-              className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
-            >
-              查看全部
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </CardHeader>
-          <CardContent className="p-0">
-            {contacts.length === 0 ? (
-              <div className="px-6 py-12 text-center text-sm text-muted-foreground">暂无询盘</div>
-            ) : (
-              <div className="divide-y divide-border">
-                {contacts.map((c) => (
-                  <Link
-                    key={c.id}
-                    href="/contacts"
-                    className="flex items-start justify-between gap-4 px-6 py-4 transition-colors hover:bg-muted/30"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        {!c.isRead ? (
-                          <Badge
-                            variant="outline"
-                            className="border-primary/30 bg-primary/10 px-1.5 py-0 text-[10px] text-primary"
-                          >
-                            新
-                          </Badge>
-                        ) : null}
-                        <ContactStatusBadge handled={c.isHandled} />
-                        <span className="truncate text-sm font-medium text-foreground">
-                          {c.name}
-                          {c.company ? ` · ${c.company}` : ''}
-                        </span>
-                      </div>
-                      <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{c.message}</p>
-                    </div>
-                    <span className="shrink-0 text-xs text-muted-foreground">
-                      {formatTime(c.createdAt)}
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {canAudit ? (
-          <Card className="border-border/80 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-              <div>
-                <CardTitle className="text-base">最近操作</CardTitle>
-                <CardDescription>后台账号的关键操作记录</CardDescription>
-              </div>
-              <Link
-                href="/audit-logs"
-                className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
-              >
-                操作日志
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </CardHeader>
-            <CardContent className="p-0">
-              {auditLogs.length === 0 ? (
-                <div className="px-6 py-12 text-center text-sm text-muted-foreground">
-                  暂无操作记录
-                </div>
-              ) : (
-                <div className="divide-y divide-border">
-                  {auditLogs.map((log) => (
-                    <div
-                      key={log.id}
-                      className="flex items-start justify-between gap-4 px-6 py-3.5"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm text-foreground">
-                          <span className="font-medium">{auditUserLabel(log)}</span>
-                          <span className="text-muted-foreground">
-                            {' '}
-                            {auditActionLabel(log.action)}
-                            {auditResourceLabel(log.resource)}
-                          </span>
-                        </p>
-                      </div>
-                      <span className="shrink-0 text-xs text-muted-foreground">
-                        {formatTime(log.createdAt)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ) : (
-          <Card className="border-border/80 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-base">快捷入口</CardTitle>
-              <CardDescription>常用管理功能</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-2 sm:grid-cols-2">
-              {visibleQuickActions.map((action) => (
-                <Button key={action.href} variant="outline" className="justify-start" asChild>
-                  <Link href={action.href}>
-                    <action.icon className="mr-2 h-4 w-4 text-muted-foreground" />
-                    {action.label}
-                  </Link>
-                </Button>
-              ))}
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      {canAudit ? (
-        <Card className="mt-6 border-border/80 shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <ScrollText className="h-4 w-4 text-muted-foreground" />
-              快捷入口
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-wrap gap-2">
-            {visibleQuickActions.map((action) => (
-              <Button key={action.href} variant="outline" size="sm" asChild>
-                <Link href={action.href}>
-                  <action.icon className="mr-1.5 h-3.5 w-3.5" />
-                  {action.label}
-                </Link>
-              </Button>
-            ))}
-          </CardContent>
-        </Card>
-      ) : null}
+      <Suspense fallback={<ActivitySkeleton />}>
+        <ActivitySection canAudit={canAudit} />
+      </Suspense>
     </div>
   );
 }

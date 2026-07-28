@@ -2,13 +2,13 @@
 
 import { Suspense } from 'react';
 import { ContentPagination } from '@/components/content/ContentPagination';
-import type { SearchPagination } from '@/lib/search/types';
+import type { SearchPagination as SearchPaginationData } from '@/lib/search/types';
 
 function SearchPaginationInner({
   pagination,
   unit,
 }: {
-  pagination: SearchPagination;
+  pagination: SearchPaginationData;
   unit: string;
 }) {
   return (
@@ -29,7 +29,7 @@ export function SearchPagination({
   pagination,
   unit,
 }: {
-  pagination: SearchPagination;
+  pagination: SearchPaginationData;
   unit: string;
 }) {
   if (pagination.total <= 0) return null;

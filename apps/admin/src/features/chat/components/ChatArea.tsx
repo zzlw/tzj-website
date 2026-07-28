@@ -61,14 +61,14 @@ export function ChatArea({
   onRestore,
   onPurge,
 }: Props) {
-  // 真正可滚动的元素是 Radix ScrollArea 的 Viewport（带 data-radix-scroll-area-viewport）。
+  // 真正可滚动的元素是 ScrollArea 的 Viewport（带 data-slot="scroll-area-viewport"）。
   // @tzj/ui 的 ScrollArea 没有透出 viewport ref，所以从内容 div 用 closest() 反向找到。
   const viewportRef = useRef<HTMLElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const setContentRef = useCallback((el: HTMLDivElement | null) => {
     contentRef.current = el;
     viewportRef.current = el
-      ? (el.closest('[data-radix-scroll-area-viewport]') as HTMLElement | null)
+      ? (el.closest('[data-slot="scroll-area-viewport"]') as HTMLElement | null)
       : null;
   }, []);
 
@@ -132,7 +132,9 @@ export function ChatArea({
         rafRef.current = r2;
       });
       rafRef.current = r1;
-      return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+      return () => {
+        if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      };
     }
     if (!isNew) return;
     if (pinnedRef.current) {
@@ -141,7 +143,9 @@ export function ChatArea({
         rafRef.current = r2;
       });
       rafRef.current = r1;
-      return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+      return () => {
+        if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      };
     }
     // 用户翻历史时收到新消息 → 累加「新消息」计数
     setNewMsgCount((n) => n + 1);
@@ -211,12 +215,15 @@ export function ChatArea({
         onPurge={onPurge}
       />
 
-     {/* 消息滚动区 + 「↓ 新消息」浮动按钮
+      {/* 消息滚动区 + 「↓ 新消息」浮动按钮
           业内最佳实践（WhatsApp/Telegram/Intercom）：pill 锚定在消息视口底缘，
           浮于消息内容之上，与 composer 高度完全解耦。 */}
       <div className="relative min-h-0 flex-1">
         <ImagePreviewProvider>
-          <ScrollArea type="always" className="h-full [&>[data-radix-scroll-area-viewport]]:overscroll-contain">
+          <ScrollArea
+            type="always"
+            className="h-full [&>[data-slot=scroll-area-viewport]]:overscroll-contain"
+          >
             <div ref={setContentRef} className="space-y-3 overflow-x-hidden pb-3 pr-3 sm:space-y-4">
               {room.messages?.length === 0 ? (
                 <p className="text-muted-foreground py-10 text-center text-sm">尚未有消息</p>
@@ -236,7 +243,9 @@ export function ChatArea({
                 <div className="flex flex-col items-start" aria-live="polite">
                   {clientTypingText ? (
                     <div className="bg-muted/50 max-w-[80%] rounded-2xl px-3.5 py-2.5">
-                      <p className="text-muted-foreground text-sm italic leading-relaxed break-words whitespace-pre-wrap">{clientTypingText}</p>
+                      <p className="text-muted-foreground text-sm italic leading-relaxed break-words whitespace-pre-wrap">
+                        {clientTypingText}
+                      </p>
                       <span className="mt-1.5 flex items-center justify-end gap-[3px]">
                         <span className="bg-muted-foreground/40 h-1 w-1 animate-bounce rounded-full [animation-delay:-0.2s]" />
                         <span className="bg-muted-foreground/40 h-1 w-1 animate-bounce rounded-full [animation-delay:-0.1s]" />

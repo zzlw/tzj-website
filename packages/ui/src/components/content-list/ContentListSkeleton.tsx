@@ -10,9 +10,10 @@ export interface ContentListSkeletonProps {
 /** 内容列表加载占位。 */
 export function ContentListSkeleton({ count = 5, className }: ContentListSkeletonProps) {
   return (
-    <Card className={cn('overflow-hidden border-border/80 py-0 shadow-sm', className)}>
+    <Card className={cn('overflow-hidden border-border/80 py-0', className)}>
       <div className="divide-y divide-border/60">
         {Array.from({ length: count }, (_, i) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: 骨架屏占位行同质且不重排，索引 key 安全
           <div key={i} className="flex gap-4 px-5 py-4">
             <Skeleton className="h-10 w-10 shrink-0 rounded-lg" />
             <div className="min-w-0 flex-1 space-y-2">

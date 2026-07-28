@@ -32,14 +32,14 @@ import { VirtualList } from './VirtualList';
 const ROW_HEIGHT = 84;
 
 const presenceDot: Record<PresenceStatus, string> = {
-  online: 'bg-emerald-500',
-  away: 'bg-amber-500',
+  online: 'bg-success',
+  away: 'bg-warning',
   offline: 'bg-zinc-400',
 };
 
 const agentStatusMeta: Record<PresenceStatus, { label: string; dot: string }> = {
-  online: { label: '在线', dot: 'bg-emerald-500' },
-  away: { label: '离开', dot: 'bg-amber-500' },
+  online: { label: '在线', dot: 'bg-success' },
+  away: { label: '离开', dot: 'bg-warning' },
   offline: { label: '离线', dot: 'bg-zinc-400' },
 };
 
@@ -89,8 +89,8 @@ function AssigneeChip({ room, currentAgentEmail }: { room: ChatRoom; currentAgen
   return (
     <span
       className={cn(
-        'inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[0.6rem] font-medium',
-        isMine ? 'bg-primary/10 text-primary' : 'bg-sky-500/10 text-sky-600',
+        'inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-xs font-medium',
+        isMine ? 'bg-primary/10 text-primary' : 'bg-info/10 text-info-foreground',
       )}
       title={isMine ? undefined : room.assignedAgentEmail}
     >
@@ -122,7 +122,7 @@ function RoomSecondaryLine({
       {room.assignedAgentEmail ? (
         <AssigneeChip room={room} currentAgentEmail={currentAgentEmail} />
       ) : room.status === 'waiting' ? (
-        <span className="inline-flex shrink-0 items-center rounded-full bg-zinc-500/10 px-1.5 py-0.5 text-[0.6rem] font-medium text-zinc-500">
+        <span className="inline-flex shrink-0 items-center rounded-full bg-zinc-500/10 px-1.5 py-0.5 text-xs font-medium text-zinc-500">
           未分配
         </span>
       ) : null}
@@ -233,7 +233,7 @@ export function ChatConversationList({
         </div>
         <div className="flex items-center gap-1.5">
           {totalUnread > 0 && (
-            <span className="bg-primary text-primary-foreground inline-flex min-h-[1.25rem] min-w-[1.25rem] items-center justify-center rounded-full px-1.5 text-[0.65rem] font-semibold">
+            <span className="bg-primary text-primary-foreground inline-flex min-h-[1.25rem] min-w-[1.25rem] items-center justify-center rounded-full px-1.5 text-xs font-semibold">
               {totalUnread > 99 ? '99+' : totalUnread}
             </span>
           )}
@@ -241,7 +241,7 @@ export function ChatConversationList({
             <button
               type="button"
               onClick={onEnterSelectMode}
-              className="text-muted-foreground border-border/50 rounded-full border px-3 py-1 text-[0.7rem] font-medium transition hover:bg-muted"
+              className="text-muted-foreground border-border/50 rounded-full border px-3 py-1 text-xs font-medium transition hover:bg-muted"
             >
               批量管理
             </button>
@@ -249,7 +249,7 @@ export function ChatConversationList({
             <button
               type="button"
               onClick={onExitSelectMode}
-              className="text-muted-foreground rounded-full px-2 py-1 text-[0.7rem] font-medium transition hover:bg-muted"
+              className="text-muted-foreground rounded-full px-2 py-1 text-xs font-medium transition hover:bg-muted"
             >
               取消
             </button>
@@ -259,7 +259,7 @@ export function ChatConversationList({
               <button
                 type="button"
                 aria-label="切换我的在线状态"
-                className="border-border/50 bg-primary/10 text-primary flex items-center gap-1.5 rounded-full border px-3 py-1 text-[0.7rem] font-medium tracking-wide transition hover:bg-primary/15"
+                className="border-border/50 bg-primary/10 text-primary flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium tracking-wide transition hover:bg-primary/15"
               >
                 <span
                   className={cn(
@@ -363,14 +363,14 @@ export function ChatConversationList({
           <span className="text-xs font-medium">
             {activeBucket === 'archived' ? '已归档' : '回收站'}
           </span>
-          <span className="bg-muted text-muted-foreground rounded-full px-1.5 text-[0.65rem] font-semibold">
+          <span className="bg-muted text-muted-foreground rounded-full px-1.5 text-xs font-semibold">
             {bucketCounts[activeBucket] ?? 0}
           </span>
           {activeBucket === 'deleted' && (
-            <span className="text-muted-foreground text-[0.65rem]">30 天后自动清理</span>
+            <span className="text-muted-foreground text-xs">30 天后自动清理</span>
           )}
           {search.trim() && (
-            <span className="text-muted-foreground ml-auto text-[0.65rem]">已按搜索过滤</span>
+            <span className="text-muted-foreground ml-auto text-xs">已按搜索过滤</span>
           )}
         </div>
       ) : (
@@ -395,7 +395,7 @@ export function ChatConversationList({
                   {b.label}
                   <span
                     className={cn(
-                      'text-[0.6rem] font-semibold tabular-nums',
+                      'text-xs font-semibold tabular-nums',
                       isActive ? 'text-primary' : 'text-muted-foreground/70',
                     )}
                   >
@@ -422,7 +422,7 @@ export function ChatConversationList({
               type="button"
               onClick={() => onMineOnlyChange?.(!mineOnly)}
               className={cn(
-                'flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1.5 text-[0.7rem] font-medium transition',
+                'flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1.5 text-xs font-medium transition',
                 mineOnly
                   ? 'border-primary/40 bg-primary/15 text-primary'
                   : 'border-border/50 text-muted-foreground hover:bg-muted',
@@ -441,7 +441,7 @@ export function ChatConversationList({
             >
               <Archive className="h-3.5 w-3.5" />
               {(bucketCounts.archived ?? 0) > 0 && (
-                <span className="bg-muted text-muted-foreground absolute -top-1 -right-1 inline-flex min-h-[0.875rem] min-w-[0.875rem] items-center justify-center rounded-full px-1 text-[0.55rem] font-semibold ring-2 ring-background">
+                <span className="bg-muted text-muted-foreground absolute -top-1 -right-1 inline-flex min-h-[0.875rem] min-w-[0.875rem] items-center justify-center rounded-full px-1 text-xs font-semibold ring-2 ring-background">
                   {bucketCounts.archived}
                 </span>
               )}
@@ -457,7 +457,7 @@ export function ChatConversationList({
               >
                 <Trash2 className="h-3.5 w-3.5" />
                 {(bucketCounts.deleted ?? 0) > 0 && (
-                  <span className="bg-muted text-muted-foreground absolute -top-1 -right-1 inline-flex min-h-[0.875rem] min-w-[0.875rem] items-center justify-center rounded-full px-1 text-[0.55rem] font-semibold ring-2 ring-background">
+                  <span className="bg-muted text-muted-foreground absolute -top-1 -right-1 inline-flex min-h-[0.875rem] min-w-[0.875rem] items-center justify-center rounded-full px-1 text-xs font-semibold ring-2 ring-background">
                     {bucketCounts.deleted}
                   </span>
                 )}
@@ -532,7 +532,7 @@ export function ChatConversationList({
                       </p>
                       <span
                         className={cn(
-                          'bg-emerald-500/10 text-emerald-600 inline-flex shrink-0 items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[0.6rem] font-medium transition-opacity',
+                          'bg-success/10 text-success-foreground inline-flex shrink-0 items-center gap-0.5 rounded-full px-1.5 py-0.5 text-xs font-medium transition-opacity',
                           room.clientPanelOpen && room.clientPresence === 'online'
                             ? 'opacity-100'
                             : 'pointer-events-none opacity-0',
@@ -543,9 +543,7 @@ export function ChatConversationList({
                       </span>
                     </div>
                   </div>
-                  <span className="text-muted-foreground shrink-0 text-[0.65rem]">
-                    {timeOf(room)}
-                  </span>
+                  <span className="text-muted-foreground shrink-0 text-xs">{timeOf(room)}</span>
                 </div>
                 <RoomSecondaryLine
                   room={room}
@@ -554,19 +552,15 @@ export function ChatConversationList({
                 />
               </div>
               {unread > 0 && (
-                <span className="bg-primary text-primary-foreground ml-1 inline-flex min-h-[1.5rem] min-w-[1.5rem] items-center justify-center rounded-full text-[0.7rem] font-semibold shadow-lg">
+                <span className="bg-primary text-primary-foreground ml-1 inline-flex min-h-[1.5rem] min-w-[1.5rem] items-center justify-center rounded-full text-xs font-semibold shadow-lg">
                   {unread}
                 </span>
               )}
               {isArchived && (
-                <span className="text-muted-foreground shrink-0 self-center text-[0.6rem]">
-                  已归档
-                </span>
+                <span className="text-muted-foreground shrink-0 self-center text-xs">已归档</span>
               )}
               {isDeleted && (
-                <span className="text-destructive/70 shrink-0 self-center text-[0.6rem]">
-                  已删除
-                </span>
+                <span className="text-destructive/70 shrink-0 self-center text-xs">已删除</span>
               )}
             </button>
           );

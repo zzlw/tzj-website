@@ -26,7 +26,7 @@ export function EnrollTwoFactorClient() {
     <QueryProvider>
       <div className="flex min-h-screen items-center justify-center px-4 py-12">
         <Card className="w-full max-w-md border-border/80 bg-card/95 shadow-xl backdrop-blur-sm">
-          <CardHeader className="space-y-4 text-center">
+          <CardHeader className="gap-4 text-center">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-lg font-bold text-primary-foreground shadow-md">
               TZJ
             </div>

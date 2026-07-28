@@ -7,6 +7,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { Breadcrumbs } from './Breadcrumbs';
 import { ScreenWatermark } from './ScreenWatermark';
 import { AppSidebar } from './Sidebar';
+import { ThemeModeToggle } from './theme/ThemeModeToggle';
+import { ThemeSelector } from './theme/ThemeSelector';
 
 const NAV_QUERY_KEY = 'nav';
 
@@ -67,9 +69,13 @@ export function DashboardShell({
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-1 h-4" />
           <Breadcrumbs />
-          <p className="ml-auto hidden shrink-0 text-xs text-muted-foreground md:block">
-            河南拓之迹 · 企业内容管理系统
-          </p>
+          <div className="ml-auto flex shrink-0 items-center gap-2">
+            <ThemeSelector />
+            <ThemeModeToggle />
+            <p className="hidden text-xs text-muted-foreground lg:block">
+              河南拓之迹 · 企业内容管理系统
+            </p>
+          </div>
         </header>
         {/* 冷灰画布（canvas）：比 surface 深一档、肉眼可辨，白卡浮起的同时
             也作为深色侧栏→浅色内容的明度过渡台阶 */}

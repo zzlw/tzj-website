@@ -3,12 +3,9 @@ import {
   Building,
   Clock,
   DoorClosed,
-  Factory,
   FileText,
   Layers,
-  PencilRuler,
   ShieldCheck,
-  Truck,
   Wrench,
 } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';

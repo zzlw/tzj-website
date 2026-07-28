@@ -70,7 +70,6 @@ export class HealthService {
     }
   }
 
-
   private async checkEmail(): Promise<DependencyStatus> {
     try {
       const active = await this.integrations.isActive('aliyun-directmail');

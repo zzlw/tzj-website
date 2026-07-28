@@ -229,7 +229,7 @@ function GalleryField({
           className="w-20 h-20 flex flex-col items-center justify-center gap-1 border border-dashed border-border rounded-sm text-secondary-text hover:border-primary hover:text-primary transition-colors"
         >
           <ImagePlus className="w-4 h-4" />
-          <span className="text-[10px]">添加</span>
+          <span className="text-xs">添加</span>
         </button>
       </div>
       <MediaPicker

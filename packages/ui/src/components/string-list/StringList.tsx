@@ -37,6 +37,7 @@ export function StringList({
   return (
     <div className="space-y-2">
       {rows.map((row, index) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: 行无稳定 id（纯字符串列表），受控 value 不依赖 DOM 状态
         <div key={index} className="flex gap-2">
           <Input
             type="text"

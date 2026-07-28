@@ -69,7 +69,7 @@ export function TwoFactorCard() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           {status?.enabled ? (
-            <ShieldCheck className="h-4 w-4 text-green-600" />
+            <ShieldCheck className="h-4 w-4 text-success" />
           ) : (
             <ShieldOff className="h-4 w-4 text-muted-foreground" />
           )}

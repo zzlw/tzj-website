@@ -72,6 +72,7 @@ export function ChatMessageComposer({
               {disabledHint}
             </div>
           ) : (
+            // biome-ignore lint/a11y/noStaticElementInteractions: 快捷键委托容器（⌘/Ctrl+Enter 发送），焦点在内部 Vditor 编辑器
             <div
               className="chat-composer-editor"
               onKeyDown={(e) => {
@@ -82,9 +83,11 @@ export function ChatMessageComposer({
                 }
               }}
             >
+              {/* biome-ignore lint/a11y/useFocusableInteractive: 鼠标拖拽手柄，无键盘等价操作，故意不可聚焦 */}
               <div
                 role="separator"
                 aria-orientation="horizontal"
+                aria-valuenow={Math.round(editorHeight)}
                 aria-label="拖动调整输入框高度"
                 onMouseDown={onResizeStart}
                 className="mb-1 flex h-3 w-full cursor-row-resize items-center justify-center"
@@ -121,7 +124,7 @@ export function ChatMessageComposer({
               key={q}
               type="button"
               onClick={() => onQuickReply?.(q)}
-              className="border-border/50 bg-background/70 text-muted-foreground hover:border-primary/40 hover:text-foreground focus-visible:ring-primary/40 focus-visible:ring-offset-background rounded-full border px-2.5 py-0.5 text-[0.65rem] transition focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none sm:px-3 sm:py-1 sm:text-xs"
+              className="border-border/50 bg-background/70 text-muted-foreground hover:border-primary/40 hover:text-foreground focus-visible:ring-primary/40 focus-visible:ring-offset-background rounded-full border px-2.5 py-0.5 text-xs transition focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none sm:px-3 sm:py-1"
             >
               {q}
             </button>

@@ -58,7 +58,7 @@ function RelatedVisitorsBar({ visitors }: { visitors: AnalyticsRelatedVisitor[] 
             {v.identified ? (
               <Badge
                 variant="outline"
-                className="border-emerald-200 bg-emerald-50 px-1 py-0 text-[0.6rem] text-emerald-700"
+                className="border-success/30 bg-success-muted px-1 py-0 text-xs text-success-foreground"
               >
                 已识别
               </Badge>

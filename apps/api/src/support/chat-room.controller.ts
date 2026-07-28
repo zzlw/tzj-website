@@ -14,17 +14,17 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
-import type { AuthUser } from '../auth/roles';
+// biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
+import { RolesService } from '../access/roles.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
-// biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
-import { RolesService } from '../access/roles.service';
+import type { AuthUser } from '../auth/roles';
 import { extractClientIp } from '../common/utils/client-ip';
 // biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
-import { ChatAuthService } from './chat-auth.service';
-// biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
 import { ChatGateway } from './chat.gateway';
+// biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
+import { ChatAuthService } from './chat-auth.service';
 // biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
 import { ChatPresenceStore } from './chat-presence.store';
 // biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
@@ -220,8 +220,6 @@ export class ChatRoomController {
     }
   }
 
-
-
   @RequirePermissions('chat.view')
   @ApiBearerAuth()
   @Get('stats/overview')
@@ -246,8 +244,6 @@ export class ChatRoomController {
       throw new HttpException(errMsg(e), HttpStatus.BAD_REQUEST);
     }
   }
-
-
 
   /**
    * 访客获取自己的会话详情（含消息）。
@@ -382,8 +378,6 @@ export class ChatRoomController {
       throw new HttpException(errMsg(e), HttpStatus.BAD_REQUEST);
     }
   }
-
-
 
   @RequirePermissions('chat.delete')
   @ApiBearerAuth()

@@ -61,10 +61,13 @@ export function ChatPresenceProvider({
   useEffect(() => {
     void fetchToken();
     lastFetchRef.current = Date.now();
-    const id = setInterval(() => {
-      void fetchToken();
-      lastFetchRef.current = Date.now();
-    }, 10 * 60 * 1000);
+    const id = setInterval(
+      () => {
+        void fetchToken();
+        lastFetchRef.current = Date.now();
+      },
+      10 * 60 * 1000,
+    );
 
     const handleVisibility = () => {
       if (document.visibilityState === 'visible' && Date.now() - lastFetchRef.current > 30_000) {

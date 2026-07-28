@@ -4,7 +4,7 @@ import { getTranslations } from 'next-intl/server';
 import { ContentListShell, ContentPaginationShell } from '@/components/content/ContentListShell';
 import { ContentPagination } from '@/components/content/ContentPagination';
 import { CtaBand, FeatureGrid, RelatedLinks } from '@/components/sections/blocks';
-import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
+import { StatBandI18n } from '@/components/sections/blocks-i18n';
 import { Container, PageHero, SectionHeading } from '@/components/ui';
 import { getTradeShows } from '@/lib/api';
 import { formatContentDate, tradeShowTypeLabel } from '@/lib/content-labels';

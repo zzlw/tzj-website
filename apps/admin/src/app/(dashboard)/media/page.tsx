@@ -289,7 +289,7 @@ export default function MediaPage() {
         </>
       ) : null}
 
-      <Card className="mb-6 border-border/80 py-0 shadow-sm">
+      <Card className="mb-6 border-border/80 py-0">
         <CardContent className="flex flex-wrap items-center gap-3 p-4">
           <form
             className="relative min-w-[220px] max-w-md flex-1"
@@ -351,7 +351,7 @@ export default function MediaPage() {
           <Loader2 className="h-6 w-6 animate-spin" />
         </div>
       ) : assets.length === 0 ? (
-        <Card className="border-dashed border-border/80">
+        <Card className="border-dashed border-border/80 py-0">
           <CardContent className="flex flex-col items-center py-16 text-muted-foreground">
             <ImageOff className="mb-3 h-10 w-10 opacity-40" />
             <p className="text-sm">

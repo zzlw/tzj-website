@@ -4,6 +4,7 @@ import {
   Alert,
   Button,
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -225,21 +226,21 @@ function SessionsCard() {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0">
-        <div>
-          <CardTitle className="text-base">活跃会话</CardTitle>
-          <CardDescription>当前账号的登录设备，可撤销异常会话</CardDescription>
-        </div>
+      <CardHeader>
+        <CardTitle className="text-base">活跃会话</CardTitle>
+        <CardDescription>当前账号的登录设备，可撤销异常会话</CardDescription>
         {sessions && sessions.length > 1 && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRevokeOthers}
-            disabled={revokeOthers.isPending}
-          >
-            <LogOut className="mr-1.5 h-3.5 w-3.5" />
-            退出其他会话
-          </Button>
+          <CardAction>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRevokeOthers}
+              disabled={revokeOthers.isPending}
+            >
+              <LogOut className="mr-1.5 h-3.5 w-3.5" />
+              退出其他会话
+            </Button>
+          </CardAction>
         )}
       </CardHeader>
       <CardContent>

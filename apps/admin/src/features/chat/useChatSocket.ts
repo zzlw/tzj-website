@@ -335,6 +335,21 @@ export function useChatSocket(params: { token: string | null }): UseChatSocketRe
     // 所有函数均为 useCallback([]) 稳定引用；connected 是唯一变动项。
     // 稳定化返回对象避免消费方 effect 依赖数组因「每次渲染新对象」而频繁重装监听器。
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [connected, on, off, joinRoom, leaveRoom, sendMessage, markRead, updateStatus, transferRoom, sendTyping, sendStopTyping, requestNotificationCounts, requestRoomList, setPresence],
+    [
+      connected,
+      on,
+      off,
+      joinRoom,
+      leaveRoom,
+      sendMessage,
+      markRead,
+      updateStatus,
+      transferRoom,
+      sendTyping,
+      sendStopTyping,
+      requestNotificationCounts,
+      requestRoomList,
+      setPresence,
+    ],
   );
 }

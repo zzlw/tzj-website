@@ -1,0 +1,47 @@
+# ============================================================
+# Admin 性能度量（C2）— 手动触发，只记录不卡卡口
+# 对目标环境跑 scripts/perf/admin-perf.mjs 并输出指标：
+#   导航反馈 < 100ms / 仪表盘首块 < 500ms（参考预算）
+# 凭据来自 Secrets: PERF_ADMIN_USERNAME / PERF_ADMIN_PASSWORD
+# ============================================================
+
+name: Admin Perf (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "被测 Admin 地址（含协议，不带末尾斜杠）"
+        required: true
+        default: "https://tzj-admin.jiawen.live"
+
+jobs:
+  perf:
+    name: Measure Admin Perf
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.9.0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium
+        run: pnpm --filter @tzj/admin exec playwright install chromium --with-deps
+
+      - name: Run perf measurement (record only)
+        env:
+          PERF_BASE_URL: ${{ github.event.inputs.base_url }}
+          PERF_USERNAME: ${{ secrets.PERF_ADMIN_USERNAME }}
+          PERF_PASSWORD: ${{ secrets.PERF_ADMIN_PASSWORD }}
+        run: node scripts/perf/admin-perf.mjs

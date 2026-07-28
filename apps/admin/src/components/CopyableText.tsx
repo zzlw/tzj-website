@@ -63,11 +63,7 @@ export function CopyableText({
         aria-label={`复制 ${value}`}
         title="复制"
       >
-        {copied ? (
-          <Check className="h-3.5 w-3.5 text-emerald-600" />
-        ) : (
-          <Copy className="h-3.5 w-3.5" />
-        )}
+        {copied ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
       </button>
     </span>
   );

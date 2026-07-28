@@ -9,19 +9,19 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import type { Server, Socket, RemoteSocket } from 'socket.io';
+import type { DefaultEventsMap, RemoteSocket, Server, Socket } from 'socket.io';
 import { extractSocketIp } from '../common/utils/client-ip';
 // biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
 import { IpBanService } from '../security/ip-ban.service';
-// biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
-import { ChatAuthService } from './chat-auth.service';
 import type { ChatTokenPayload } from './chat-auth.service';
 // biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
-import { ChatPresenceStore } from './chat-presence.store';
+import { ChatAuthService } from './chat-auth.service';
 import type { PresenceStatus } from './chat-presence.store';
 // biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
-import { ChatRoomService } from './chat-room.service';
+import { ChatPresenceStore } from './chat-presence.store';
 import type { ChatRoomListItem, ChatRoomResult } from './chat-room.service';
+// biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
+import { ChatRoomService } from './chat-room.service';
 
 const ChatRoomStatus = {
   ACTIVE: 'active',
@@ -115,7 +115,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private pendingOfflineTimers = new Map<string, ReturnType<typeof setTimeout>>();
   // 等待队列周期性扫描定时器（安全网：即时分配失败时 10s 内自动补分配）
   private waitingQueueSweep: ReturnType<typeof setInterval> | null = null;
-
 
   constructor(
     private readonly chatRoomService: ChatRoomService,
@@ -654,7 +653,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async drainWaitingQueue(): Promise<void> {
     try {
       // 防御性检查：测试环境中 chatRoomService 可能为 null 或缺少方法
-      if (!this.chatRoomService?.getChatRooms || !this.chatRoomService?.assignAvailableAgent) return;
+      if (!this.chatRoomService?.getChatRooms || !this.chatRoomService?.assignAvailableAgent)
+        return;
       const waiting = await this.chatRoomService.getChatRooms({
         status: 'waiting',
         take: 5,
@@ -785,7 +785,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // 与 join-room「查看≠分配」「所有权转移须走显式转接」一致：坐席不得向「他人负责」的会话
     // 直接发对客消息，避免双人抢答、客户看到两人回复、责任不清。无主会话（waiting /
     // active 无负责人）不拦截，视为「回复即认领」；如需接手他人会话须先转接/认领。
-    if (auth.type === 'agent' && room.assignedAgentEmail && room.assignedAgentEmail !== auth.email) {
+    if (
+      auth.type === 'agent' &&
+      room.assignedAgentEmail &&
+      room.assignedAgentEmail !== auth.email
+    ) {
       client.emit('error', {
         code: 'NOT_ASSIGNEE',
         roomId,
@@ -917,8 +921,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-
-
   /**
    * 关闭会话 + 完整通知链路（系统消息落库 → 广播 new-message + room-status-changed）。
    * 单会话关闭（socket）与批量关闭（HTTP controller）共用此方法，保证行为一致：
@@ -1043,7 +1045,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       // ④ 先将目标坐席加入房间（修复竞态：确保后续广播能收到）
       // 业内最佳实践：转接时先建立连接再推送消息，避免目标坐席错过系统提示
       const sockets = await this.server.fetchSockets();
-      const targetSockets: RemoteSocket<any, any>[] = [];
+      const targetSockets: RemoteSocket<DefaultEventsMap, SocketData>[] = [];
       if (sockets) {
         for (const sock of sockets) {
           const sockAuth = (sock.data as SocketData).auth;
@@ -1126,12 +1128,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-
-
   // ── 输入指示器（P1 H2） ───────────────────────────────
 
   @SubscribeMessage('typing')
-  async handleTyping(@ConnectedSocket() client: Socket, @MessageBody() data: { roomId: string; text?: string }) {
+  async handleTyping(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { roomId: string; text?: string },
+  ) {
     const auth = this.getAuth(client);
     if (!auth) return;
     const { roomId, text } = data;
@@ -1209,10 +1212,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
    * 仅作为「高意向」提示透传给 B 端（如「访客正在查看对话」）。
    */
   @SubscribeMessage('chat-panel')
-  handleChatPanel(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() body: { open?: boolean },
-  ) {
+  handleChatPanel(@ConnectedSocket() client: Socket, @MessageBody() body: { open?: boolean }) {
     const auth = this.getAuth(client);
     if (!auth || auth.type !== 'client') return;
     const open = body?.open === true;
@@ -1243,8 +1243,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
     })();
   }
-
-
 
   @SubscribeMessage('set-presence')
   async handleSetPresence(
@@ -1283,7 +1281,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       if (!sockets) return;
       for (const sock of sockets) {
         if (sock.data && (sock.data as SocketData).auth?.type === 'agent') {
-          sock.emit('room-list-updated', { rooms: enriched, statusBreakdown: stats.statusBreakdown });
+          sock.emit('room-list-updated', {
+            rooms: enriched,
+            statusBreakdown: stats.statusBreakdown,
+          });
         }
       }
     } catch (error) {
@@ -1334,7 +1335,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       if (!this.chatRoomService?.getNotificationCounts) return;
       const byUser = new Map<
         string,
-        { email: string; type: 'client' | 'agent'; sockets: RemoteSocket<any, any>[] }
+        {
+          email: string;
+          type: 'client' | 'agent';
+          sockets: RemoteSocket<DefaultEventsMap, SocketData>[];
+        }
       >();
       const sockets = await this.server.fetchSockets();
       if (!sockets) return;

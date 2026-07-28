@@ -36,7 +36,12 @@ type ChatVisitorEventMap = {
 /** 通知计数聚合负载（P2 M1） */
 type ChatNotificationCounts = {
   totalUnread: number;
-  roomCounts?: Array<{ roomId: string; unreadCount: number; clientEmail?: string; status?: string }>;
+  roomCounts?: Array<{
+    roomId: string;
+    unreadCount: number;
+    clientEmail?: string;
+    status?: string;
+  }>;
 };
 
 export interface UseVisitorChatResult {
@@ -303,6 +308,26 @@ export function useVisitorChat(token: string | null): UseVisitorChatResult {
     }),
     // 函数均为 useCallback([]) 稳定引用；状态项为唯一变动项。
     // 稳定化返回对象，避免消费方因「每次渲染新对象」而重装监听器。
-    [connected, authError, agentsOnline, agentsAway, agentLastOnlineAt, on, off, joinRoom, leaveRoom, sendMessage, markRead, sendTyping, sendStopTyping, requestNotificationCounts, reportActive, reportIdle, reportPanelState, setAgentsOnline, setAgentsAway],
+    [
+      connected,
+      authError,
+      agentsOnline,
+      agentsAway,
+      agentLastOnlineAt,
+      on,
+      off,
+      joinRoom,
+      leaveRoom,
+      sendMessage,
+      markRead,
+      sendTyping,
+      sendStopTyping,
+      requestNotificationCounts,
+      reportActive,
+      reportIdle,
+      reportPanelState,
+      setAgentsOnline,
+      setAgentsAway,
+    ],
   );
 }

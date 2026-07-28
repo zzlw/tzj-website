@@ -88,8 +88,7 @@ const NAV_GROUPS: Array<{
         icon: AudioLines,
         soon: {
           tagline: '实时语音智能体',
-          description:
-            '与后台对话，像与人交谈。接入自研多模态大模型与 GPT-Live 实时语音引擎：张口即问、毫秒应答——语音查询盘、口述写文章、聊着天调出报表。你负责说，剩下的交给灵犀。',
+          description: '实时语音操作后台：语音查询数据、口述创建内容、调出报表。',
           footer: 'Coming Soon · Powered by GPT-Live',
         },
       },
@@ -191,7 +190,7 @@ function NavItem({ item, pathname }: { item: NavItemDef; pathname: string }) {
               <span>{item.label}</span>
               <span
                 className={cn(
-                  'ml-auto rounded-sm border border-primary/30 bg-primary/10 px-1.5 py-px text-[10px] font-semibold tracking-wider text-primary',
+                  'ml-auto rounded-sm border border-primary/30 bg-primary/10 px-1.5 py-px text-xs font-semibold tracking-wider text-primary',
                   sidebarCollapseText,
                 )}
               >
@@ -204,14 +203,14 @@ function NavItem({ item, pathname }: { item: NavItemDef; pathname: string }) {
             sideOffset={12}
             className="max-w-[272px] bg-foreground px-4 py-3.5 text-background"
           >
-            <div className="flex items-center gap-1.5 text-[13px] font-semibold">
+            <div className="flex items-center gap-1.5 text-sm font-semibold">
               <item.icon className="lingxi-icon size-3.5 text-primary" />
               {item.label} · {item.soon.tagline}
             </div>
             <p className="mt-1.5 text-xs leading-relaxed text-background/70">
               {item.soon.description}
             </p>
-            <div className="mt-2 text-[10px] font-medium uppercase tracking-[0.18em] text-primary">
+            <div className="mt-2 text-xs font-medium uppercase tracking-[0.18em] text-primary">
               {item.soon.footer}
             </div>
           </TooltipContent>
@@ -275,7 +274,7 @@ function SidebarNavUser({ username, roleLabel }: { username: string; roleLabel: 
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              className="data-[popup-open]:bg-sidebar-accent data-[popup-open]:text-sidebar-accent-foreground"
             >
               <Avatar className="h-8 w-8 shrink-0 rounded-lg">
                 <AvatarFallback className="rounded-lg bg-sidebar-primary/15 text-xs font-semibold text-sidebar-primary">
@@ -292,7 +291,7 @@ function SidebarNavUser({ username, roleLabel }: { username: string; roleLabel: 
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            className="w-[var(--radix-dropdown-menu-trigger-width)] min-w-56 rounded-lg"
+            className="w-[var(--anchor-width)] min-w-56 rounded-lg"
             side={isMobile ? 'bottom' : 'right'}
             align="end"
             sideOffset={4}

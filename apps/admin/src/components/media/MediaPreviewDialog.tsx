@@ -32,6 +32,7 @@ import {
 function PreviewBody({ asset, kind }: { asset: MediaAsset; kind: MediaKind }) {
   if (kind === 'video') {
     return (
+      // biome-ignore lint/a11y/useMediaCaption: 用户上传的媒体资源无字幕轨可供关联
       <video
         key={asset.url}
         src={asset.url}
@@ -153,7 +154,7 @@ export function MediaThumbnail({ asset, kind }: { asset: MediaAsset; kind: Media
   return (
     <div className="flex h-full flex-col items-center justify-center gap-2 px-2 text-muted-foreground">
       <Icon className="h-10 w-10 shrink-0 opacity-70" />
-      <span className="line-clamp-2 text-center text-[10px] leading-tight">{asset.filename}</span>
+      <span className="line-clamp-2 text-center text-xs leading-tight">{asset.filename}</span>
     </div>
   );
 }

@@ -23,8 +23,8 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from '../auth/decorators/public.decorator';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
-import { FaviconService } from './favicon.service';
 import type { FaviconUploadResult } from './favicon.service';
+import { FaviconService } from './favicon.service';
 
 /** 允许的 MIME 类型：ICO + 常见图片格式 */
 const ALLOWED_MIME_TYPES = new Set([

@@ -51,7 +51,10 @@ function IdentityCell({ row }: { row: AnalyticsVisitorRow }) {
       <div className="flex items-center gap-2">
         <span className="font-medium text-foreground">{name}</span>
         {row.identified ? (
-          <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">
+          <Badge
+            variant="outline"
+            className="border-success/30 bg-success-muted text-success-foreground"
+          >
             已识别
           </Badge>
         ) : (
@@ -98,7 +101,7 @@ function KeyPagesCell({ row }: { row: AnalyticsVisitorRow }) {
       {row.touchedContact ? (
         <Badge
           variant="outline"
-          className="whitespace-nowrap border-amber-200 bg-amber-50 text-amber-700"
+          className="whitespace-nowrap border-warning/40 bg-warning-muted text-warning-foreground"
         >
           联系
         </Badge>
@@ -106,7 +109,7 @@ function KeyPagesCell({ row }: { row: AnalyticsVisitorRow }) {
       {row.touchedCase ? (
         <Badge
           variant="outline"
-          className="whitespace-nowrap border-sky-200 bg-sky-50 text-sky-700"
+          className="whitespace-nowrap border-info/30 bg-info-muted text-info-foreground"
         >
           案例
         </Badge>
@@ -133,7 +136,7 @@ function ConvertedCell({ row }: { row: AnalyticsVisitorRow }) {
     <Link href={`/customers/${row.convertedCustomerId}`}>
       <Badge
         variant="outline"
-        className="border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+        className="border-success/30 bg-success-muted text-success-foreground hover:bg-success/15"
       >
         已转客户
       </Badge>
@@ -160,8 +163,8 @@ function RowActions({
       <Button
         type="button"
         variant="ghost"
-        size="sm"
-        className="text-muted-foreground hover:text-foreground h-7 gap-1 px-2 text-xs"
+        size="xs"
+        className="text-muted-foreground hover:text-foreground"
         onClick={() => onView(row)}
       >
         <Eye className="h-3.5 w-3.5" />
@@ -170,7 +173,7 @@ function RowActions({
       {row.convertedCustomerId ? (
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button asChild variant="ghost" size="icon" className="h-7 w-7">
+            <Button asChild variant="ghost" size="icon-xs">
               <Link href={`/customers/${row.convertedCustomerId}`}>
                 <UserRoundCheck className="h-3.5 w-3.5 text-primary" />
               </Link>
@@ -184,8 +187,8 @@ function RowActions({
             <Button
               type="button"
               variant="ghost"
-              size="icon"
-              className="text-muted-foreground hover:text-foreground h-7 w-7"
+              size="icon-xs"
+              className="text-muted-foreground hover:text-foreground"
               onClick={() => onConvert(row)}
             >
               <UserRoundPlus className="h-3.5 w-3.5" />
@@ -467,8 +470,8 @@ export function PeopleVisitorLens({ dateParams }: { dateParams: { from?: string;
 
   return (
     <TooltipProvider>
-      <Card className="border-border/80 shadow-sm">
-        <CardContent className="space-y-4 pt-6">
+      <Card className="border-border/80">
+        <CardContent className="space-y-4">
           <VisitorFilterBar
             search={searchInput}
             onSearchChange={setSearchInput}

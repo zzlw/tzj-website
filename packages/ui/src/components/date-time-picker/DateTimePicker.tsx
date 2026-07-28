@@ -99,6 +99,7 @@ function DateTimePicker({
             {displayDate ? formatLabel.format(displayDate) : placeholder}
           </span>
           {hasValue && (
+            // biome-ignore lint/a11y/useKeyWithClickEvents: 嵌套在触发按钮内的清除角标，故意不可聚焦（tabIndex=-1），键盘用户经面板清除
             <span
               role="button"
               aria-label="清除日期时间"

@@ -45,10 +45,7 @@ export function highlightParts(text: string, query: string): ReactNode[] {
     }
     if (found > cursor) parts.push(text.slice(cursor, found));
     parts.push(
-      <mark
-        key={key++}
-        className="text-foreground rounded bg-amber-200 px-0.5 dark:bg-amber-500/40"
-      >
+      <mark key={key++} className="text-foreground rounded bg-warning/25 px-0.5 dark:bg-warning/40">
         {text.slice(found, found + query.length)}
       </mark>,
     );

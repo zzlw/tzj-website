@@ -689,10 +689,14 @@ export function ChatWidget({
         } catch {}
       } catch {
         // 兑换失败（如会话已删除）：清空本地存储，访客下次操作时将自然进入「开始新对话」
-        try { localStorage.removeItem(STORAGE_KEY); } catch {}
+        try {
+          localStorage.removeItem(STORAGE_KEY);
+        } catch {}
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [authError]);
 
   // 注册 socket 业务事件
@@ -918,11 +922,11 @@ export function ChatWidget({
     };
   }, [roomIdForSync, getRoom]);
 
-  // 取 Radix ScrollArea 真正可滚动的 Viewport，避免 scrollIntoView 误把整页滚到底
+  // 取 ScrollArea 真正可滚动的 Viewport，避免 scrollIntoView 误把整页滚到底
   const getChatViewport = useCallback((): HTMLElement | null => {
     const root = scrollAreaRef.current;
     if (!root) return null;
-    return root.querySelector<HTMLElement>('[data-radix-scroll-area-viewport]');
+    return root.querySelector<HTMLElement>('[data-slot="scroll-area-viewport"]');
   }, []);
 
   const scrollToBottom = useCallback(
@@ -1618,7 +1622,7 @@ export function ChatWidget({
         <div className="relative min-h-0 flex-1">
           <ScrollArea
             ref={scrollAreaRef}
-            className="h-full bg-white [&>[data-radix-scroll-area-viewport]]:overscroll-contain"
+            className="h-full bg-white [&>[data-slot=scroll-area-viewport]]:overscroll-contain"
           >
             <ImagePreviewProvider>
               <div

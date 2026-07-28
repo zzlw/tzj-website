@@ -1,9 +1,9 @@
-import type { Server } from 'socket.io';
-import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import type { Server } from 'socket.io';
 import { ChatGateway } from './chat.gateway';
-import { ChatPresenceStore } from './chat-presence.store';
 import { ChatAuthService } from './chat-auth.service';
+import { ChatPresenceStore } from './chat-presence.store';
 import type { ChatRoomListItem, ChatRoomResult } from './chat-room.service';
 
 // 轻量内存 ChatRoomService（仅实现网关用到的查询/变更方法），用于端到端驱动真实网关 handler
@@ -23,10 +23,7 @@ class FakeRoomService {
     return this.rooms.get(roomId) ?? null;
   }
 
-  async updateChatRoom(
-    roomId: string,
-    data: Partial<ChatRoomResult>,
-  ): Promise<ChatRoomResult> {
+  async updateChatRoom(roomId: string, data: Partial<ChatRoomResult>): Promise<ChatRoomResult> {
     const room = this.rooms.get(roomId);
     if (!room) throw new Error('room not found');
     const next = { ...room, ...data };
@@ -180,7 +177,10 @@ class FakeServer {
 
 const JWT_SECRET = 'test-secret';
 process.env.JWT_SECRET = JWT_SECRET;
-const authService = new ChatAuthService(new JwtService({ secret: JWT_SECRET }), new ConfigService());
+const authService = new ChatAuthService(
+  new JwtService({ secret: JWT_SECRET }),
+  new ConfigService(),
+);
 
 const VISITOR = 'visitor@example.com';
 const NEW_GUEST = 'new-guest@example.com';
@@ -217,9 +217,7 @@ const roomSeed: ChatRoomResult[] = [
 ];
 
 function eventsFor(server: FakeServer, sockId: string, event: string) {
-  return (server.received.get(sockId) ?? [])
-    .filter((e) => e.event === event)
-    .map((e) => e.payload);
+  return (server.received.get(sockId) ?? []).filter((e) => e.event === event).map((e) => e.payload);
 }
 
 function findRoom(payload: unknown, roomId: string): ChatRoomListItem | undefined {
@@ -270,7 +268,11 @@ describe('聊天会话生命周期：结束对话 → 开始新对话（按房�
   });
 
   it('1) 结束后：R1 关闭且访客在线（在房间内）', async () => {
-    await gateway.handleUpdateRoomStatus(agent, { roomId: 'R1', status: 'closed', closedBy: 'agent' });
+    await gateway.handleUpdateRoomStatus(agent, {
+      roomId: 'R1',
+      status: 'closed',
+      closedBy: 'agent',
+    });
     const closed = eventsFor(server, 'a1', 'room-list-updated').pop() as
       | { rooms: ChatRoomListItem[] }
       | undefined;

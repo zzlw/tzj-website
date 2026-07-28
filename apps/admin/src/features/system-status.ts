@@ -36,11 +36,11 @@ export function dependencyStatusLabel(status: string): string {
 export function dependencyStatusClass(status: string): string {
   switch (status) {
     case 'up':
-      return 'text-emerald-700 bg-emerald-50 border-emerald-200';
+      return 'text-success-foreground bg-success-muted border-success/30';
     case 'down':
-      return 'text-red-700 bg-red-50 border-red-200';
+      return 'text-destructive bg-destructive/10 border-destructive/30';
     case 'degraded':
-      return 'text-amber-700 bg-amber-50 border-amber-200';
+      return 'text-warning-foreground bg-warning-muted border-warning/40';
     default:
       return 'text-muted-foreground bg-muted/50 border-border';
   }

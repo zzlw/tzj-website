@@ -1,11 +1,9 @@
-'use client';
-
-import * as AvatarPrimitive from '@radix-ui/react-avatar';
+import { Avatar as AvatarPrimitive } from '@base-ui-components/react/avatar';
 import type { ComponentPropsWithoutRef, ElementRef } from 'react';
 import { forwardRef } from 'react';
 import { cn } from '../../lib/utils';
 
-/** shadcn/ui Avatar — https://ui.shadcn.com/docs/components/avatar */
+/** shadcn/ui Avatar（Base UI 底座）— https://ui.shadcn.com/docs/components/avatar */
 const Avatar = forwardRef<
   ElementRef<typeof AvatarPrimitive.Root>,
   ComponentPropsWithoutRef<typeof AvatarPrimitive.Root>
@@ -16,7 +14,7 @@ const Avatar = forwardRef<
     {...props}
   />
 ));
-Avatar.displayName = AvatarPrimitive.Root.displayName;
+Avatar.displayName = 'Avatar';
 
 const AvatarImage = forwardRef<
   ElementRef<typeof AvatarPrimitive.Image>,
@@ -28,7 +26,7 @@ const AvatarImage = forwardRef<
     {...props}
   />
 ));
-AvatarImage.displayName = AvatarPrimitive.Image.displayName;
+AvatarImage.displayName = 'AvatarImage';
 
 const AvatarFallback = forwardRef<
   ElementRef<typeof AvatarPrimitive.Fallback>,
@@ -43,6 +41,6 @@ const AvatarFallback = forwardRef<
     {...props}
   />
 ));
-AvatarFallback.displayName = AvatarPrimitive.Fallback.displayName;
+AvatarFallback.displayName = 'AvatarFallback';
 
 export { Avatar, AvatarFallback, AvatarImage };

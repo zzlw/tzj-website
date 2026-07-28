@@ -4,7 +4,7 @@ import { getTranslations } from 'next-intl/server';
 import { ContentListShell, ContentPaginationShell } from '@/components/content/ContentListShell';
 import { ContentPagination } from '@/components/content/ContentPagination';
 import { RelatedLinks } from '@/components/sections/blocks';
-import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
+import { StatBandI18n } from '@/components/sections/blocks-i18n';
 import { Container, PageHero, RbButton, SectionHeading } from '@/components/ui';
 import { getNewsList } from '@/lib/api';
 import { formatContentDate, newsCategoryLabel } from '@/lib/content-labels';

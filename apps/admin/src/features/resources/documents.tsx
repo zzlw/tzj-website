@@ -40,7 +40,7 @@ function buildDocumentsConfig(): DocumentsResourceConfig {
         cell: (r) => (
           <span className="inline-flex items-center gap-1.5">
             {r.isPinned ? (
-              <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
+              <span className="rounded bg-warning-muted px-1.5 py-0.5 text-xs font-medium text-warning-foreground">
                 置顶
               </span>
             ) : null}

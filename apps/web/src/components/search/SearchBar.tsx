@@ -336,6 +336,7 @@ export function SearchBar({
             }}
             onFocus={() => setOpen(true)}
             onKeyDown={handleKeyDown}
+            // biome-ignore lint/a11y/noAutofocus: 搜索弹层场景由调用方按需开启，自动聚焦是用户主动唤起搜索的预期行为
             autoFocus={autoFocus}
             enterKeyHint="search"
             autoComplete="off"

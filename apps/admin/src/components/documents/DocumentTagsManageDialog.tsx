@@ -167,8 +167,7 @@ export function DocumentTagsManageDialog({
                           <div className="flex justify-end gap-0.5">
                             <Button
                               variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
+                              size="icon-sm"
                               title="重命名"
                               onClick={() => {
                                 setRenameFrom(row.tag);
@@ -180,8 +179,8 @@ export function DocumentTagsManageDialog({
                             </Button>
                             <Button
                               variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                              size="icon-sm"
+                              className="text-muted-foreground hover:text-destructive"
                               title="删除"
                               onClick={() => void handleDelete(row.tag)}
                             >

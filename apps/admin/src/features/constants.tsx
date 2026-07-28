@@ -10,11 +10,11 @@ export const STATUS_OPTIONS: Option[] = [
 const STATUS_MAP: Record<string, { label: string; className: string }> = {
   draft: {
     label: '草稿',
-    className: 'border-amber-200 bg-amber-50 text-amber-700',
+    className: 'border-warning/40 bg-warning-muted text-warning-foreground',
   },
   published: {
     label: '已发布',
-    className: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+    className: 'border-success/30 bg-success-muted text-success-foreground',
   },
   archived: {
     label: '已归档',
@@ -104,18 +104,18 @@ export const CUSTOMER_STAGE_OPTIONS: Option[] = [
 ];
 
 const STAGE_MAP: Record<string, { label: string; className: string }> = {
-  new: { label: '新线索', className: 'border-sky-200 bg-sky-50 text-sky-700' },
+  new: { label: '新线索', className: 'border-info/30 bg-info-muted text-info-foreground' },
   following: {
     label: '跟进中',
-    className: 'border-amber-200 bg-amber-50 text-amber-700',
+    className: 'border-warning/40 bg-warning-muted text-warning-foreground',
   },
   intent: {
     label: '有意向',
-    className: 'border-violet-200 bg-violet-50 text-violet-700',
+    className: 'border-primary/30 bg-primary/10 text-primary',
   },
   deal: {
     label: '已成交',
-    className: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+    className: 'border-success/30 bg-success-muted text-success-foreground',
   },
   lost: { label: '已流失', className: 'border-border bg-muted text-muted-foreground' },
 };
@@ -134,8 +134,8 @@ export function StageBadge({ stage }: { stage: string }) {
 }
 
 const LEVEL_MAP: Record<string, { label: string; className: string }> = {
-  A: { label: 'A', className: 'border-rose-200 bg-rose-50 text-rose-700' },
-  B: { label: 'B', className: 'border-blue-200 bg-blue-50 text-blue-700' },
+  A: { label: 'A', className: 'border-primary/30 bg-primary/10 text-primary' },
+  B: { label: 'B', className: 'border-info/30 bg-info-muted text-info-foreground' },
   C: { label: 'C', className: 'border-border bg-muted text-muted-foreground' },
 };
 

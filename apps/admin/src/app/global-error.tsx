@@ -27,6 +27,7 @@ export default function GlobalError({
             {error.message || '发生未知错误'}
           </p>
           <button
+            type="button"
             onClick={reset}
             style={{
               marginTop: 16,

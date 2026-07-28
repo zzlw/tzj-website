@@ -51,7 +51,7 @@ function OperatorProfileCard({ user }: { user: ContentOperatorUser }) {
         {user.isActive ? (
           <Badge
             variant="outline"
-            className="shrink-0 border-emerald-200 bg-emerald-50 text-emerald-700"
+            className="shrink-0 border-success/30 bg-success-muted text-success-foreground"
           >
             启用
           </Badge>
@@ -85,7 +85,7 @@ function OperatorInline({ user }: { user: ContentOperatorUser }) {
     <span className="inline-flex max-w-full items-center gap-1.5 text-left font-medium text-foreground">
       <Avatar className="h-5 w-5">
         {user.avatar ? <AvatarImage src={user.avatar} alt={nickname} /> : null}
-        <AvatarFallback className="text-[9px] font-medium">{initials(nickname)}</AvatarFallback>
+        <AvatarFallback className="text-xs font-medium">{initials(nickname)}</AvatarFallback>
       </Avatar>
       <span className="truncate">{nickname}</span>
     </span>
@@ -146,7 +146,7 @@ export function LastOperatorCell({
         >
           <Avatar className="h-5 w-5">
             {user.avatar ? <AvatarImage src={user.avatar} alt={nickname} /> : null}
-            <AvatarFallback className="text-[9px] font-medium">{initials(nickname)}</AvatarFallback>
+            <AvatarFallback className="text-xs font-medium">{initials(nickname)}</AvatarFallback>
           </Avatar>
           <span className="truncate">{nickname}</span>
         </button>

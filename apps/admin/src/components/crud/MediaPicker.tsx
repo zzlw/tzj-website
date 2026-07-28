@@ -86,7 +86,7 @@ function MediaPickerTile({
               draggable={false}
             />
           ) : (
-            <span className="flex h-full w-full items-center justify-center break-all px-1 text-center text-[10px] text-muted-foreground">
+            <span className="flex h-full w-full items-center justify-center break-all px-1 text-center text-xs text-muted-foreground">
               {asset.filename}
             </span>
           )}
@@ -96,11 +96,11 @@ function MediaPickerTile({
             </span>
           )}
           {asset.isSiteResource ? (
-            <span className="absolute left-1 top-1 rounded bg-background/90 px-1 py-0.5 text-[9px] text-muted-foreground">
+            <span className="absolute left-1 top-1 rounded bg-background/90 px-1 py-0.5 text-xs text-muted-foreground">
               站点
             </span>
           ) : asset.usageCount && asset.usageCount > 0 ? (
-            <span className="absolute left-1 top-1 rounded bg-background/90 px-1 py-0.5 text-[9px] text-muted-foreground">
+            <span className="absolute left-1 top-1 rounded bg-background/90 px-1 py-0.5 text-xs text-muted-foreground">
               使用中
             </span>
           ) : null}
@@ -148,10 +148,7 @@ function MediaPickerTile({
         </div>
       </div>
       {isImage ? (
-        <p
-          className="truncate px-0.5 text-[11px] leading-tight text-foreground"
-          title={asset.filename}
-        >
+        <p className="truncate px-0.5 text-xs leading-tight text-foreground" title={asset.filename}>
           {asset.filename}
         </p>
       ) : null}
@@ -315,12 +312,16 @@ export function MediaPicker({
   }
 
   const deleteConfirmOverlay = deleteTarget ? (
+    // biome-ignore lint/a11y/useKeyWithClickEvents: 点击遮罩关闭是冗余途径，键盘用户经「取消」按钮关闭
+    // biome-ignore lint/a11y/noStaticElementInteractions: 同上，遮罩层非交互控件
     <div
       className="absolute inset-0 z-[60] flex items-center justify-center bg-black/60 p-4"
       onClick={() => {
         if (!remove.isPending) setDeleteTarget(null);
       }}
     >
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: 仅阻断冒泡避免点击内容区关闭弹窗 */}
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: 同上，冒泡阻断容器 */}
       <div
         className="w-full max-w-md rounded-lg border border-border bg-surface p-6 shadow-lg"
         role="alertdialog"

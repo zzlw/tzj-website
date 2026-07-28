@@ -5,7 +5,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateDocumentPermissionDto, DocumentAccessInfo, DocumentPermissionItem, PermissionRole, PermissionTargetType, UpdateDocumentPermissionDto } from './dto/document-permission.dto';
+import {
+  CreateDocumentPermissionDto,
+  DocumentAccessInfo,
+  DocumentPermissionItem,
+  PermissionRole,
+  PermissionTargetType,
+} from './dto/document-permission.dto';
 
 @Injectable()
 export class DocumentPermissionsService {

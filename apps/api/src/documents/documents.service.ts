@@ -19,6 +19,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { DocTagsService } from './doc-tags.service';
 import { DocumentPermissionsService } from './document-permissions.service';
 import type { CreateDocumentDto, UpdateDocumentDto } from './dto/document.dto';
+import type { CreateDocumentPermissionDto } from './dto/document-permission.dto';
 
 const LIST_SORT_FIELDS = [
   'title',
@@ -600,7 +601,7 @@ export class DocumentsService {
    */
   async updatePermissions(
     documentId: string,
-    permissions: any[],
+    permissions: CreateDocumentPermissionDto[],
     userId: string | undefined,
     canManage: boolean,
   ) {
@@ -612,7 +613,7 @@ export class DocumentsService {
    */
   async addPermission(
     documentId: string,
-    permission: any,
+    permission: CreateDocumentPermissionDto,
     userId: string | undefined,
     canManage: boolean,
   ) {

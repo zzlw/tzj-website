@@ -50,6 +50,7 @@ function DatePicker({
             {selected ? formatDateLabel.format(selected) : placeholder}
           </span>
           {selected && (
+            // biome-ignore lint/a11y/useKeyWithClickEvents: 嵌套在触发按钮内的清除角标，故意不可聚焦（tabIndex=-1），键盘用户经日历面板清除
             <span
               role="button"
               aria-label="清除日期"

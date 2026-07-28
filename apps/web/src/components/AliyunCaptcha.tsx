@@ -124,11 +124,8 @@ export function AliyunCaptchaEmbed({
   }, [config.prefix, config.sceneId, config.region, language]);
 
   return (
-    <div
-      id={CAPTCHA_ELEMENT_ID}
-      className="flex min-h-[44px] justify-center"
-      aria-label="人机验证"
-    />
+    // 第三方验证码挂载点，控件自身提供语义，容器不另设 aria 属性
+    <div id={CAPTCHA_ELEMENT_ID} className="flex min-h-[44px] justify-center" />
   );
 }
 

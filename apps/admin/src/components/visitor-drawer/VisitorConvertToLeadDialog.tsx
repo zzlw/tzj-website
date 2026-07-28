@@ -277,9 +277,7 @@ export function VisitorConvertToLeadDialog({
               onChange={() => {}}
               disabled
             />
-            <p className="text-muted-foreground mt-1 text-[11px]">
-              系统自动记录（创建后可手动补充）
-            </p>
+            <p className="text-muted-foreground mt-1 text-xs">系统自动记录（创建后可手动补充）</p>
           </div>
         </div>
       </div>

@@ -19,6 +19,8 @@
     "@tzj/ui": "workspace:*",
     "lucide-react": "catalog:",
     "next": "catalog:",
+    "next-themes": "^0.4.6",
+    "nextjs-toploader": "^3.9.17",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-hook-form": "catalog:",

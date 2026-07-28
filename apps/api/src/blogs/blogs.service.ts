@@ -46,8 +46,16 @@ export class BlogsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll(params: FindAllParams) {
-    const { page, limit, category, status, search, includeUnpublished = false, sortBy, sortOrder } =
-      params;
+    const {
+      page,
+      limit,
+      category,
+      status,
+      search,
+      includeUnpublished = false,
+      sortBy,
+      sortOrder,
+    } = params;
     const skip = (page - 1) * limit;
 
     const where: Prisma.BlogWhereInput = {

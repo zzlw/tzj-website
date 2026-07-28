@@ -9,6 +9,7 @@ import type {
 import {
   Button,
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardFooter,
@@ -201,19 +202,17 @@ export function WatermarkSettingsCard() {
   const wm = form.watermark;
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-start justify-between space-y-0">
-        <div>
-          <CardTitle className="flex items-center gap-2">
-            <Stamp className="h-4 w-4 text-muted-foreground" />
-            媒体水印
-          </CardTitle>
-          <CardDescription className="mt-1.5 max-w-2xl">
-            上传图片/视频时自动叠加水印（烧录进文件）。推荐：品牌用角标、内部资料用平铺斜纹、预览稿用居中样片。
-            Logo 请用 PNG 透明底；视频需服务器安装 ffmpeg。content/ 静态资源不受影响。
-          </CardDescription>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
+    <Card className="pb-0">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Stamp className="h-4 w-4 text-muted-foreground" />
+          媒体水印
+        </CardTitle>
+        <CardDescription className="max-w-2xl">
+          上传图片/视频时自动叠加水印（烧录进文件）。推荐：品牌用角标、内部资料用平铺斜纹、预览稿用居中样片。
+          Logo 请用 PNG 透明底；视频需服务器安装 ffmpeg。content/ 静态资源不受影响。
+        </CardDescription>
+        <CardAction className="flex items-center gap-2">
           <Label htmlFor="wm-enabled" className="text-sm text-muted-foreground">
             启用
           </Label>
@@ -226,7 +225,7 @@ export function WatermarkSettingsCard() {
               )
             }
           />
-        </div>
+        </CardAction>
       </CardHeader>
       <CardContent className={`space-y-5 ${wm.enabled ? '' : 'pointer-events-none opacity-50'}`}>
         <div className="flex flex-wrap gap-2">
@@ -509,8 +508,9 @@ export function WatermarkSettingsCard() {
         <div className="space-y-3 rounded-lg border border-border/80 bg-muted/20 p-4">
           <p className="text-sm font-medium">应用范围</p>
           <div className="flex flex-wrap gap-4">
-            <label className="flex items-center gap-2 text-sm">
+            <label className="flex items-center gap-2 text-sm" htmlFor="wm-apply-images">
               <Switch
+                id="wm-apply-images"
                 checked={wm.applyToImages}
                 onCheckedChange={(applyToImages) =>
                   setForm((prev) =>
@@ -520,8 +520,9 @@ export function WatermarkSettingsCard() {
               />
               图片（JPEG/PNG/WebP）
             </label>
-            <label className="flex items-center gap-2 text-sm">
+            <label className="flex items-center gap-2 text-sm" htmlFor="wm-apply-videos">
               <Switch
+                id="wm-apply-videos"
                 checked={wm.applyToVideos}
                 onCheckedChange={(applyToVideos) =>
                   setForm((prev) =>
@@ -560,7 +561,7 @@ export function WatermarkSettingsCard() {
           </div>
         </div>
       </CardContent>
-      <CardFooter className="items-center justify-end border-t bg-muted/20 px-6 py-4">
+      <CardFooter className="items-center justify-end border-t bg-muted/20 px-6 pt-4! pb-4">
         <ModuleSaveButton pending={updateMedia.isPending} onClick={onSave} />
       </CardFooter>
     </Card>

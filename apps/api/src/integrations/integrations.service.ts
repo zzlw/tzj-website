@@ -1,7 +1,11 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import type {
+  IntegrationAdminItem,
+  IntegrationsAdminOverview,
+  IntegrationTestResult,
+} from '@tzj/types';
 import { UpdateIntegrationDto } from '@tzj/types';
-import type { IntegrationAdminItem, IntegrationsAdminOverview, IntegrationTestResult } from '@tzj/types';
 import { decryptSecrets, encryptSecrets, maskSecret } from '../common/crypto/secrets-crypto';
 import { LAST_OPERATOR_USER_SELECT, mapOperatorUser } from '../common/utils/content-list';
 import { PrismaService } from '../prisma/prisma.service';

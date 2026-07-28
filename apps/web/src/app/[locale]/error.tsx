@@ -4,7 +4,8 @@ import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 import { Container, RbButton } from '@/components/ui';
 
-export default function Error({
+// 命名避开全局 Error（noShadowRestrictedNames）；Next.js 只要求 default export
+export default function LocaleError({
   error,
   reset,
 }: {

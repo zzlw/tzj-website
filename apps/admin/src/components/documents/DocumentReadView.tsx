@@ -32,7 +32,7 @@ import Link from 'next/link';
 import { Can } from '@/components/Can';
 import { MarkdownPreview } from '@/components/documents/MarkdownPreview';
 import { LastOperatorCell } from '@/components/LastOperatorCell';
-import { formatDateTime, StatusBadge } from '@/features/constants';
+import { formatDateTime } from '@/features/constants';
 import { buildDocListHref } from '@/features/documents';
 import type { DocRevisionItem, InternalDocumentItem } from '@/features/types';
 
@@ -129,7 +129,7 @@ export function DocumentReadView({
               {doc.isPinned ? (
                 <Badge
                   variant="outline"
-                  className="gap-1 border-amber-200 bg-amber-50 text-amber-700"
+                  className="gap-1 border-warning/40 bg-warning-muted text-warning-foreground"
                 >
                   <Pin className="h-3 w-3" />
                   置顶
@@ -177,8 +177,8 @@ export function DocumentReadView({
 
           {/* 侧栏元信息 */}
           <aside className="mt-8 space-y-5 lg:mt-0 lg:sticky lg:top-[4.25rem] lg:self-start">
-            <Card className="border-border/80 shadow-sm">
-              <CardHeader className="pb-3">
+            <Card className="border-border/80">
+              <CardHeader>
                 <CardTitle className="text-sm font-medium">文档信息</CardTitle>
                 <CardDescription className="text-xs">阅读与发布统计</CardDescription>
               </CardHeader>
@@ -194,8 +194,8 @@ export function DocumentReadView({
               </CardContent>
             </Card>
 
-            <Card className="border-border/80 shadow-sm">
-              <CardHeader className="pb-3">
+            <Card className="border-border/80 pb-0">
+              <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-sm font-medium">
                   <History className="h-4 w-4 text-muted-foreground" />
                   版本历史
@@ -241,8 +241,8 @@ export function DocumentReadView({
                             <Can anyPerm={['docs.edit']}>
                               <Button
                                 variant="ghost"
-                                size="sm"
-                                className="mt-1 h-7 px-2 text-xs"
+                                size="xs"
+                                className="mt-1"
                                 onClick={() => onRestoreRequest(rev.id)}
                               >
                                 <RotateCcw className="mr-1 h-3 w-3" />

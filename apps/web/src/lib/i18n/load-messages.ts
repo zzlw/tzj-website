@@ -22,7 +22,7 @@ async function loadModule(
   name: string,
 ): Promise<Record<string, unknown> | null> {
   try {
-    let mod;
+    let mod: { default: unknown };
     const key = `${locale}/${name}`;
     switch (key) {
       case 'zh-CN/blocks':
