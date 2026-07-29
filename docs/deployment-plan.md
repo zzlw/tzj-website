@@ -562,11 +562,11 @@ rsync -av infra/docker/docker-compose.prod.yml infra/docker/docker-compose.acme.
 
 | # | 任务 | 产出 |
 |---|------|------|
-| 1 | ~~购买 ECS~~（已购：e-c1m1.large / 2C2G / 北京 / `REDACTED-IP`）重装为 Ubuntu 24.04 + 域名解析 | 可 SSH 的服务器 |
-| 2 | 系统初始化（§6.1） | Docker 就绪、加固完成 |
-| 3 | 改造 infra：compose（+minio/−redis/mem_limit）+ nginx 模板（minio 反代 + 裸域 301）+ env example（域名段 + S3 段）+ s3.service.ts forcePathStyle（§4.1–4.6） | PR 合入 main |
-| 4 | ECS 铺环境文件，启动 postgres/minio/acme/gateway，出证书 | 基础设施就绪 |
-| 5 | MinIO bucket 初始化 + 本地媒体对象同步（§4.4 / §4.5.2） | 静态资源可访问 |
+| 1 | ~~购买 ECS~~（已购：e-c1m1.large / 2C2G / 北京 / `REDACTED-IP`）~~重装为 Ubuntu 24.04 + 域名解析~~ ✅ | 可 SSH 的服务器 |
+| 2 | ~~系统初始化（§6.1）~~ ✅ | Docker 就绪、加固完成 |
+| 3 | ~~改造 infra：compose（+minio/−redis/mem_limit）+ nginx 模板（minio 反代 + 裸域 301）+ env example（域名段 + S3 段）+ s3.service.ts forcePathStyle（§4.1–4.6）~~ ✅ | PR 合入 main |
+| 4 | ~~ECS 铺环境文件，启动 postgres/minio/acme/gateway，出证书~~ ✅ | 基础设施就绪 |
+| 5 | ~~MinIO bucket 初始化 + 本地媒体对象同步（§4.4 / §4.5.2）~~ ✅（1153 对象/556MiB 已对齐） | 静态资源可访问 |
 | 6 | GitHub Secrets/Vars 配置，触发 `deploy.yml` | 首次上线（表结构就绪） |
 | 7 | 本地内容数据导入生产库（§4.5.1，11 个后台模块） | 站点内容就绪 |
 | 8 | 备份 crontab + 云监控 + 拨测（§7） | 运维闭环 |
