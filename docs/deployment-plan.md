@@ -304,18 +304,34 @@ ssh tzj-prod "cd /opt/tzj && docker compose -f docker-compose.prod.yml \
 
 #### 4.5.2 本地 MinIO 媒体对象 → 生产 MinIO
 
-媒体库及富文本引用的文件本体在本地 dev MinIO，经公网 `static.tzjii.com` 上行同步（走 nginx 反代到 minio，SigV4 path-style 签名可过；阿里云入方向带宽不受 3 Mbps 购买值限制）：
+媒体库及富文本引用的文件本体在本地 dev MinIO（`tzj-uploads-dev`，实测 1153 对象 / 556MiB）。**分两步完成**：小文件走公网反代批量同步，大文件走服务器内网入库。
+
+**❌ 不要整库走 `static.tzjii.com` 公网 mirror：**实测公网 nginx 反代 + SigV4 签名 + 单核 ECS 上 nginx 把请求体缓冲到临时文件，把上传吞吐压到 <1MB/s（跟带宽无关：同一批文件用 scp 直传服务器能跑到 12–14MB/s）；且大文件（>16MB）走分片上传时，若 nginx 开了 `proxy_request_buffering off` 会把 body 改用 chunked 重编码转发、破坏 aws-chunked 签名导致 minio 返 **HTTP 400**。
+
+**✅ 正确做法：**
 
 ```bash
-# 本机执行；dev 侧凭证即 dev compose 的 minioadmin，prod 侧用应用 AK（§4.4 创建的 tzj-api）
-docker run --rm --entrypoint sh minio/mc -c "
+# ① 小文件（图片/图标 ≤约 10MB）——本机走公网反代 mirror，数量多但单个小，快且可重跑（--overwrite 幂等）
+docker run --rm --add-host static.tzjii.com:<生产 IP> --entrypoint sh minio/mc -c "
   mc alias set dev http://host.docker.internal:9000 minioadmin <本地MINIO_ROOT_PASSWORD> &&
   mc alias set prod https://static.tzjii.com <S3_ACCESS_KEY_ID> <S3_ACCESS_KEY_SECRET> &&
-  mc mirror dev/tzj-uploads-dev prod/tzj-uploads-prod
-"
+  mc mirror --overwrite dev/tzj-uploads-dev prod/tzj-uploads-prod"
+# （本地解析器若缓存了新域名的 NXDOMAIN，容器 DNS 会 no such host，故用 --add-host 直映射绕过）
+
+# ② 大文件（视频/大图 >16MB，本例 7×37MB mp4 + 4 张大图 = 320MiB）——先导出到本地目录，
+#    scp 到服务器（~12MB/s，秒级），再在服务器上走内网 http://minio:9000 入库（根凭证，无 nginx/TLS/签名穿透，53MB/s）
+mkdir -p /tmp/tzj-tree/{videos,content,products}   # 按 bucket 前缀组织
+docker run --rm -v /tmp/tzj-tree:/out --entrypoint sh minio/mc -c \
+  "mc alias set dev http://host.docker.internal:9000 minioadmin <pw> && mc cp dev/tzj-uploads-dev/videos/xxx.mp4 /out/videos/ ..."
+scp -r /tmp/tzj-tree/* deploy@<生产 IP>:/tmp/tzj-tree/
+ssh deploy@<生产 IP> 'docker run --rm --network tzj_default -v /tmp/tzj-tree:/data \
+  --env-file /opt/tzj/.env.prod --entrypoint sh minio/mc -c \
+  "mc alias set prod http://minio:9000 \$MINIO_ROOT_USER \$MINIO_ROOT_PASSWORD && mc cp --recursive /data/ prod/tzj-uploads-prod/"'
+
+# ③ 校验：两端对象数/总大小一致（均 1153 对象 / 556MiB），抽查大文件公网 GET 200 + content-length 正确
 ```
 
-> 前提：§4.4 bucket 已初始化、DNS/证书已就绪（§6.3 步骤 1–4）。单文件受 nginx `client_max_body_size 100m` 限制，超限的大视频先压缩（AGENTS.md 规范本就要求视频 < 1080p / 30s）。
+> 前提：§4.4 bucket 已初始化、DNS/证书已就绪（§6.3 步骤 1–4）。后台管理后台的媒体上传走预签名 PUT + 分片，单文件仍受 nginx `client_max_body_size 100m` 限制（已配 300s 读写/请求体超时，但不得关 `proxy_request_buffering`）；超大视频先压缩（AGENTS.md 规范本就要求视频 < 1080p / 30s）。
 
 #### 4.5.3 存量 OSS 数据迁移（如有）
 
