@@ -92,8 +92,24 @@ run_migrate() {
   local api_image="${IMAGE_REGISTRY}/tzj-api:${api_tag}"
   local migrate_env=(--env-file "$ENV_FILE" --env-file "$LOCAL_ENV_FILE")
 
+  # Prisma migration engine（schema-engine）无法解析 compose 服务名 postgres：建立 TCP 后
+  # pg 握手挂起，~60s 后抛 P1001（同镜像的 query engine / node getaddrinfo 解析均正常，
+  # 仅 migration engine 的 DNS 解析器命中此坑）。解析 postgres 容器当前 IP 并 --add-host
+  # 钉进 /etc/hosts（getaddrinfo 优先命中，绕过 DNS），每次部署重算，postgres 重启换 IP 亦安全。
+  local add_host_args=()
+  local pg_cid pg_ip
+  pg_cid=$(compose ps -q postgres 2>/dev/null || true)
+  if [[ -n "$pg_cid" ]]; then
+    pg_ip=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$pg_cid" 2>/dev/null || true)
+    if [[ -n "$pg_ip" ]]; then
+      add_host_args=(--add-host "postgres:${pg_ip}")
+      echo "==> Migrate 解析 postgres -> ${pg_ip}（绕过 schema-engine DNS 坑）"
+    fi
+  fi
+
   echo "==> Migrate (${api_image})"
   docker run --rm --network "$NETWORK" \
+    ${add_host_args[@]+"${add_host_args[@]}"} \
     -e NPM_CONFIG_REGISTRY=https://registry.npmmirror.com \
     -e COREPACK_NPM_REGISTRY=https://registry.npmmirror.com \
     "${migrate_env[@]}" \
