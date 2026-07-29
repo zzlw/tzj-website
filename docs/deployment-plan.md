@@ -439,7 +439,7 @@ usermod -aG docker deploy
 #     需要把 registry-mirrors 和 log-opts 写在同一份文件里，避免互相覆盖）
 cat >/etc/docker/daemon.json <<'EOF'
 {
-  "registry-mirrors": ["https://docker.1ms.run", "https://docker.m.daocloud.io"],
+  "registry-mirrors": ["https://docker.m.daocloud.io", "https://docker.1ms.run"],
   "log-driver": "json-file",
   "log-opts": { "max-size": "50m", "max-file": "3" }
 }

@@ -8,8 +8,8 @@ mkdir -p /etc/docker
 tee /etc/docker/daemon.json <<'EOF'
 {
   "registry-mirrors": [
-    "https://docker.1ms.run",
-    "https://docker.m.daocloud.io"
+    "https://docker.m.daocloud.io",
+    "https://docker.1ms.run"
   ]
 }
 EOF
