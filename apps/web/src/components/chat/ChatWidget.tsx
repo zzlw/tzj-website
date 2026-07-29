@@ -338,6 +338,14 @@ export function ChatWidget({
     return greetingText;
   }, [noAgentOnline, displayPresence, greetingText, noAgentHintText, offlineHintText, t]);
 
+  // 招呼消息时间戳：不能在渲染阶段取 new Date()——页面经 SSR/SSG 输出的 HTML
+  // 与客户端水合时的时间必然不同，会触发 React #418（文本节点 hydration 不匹配）。
+  // 首屏留空（两端一致），挂载后再补写真实时间。
+  const [greetingTimestamp, setGreetingTimestamp] = useState('');
+  useEffect(() => {
+    setGreetingTimestamp(new Date().toISOString());
+  }, []);
+
   // 构造客服首条招呼消息（不写入后端，只在本地展示，模拟 Intercom 体验）
   const aiGreetingMessage: ChatMessage = useMemo(
     () => ({
@@ -345,10 +353,10 @@ export function ChatWidget({
       content: greetingContent,
       sender: 'agent',
       senderEmail: 'agent@tzj.com',
-      timestamp: new Date().toISOString(),
+      timestamp: greetingTimestamp,
       isRead: true,
     }),
-    [greetingContent],
+    [greetingContent, greetingTimestamp],
   );
 
   // 真正显示给用户的消息列表：AI 招呼语始终作为首条保留，

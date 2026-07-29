@@ -34,13 +34,17 @@ export function DayGroupedMessages({
       {groups.map((g, gi) => {
         const first = g.items[0];
         if (!first) return null;
+        // 时间戳为空（招呼消息水合前的占位态）→ 不渲染空的日期胶囊
+        const dayLabel = formatDayLabel(first.timestamp, locale, t);
         return (
           <div key={gi} className="flex flex-col gap-3">
-            <div className="flex items-center justify-center">
-              <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-[10px] font-medium tracking-wide text-zinc-500 uppercase">
-                {formatDayLabel(first.timestamp, locale, t)}
-              </span>
-            </div>
+            {dayLabel && (
+              <div className="flex items-center justify-center">
+                <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-[10px] font-medium tracking-wide text-zinc-500 uppercase">
+                  {dayLabel}
+                </span>
+              </div>
+            )}
             {g.items.map((m) => (
               <MessageBubble
                 key={m.messageId}
@@ -86,6 +90,8 @@ function MessageBubble({
   const isAgent = message.sender === 'agent';
   // 纯 emoji 消息：放大 3 倍渲染（text-sm≈14px → text-5xl≈42px）
   const bigEmoji = !!message.content && isEmojiOnlyMessage(message.content);
+  // 时间戳为空（招呼消息水合前的占位态）→ 不渲染时间及悬空的「·」分隔符
+  const timeLabel = formatTime(message.timestamp, locale);
 
   return (
     <div
@@ -173,11 +179,15 @@ function MessageBubble({
             <span className="font-medium text-zinc-500">{agentName}</span>
             <span className="mx-1 text-zinc-300">·</span>
             <span>{agentTitle}</span>
-            <span className="mx-1 text-zinc-300">·</span>
-            <span>{formatTime(message.timestamp, locale)}</span>
+            {timeLabel && (
+              <>
+                <span className="mx-1 text-zinc-300">·</span>
+                <span>{timeLabel}</span>
+              </>
+            )}
           </span>
         ) : (
-          <span>{formatTime(message.timestamp, locale)}</span>
+          <span>{timeLabel}</span>
         )}
       </div>
     </div>
