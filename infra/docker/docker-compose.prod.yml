@@ -20,7 +20,7 @@ services:
   minio:
     image: minio/minio:RELEASE.2025-04-22T22-12-26Z # 锁定版本，生产禁 latest
     restart: unless-stopped
-    mem_limit: 256m
+    mem_limit: 512m # IAM/admin 操作会瞬时冲高，256m 会被 cgroup 杀导致 exit0 重启循环
     command: server /data
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:?required}

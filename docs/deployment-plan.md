@@ -67,11 +67,11 @@ GitHub push(main) ──► GitHub Actions ──► 构建 3 镜像 ──► �
 | 服务 | 上限 | 说明 |
 |------|------|------|
 | postgres | 384 MB | 小库足够，`shared_buffers` 保持默认 128MB |
-| minio | 256 MB | `MINIO_MEMORY` 无需调，静态读为主 |
+| minio | 512 MB | IAM/admin 操作（建用户/挂策略）会瞬时冲高，256m 实测被 cgroup 杀导致 exit0 重启循环，必须 ≥512m |
 | api (NestJS) | 512 MB | `NODE_OPTIONS=--max-old-space-size=384` |
 | web / admin (Next.js) | 各 320 MB | `NODE_OPTIONS=--max-old-space-size=256` |
 | gateway + acme | ~64 MB | nginx 极轻 |
-| 合计 | ~1.86 GB | 剩余给内核/Docker daemon；滚动更新瞬时高峰靠 swap 兜底 |
+| 合计 | ~2.11 GB | 超出物理 2GiB，重度依赖 2G swap；低流量小站各容器峰值不同时到，可接受 |
 
 ---
 
@@ -336,7 +336,7 @@ docker run --rm --network tzj_default --env-file /opt/tzj/.env.prod \
 1. **移除 redis 服务**：`docker-compose.prod.yml` 删除 `redis` 服务、`redisdata` volume，及 api 的 `depends_on.redis`。依据：API 代码中 Redis 仅为注释标注的可选依赖（多实例 Socket.IO 才需要），`env.validation.ts` 无任何 REDIS 变量，单机部署纯属死重量（~60MB 内存）。
 2. **去除 acme 的 CDN 证书推送**：`infra/docker/acme/issue.sh` 尾部在 `STATIC_DOMAIN + Ali_Key` 存在时会调 `deploy-cdn.sh` 往阿里云 CDN 推证书——MinIO 自托管后 static 域名不再走 CDN，删除该分支及 `deploy-cdn.sh`，**并同时删掉 `--issue` 命令里的 `--renew-hook "sh /scripts/deploy-cdn.sh"`**（renew-hook 会被 acme.sh 持久化进域配置，脚本删了 hook 还在，之后每次自动续期都报错；nginx 侧已有 `90-periodic-reload.sh` 每 6h 自动 reload，无需 hook）。
 3. **API 访问自身公网域名的回环优化（可选）**：api 容器内访问 `static.tzjii.com` 会经公网 IP hairpin，占 3 Mbps 带宽。可在 api 服务加 `extra_hosts: ["static.tzjii.com:网关容器IP"]` 或接受现状（服务端直接 S3 写入频率低，主路径是浏览器预签名直传）。首版接受现状，不加复杂度。
-4. **落地 §2 内存预算**：给 compose 各服务加 `mem_limit`（postgres 384m / minio 256m / api 512m / web·admin 各 320m），并在 api/web/admin 的 `environment` 补 `NODE_OPTIONS`（api `--max-old-space-size=384`，web/admin `--max-old-space-size=256`）。
+4. **落地 §2 内存预算**：给 compose 各服务加 `mem_limit`（postgres 384m / minio 512m / api 512m / web·admin 各 320m），并在 api/web/admin 的 `environment` 补 `NODE_OPTIONS`（api `--max-old-space-size=384`，web/admin `--max-old-space-size=256`）。
 5. **清理 `.env.prod.local.example` 注释**：删掉「CDN 证书推送仍需 ALI_KEY/ALI_SECRET」一行（CDN 推送已废，ALI_KEY/ALI_SECRET 仅供 acme DNS-01 使用）。
 6. **Makefile 按运行位置拆分（已执行）**：根 `Makefile` 只留本地开发 target（dev / db-*）；新建 `infra/docker/Makefile`（服务器运维：prod-deploy / prod-status / prod-logs / gateway-reload / cert-selfsigned / acme-build / infra-up / cert-issue / cert-renew），路径全按 `/opt/tzj`，PROD 宏用 `$(wildcard)` 条件叠加 acme override（与 deploy.sh 的 compose() 对齐），经 scp `strip_components: 2` 落地为 `/opt/tzj/Makefile`；两个 workflow 的 scp 清单已补 `infra/docker/Makefile`；旧的 `cert-deploy-cdn` 与 `deploy-ssh-help` target 随拆分删除。
 
