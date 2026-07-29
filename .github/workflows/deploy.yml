@@ -76,6 +76,10 @@ jobs:
           host: ${{ vars.ECS_HOST }}
           username: ${{ vars.ECS_USER }}
           key: ${{ secrets.ECS_SSH_KEY }}
+          # 2C2G 小机冷启动镜像拉取 + migrate + 滚动更新可能超过默认 10m；
+          # 超时会杀掉 SSH 会话但服务器上的 deploy.sh 仍作为孤儿进程续跑，
+          # 造成 CI 误报失败且状态不可观测。放宽到 20m 覆盖冷拉取最坏情况。
+          command_timeout: 20m
           script: |
             set -euo pipefail
             cd /opt/tzj

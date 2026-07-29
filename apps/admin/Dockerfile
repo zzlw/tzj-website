@@ -62,8 +62,9 @@ RUN addgroup --system --gid 1001 nodejs && \
 # 复制 .next/standalone (自动打包好的所有依赖)
 COPY --from=builder --chown=nextjs:nodejs /app/apps/admin/.next/standalone ./
 
-# 复制 public 静态资源：monorepo standalone 下必须与 server.js 同级
-# （/app/apps/admin/public），放根目录 /app/public 会导致整站 public 资源 404
+# 复制 public 静态资源：standalone server.js 位于 /app/apps/admin/server.js，
+# 启动时 process.chdir(__dirname)，Next 从 cwd/public 提供静态资源 →
+# 必须落到 /app/apps/admin/public（与 .next/static 同级），否则 vditor-assets 等全部 404
 COPY --from=builder --chown=nextjs:nodejs /app/apps/admin/public ./apps/admin/public
 
 # 复制静态产物
