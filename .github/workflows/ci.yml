@@ -143,20 +143,14 @@ jobs:
             NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL }}
             NEXT_PUBLIC_WEB_URL=${{ vars.NEXT_PUBLIC_WEB_URL }}
 
-      # Trivy 安全扫描（扫描本地 load 的镜像或刚构建的 tag）
+      # Trivy 安全扫描：结果直接输出到 CI 日志
+      # （私有仓库无 GHAS，Code Scanning 不可用，不上传 SARIF）
       - name: Security Scan (Trivy)
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: tzj-${{ matrix.app }}:${{ github.sha }}
-          format: sarif
-          output: trivy-${{ matrix.app }}.sarif
+          format: table
           severity: CRITICAL,HIGH
-
-      - name: Upload Trivy results
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: trivy-${{ matrix.app }}.sarif
 
   # ── 3. Dependency Audit ────────────────────────────────────
   dependency-audit:
