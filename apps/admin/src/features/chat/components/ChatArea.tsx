@@ -88,6 +88,16 @@ export function ChatArea({
   // 待执行的 rAF 句柄，卸载/依赖变化时取消，避免泄漏与竞态
   const rafRef = useRef<number | null>(null);
 
+  // 首次点开会话 → 请求浏览器通知权限（手势触发，符合浏览器策略）
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('Notification' in window)) return;
+    if (Notification.permission === 'granted' || Notification.permission === 'denied') return;
+
+    void Notification.requestPermission().catch(() => {
+      // 静默失败（可能被浏览器拦截）
+    });
+  }, [room.roomId]);
+
   const scrollToBottom = useCallback((smooth: boolean) => {
     const el = viewportRef.current;
     if (!el) return;

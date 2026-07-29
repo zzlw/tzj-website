@@ -5,6 +5,7 @@ import { ScrollArea, Separator, SidebarInset, SidebarProvider, SidebarTrigger } 
 import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { Breadcrumbs } from './Breadcrumbs';
+import { NotificationBell } from './NotificationBell';
 import { ScreenWatermark } from './ScreenWatermark';
 import { AppSidebar } from './Sidebar';
 import { ThemeModeToggle } from './theme/ThemeModeToggle';
@@ -70,6 +71,7 @@ export function DashboardShell({
           <Separator orientation="vertical" className="mr-1 h-4" />
           <Breadcrumbs />
           <div className="ml-auto flex shrink-0 items-center gap-2">
+            <NotificationBell />
             <ThemeSelector />
             <ThemeModeToggle />
             <p className="hidden text-xs text-muted-foreground lg:block">

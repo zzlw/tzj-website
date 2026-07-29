@@ -19,6 +19,7 @@ import {
   useTwoFactorStatus,
 } from '@/features/account';
 import { notifyError, notifySuccess } from '@/lib/notify';
+import { AuthenticatorGuideDialog } from './AuthenticatorGuide';
 import { RecoveryCodesPanel, TwoFactorEnrollWizard } from './TwoFactorEnrollWizard';
 
 /** 两步验证（TOTP）设置卡片：绑定向导 / 恢复码管理 / 关闭 */
@@ -76,9 +77,20 @@ export function TwoFactorCard() {
           两步验证（2FA）
         </CardTitle>
         <CardDescription>
-          {status?.enabled
-            ? `已启用 · 恢复码剩余 ${status.recoveryCodesRemaining} 个`
-            : '使用验证器 App（如 Google Authenticator）生成动态码，为登录加一道防线'}
+          {status?.enabled ? (
+            `已启用 · 恢复码剩余 ${status.recoveryCodesRemaining} 个`
+          ) : (
+            <>
+              使用验证器 App（如 Microsoft Authenticator）生成动态码，为登录加一道防线。
+              <AuthenticatorGuideDialog
+                trigger={
+                  <button type="button" className="ml-1 text-primary hover:underline">
+                    查看教程
+                  </button>
+                }
+              />
+            </>
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent>

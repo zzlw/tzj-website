@@ -1,6 +1,6 @@
 'use client';
 
-import { Tabs as TabsPrimitive } from '@base-ui-components/react/tabs';
+import { Tabs as TabsPrimitive } from '@base-ui/react/tabs';
 import type { ComponentPropsWithoutRef } from 'react';
 import { forwardRef } from 'react';
 import { cn } from '../../lib/utils';

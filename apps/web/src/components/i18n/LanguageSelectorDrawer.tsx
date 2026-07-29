@@ -116,6 +116,7 @@ function LocaleFlag({ country }: { country: string }) {
       className="relative inline-flex h-[1.125rem] w-7 shrink-0 overflow-hidden rounded-[2px] border border-neutral-200 bg-neutral-100 shadow-sm"
       aria-hidden="true"
     >
+      {/* 豁免 next/image：三方 flagcdn 小图标（已带 srcSet/尺寸/lazy），不值得过代理优化 */}
       <img
         src={`https://flagcdn.com/w40/${country}.png`}
         srcSet={`https://flagcdn.com/w80/${country}.png 2x`}

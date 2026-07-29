@@ -12,6 +12,7 @@ import {
 } from '@tzj/ui';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
+import { AuthenticatorGuideDialog } from '@/components/settings/AuthenticatorGuide';
 import { BASE_PATH } from '@/lib/config';
 import { notifyError } from '@/lib/notify';
 
@@ -43,7 +44,7 @@ function LoginForm() {
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok || !body.success) {
-        notifyError(body.message || '登录失败，请检查用户名或密码');
+        notifyError(body.message || '登录失败，请检查账号或密码');
         return;
       }
       if (body.requires2fa && body.pendingToken) {
@@ -104,6 +105,18 @@ function LoginForm() {
             <CardDescription>
               {pendingToken ? '请输入验证器 App 中的 6 位动态码' : '拓之迹企业内容管理系统'}
             </CardDescription>
+            {pendingToken ? (
+              <AuthenticatorGuideDialog
+                trigger={
+                  <button
+                    type="button"
+                    className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                  >
+                    找不到验证码？查看使用教程
+                  </button>
+                }
+              />
+            ) : null}
           </div>
         </CardHeader>
         <CardContent>
@@ -159,7 +172,7 @@ function LoginForm() {
           ) : (
             <form className="space-y-4" onSubmit={onSubmit}>
               <div className="space-y-2">
-                <Label htmlFor="username">用户名</Label>
+                <Label htmlFor="username">账号</Label>
                 <Input
                   id="username"
                   type="text"
@@ -168,7 +181,7 @@ function LoginForm() {
                   autoComplete="username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="请输入用户名"
+                  placeholder="用户名 / 邮箱 / 手机号"
                 />
               </div>
               <div className="space-y-2">

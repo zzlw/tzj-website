@@ -1,6 +1,6 @@
 'use client';
 
-import { Collapsible as CollapsiblePrimitive } from '@base-ui-components/react/collapsible';
+import { Collapsible as CollapsiblePrimitive } from '@base-ui/react/collapsible';
 import type { ComponentPropsWithoutRef, ElementRef, ReactNode } from 'react';
 import { forwardRef } from 'react';
 import { toRenderProps } from '../../lib/slot';

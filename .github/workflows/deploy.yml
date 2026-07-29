@@ -1,14 +1,18 @@
 # ============================================================
-# TZJ — 完整构建 + 部署（备用，主路径请用云效 Flow）
+# TZJ — 完整构建 + 部署（主路径）
 # ============================================================
-# 跨境 GitHub Runner 构建 push ACR + SSH deploy
-# 日常发布：Codeup push → 云效 pipeline
-# Runner 离线 / 回滚：Actions → Deploy ECS (SSH)
+# GitHub Runner 构建 push ACR + SSH deploy
+# 日常发布：push main 自动触发（保留手动）
+# 回滚：Actions → Deploy ECS (SSH) 指定旧 sha
 # ============================================================
 
 name: Deploy Production (Build + SSH)
 
 on:
+  push:
+    branches: ["main"]
+    # docs-only 提交不触发生产部署（避免改文档就全量重建+滚动重启）
+    paths-ignore: ["docs/**", "**.md"]
   workflow_dispatch:
 
 concurrency:
@@ -63,7 +67,7 @@ jobs:
           host: ${{ vars.ECS_HOST }}
           username: ${{ vars.ECS_USER }}
           key: ${{ secrets.ECS_SSH_KEY }}
-          source: "infra/docker/docker-compose.prod.yml,infra/docker/docker-compose.acme.override.yml,infra/docker/deploy.sh,infra/docker/.env.prod.local.example,infra/docker/nginx,infra/docker/acme,infra/docker/scripts"
+          source: "infra/docker/docker-compose.prod.yml,infra/docker/docker-compose.acme.override.yml,infra/docker/deploy.sh,infra/docker/Makefile,infra/docker/.env.prod.local.example,infra/docker/nginx,infra/docker/acme"
           target: "/opt/tzj"
           strip_components: 2
       - uses: appleboy/ssh-action@v1.2.0

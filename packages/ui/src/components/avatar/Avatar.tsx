@@ -1,4 +1,4 @@
-import { Avatar as AvatarPrimitive } from '@base-ui-components/react/avatar';
+import { Avatar as AvatarPrimitive } from '@base-ui/react/avatar';
 import type { ComponentPropsWithoutRef, ElementRef } from 'react';
 import { forwardRef } from 'react';
 import { cn } from '../../lib/utils';

@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
 
   const { username, password } = payload;
   if (!username || !password) {
-    return NextResponse.json({ success: false, message: '请输入用户名和密码' }, { status: 400 });
+    return NextResponse.json({ success: false, message: '请输入账号和密码' }, { status: 400 });
   }
 
   const res = await retryFetch(`${API_BASE}/auth/login`, {

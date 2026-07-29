@@ -46,12 +46,9 @@ export class CreateUserDto {
   role!: string;
 }
 
+// 注：UpdateUserDto 不含 password——改密统一走 reset-password 单一入口（G3）；
+// 全局 ValidationPipe 为 whitelist: false，真正的防线在 service 不再读取该字段
 export class UpdateUserDto extends PartialType(OmitType(CreateUserDto, ['password'] as const)) {
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsStrongPassword()
-  password?: string;
-
   @ApiPropertyOptional({ description: '是否启用账号' })
   @IsOptional()
   @IsBoolean({ message: '账号状态无效' })

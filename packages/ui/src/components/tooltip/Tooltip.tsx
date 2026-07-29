@@ -1,6 +1,6 @@
 'use client';
 
-import { Tooltip as TooltipPrimitive } from '@base-ui-components/react/tooltip';
+import { Tooltip as TooltipPrimitive } from '@base-ui/react/tooltip';
 import type { ComponentPropsWithoutRef } from 'react';
 import { forwardRef } from 'react';
 import { toRenderProps } from '../../lib/slot';
@@ -54,7 +54,7 @@ const TooltipContent = forwardRef<HTMLDivElement, TooltipContentProps>(
         <TooltipPrimitive.Popup
           ref={ref}
           className={cn(
-            'overflow-hidden rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground animate-in fade-in-0 zoom-in-95 data-[closed]:animate-out data-[closed]:fade-out-0 data-[closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
+            'overflow-hidden rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground animate-in fade-in-0 zoom-in-95 data-[closed]:animate-out data-[closed]:fill-mode-forwards data-[closed]:fade-out-0 data-[closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
             className,
           )}
           {...props}

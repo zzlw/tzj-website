@@ -215,7 +215,7 @@ export {
 } from './components/tag';
 // Components — Textarea
 export { Textarea, type TextareaProps } from './components/textarea';
-// Components — Toast（sonner / shadcn 风格）
+// Components — Toast（base-ui 内核，§4.4）
 export { Toaster, type ToastOptions, toast } from './components/toast';
 // Components — Tooltip
 export {

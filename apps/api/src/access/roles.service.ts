@@ -7,6 +7,7 @@ import {
   NotFoundException,
   OnModuleInit,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateAccessRoleDto, UpdateAccessRoleDto } from './dto/role.dto';
 import {
@@ -14,6 +15,7 @@ import {
   assertValidPermissions,
   DEPRECATED_ROLE_SLUGS,
   PERMISSION_GROUPS,
+  PRESET_ROLES,
   RESERVED_ROLE_SLUGS,
   ROLE_META,
   ROLE_PERMISSIONS,
@@ -23,6 +25,9 @@ import {
 
 /** 权限缓存 TTL（5 分钟），多实例部署时保证权限变更最终一致。 */
 const PERMISSION_CACHE_TTL_MS = 5 * 60 * 1000;
+
+/** Setting KV 键：预置角色播种标记（只播一次，删除的预设不复活）。 */
+const PRESET_ROLES_SEEDED_KEY = 'access.presetRolesSeededAt';
 
 interface CacheEntry {
   perms: string[];
@@ -38,6 +43,7 @@ export class RolesService implements OnModuleInit {
 
   async onModuleInit() {
     await this.syncSystemRoles();
+    await this.seedPresetRoles();
   }
 
   /** 启动时同步系统预置角色，并清理已废弃的 editor/viewer。 */
@@ -82,6 +88,59 @@ export class RolesService implements OnModuleInit {
     });
 
     this.invalidateCache();
+  }
+
+  /**
+   * 首次启动播种业务角色预设（docs/rbac-preset-roles-design.md §4.2）：
+   * 用 Setting 标记保证只播一次——管理员删掉不需要的预设后重启不复活；
+   * create-if-missing 不覆盖任何现有角色（slug 撞名时跳过）。
+   */
+  async seedPresetRoles() {
+    const seeded = await this.prisma.setting.findUnique({
+      where: { key: PRESET_ROLES_SEEDED_KEY },
+    });
+    if (seeded) return;
+
+    const created: string[] = [];
+    for (const preset of PRESET_ROLES) {
+      const existing = await this.prisma.accessRole.findUnique({ where: { slug: preset.slug } });
+      if (existing) continue;
+      try {
+        await this.prisma.accessRole.create({
+          data: {
+            slug: preset.slug,
+            name: preset.name,
+            description: preset.description,
+            permissions: [...preset.permissions],
+            isSystem: false,
+          },
+        });
+        created.push(preset.slug);
+      } catch (e) {
+        // 多实例并发 onModuleInit 竞态撞 slug 唯一约束（P2002），视为已存在跳过
+        if (!(e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002')) throw e;
+      }
+    }
+
+    // upsert 而非 create：双实例同时读不到标记会双双走到本步，create 会撞 key 唯一约束
+    const seededAt = new Date().toISOString();
+    await this.prisma.setting.upsert({
+      where: { key: PRESET_ROLES_SEEDED_KEY },
+      update: { value: seededAt },
+      create: {
+        key: PRESET_ROLES_SEEDED_KEY,
+        value: seededAt,
+        group: 'access',
+        label: '预置角色播种时间',
+      },
+    });
+
+    this.invalidateCache();
+    this.logger.log(
+      created.length > 0
+        ? `预置业务角色播种完成：新建 ${created.join(', ')}`
+        : '预置业务角色播种完成：均已存在，未新建',
+    );
   }
 
   invalidateCache() {
@@ -158,7 +217,23 @@ export class RolesService implements OnModuleInit {
     }
   }
 
-  async create(dto: CreateAccessRoleDto) {
+  /**
+   * 角色写操作的 admin 硬校验（防相邻提权）：持 access.manage 的非 admin 用户
+   * 若能编辑自己所属角色的权限集，等于自己给自己发权限。防线必须在 service 层
+   * 查库确认，不依赖 controller 装饰器。见 docs/security/account-recovery-design.md §7。
+   */
+  private async assertAdminActor(actorId: string) {
+    const actor = await this.prisma.user.findUnique({
+      where: { id: actorId },
+      select: { role: true, isActive: true },
+    });
+    if (!actor || !actor.isActive || actor.role !== 'admin') {
+      throw new ForbiddenException('仅 admin 可管理角色');
+    }
+  }
+
+  async create(dto: CreateAccessRoleDto, actorId: string) {
+    await this.assertAdminActor(actorId);
     const slug = (dto.slug?.trim() || slugifyRoleName(dto.name)).toLowerCase();
     if (!slug || slug.length < 2) {
       throw new BadRequestException('无法生成有效的角色标识');
@@ -187,7 +262,8 @@ export class RolesService implements OnModuleInit {
     return role;
   }
 
-  async update(id: string, dto: UpdateAccessRoleDto) {
+  async update(id: string, dto: UpdateAccessRoleDto, actorId: string) {
+    await this.assertAdminActor(actorId);
     const role = await this.findOne(id);
 
     if (role.isSystem) {
@@ -222,7 +298,8 @@ export class RolesService implements OnModuleInit {
     return updated;
   }
 
-  async remove(id: string) {
+  async remove(id: string, actorId: string) {
+    await this.assertAdminActor(actorId);
     const role = await this.findOne(id);
     if (role.isSystem) {
       throw new ForbiddenException('系统预置角色不可删除');

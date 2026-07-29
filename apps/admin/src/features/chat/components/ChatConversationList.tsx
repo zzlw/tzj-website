@@ -478,6 +478,11 @@ export function ChatConversationList({
           const unread = room.unreadCountForAgent;
           const isDeleted = !!room.deletedAt;
           const isArchived = room.status === 'archived' && !isDeleted;
+          // 他人负责的会话：未读徽标弱化显示（与新未读口径一致——他人会话不计入我的总数）
+          const isOthersRoom =
+            !!room.assignedAgentEmail &&
+            !!currentAgentEmail &&
+            room.assignedAgentEmail !== currentAgentEmail;
           return (
             <button
               type="button"
@@ -552,7 +557,15 @@ export function ChatConversationList({
                 />
               </div>
               {unread > 0 && (
-                <span className="bg-primary text-primary-foreground ml-1 inline-flex min-h-[1.5rem] min-w-[1.5rem] items-center justify-center rounded-full text-xs font-semibold shadow-lg">
+                <span
+                  className={cn(
+                    'ml-1 inline-flex min-h-[1.5rem] min-w-[1.5rem] items-center justify-center rounded-full text-xs font-semibold',
+                    // 他人负责的会话：弱化显示（bg-muted text-muted-foreground）
+                    isOthersRoom
+                      ? 'bg-muted text-muted-foreground'
+                      : 'bg-primary text-primary-foreground shadow-lg',
+                  )}
+                >
                   {unread}
                 </span>
               )}

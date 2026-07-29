@@ -180,6 +180,10 @@ process.env.JWT_SECRET = JWT_SECRET;
 const authService = new ChatAuthService(
   new JwtService({ secret: JWT_SECRET }),
   new ConfigService(),
+  // 本用例不走 exchangeAgentToken，权限查询给最小桩即可
+  { getPermissionsForSlug: async () => ['chat.view'] } as unknown as ConstructorParameters<
+    typeof ChatAuthService
+  >[2],
 );
 
 const VISITOR = 'visitor@example.com';

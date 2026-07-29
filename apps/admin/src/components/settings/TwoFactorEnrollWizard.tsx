@@ -5,6 +5,7 @@ import { Copy } from 'lucide-react';
 import { useState } from 'react';
 import { type TwoFactorSetupData, useTwoFactorEnable, useTwoFactorSetup } from '@/features/account';
 import { notifyError, notifySuccess } from '@/lib/notify';
+import { AuthenticatorGuideCollapsible, AuthenticatorGuideDialog } from './AuthenticatorGuide';
 
 /** 恢复码一次性展示面板（enable / regenerate 成功后共用） */
 export function RecoveryCodesPanel({
@@ -147,7 +148,16 @@ export function TwoFactorEnrollWizard({
             className="h-40 w-40 rounded-md border border-border"
           />
           <div className={ui.qrInfo}>
-            <p>1. 用验证器 App 扫描二维码；</p>
+            <p>
+              1. 用验证器 App 扫描二维码；
+              <AuthenticatorGuideDialog
+                trigger={
+                  <button type="button" className="ml-1 text-xs text-primary hover:underline">
+                    不知道怎么扫？
+                  </button>
+                }
+              />
+            </p>
             <p>2. 无法扫码时手动输入密钥：</p>
             <code className="block break-all rounded bg-muted px-2 py-1 font-mono text-xs">
               {setupData.secret}
@@ -192,9 +202,10 @@ export function TwoFactorEnrollWizard({
     );
   }
 
-  /* 绑定第一步：输入密码开始设置 */
+  /* 绑定第一步：输入密码开始设置（表单上方先给教程，让用户在生成 15 分钟有效期的二维码前装好 App） */
   return (
     <form onSubmit={onSetup} className={ui.setupForm}>
+      <AuthenticatorGuideCollapsible />
       <div className="space-y-2">
         <Label htmlFor="setup-password">{ui.passwordLabel}</Label>
         <Input

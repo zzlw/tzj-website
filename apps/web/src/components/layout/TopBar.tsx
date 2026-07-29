@@ -89,10 +89,13 @@ export function TopBar({ phone, email, socialChannels, scanHint }: TopBarProps) 
                         >
                           <figure className="flex flex-col items-center">
                             <div className="relative h-36 w-36 border border-neutral-200 bg-white p-1.5">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              {/* 豁免 next/image：弹层内二维码（按需展示、非 LCP），固定容器尺寸无 CLS */}
                               <img
                                 src={resolveSocialQrUrl(channel.qr!)}
                                 alt={channel.label}
+                                width={144}
+                                height={144}
+                                loading="lazy"
                                 className="h-full w-full object-contain"
                               />
                             </div>

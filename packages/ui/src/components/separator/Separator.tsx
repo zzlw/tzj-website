@@ -1,4 +1,4 @@
-import { Separator as SeparatorPrimitive } from '@base-ui-components/react/separator';
+import { Separator as SeparatorPrimitive } from '@base-ui/react/separator';
 import type { ComponentPropsWithoutRef, ElementRef } from 'react';
 import { forwardRef } from 'react';
 import { cn } from '../../lib/utils';

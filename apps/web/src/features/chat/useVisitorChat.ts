@@ -3,11 +3,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Socket } from 'socket.io-client';
 import type { ChatMessage } from '@/features/chat/types';
+import { env } from '@/lib/env';
 
-const SOCKET_URL = (process.env.NEXT_PUBLIC_CHAT_SOCKET_URL ?? 'http://localhost:4000').replace(
-  /\/$/,
-  '',
-);
+const SOCKET_URL = env.chatSocketUrl;
 
 type ChatUserType = 'client' | 'agent';
 

@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -11,6 +12,7 @@ import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import type { MeResult } from '@tzj/types';
 import * as bcrypt from 'bcrypt';
 import { RolesService } from '../access/roles.service';
+import { normalizeEmail, normalizePhone } from '../common/utils/identifier';
 import { PrismaService } from '../prisma/prisma.service';
 import { SettingsService } from '../settings/settings.service';
 import type { AuthUser, JwtPayload, Role } from './roles';
@@ -39,8 +41,8 @@ export class AuthService {
     private readonly settings: SettingsService,
   ) {}
 
-  async login(username: string, password: string, meta: RequestMeta) {
-    const user = await this.prisma.user.findUnique({ where: { username } });
+  async login(identifier: string, password: string, meta: RequestMeta) {
+    const user = await this.findUserByIdentifier(identifier);
 
     // 账号锁定检查
     if (user?.lockedUntil && user.lockedUntil.getTime() > Date.now()) {
@@ -79,8 +81,8 @@ export class AuthService {
         }
       }
 
-      // 统一模糊提示，避免用户名枚举
-      throw new UnauthorizedException('用户名或密码错误');
+      // 统一模糊提示，避免账号枚举（三种标识 miss 口径一致）
+      throw new UnauthorizedException('账号或密码错误');
     }
 
     // 登录成功但已启用 2FA → 返回预鉴权态，不发正式令牌、不建 Session（kill-switch 打开时豁免）
@@ -109,6 +111,26 @@ export class AuthService {
     await this.audit(user.id, 'login', 'auth', user.id, meta);
 
     return { requires2fa: false as const, ...tokens, user: await this.toAuthUser(user) };
+  }
+
+  /**
+   * 多标识登录查找（方案 §3.2）：按确定性优先级串行精确查找，命中即返回——
+   * 避免 OR 查询在「A 的用户名 = B 的手机号」时产生歧义；
+   * username 优先级第一，存量账号（含邮箱/纯数字形态用户名）登录行为与既往完全一致。
+   */
+  private async findUserByIdentifier(identifier: string) {
+    const byUsername = await this.prisma.user.findUnique({ where: { username: identifier } });
+    if (byUsername) return byUsername;
+
+    if (identifier.includes('@')) {
+      return await this.prisma.user.findUnique({ where: { email: normalizeEmail(identifier) } });
+    }
+
+    const phone = normalizePhone(identifier);
+    if (phone) {
+      return await this.prisma.user.findUnique({ where: { phone } });
+    }
+    return null;
   }
 
   /** 2FA 挡板 kill-switch（TWOFA_CHALLENGE_DISABLED=true 时豁免 login 挑战与 refresh gating，事故止血用） */
@@ -297,9 +319,28 @@ export class AuthService {
     userId: string,
     data: { nickname?: string; email?: string; phone?: string },
   ): Promise<AuthUser> {
-    if (data.email) {
+    // 保持 truthy 语义：空串/undefined 均视为「不更新」，归一化不改变清空行为
+    const email = data.email ? normalizeEmail(data.email) : data.email;
+    let phone = data.phone;
+    if (data.phone) {
+      const current = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { phone: true },
+      });
+      // 格式校验仅在「值相对现库发生变化」时进行，存量非标值（座机/国际号）回填提交放行（方案 §3.4）
+      if (data.phone !== current?.phone) {
+        const normalized = normalizePhone(data.phone);
+        if (!normalized) throw new BadRequestException('手机号格式不正确');
+        const dupPhone = await this.prisma.user.findFirst({
+          where: { phone: normalized, NOT: { id: userId } },
+        });
+        if (dupPhone) throw new ConflictException('手机号已被使用');
+        phone = normalized;
+      }
+    }
+    if (email) {
       const dup = await this.prisma.user.findFirst({
-        where: { email: data.email, NOT: { id: userId } },
+        where: { email, NOT: { id: userId } },
       });
       if (dup) throw new ConflictException('邮箱已被使用');
     }
@@ -307,8 +348,8 @@ export class AuthService {
       where: { id: userId },
       data: {
         nickname: data.nickname,
-        email: data.email,
-        phone: data.phone,
+        email,
+        phone,
       },
     });
     return await this.toAuthUser(user);

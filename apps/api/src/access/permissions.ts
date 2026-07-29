@@ -233,6 +233,110 @@ export function isPermissionSubset(
 
 export const RESERVED_ROLE_SLUGS = new Set<string>([Role.ADMIN, ...DEPRECATED_ROLE_SLUGS]);
 
+export interface PresetRoleDef {
+  slug: string;
+  name: string;
+  description: string;
+  permissions: string[];
+}
+
+/**
+ * 业务角色预设（docs/rbac-preset-roles-design.md §3.2 权限矩阵）：
+ * 仅首次启动播种，isSystem=false，管理员可改可删，系统永不覆盖。
+ * 删除红线：不可恢复删除（media.purge 及询盘/客户/会话/工单/文档的 *.delete）
+ * 不进任何预设；回收站语义的 content.delete / media.delete 仅授 marketing-ops。
+ */
+export const PRESET_ROLES: PresetRoleDef[] = [
+  {
+    slug: 'content-editor',
+    name: '内容编辑',
+    description: '官网内容创作与发布、媒体上传',
+    permissions: [
+      'content.view',
+      'content.create',
+      'content.edit',
+      'content.publish',
+      'media.upload',
+      'docs.view',
+      'docs.create',
+      'docs.edit',
+    ],
+  },
+  {
+    slug: 'marketing-ops',
+    name: '市场运营',
+    description: '内容全生命周期、数据分析与站点设置',
+    permissions: [
+      'content.view',
+      'content.create',
+      'content.edit',
+      'content.publish',
+      'content.delete',
+      'media.upload',
+      'media.delete',
+      'media.replaceSite',
+      'contacts.view',
+      'analytics.view',
+      'docs.view',
+      'docs.create',
+      'docs.edit',
+      'docs.publish',
+      'settings.view',
+      'settings.manage',
+    ],
+  },
+  {
+    slug: 'sales',
+    name: '销售',
+    description: '询盘跟进与客户管理',
+    permissions: [
+      'contacts.view',
+      'contacts.manage',
+      'customers.view',
+      'customers.manage',
+      'docs.view',
+      'docs.create',
+      'docs.edit',
+    ],
+  },
+  {
+    slug: 'support',
+    name: '客服',
+    description: '在线会话、工单与询盘处理',
+    permissions: [
+      'contacts.view',
+      'contacts.manage',
+      'customers.view',
+      'chat.view',
+      'chat.manage',
+      'tickets.view',
+      'tickets.manage',
+      'docs.view',
+    ],
+  },
+  {
+    slug: 'management',
+    name: '管理层',
+    description: '全业务只读驾驶舱与操作日志',
+    permissions: [
+      'content.view',
+      'contacts.view',
+      'customers.view',
+      'analytics.view',
+      'docs.view',
+      'tickets.view',
+      'audit.view',
+      'system.view',
+    ],
+  },
+  {
+    slug: 'staff',
+    name: '普通员工',
+    description: '内部知识库阅读与个人文档',
+    permissions: ['docs.view', 'docs.create', 'docs.edit'],
+  },
+];
+
 export function slugifyRoleName(name: string): string {
   const latin = name
     .toLowerCase()

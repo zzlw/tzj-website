@@ -219,7 +219,7 @@ tzj-uploads-dev/
 ### 分层架构（B2 多主题后）
 
 - **web（C 端）**：维持编译期 `@theme` 直写——ui 共享基准在前、app 覆盖在后，视觉不变，不加载主题切换器。
-- **admin（B 端）**：运行时主题机制——工具类经 `@theme inline` 映射到原始变量（oklch），`:root` / `.dark` / `.theme-*` 运行时切换；10 套配色预设（含品牌红 `theme-brand`）+ 明暗模式 + cookie 持久化。默认主题为中性 zinc 体系，品牌红沉淀为预设之一。细则见 CONVENTIONS.md「Admin 多主题机制」。
+- **admin（B 端）**：运行时主题机制——工具类经 `@theme inline` 映射到原始变量（oklch），`:root` / `.dark` / `.theme-*` 运行时切换；10 套配色预设（含品牌红 `theme-brand`）+ 明暗模式 + cookie 持久化。默认主题为品牌红 `theme-brand`（无 cookie 时服务端与客户端均回退 brand），中性 zinc 体系作为「默认」预设保留可选。细则见 CONVENTIONS.md「Admin 多主题机制」。
 
 ### 圆角刻度 (Border Radius)
 

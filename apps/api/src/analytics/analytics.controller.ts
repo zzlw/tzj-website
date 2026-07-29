@@ -5,6 +5,7 @@ import {
   Get,
   ParseIntPipe,
   Post,
+  Put,
   Query,
   Req,
 } from '@nestjs/common';
@@ -23,6 +24,10 @@ import { AnalyticsService } from './analytics.service';
 import { CollectPageViewDto } from './dto/collect-pageview.dto';
 // biome-ignore lint/style/useImportType: NestJS 校验需要 DTO 作为运行期值（design:paramtypes）
 import { IdentifyDto } from './dto/identify.dto';
+// biome-ignore lint/style/useImportType: NestJS 校验需要 DTO 作为运行期值（design:paramtypes）
+import { UpdateGrowthSettingsDto } from './dto/update-growth-settings.dto';
+// biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
+import { GrowthMetricsService } from './growth-metrics.service';
 
 @ApiTags('analytics')
 @Controller('analytics')
@@ -30,6 +35,7 @@ export class AnalyticsController {
   constructor(
     private readonly analyticsService: AnalyticsService,
     private readonly securityService: SecurityService,
+    private readonly growthMetricsService: GrowthMetricsService,
   ) {}
 
   @Public()
@@ -70,11 +76,59 @@ export class AnalyticsController {
   @RequirePermissions('analytics.view')
   @ApiBearerAuth()
   @Get('sources')
-  @ApiOperation({ summary: '营销归因（渠道分组/广告系列/来源排行）' })
+  @ApiOperation({ summary: '营销归因（渠道分组/广告系列/来源排行；detail=funnel 时返回四层漏斗）' })
   @ApiQuery({ name: 'from', required: false, description: 'YYYY-MM-DD' })
   @ApiQuery({ name: 'to', required: false, description: 'YYYY-MM-DD' })
-  sources(@Query('from') from?: string, @Query('to') to?: string) {
-    return this.analyticsService.getSources(from, to);
+  @ApiQuery({
+    name: 'detail',
+    required: false,
+    description: '缺省返回现有三组结构（向后兼容）；funnel 返回逐渠道四层转化漏斗',
+  })
+  sources(
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('detail') detail?: string,
+  ) {
+    // 分支分发：现有返回结构零变更，旧消费方（访客分析页）不受影响
+    return detail === 'funnel'
+      ? this.growthMetricsService.getSourcesFunnel(from, to)
+      : this.analyticsService.getSources(from, to);
+  }
+
+  @RequirePermissions('analytics.view')
+  @ApiBearerAuth()
+  @Get('conversion-metrics')
+  @ApiOperation({ summary: '转化率核心指标（访客→客户转化，含付费渠道归因与询盘成本）' })
+  @ApiQuery({ name: 'from', required: false, description: 'YYYY-MM-DD' })
+  @ApiQuery({ name: 'to', required: false, description: 'YYYY-MM-DD' })
+  conversionMetrics(@Query('from') from?: string, @Query('to') to?: string) {
+    return this.growthMetricsService.getConversionMetrics(from, to);
+  }
+
+  @RequirePermissions('analytics.view')
+  @ApiBearerAuth()
+  @Get('support-metrics')
+  @ApiOperation({ summary: '客服绩效指标（首响/会话转化率/坐席排行）' })
+  @ApiQuery({ name: 'from', required: false, description: 'YYYY-MM-DD' })
+  @ApiQuery({ name: 'to', required: false, description: 'YYYY-MM-DD' })
+  supportMetrics(@Query('from') from?: string, @Query('to') to?: string) {
+    return this.growthMetricsService.getSupportMetrics(from, to);
+  }
+
+  @RequirePermissions('analytics.view')
+  @ApiBearerAuth()
+  @Get('growth-settings')
+  @ApiOperation({ summary: '获取增长看板设置（广告花费，手动录入）' })
+  growthSettings() {
+    return this.growthMetricsService.getGrowthSettings();
+  }
+
+  @RequirePermissions('settings.manage')
+  @ApiBearerAuth()
+  @Put('growth-settings')
+  @ApiOperation({ summary: '更新增长看板设置（广告花费，参与询盘成本计算）' })
+  updateGrowthSettings(@Body() dto: UpdateGrowthSettingsDto) {
+    return this.growthMetricsService.updateGrowthSettings(dto.adSpend);
   }
 
   @RequirePermissions('analytics.view')

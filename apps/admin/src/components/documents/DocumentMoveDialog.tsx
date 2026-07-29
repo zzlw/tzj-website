@@ -77,7 +77,8 @@ export function DocumentMoveDialog({
           <DialogDescription>将「{documentTitle}」移动到新的分类位置。</DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-2 py-2">
+        {/* flex-col gap-2 而非 space-y-2：Select 末尾的隐藏 input 会让 space-y 给 Trigger 多加下边距 */}
+        <div className="flex flex-col gap-2 py-2">
           <Label htmlFor="move-folder">目标文件夹</Label>
           <Select
             value={folderId || '__none__'}

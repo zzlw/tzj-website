@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Alert,
   Badge,
@@ -17,11 +18,13 @@ import {
   TablePagination,
   TooltipProvider,
 } from '@tzj/ui';
-import { LockOpen, Plus, Search, Trash2, UserCog } from 'lucide-react';
+import { KeyRound, LockOpen, Plus, Search, ShieldOff, Trash2, UserCog } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { Can } from '@/components/Can';
 import { useSession } from '@/components/session';
+import { ForceDisable2faDialog } from '@/components/users/ForceDisable2faDialog';
+import { ResetPasswordDialog } from '@/components/users/ResetPasswordDialog';
 import { TwoFactorPolicyCard } from '@/components/users/TwoFactorPolicyCard';
 import { type RoleOption, useRoleOptions } from '@/features/access';
 import { formatDate } from '@/features/constants';
@@ -116,7 +119,8 @@ const COLUMNS = (roleOptions: RoleOption[]): DataTableColumn<UserItem>[] => [
 ];
 
 export default function UsersPage() {
-  const { username: currentUsername } = useSession();
+  const { username: currentUsername, role: sessionRole } = useSession();
+  const queryClient = useQueryClient();
   const [urlState, setUrlState] = useUrlState({
     page: intField(1, { min: 1 }),
     pageSize: intField(20, { min: 1 }),
@@ -126,6 +130,8 @@ export default function UsersPage() {
   const { page, pageSize, role: roleFilter } = urlState;
   const [searchInput, setSearchInput] = useState(() => urlState.search || '');
   const [deleteTarget, setDeleteTarget] = useState<UserItem | null>(null);
+  const [resetTarget, setResetTarget] = useState<UserItem | null>(null);
+  const [disable2faTarget, setDisable2faTarget] = useState<UserItem | null>(null);
 
   const params = useMemo(
     () => ({
@@ -260,6 +266,31 @@ export default function UsersPage() {
                 <UserCog className="h-4 w-4" />
               </Link>
             </Button>
+            {/* 重置密码：不对自己展示（自改走个人设置）；ADMIN 目标仅 admin 操作者可见（后端另有硬校验） */}
+            {r.username !== currentUsername && (r.role !== 'admin' || sessionRole === 'admin') && (
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                onClick={() => setResetTarget(r)}
+                aria-label="重置密码"
+                title="重置密码"
+              >
+                <KeyRound className="h-4 w-4" />
+              </Button>
+            )}
+            {/* 强制解除 2FA：后端 @Roles('admin') 硬约束，非 admin 不渲染入口 */}
+            {r.twoFactorEnabled && sessionRole === 'admin' && (
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                className="text-warning-foreground hover:text-warning-foreground/80"
+                onClick={() => setDisable2faTarget(r)}
+                aria-label="强制解除两步验证"
+                title="强制解除两步验证"
+              >
+                <ShieldOff className="h-4 w-4" />
+              </Button>
+            )}
             {r.username !== currentUsername && (
               <Button
                 size="icon-sm"
@@ -289,6 +320,17 @@ export default function UsersPage() {
           unit="个"
         />
       )}
+
+      <ResetPasswordDialog
+        target={resetTarget}
+        onOpenChange={(open) => !open && setResetTarget(null)}
+      />
+
+      <ForceDisable2faDialog
+        target={disable2faTarget}
+        onOpenChange={(open) => !open && setDisable2faTarget(null)}
+        onSuccess={() => void queryClient.invalidateQueries({ queryKey: ['users'] })}
+      />
 
       <ConfirmDialog
         open={deleteTarget !== null}

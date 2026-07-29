@@ -217,7 +217,8 @@
     },
     "status": {
       "success": "Submitted successfully. We will contact you soon.",
-      "error": "Submission failed. Please try again later or call us directly."
+      "error": "Submission failed. Please try again later or call us directly.",
+      "tooFrequent": "Too many submissions. Please try again later."
     },
     "emptyMessage": "(No specific requirements provided)"
   },

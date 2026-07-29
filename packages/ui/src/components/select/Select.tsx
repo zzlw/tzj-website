@@ -1,6 +1,6 @@
 'use client';
 
-import { Select as SelectPrimitive } from '@base-ui-components/react/select';
+import { Select as SelectPrimitive } from '@base-ui/react/select';
 import { Check, ChevronDown, ChevronUp } from 'lucide-react';
 import type { ComponentPropsWithoutRef, ForwardedRef, ReactNode } from 'react';
 import { Children, createContext, forwardRef, isValidElement, useContext } from 'react';
@@ -115,7 +115,10 @@ const SelectScrollUpButton = forwardRef<HTMLDivElement, ComponentPropsWithoutRef
   ({ className, ...props }, ref) => (
     <SelectPrimitive.ScrollUpArrow
       ref={ref}
-      className={cn('flex cursor-default items-center justify-center py-1', className)}
+      className={cn(
+        'absolute inset-x-0 top-0 z-10 flex cursor-default items-center justify-center rounded-t-md bg-popover py-1',
+        className,
+      )}
       {...props}
     >
       <ChevronUp className="h-4 w-4" />
@@ -128,7 +131,10 @@ const SelectScrollDownButton = forwardRef<HTMLDivElement, ComponentPropsWithoutR
   ({ className, ...props }, ref) => (
     <SelectPrimitive.ScrollDownArrow
       ref={ref}
-      className={cn('flex cursor-default items-center justify-center py-1', className)}
+      className={cn(
+        'absolute inset-x-0 bottom-0 z-10 flex cursor-default items-center justify-center rounded-b-md bg-popover py-1',
+        className,
+      )}
       {...props}
     >
       <ChevronDown className="h-4 w-4" />
@@ -158,7 +164,7 @@ const SelectContent = forwardRef<HTMLDivElement, SelectContentProps>(
         <SelectPrimitive.Popup
           ref={ref}
           className={cn(
-            'relative max-h-[min(24rem,var(--available-height))] min-w-[8rem] overflow-hidden rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md data-[open]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[open]:fade-in-0 data-[closed]:zoom-out-95 data-[open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-[var(--transform-origin)]',
+            'relative max-h-[min(24rem,var(--available-height))] min-w-[8rem] overflow-hidden rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md data-[open]:animate-in data-[closed]:animate-out data-[closed]:fill-mode-forwards data-[closed]:fade-out-0 data-[open]:fade-in-0 data-[closed]:zoom-out-95 data-[open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-[var(--transform-origin)]',
             position === 'popper' && 'min-w-[var(--anchor-width)]',
             className,
           )}

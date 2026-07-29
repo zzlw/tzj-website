@@ -1,6 +1,8 @@
 import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
+import type { AuthUser } from '../auth/roles';
 import { AccessService } from './access.service';
 import { CreateAccessRoleDto, UpdateAccessRoleDto } from './dto/role.dto';
 import { RolesService } from './roles.service';
@@ -30,21 +32,25 @@ export class AccessController {
   @Post('roles')
   @RequirePermissions('access.manage')
   @ApiOperation({ summary: '创建自定义角色' })
-  createRole(@Body() dto: CreateAccessRoleDto) {
-    return this.rolesService.create(dto);
+  createRole(@Body() dto: CreateAccessRoleDto, @CurrentUser() user: AuthUser) {
+    return this.rolesService.create(dto, user.id);
   }
 
   @Put('roles/:id')
   @RequirePermissions('access.manage')
   @ApiOperation({ summary: '更新自定义角色' })
-  updateRole(@Param('id') id: string, @Body() dto: UpdateAccessRoleDto) {
-    return this.rolesService.update(id, dto);
+  updateRole(
+    @Param('id') id: string,
+    @Body() dto: UpdateAccessRoleDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.rolesService.update(id, dto, user.id);
   }
 
   @Delete('roles/:id')
   @RequirePermissions('access.manage')
   @ApiOperation({ summary: '删除自定义角色' })
-  removeRole(@Param('id') id: string) {
-    return this.rolesService.remove(id);
+  removeRole(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    return this.rolesService.remove(id, user.id);
   }
 }

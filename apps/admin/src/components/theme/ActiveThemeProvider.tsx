@@ -19,7 +19,8 @@ export const THEME_PRESETS = [
 export type ThemePreset = (typeof THEME_PRESETS)[number]['value'];
 
 const COOKIE_NAME = 'active_theme';
-const DEFAULT_THEME: ThemePreset = 'default';
+// 默认品牌红：无 cookie（首次访问/清除后）落到 theme-brand；用户仍可显式切回「默认」（zinc）
+const DEFAULT_THEME: ThemePreset = 'brand';
 
 function isThemePreset(value: string): value is ThemePreset {
   return THEME_PRESETS.some((preset) => preset.value === value);

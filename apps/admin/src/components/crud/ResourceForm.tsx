@@ -379,8 +379,9 @@ export function ResourceForm({
         const placeholder = fieldPlaceholder(f);
         const fieldId = `${formId}-${f.name}`;
         const describedBy = f.help ? `${fieldId}-desc` : undefined;
+        // flex-col gap-2 而非 space-y-2：select 字段末尾的隐藏 input 会让 space-y 给 Trigger 多加下边距
         return (
-          <div key={f.name} className={`space-y-2 ${span}`}>
+          <div key={f.name} className={`flex flex-col gap-2 ${span}`}>
             <Label htmlFor={fieldId} className="text-foreground/90">
               {f.label}
               {f.required && <span className="text-destructive"> *</span>}

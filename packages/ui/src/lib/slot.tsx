@@ -1,4 +1,4 @@
-import { mergeProps } from '@base-ui-components/react/merge-props';
+import { mergeProps } from '@base-ui/react/merge-props';
 import {
   Children,
   cloneElement,

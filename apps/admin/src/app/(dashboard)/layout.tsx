@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { DashboardShell } from '@/components/DashboardShell';
 import { Providers } from '@/components/Providers';
+import { ChatNotificationsBridge } from '@/features/chat/ChatNotificationsBridge';
 import { ChatPresenceProvider } from '@/features/chat/ChatPresenceProvider';
 import { apiFetch, getSession } from '@/lib/auth';
 
@@ -60,14 +61,16 @@ export default async function DashboardLayout({ children }: { children: React.Re
       }}
     >
       <ChatPresenceProvider agentEmail={session.username}>
-        <DashboardShell
-          username={session.username}
-          roleLabel={roleLabels[session.role] ?? session.role}
-          defaultOpen={sidebarDefaultOpen}
-          watermark={watermark}
-        >
-          {children}
-        </DashboardShell>
+        <ChatNotificationsBridge>
+          <DashboardShell
+            username={session.username}
+            roleLabel={roleLabels[session.role] ?? session.role}
+            defaultOpen={sidebarDefaultOpen}
+            watermark={watermark}
+          >
+            {children}
+          </DashboardShell>
+        </ChatNotificationsBridge>
       </ChatPresenceProvider>
     </Providers>
   );

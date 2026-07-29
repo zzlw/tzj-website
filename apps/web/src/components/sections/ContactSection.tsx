@@ -13,7 +13,7 @@ import {
 import { SocialConnectPanel } from '@/components/contact/SocialConnectPanel';
 import { Container, Eyebrow } from '@/components/ui';
 import { identify } from '@/lib/analytics';
-import { submitContact } from '@/lib/api';
+import { ApiError, submitContact } from '@/lib/api';
 import { resolveAllSocialQrChannels } from '@/lib/resolve-social-channels';
 import {
   type ContactFieldErrors,
@@ -135,9 +135,13 @@ export function ContactSection({
         setStatusMessage(t('status.success'));
         setFormData(INITIAL_FORM);
         return true;
-      } catch {
+      } catch (err) {
         setStatus('error');
-        setStatusMessage(t('status.error'));
+        setStatusMessage(
+          err instanceof ApiError && err.status === 429
+            ? t('status.tooFrequent')
+            : t('status.error'),
+        );
         return false;
       }
     },

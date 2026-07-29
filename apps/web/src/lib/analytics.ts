@@ -1,4 +1,6 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+import { env } from './env';
+
+const API_BASE = env.apiUrl;
 
 const VISITOR_ID_KEY = '_tzj_vid';
 // 持久匿名访客 ID：2 年（跨会话、跨日归并同一浏览器访客）

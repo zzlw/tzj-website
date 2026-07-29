@@ -35,6 +35,7 @@ import {
   CalendarDays,
   ChevronsUpDown,
   FileUser,
+  Filter,
   Fingerprint,
   FolderOpen,
   Globe,
@@ -50,14 +51,43 @@ import {
   ScrollText,
   Shield,
   ShieldBan,
+  TrendingUp,
   User,
   Users,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Fragment, useState } from 'react';
+import { useChatPresence } from '@/features/chat/ChatPresenceProvider';
 import { BASE_PATH } from '@/lib/config';
 import { useSession } from './session';
+
+// 聊天会话徽章（§4.2.4）：展开态显示未读数，收起态显示红点（红点=未读语义规范）
+function ChatNavBadge() {
+  const { actionableUnread } = useChatPresence();
+
+  if (actionableUnread <= 0) return null;
+
+  const displayCount = actionableUnread > 99 ? '99+' : actionableUnread;
+
+  return (
+    <>
+      <span
+        className={cn(
+          'ml-auto text-xs font-semibold text-white',
+          'bg-red-500 hover:bg-red-600',
+          'min-w-[1.25rem] h-5 px-1 rounded-full flex items-center justify-center',
+          'transition-colors duration-200',
+          'group-data-[collapsible=icon]:hidden',
+        )}
+      >
+        {displayCount}
+      </span>
+      {/* 收起态红点：定位到 relative 的 SidebarMenuItem（li）右上角 */}
+      <span className="absolute top-1 right-1 hidden size-2 rounded-full bg-red-500 group-data-[collapsible=icon]:block" />
+    </>
+  );
+}
 
 type NavItemDef = {
   label: string;
@@ -123,6 +153,9 @@ const NAV_GROUPS: Array<{
       { label: '在线客服', href: '/chat', icon: MessagesSquare, perm: 'chat.view' },
       { label: '访客分析', href: '/analytics', icon: BarChart3, perm: 'analytics.view' },
       { label: '访客中心', href: '/visitors', icon: Fingerprint, perm: 'analytics.view' },
+      { label: '转化看板', href: '/growth/conversions', icon: TrendingUp, perm: 'analytics.view' },
+      { label: '渠道归因', href: '/growth/channels', icon: Filter, perm: 'analytics.view' },
+      { label: '客服绩效', href: '/growth/support', icon: Headphones, perm: 'analytics.view' },
     ],
   },
   {
@@ -225,6 +258,7 @@ function NavItem({ item, pathname }: { item: NavItemDef; pathname: string }) {
         <Link href={item.href}>
           <item.icon />
           <span>{item.label}</span>
+          {item.href === '/chat' && <ChatNavBadge />}
         </Link>
       </SidebarMenuButton>
     </SidebarMenuItem>

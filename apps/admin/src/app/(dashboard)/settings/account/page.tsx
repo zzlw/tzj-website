@@ -128,6 +128,9 @@ export default function AccountSettingsPage() {
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="可选"
                     />
+                    <p className="text-xs text-muted-foreground">
+                      11 位大陆手机号，保存后可用于登录
+                    </p>
                   </div>
                   <Button type="submit" disabled={updateProfile.isPending}>
                     {updateProfile.isPending ? '保存中…' : '保存资料'}

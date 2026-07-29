@@ -47,8 +47,8 @@ export class UsersController {
 
   @Post()
   @ApiOperation({ summary: '创建账号' })
-  create(@Body() dto: CreateUserDto) {
-    return this.usersService.create(dto);
+  create(@Body() dto: CreateUserDto, @CurrentUser() user: AuthUser) {
+    return this.usersService.create(dto, user.id);
   }
 
   @Put(':id')

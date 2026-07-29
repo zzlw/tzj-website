@@ -10,6 +10,10 @@ interface ChatPresenceContextValue {
   setPresence: (status: PresenceStatus) => void;
   agentEmail: string;
   socket: UseChatSocketResult;
+  /** 我的未读总数（分配给我的会话 + 待认领会话） */
+  actionableUnread: number;
+  /** 更新 actionableUnread */
+  setActionableUnread: (unread: number) => void;
 }
 
 const ChatPresenceContext = createContext<ChatPresenceContextValue | null>(null);
@@ -41,6 +45,9 @@ export function ChatPresenceProvider({
 }) {
   const [token, setToken] = useState<string | null>(null);
   const socket = useChatSocket({ token });
+
+  /** 我的未读总数（分配给我的会话 + 待认领会话） */
+  const [actionableUnread, setActionableUnread] = useState(0);
 
   const fetchToken = useCallback(async () => {
     try {
@@ -87,7 +94,7 @@ export function ChatPresenceProvider({
   useEffect(() => {
     const handler = () => void fetchToken();
     socket.on('auth-error', handler);
-    return () => socket.off('auth-error');
+    return () => socket.off('auth-error', handler);
   }, [socket, fetchToken]);
 
   const [agentStatus, setAgentStatus] = useState<PresenceStatus>('offline');
@@ -110,7 +117,7 @@ export function ChatPresenceProvider({
     };
     socket.on('my-presence', handleMyPresence);
     return () => {
-      socket.off('my-presence');
+      socket.off('my-presence', handleMyPresence);
     };
   }, [socket, setPresence]);
 
@@ -130,7 +137,7 @@ export function ChatPresenceProvider({
     };
     socket.on('presence-changed', handlePresenceChanged);
     return () => {
-      socket.off('presence-changed');
+      socket.off('presence-changed', handlePresenceChanged);
     };
   }, [socket, agentEmail]);
 
@@ -177,6 +184,8 @@ export function ChatPresenceProvider({
         setPresence,
         agentEmail,
         socket,
+        actionableUnread,
+        setActionableUnread,
       }}
     >
       {children}

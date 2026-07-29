@@ -32,6 +32,7 @@
     "seed:legal-pages": "node --env-file=../../.env ./node_modules/tsx/dist/cli.mjs scripts/seed-legal-pages.ts",
     "seed:roles": "node --env-file=../../.env ./node_modules/tsx/dist/cli.mjs scripts/seed-roles.ts",
     "sync:system-analysis": "node --env-file=../../.env ./node_modules/tsx/dist/cli.mjs scripts/sync-system-analysis.ts",
+    "sync:security-runbook": "node --env-file=../../.env ./node_modules/tsx/dist/cli.mjs scripts/sync-security-runbook.ts",
     "prisma:sync:static-media": "node --env-file=../../.env ./node_modules/tsx/dist/cli.mjs prisma/seed-content-media.ts",
     "test:favicon": "node --env-file=../../.env ./node_modules/tsx/dist/cli.mjs scripts/test-favicon.ts"
   },

@@ -1,6 +1,6 @@
 'use client';
 
-import { ScrollArea as ScrollAreaPrimitive } from '@base-ui-components/react/scroll-area';
+import { ScrollArea as ScrollAreaPrimitive } from '@base-ui/react/scroll-area';
 import type { ComponentPropsWithoutRef } from 'react';
 import { forwardRef } from 'react';
 import { cn } from '../../lib/utils';

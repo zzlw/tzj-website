@@ -207,7 +207,9 @@ export function DocumentPermissionDialog({
             {/* ── Add permission form ── */}
             <div className="flex items-end gap-2">
               {/* Target type */}
-              <div className="w-[110px] space-y-1">
+              {/* flex-col gap-1 而非 space-y-1：Base UI Select 会在末尾渲染隐藏 input，
+                  space-y 的 :not(:last-child) 会给可见 Trigger 多加下边距导致列间错位 */}
+              <div className="flex w-[110px] flex-col gap-1">
                 <span className="block text-xs text-muted-foreground">授权对象</span>
                 <Select
                   onValueChange={(v) => {
@@ -251,7 +253,7 @@ export function DocumentPermissionDialog({
 
               {/* Target selector */}
               {!addType && (
-                <div className="flex-1 space-y-1">
+                <div className="flex flex-1 flex-col gap-1">
                   <span className="block text-xs text-muted-foreground">选择目标</span>
                   <div className="flex h-9 items-center rounded-md border px-3 text-sm text-muted-foreground">
                     请先选择授权对象类型
@@ -260,7 +262,7 @@ export function DocumentPermissionDialog({
               )}
 
               {addType === 'user' && (
-                <div className="flex-1 space-y-1">
+                <div className="flex flex-1 flex-col gap-1">
                   <span className="block text-xs text-muted-foreground">选择用户</span>
                   <Select onValueChange={setAddTarget}>
                     <SelectTrigger className="h-9">
@@ -286,7 +288,7 @@ export function DocumentPermissionDialog({
               )}
 
               {addType === 'role' && (
-                <div className="flex-1 space-y-1">
+                <div className="flex flex-1 flex-col gap-1">
                   <span className="block text-xs text-muted-foreground">选择角色</span>
                   <Select onValueChange={setAddTarget}>
                     <SelectTrigger className="h-9">
@@ -312,7 +314,7 @@ export function DocumentPermissionDialog({
               )}
 
               {addType === 'public' && (
-                <div className="flex-1 space-y-1">
+                <div className="flex flex-1 flex-col gap-1">
                   <span className="block text-xs text-muted-foreground">公开访问</span>
                   <div className="flex h-9 items-center gap-1.5 rounded-md border px-3 text-sm text-muted-foreground">
                     <Globe className="h-3.5 w-3.5" />
@@ -322,7 +324,7 @@ export function DocumentPermissionDialog({
               )}
 
               {/* Role selector */}
-              <div className="w-[110px] space-y-1">
+              <div className="flex w-[110px] flex-col gap-1">
                 <span className="block text-xs text-muted-foreground">权限</span>
                 <Select onValueChange={(v) => setAddRole(v as PermissionRole)}>
                   <SelectTrigger className="h-9">

@@ -13,8 +13,21 @@ const ACTION_BY_METHOD: Record<string, string> = {
   DELETE: 'delete',
 };
 
-/** 需要记录变更摘要的资源（敏感字段排除） */
-const DETAIL_RESOURCES = new Set(['users', 'access', 'auth']);
+/**
+ * 需要记录变更摘要的资源（敏感字段排除）。
+ *
+ * 白名单条目必须与实际控制器路由前缀逐字一致，否则静默失真（
+ * `resourceFromUrl` 取 `/api/v1/` 后的首段）：
+ *  - `users` → `@Controller('users')`
+ *  - `access` → `@Controller('access')`
+ *  - `auth` → `@Controller('auth')`
+ *  - `customers` → `@Controller('customers')`
+ *  - `contact` → `@Controller('contact')`（单数！勿写为 `contacts`）
+ *  - `settings` → `@Controller('settings')`
+ *
+ * 扩展依据：docs/operation-audit-system-assessment.md §7.2 方案 A / §9 第二阶段。
+ */
+const DETAIL_RESOURCES = new Set(['users', 'access', 'auth', 'customers', 'contact', 'settings']);
 const SENSITIVE_KEYS = new Set(['password', 'actorPassword', 'newPassword', 'currentPassword']);
 
 /**

@@ -1,8 +1,10 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 // biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
 import { ConfigService } from '@nestjs/config';
 // biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
 import { JwtService } from '@nestjs/jwt';
+// biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
+import { RolesService } from '../access/roles.service';
 
 /**
  * 聊天专用令牌（chat token）。
@@ -36,6 +38,7 @@ export class ChatAuthService {
   constructor(
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
+    private readonly roles: RolesService,
   ) {}
 
   private secret(): string {
@@ -81,8 +84,13 @@ export class ChatAuthService {
   /**
    * 用业务系统 access token 换取坐席 chat token。
    * 仅当 access token 合法且 type==='access' 时才签发，避免用 refresh/任意 JWT 冒充坐席。
+   * 额外要求持有 chat.view 权限（P1b）：否则任何登录用户都能绕过 RolesGuard
+   * 成为坐席读取全部客户会话。权限吊销后无需额外处理——坐席 token 仅 15 分钟
+   * 有效期，自然过期后重新兑换即被此处拦截。
    */
-  exchangeAgentToken(accessToken: string): { token: string; email: string; role: string } {
+  async exchangeAgentToken(
+    accessToken: string,
+  ): Promise<{ token: string; email: string; role: string }> {
     let payload: { sub: string; username: string; role: string; type?: string };
     try {
       payload = this.jwt.verify<typeof payload>(accessToken, { secret: this.secret() });
@@ -91,6 +99,10 @@ export class ChatAuthService {
     }
     if (payload.type !== 'access') {
       throw new UnauthorizedException('令牌类型错误');
+    }
+    const perms = await this.roles.getPermissionsForSlug(payload.role);
+    if (!perms.includes('chat.view')) {
+      throw new ForbiddenException('无客服聊天权限，无法兑换坐席令牌');
     }
     const email = payload.username;
     const token = this.issueAgentToken(payload.sub, email, payload.role);

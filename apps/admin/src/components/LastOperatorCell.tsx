@@ -19,10 +19,10 @@ function displayNickname(user: ContentOperatorUser): string {
   return user.nickname?.trim() || user.username;
 }
 
-function initials(name: string): string {
+function initials(name: string, maxChars = 2): string {
   const t = name.trim();
   if (!t) return '?';
-  return t.slice(0, 2).toUpperCase();
+  return t.slice(0, maxChars).toUpperCase();
 }
 
 function ProfileRow({ label, value }: { label: string; value: React.ReactNode }) {
@@ -85,7 +85,7 @@ function OperatorInline({ user }: { user: ContentOperatorUser }) {
     <span className="inline-flex max-w-full items-center gap-1.5 text-left font-medium text-foreground">
       <Avatar className="h-5 w-5">
         {user.avatar ? <AvatarImage src={user.avatar} alt={nickname} /> : null}
-        <AvatarFallback className="text-xs font-medium">{initials(nickname)}</AvatarFallback>
+        <AvatarFallback className="text-[10px] font-medium">{initials(nickname, 1)}</AvatarFallback>
       </Avatar>
       <span className="truncate">{nickname}</span>
     </span>
@@ -146,7 +146,9 @@ export function LastOperatorCell({
         >
           <Avatar className="h-5 w-5">
             {user.avatar ? <AvatarImage src={user.avatar} alt={nickname} /> : null}
-            <AvatarFallback className="text-xs font-medium">{initials(nickname)}</AvatarFallback>
+            <AvatarFallback className="text-[10px] font-medium">
+              {initials(nickname, 1)}
+            </AvatarFallback>
           </Avatar>
           <span className="truncate">{nickname}</span>
         </button>

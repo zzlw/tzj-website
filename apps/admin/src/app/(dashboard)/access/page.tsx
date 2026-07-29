@@ -22,6 +22,7 @@ import { Check, Loader2, Pencil, Plus, Shield, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { RoleFormDialog, type RoleFormValues } from '@/components/access/RoleFormDialog';
+import { useSession } from '@/components/session';
 import { useAccessOverview, useCreateRole, useRemoveRole, useUpdateRole } from '@/features/access';
 import type { PermissionGroup, RoleAccessItem } from '@/features/types';
 import { notifyError, notifySuccess } from '@/lib/notify';
@@ -83,6 +84,9 @@ export default function AccessPage() {
   const createMut = useCreateRole();
   const updateMut = useUpdateRole();
   const removeMut = useRemoveRole();
+  // 角色写操作仅 admin 可见（前端仅遮蔽；后端 roles.service 的 assertAdminActor 才是防线）
+  const { role: sessionRole } = useSession();
+  const canWrite = sessionRole === 'admin';
 
   const roles = data?.roles ?? [];
   const groups = data?.groups ?? [];
@@ -188,10 +192,12 @@ export default function AccessPage() {
           title="角色与权限"
           description="管理系统预置角色与自定义角色。在「账号管理」中为成员分配角色即可生效。"
           action={
-            <Button onClick={() => setCreateOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              创建角色
-            </Button>
+            canWrite ? (
+              <Button onClick={() => setCreateOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                创建角色
+              </Button>
+            ) : undefined
           }
         />
 
@@ -252,7 +258,7 @@ export default function AccessPage() {
                     ? '系统预置角色，权限由平台定义，不可修改。'
                     : '自定义角色。修改权限后，使用该角色的账号需重新登录生效。'}
                 </CardDescription>
-                {selected && !selected.system ? (
+                {selected && !selected.system && canWrite ? (
                   <CardAction className="flex gap-2">
                     <Button variant="outline" size="sm" onClick={() => openEdit(selected)}>
                       <Pencil className="mr-1.5 h-3.5 w-3.5" />

@@ -107,8 +107,8 @@ export class ChatRoomController {
 
   /**
    * 坐席 chat token 兑换（P0 C1）：用业务系统 access token 换取聊天作用域令牌。
-   * 公开端点——令牌合法性由服务端用 JWT_SECRET 校验（仅 type==='access' 可兑换），
-   * 坐席身份由此确立，无法被伪造。
+   * 公开端点——令牌合法性由服务端用 JWT_SECRET 校验（仅 type==='access' 且
+   * 持有 chat.view 权限可兑换，见 P1b），坐席身份由此确立，无法被伪造。
    */
   @Public()
   @Post('token')
@@ -120,7 +120,7 @@ export class ChatRoomController {
         throw new HttpException('缺少访问令牌', HttpStatus.UNAUTHORIZED);
       }
       const accessToken = header.slice('Bearer '.length).trim();
-      const result = this.chatAuth.exchangeAgentToken(accessToken);
+      const result = await this.chatAuth.exchangeAgentToken(accessToken);
       return result;
     } catch (e) {
       if (e instanceof HttpException) throw e;

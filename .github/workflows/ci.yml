@@ -33,7 +33,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -62,8 +62,18 @@ jobs:
       - name: Typecheck
         run: pnpm run typecheck
 
+      # 权限注解门禁：裸端点（无 @RequirePermissions/@Roles/@Public/@AuthenticatedOnly/@AllowUnenrolled）
+      # 会被 RolesGuard fail-closed 兜底 403，属漏标注 → 阻断 CI
+      - name: Check API permission annotations
+        run: node scripts/check-permissions.mjs
+
+      # CI 校验构建注入本地占位值：web 的 lib/env.ts 在生产构建缺失 NEXT_PUBLIC_* 时 fail-fast
+      # （生产真实值由 deploy.yml 的 Docker build-args 注入，此处仅为构建可通过）
       - name: Build & Test (Turbo)
         run: pnpm run build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:4000/api/v1
+          NEXT_PUBLIC_S3_PUBLIC_DOMAIN: http://localhost:9000/tzj-uploads-dev
 
   # ── 1b. Lighthouse CI (Web) ────────────────────────────────
   lighthouse-web:
@@ -77,7 +87,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - uses: pnpm/action-setup@v4
         with:
@@ -88,11 +98,13 @@ jobs:
 
       - name: Build Web
         run: pnpm --filter @tzj/web build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:4000/api/v1
+          NEXT_PUBLIC_S3_PUBLIC_DOMAIN: http://localhost:9000/tzj-uploads-dev
 
       - name: Run Lighthouse CI
-        run: |
-          npm install -g @lhci/cli@0.14.0
-          lhci autorun --config=apps/web/lighthouserc.json
+        # pnpm dlx 代替 npm install -g（AGENTS.md 禁止 CI 中用 npm install）
+        run: pnpm dlx @lhci/cli@0.14.0 autorun --config=apps/web/lighthouserc.json
         continue-on-error: true
 
   # ── 2. Docker Build & Security Scan ────────────────────────
@@ -129,7 +141,7 @@ jobs:
 
       # Trivy 安全扫描（扫描本地 load 的镜像或刚构建的 tag）
       - name: Security Scan (Trivy)
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.28.0
         with:
           image-ref: tzj-${{ matrix.app }}:${{ github.sha }}
           format: sarif

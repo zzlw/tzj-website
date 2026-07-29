@@ -19,14 +19,18 @@ export interface OnlineAgent {
   activeRoomCount?: number;
 }
 
-/** 通知计数聚合负载（P2 M1） */
-interface AgentNotificationCounts {
+/** 通知计数聚合负载（P2 M1 + 未读拆桶 §4.1.1：agent 分支携带三桶字段）；导出供通知弹层复用 roomCounts 元素类型 */
+export interface AgentNotificationCounts {
   totalUnread: number;
+  myUnread?: number;
+  unassignedUnread?: number;
+  othersUnread?: number;
   roomCounts?: Array<{
     roomId: string;
     unreadCount: number;
     clientEmail: string;
     status: string;
+    assignedAgentEmail?: string | null;
   }>;
 }
 
@@ -83,12 +87,16 @@ type ChatAgentEventMap = {
 
 export interface UseChatSocketResult {
   connected: boolean;
-  /** 注册一次性/持续性事件监听 */
+  /** 注册一次性/持续性事件监听 → 返回 unsubscribe 函数 */
   on: <K extends keyof ChatAgentEventMap>(
     event: K,
     cb: (payload: ChatAgentEventMap[K]) => void,
+  ) => () => void; // unsubscribe
+  /** 移除事件监听器；cb 可选（默认全清） */
+  off: <K extends keyof ChatAgentEventMap>(
+    event: K,
+    cb?: (payload: ChatAgentEventMap[K]) => void,
   ) => void;
-  off: <K extends keyof ChatAgentEventMap>(event: K) => void;
   joinRoom: (roomId: string) => void;
   leaveRoom: (roomId: string) => void;
   sendMessage: (roomId: string, content: string, attachments?: string[]) => void;
@@ -118,25 +126,53 @@ export function useChatSocket(params: { token: string | null }): UseChatSocketRe
   const { token } = params;
 
   const socketRef = useRef<Socket | null>(null);
-  const handlersRef = useRef<Record<string, (...args: unknown[]) => void>>({});
+  // S2a 改造：handlersRef 从 Map<event, cb> → Map<event, Set<cb>> 支持多播
+  const handlersRef = useRef<Map<string, Set<(...args: unknown[]) => void>>>(new Map());
   const tokenRef = useRef<string | null>(token ?? null);
   const authedTokenRef = useRef<string | null>(null);
   const manualOfflineRef = useRef(false);
   const hasEverBeenOnlineRef = useRef(false);
   const [connected, setConnected] = useState(false);
 
+  /** 注册事件监听器（支持多个回调同时订阅同一事件） */
   const on = useCallback(
     <K extends keyof ChatAgentEventMap>(event: K, cb: (payload: ChatAgentEventMap[K]) => void) => {
-      handlersRef.current[event] = cb as unknown as (...args: unknown[]) => void;
+      const eventSet = handlersRef.current.get(event) || new Set<(...args: unknown[]) => void>();
+      eventSet.add(cb as (...args: unknown[]) => void);
+      handlersRef.current.set(event, eventSet);
+
       socketRef.current?.on(event as string, cb as (...args: unknown[]) => void);
+
+      // 返回 unsubscribe 函数
+      return () => {
+        off(event, cb);
+      };
     },
     [],
   );
 
-  const off = useCallback(<K extends keyof ChatAgentEventMap>(event: K) => {
-    delete handlersRef.current[event];
-    socketRef.current?.off(event);
-  }, []);
+  /** 移除指定事件的特定回调；off(event) 全清仅供内部使用 */
+  const off = useCallback(
+    <K extends keyof ChatAgentEventMap>(event: K, cb?: (payload: ChatAgentEventMap[K]) => void) => {
+      if (!cb) {
+        // 全清空该事件的所有监听器（仅供内部清理使用）
+        handlersRef.current.delete(event);
+        socketRef.current?.off(event as string);
+        return;
+      }
+
+      const eventSet = handlersRef.current.get(event);
+      if (eventSet) {
+        eventSet.delete(cb as (...args: unknown[]) => void);
+        // 无论是否空 Set，都要从 socket 移除该回调（避免多订阅互踩）
+        socketRef.current?.off(event as string, cb as (...args: unknown[]) => void);
+        if (eventSet.size === 0) {
+          handlersRef.current.delete(event);
+        }
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     tokenRef.current = token ?? null;
@@ -184,6 +220,13 @@ export function useChatSocket(params: { token: string | null }): UseChatSocketRe
         hasEverBeenOnlineRef.current = true;
         // 连接即拉取未读聚合计数（P2 M1）
         sock.emit('get-notification-counts');
+
+        // S2a 重连补挂：遍历所有 Set 全量重新注册监听器
+        for (const [event, handlers] of handlersRef.current) {
+          for (const cb of handlers) {
+            sock.on(event as string, cb as (...args: unknown[]) => void);
+          }
+        }
       });
       sock.on('disconnect', () => setConnected(false));
       sock.on('connect_error', () => setConnected(false));
@@ -196,10 +239,6 @@ export function useChatSocket(params: { token: string | null }): UseChatSocketRe
             sock.connect();
           }
         }, 1000);
-      });
-
-      Object.entries(handlersRef.current).forEach(([event, cb]) => {
-        sock.on(event, cb);
       });
 
       const heartbeatTimer = setInterval(() => {

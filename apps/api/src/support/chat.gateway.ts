@@ -529,12 +529,19 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     email: string,
   ): Promise<{
     totalUnread: number;
-    roomCounts: Array<{ roomId: string; unreadCount: number; clientEmail: string; status: string }>;
+    myUnread?: number;
+    unassignedUnread?: number;
+    othersUnread?: number;
+    roomCounts: Array<{
+      roomId: string;
+      unreadCount: number;
+      clientEmail: string;
+      status: string;
+      assignedAgentEmail?: string | null;
+    }>;
   }> {
-    return this.chatRoomService.getNotificationCounts(
-      userType === 'agent' ? undefined : email,
-      userType,
-    );
+    // P1-1：始终透传 email，让 service 能按归属人分桶
+    return this.chatRoomService.getNotificationCounts(email, userType);
   }
 
   // ── 定时扫描：心跳超时 → away / offline ────────────────
@@ -732,6 +739,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       // 已分配给他人 / closed / archived → 仅查看，不变更所有权。
       // 此前无条件覆写 assignedAgentEmail → 点一下别人的会话就被抢走，
       // 点已关闭会话还会复活幽灵负责人。
+    } else {
+      // P1-4：访客 join-room 时，同步将全部在线坐席 socket 加入该房间
+      // （socket.io 重复 join 幂等，无需去重判断），确保新创建的会话坐席能收到 new-message
+      const sockets = await this.server.fetchSockets();
+      for (const sock of sockets) {
+        if ((sock.data as SocketData).auth?.type === 'agent') {
+          sock.join(roomId);
+        }
+      }
+      this.logger.log(
+        `[新房间] 访客 ${auth.email} 加入 ${roomId}，同步拉入${sockets.filter((s) => (s.data as SocketData)?.auth?.type === 'agent').length}个在线坐席`,
+      );
     }
   }
 
@@ -1360,6 +1379,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         const nonZero = counts.roomCounts.filter((r) => r.unreadCount > 0);
         this.logger.log(
           `[notif-counts] ${info.type}:${info.email} total=${counts.totalUnread} ` +
+            `my=${counts.myUnread ?? 0}/pool=${counts.unassignedUnread ?? 0}/others=${counts.othersUnread ?? 0} ` +
             `rooms=${counts.roomCounts.length} nonZero=${nonZero.length} ` +
             `[${nonZero.map((r) => `${r.roomId.slice(0, 8)}:${r.unreadCount}`).join(',')}]`,
         );

@@ -1,4 +1,4 @@
-import { Switch as SwitchPrimitives } from '@base-ui-components/react/switch';
+import { Switch as SwitchPrimitives } from '@base-ui/react/switch';
 import type { ComponentPropsWithoutRef, ElementRef } from 'react';
 import { forwardRef } from 'react';
 import { cn } from '../../lib/utils';

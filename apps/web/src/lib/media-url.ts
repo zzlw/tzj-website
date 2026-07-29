@@ -1,6 +1,8 @@
+import { env } from './env';
+
 /** 对象存储公开访问域名（与 API S3_PUBLIC_DOMAIN 一致）。 */
 export function getS3PublicDomain(): string {
-  return process.env.NEXT_PUBLIC_S3_PUBLIC_DOMAIN ?? 'http://localhost:9000/tzj-uploads-dev';
+  return env.s3PublicDomain;
 }
 
 /** MinIO 中站点静态资源的 key 前缀（与 sync-content-media 上传路径一致）。 */

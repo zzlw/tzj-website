@@ -1,10 +1,8 @@
 import { getVisitorId } from '@/lib/analytics';
+import { env } from '@/lib/env';
 import type { ChatRoom, RecentRoomData } from './types';
 
-const API_URL = (process.env.NEXT_PUBLIC_CHAT_API_URL ?? 'http://localhost:4000/api/v1').replace(
-  /\/$/,
-  '',
-);
+const API_URL = env.chatApiUrl;
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {

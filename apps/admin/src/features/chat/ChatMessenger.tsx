@@ -23,6 +23,7 @@ import {
   ChatConversationList,
 } from './components/ChatConversationList';
 import type { ChatMessage, ChatRoom, PresenceStatus } from './types';
+import { CHAT_OPEN_ROOM_EVENT } from './use-open-chat-room';
 import type { OnlineAgent } from './useChatSocket';
 
 const QUICK_REPLIES = [
@@ -869,16 +870,27 @@ export function ChatMessenger() {
     if (clientTypingTimer.current) clearTimeout(clientTypingTimer.current);
   }, []);
 
-  /** 未读聚合计数（P2 M1）：总量驱动顶栏徽标；roomCounts 全量刷新各会话未读徽标 */
+  /** 未读聚合计数（P2 M1）：总量驱动顶栏徽标；roomCounts 全量刷新各会话未读徽标
+   * Agent 分支 payload 扩展字段（client 分支不返回）：
+   * - myUnread: assignedAgentEmail === userEmail 的会话未读合计
+   * - unassignedUnread: status='waiting' 且 assignedAgentEmail 为空的会话未读合计
+   * - othersUnread: 分配给其他坐席的会话未读合计
+   * - totalUnread 语义变更（仅 agent）:= myUnread + unassignedUnread
+   */
   const handleNotifCounts = useCallback(
     (payload: {
       totalUnread?: number;
+      myUnread?: number;
+      unassignedUnread?: number;
       roomCounts?: Array<{ roomId: string; unreadCount: number }>;
     }) => {
-      let total = typeof payload.totalUnread === 'number' ? payload.totalUnread : 0;
-      // 防闪烁（不依赖事件时序）：选中会话永远被立即 markRead，其对未读总数的
-      // 真实贡献恒为 0；但服务端广播的 DB 查询可能先于 markRead 落库，仍计入该会话。
-      // 直接从总数中减去 payload 里选中房间的计数，避免徽标 N→N+1→N 闪烁。
+      // S3: 使用新口径总数（myUnread + unassignedUnread），忽略 othersUnread
+      let total = payload.myUnread ?? 0;
+      if (typeof payload.unassignedUnread === 'number') {
+        total += payload.unassignedUnread;
+      }
+
+      // 防闪烁逻辑保持不变
       const selectedNow = selectedIdRef.current;
       if (selectedNow && payload.roomCounts) {
         const selectedCount = payload.roomCounts.find(
@@ -1054,19 +1066,23 @@ export function ChatMessenger() {
   );
 
   useEffect(() => {
-    socket.on('room-list-updated', handleRoomList);
-    socket.on('new-message', handleNewMessage);
-    socket.on('room-status-changed', handleStatusChanged);
-    socket.on('messages-read', handleMessagesRead);
-    socket.on('presence-changed', handlePresenceChanged);
-    socket.on('user-left', handleUserLeft);
-    socket.on('agent-roster', handleAgentRoster);
-    socket.on('typing', handleTyping);
-    socket.on('stop-typing', handleStopTyping);
-    socket.on('notification-counts-updated', handleNotifCounts);
-    socket.on('notification-counts', handleNotifCounts);
-    socket.on('room-transferred-in', handleTransferredIn);
-    socket.on('error', (payload: unknown) => {
+    const unsubscribeRoomList = socket.on('room-list-updated', handleRoomList);
+    const unsubscribeNewMessage = socket.on('new-message', handleNewMessage);
+    const unsubscribeStatusChanged = socket.on('room-status-changed', handleStatusChanged);
+    const unsubscribeMessagesRead = socket.on('messages-read', handleMessagesRead);
+    const unsubscribePresenceChanged = socket.on('presence-changed', handlePresenceChanged);
+    const unsubscribeUserLeft = socket.on('user-left', handleUserLeft);
+    const unsubscribeAgentRoster = socket.on('agent-roster', handleAgentRoster);
+    const unsubscribeTyping = socket.on('typing', handleTyping);
+    const unsubscribeStopTyping = socket.on('stop-typing', handleStopTyping);
+    const unsubscribeNotifCountsUpdated = socket.on(
+      'notification-counts-updated',
+      handleNotifCounts,
+    );
+    const unsubscribeNotifCounts = socket.on('notification-counts', handleNotifCounts);
+    const unsubscribeTransferredIn = socket.on('room-transferred-in', handleTransferredIn);
+
+    const handleError = (payload: unknown) => {
       if (!initialLoaded.current) setLoading(false);
       // 兜底反馈：如向他人负责的会话发消息被服务端拒绝（NOT_ASSIGNEE），给出明确提示，
       // 而非静默失败（UI 通常已禁用输入，此处覆盖陈旧 UI / 竞态触发的场景）。
@@ -1075,21 +1091,23 @@ export function ChatMessenger() {
           ? (payload as { message?: string }).message
           : undefined;
       if (msg) toast.warning(msg);
-    });
+    };
+    const unsubscribeError = socket.on('error', handleError);
+
     return () => {
-      socket.off('room-list-updated');
-      socket.off('new-message');
-      socket.off('room-status-changed');
-      socket.off('messages-read');
-      socket.off('presence-changed');
-      socket.off('user-left');
-      socket.off('agent-roster');
-      socket.off('typing');
-      socket.off('stop-typing');
-      socket.off('notification-counts-updated');
-      socket.off('notification-counts');
-      socket.off('room-transferred-in');
-      socket.off('error');
+      unsubscribeRoomList();
+      unsubscribeNewMessage();
+      unsubscribeStatusChanged();
+      unsubscribeMessagesRead();
+      unsubscribePresenceChanged();
+      unsubscribeUserLeft();
+      unsubscribeAgentRoster();
+      unsubscribeTyping();
+      unsubscribeStopTyping();
+      unsubscribeNotifCountsUpdated();
+      unsubscribeNotifCounts();
+      unsubscribeTransferredIn();
+      unsubscribeError();
       if (clientTypingTimer.current) clearTimeout(clientTypingTimer.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1522,6 +1540,18 @@ export function ChatMessenger() {
     restoredRef.current = true;
     if (roomParam) void handleSelect(roomParam);
   }, [initialLoaded.current, selectedId, roomParam, handleSelect]);
+
+  // Bridge toast「查看」同页切换会话（§4.2.2）：本页选中经 replaceState 同步 URL，
+  // useSearchParams 会停留旧值，router.push 同值时不触发变更，故经自定义事件直达。
+  useEffect(() => {
+    const handleOpenRoom = (e: Event) => {
+      const roomId = (e as CustomEvent<{ roomId?: string }>).detail?.roomId;
+      if (!roomId || roomId === selectedIdRef.current) return;
+      void handleSelect(roomId);
+    };
+    window.addEventListener(CHAT_OPEN_ROOM_EVENT, handleOpenRoom);
+    return () => window.removeEventListener(CHAT_OPEN_ROOM_EVENT, handleOpenRoom);
+  }, [handleSelect]);
 
   // 若 URL 未带 bucket 参数，补写默认 ?bucket=all（保留已有 room 等参数），
   // 使地址栏明确反映当前分桶，刷新行为可预期。

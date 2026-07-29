@@ -16,6 +16,7 @@ import { extractClientIp } from '../common/utils/client-ip';
 import type { RequestMeta } from './auth.service';
 import { AuthService } from './auth.service';
 import { AllowUnenrolled } from './decorators/allow-unenrolled.decorator';
+import { AuthenticatedOnly } from './decorators/authenticated-only.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { Public } from './decorators/public.decorator';
 import { LoginDto, LogoutDto, RefreshDto } from './dto/auth.dto';
@@ -69,6 +70,7 @@ export class AuthController {
     return this.auth.me(user.id);
   }
 
+  @AuthenticatedOnly()
   @Patch('me')
   @ApiBearerAuth()
   @ApiOperation({ summary: '更新当前用户资料' })
@@ -76,6 +78,7 @@ export class AuthController {
     return this.auth.updateProfile(user.id, dto);
   }
 
+  @AuthenticatedOnly()
   @Patch('password')
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
@@ -84,6 +87,7 @@ export class AuthController {
     return this.auth.changePassword(user.id, dto.currentPassword, dto.newPassword);
   }
 
+  @AuthenticatedOnly()
   @Get('sessions')
   @ApiBearerAuth()
   @ApiOperation({ summary: '获取当前用户活跃会话列表' })
@@ -91,6 +95,7 @@ export class AuthController {
     return this.auth.getSessions(user.id);
   }
 
+  @AuthenticatedOnly()
   @Delete('sessions/:id')
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
@@ -99,6 +104,7 @@ export class AuthController {
     return this.auth.revokeSession(user.id, sessionId);
   }
 
+  @AuthenticatedOnly()
   @Delete('sessions')
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()

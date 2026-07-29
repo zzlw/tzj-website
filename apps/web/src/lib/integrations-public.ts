@@ -1,6 +1,7 @@
 import type { IntegrationsPublicConfig } from '@tzj/types';
+import { env } from './env';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+const API_BASE = env.apiUrl;
 
 const CACHE_KEY = '_tzj_integrations_public';
 const CACHE_TTL_MS = 5 * 60 * 1000;

@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { AuthenticatedOnly } from '../auth/decorators/authenticated-only.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
 import type { AuthUser } from '../auth/roles';
@@ -32,6 +33,7 @@ export class MediaController {
 
   // 媒体库浏览/读取对所有已登录角色开放（无需专门权限）：素材为团队共享资源，
   // 只读浏览不构成风险；写操作（上传/删除/清除/替换站点资源）仍各自受权限约束。
+  @AuthenticatedOnly()
   @Get()
   @ApiOperation({ summary: '媒体库列表（分页）' })
   findAll(

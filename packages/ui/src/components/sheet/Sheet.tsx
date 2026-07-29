@@ -1,6 +1,6 @@
 'use client';
 
-import { Dialog as DialogPrimitive } from '@base-ui-components/react/dialog';
+import { Dialog as DialogPrimitive } from '@base-ui/react/dialog';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { X } from 'lucide-react';
 import type { ComponentPropsWithoutRef, HTMLAttributes } from 'react';
@@ -36,7 +36,7 @@ const SheetOverlay = forwardRef<HTMLDivElement, ComponentPropsWithoutRef<'div'>>
 SheetOverlay.displayName = 'SheetOverlay';
 
 export const sheetVariants = cva(
-  'fixed z-50 gap-4 bg-surface p-6 shadow-lg transition ease-in-out data-[open]:animate-in data-[closed]:animate-out data-[closed]:duration-300 data-[open]:duration-500',
+  'fixed z-50 gap-4 bg-surface p-6 shadow-lg transition ease-in-out data-[open]:animate-in data-[closed]:animate-out data-[closed]:fill-mode-forwards data-[closed]:duration-300 data-[open]:duration-500',
   {
     variants: {
       side: {

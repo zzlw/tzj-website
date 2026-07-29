@@ -1408,20 +1408,30 @@ export class ChatRoomService {
   /**
    * 从消息 + 已读回执表实时计算未读数，彻底避免增量计数器因并发竞态导致的偏移。
    * 未读 = 对方发的消息中、当前用户尚未创建 readReceipt 的条数。
+   *
+   * Agent 分支扩展返回结构（坐席端新增三个字段）：
+   * - myUnread: assignedAgentEmail === userEmail 的会话未读合计
+   * - unassignedUnread: status='waiting' 且 assignedAgentEmail 为空的会话未读合计
+   * - othersUnread: 分配给其他坐席的会话未读合计
+   * - roomCounts: 含 assignedAgentEmail 字段（前端归属判断依据）
    */
   async getNotificationCounts(
     userEmail?: string,
     userType?: 'client' | 'agent',
   ): Promise<{
     totalUnread: number;
+    // Agent 分支新增字段，client 分支不返回（类型可选）
+    myUnread?: number;
+    unassignedUnread?: number;
+    othersUnread?: number;
     roomCounts: Array<{
       roomId: string;
       unreadCount: number;
       clientEmail: string;
       status: string;
+      assignedAgentEmail?: string | null;
     }>;
   }> {
-    // 对方发送者：agent 看 client 消息，client 看 agent 消息
     const oppositeSender = userType === 'agent' ? 'client' : 'agent';
 
     // P1-2：改为带过滤的关系计数，避免逐条物化未读消息行
@@ -1436,6 +1446,7 @@ export class ChatRoomService {
         roomId: true,
         clientEmail: true,
         status: true,
+        assignedAgentEmail: true,
         _count: {
           select: {
             messages: {
@@ -1467,23 +1478,79 @@ export class ChatRoomService {
       unreadCount: number;
       clientEmail: string;
       status: string;
+      assignedAgentEmail?: string | null;
     }> = [];
 
+    // Agent 分支三桶计数
+    let myUnread = 0;
+    let unassignedUnread = 0;
+    let othersUnread = 0;
+
     for (const room of rooms) {
-      // client 类型只计算属于自己的会话
+      // client 类型只计算属于自己的会话（与改造前行为完全一致：他人房间不进 total 也不进 roomCounts）
       if (userType === 'client' && room.clientEmail !== userEmail) continue;
       const unread = room._count.messages;
-      totalUnread += unread;
-      // 始终返回所有房间（含 unread=0），确保前端能正确重置已清空的徽标
-      roomCounts.push({
-        roomId: room.roomId,
-        unreadCount: unread,
-        clientEmail: room.clientEmail,
-        status: room.status,
-      });
+
+      if (userType === 'client') {
+        totalUnread += unread;
+        // 始终返回所有房间（含 unread=0），确保前端能正确重置已清空的徽标
+        roomCounts.push({
+          roomId: room.roomId,
+          unreadCount: unread,
+          clientEmail: room.clientEmail,
+          status: room.status,
+        });
+      } else {
+        // Agent 分支：按归属人分桶；roomCounts 仍返回全部房间（含他人房间）
+        roomCounts.push({
+          roomId: room.roomId,
+          unreadCount: unread,
+          clientEmail: room.clientEmail,
+          status: room.status,
+          assignedAgentEmail: room.assignedAgentEmail,
+        });
+
+        // 分类统计：未分配（常态为 waiting；active 且无负责人的边界房间同属待认领）
+        if (!room.assignedAgentEmail) {
+          unassignedUnread += unread;
+        } else if (room.assignedAgentEmail === userEmail) {
+          // 分配给我的会话
+          myUnread += unread;
+        } else {
+          // 分配给其他坐席的会话
+          othersUnread += unread;
+        }
+      }
     }
 
-    return { totalUnread, roomCounts };
+    // 坐席口径收窄（设计 §4.1.1）：totalUnread = 我的 + 待认领；
+    // 他人会话未读仅通过 othersUnread 供列表弱化展示，不进主徽标。
+    if (userType === 'agent') {
+      totalUnread = myUnread + unassignedUnread;
+    }
+
+    const result: {
+      totalUnread: number;
+      myUnread?: number;
+      unassignedUnread?: number;
+      othersUnread?: number;
+      roomCounts: Array<{
+        roomId: string;
+        unreadCount: number;
+        clientEmail: string;
+        status: string;
+        assignedAgentEmail?: string | null;
+      }>;
+    } = { totalUnread, roomCounts };
+
+    // 仅在 agent 分支返回扩展字段（client 分支输出与改造前逐字段一致，§4.1.3）
+    if (userType === 'agent') {
+      result.myUnread = myUnread;
+      result.unassignedUnread = unassignedUnread;
+      result.othersUnread = othersUnread;
+    }
+
+    return result;
   }
 
   /* ==================== 更新 & 删除 ==================== */

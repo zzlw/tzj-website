@@ -34,7 +34,7 @@ export function SocialQrImage({ qr, platform, label, className }: SocialQrImageP
       {showPlaceholder ? (
         <SocialQrPlaceholder platform={platform} />
       ) : (
-        // eslint-disable-next-line @next/next/no-img-element
+        // 豁免 next/image：多候选 URL 失败回退依赖原生 onError 链，且二维码非 LCP，固定尺寸无 CLS
         <img
           src={src}
           alt={label}

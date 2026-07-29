@@ -6,8 +6,9 @@
     "dev": "node scripts/generate-placeholders.mjs && node -e \"try{require('child_process').execSync('lsof -ti:3001|xargs kill -9',{stdio:'ignore'})}catch{}\" && next dev --port 3001",
     "build": "node scripts/generate-placeholders.mjs && next build",
     "start": "next start --port 3001",
-    "lint": "next lint",
+    "lint": "biome lint src/",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
     "generate:placeholders": "node scripts/generate-placeholders.mjs",
     "postinstall": "node scripts/copy-vditor-assets.mjs"
   },
@@ -26,7 +27,8 @@
     "socket.io-client": "catalog:",
     "tailwind-merge": "catalog:",
     "tw-animate-css": "catalog:",
-    "vditor": "catalog:"
+    "vditor": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "catalog:",
@@ -35,6 +37,7 @@
     "@types/react-dom": "catalog:",
     "postcss": "catalog:",
     "tailwindcss": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "^4.1.10"
   }
 }

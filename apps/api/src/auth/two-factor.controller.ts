@@ -5,6 +5,7 @@ import type { Request } from 'express';
 import { extractClientIp } from '../common/utils/client-ip';
 import type { RequestMeta } from './auth.service';
 import { AllowUnenrolled } from './decorators/allow-unenrolled.decorator';
+import { AuthenticatedOnly } from './decorators/authenticated-only.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { Public } from './decorators/public.decorator';
 import { Roles } from './decorators/roles.decorator';
@@ -72,6 +73,7 @@ export class TwoFactorController {
     return this.twoFactor.verify(dto.pendingToken, dto.code, dto.recoveryCode, metaFrom(req));
   }
 
+  @AuthenticatedOnly()
   @Post('disable')
   @HttpCode(HttpStatus.OK)
   @Throttle(STRICT_THROTTLE)
@@ -81,6 +83,7 @@ export class TwoFactorController {
     return this.twoFactor.disable(user.id, dto.password, dto.code, dto.recoveryCode, metaFrom(req));
   }
 
+  @AuthenticatedOnly()
   @Post('recovery-codes/regenerate')
   @HttpCode(HttpStatus.OK)
   @Throttle(STRICT_THROTTLE)

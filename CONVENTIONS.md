@@ -33,7 +33,7 @@
 - **分层**: 工具类经 `@theme inline` 映射到运行时原始变量（`--background` 等 oklch 值），由 `:root` / `.dark` / `.theme-*` 在运行时切换，**禁止**在 admin 的 `@theme` 块内直写颜色字面值（会被烘进编译产物，主题无法覆盖）
 - **CSS 内部引用**: admin 作用域内引用变量用 `var(--primary)` 等原始变量，不用 `var(--color-*)`（inline 模式下不产出）
 - **预设**: 10 套配色预设定义在 `apps/admin/src/app/theme-presets.css`，预设类挂 `<body>`，仅覆盖强调色；每个预设必须同时提供 `.dark .theme-*` 暗色对应值
-- **持久化**: 配色预设用 cookie `active_theme`（服务端预置 body 类，无闪变）；明暗模式由 next-themes 管理（html 上的 `.dark` 类）
+- **持久化**: 配色预设用 cookie `active_theme`（服务端预置 body 类，无闪变）；无 cookie 时默认品牌红 `theme-brand`（layout 与 ActiveThemeProvider 双端回退保持一致）；明暗模式由 next-themes 管理（html 上的 `.dark` 类）
 - **圆角**: 由单一 `--radius` 派生（sm=-4px / md=-2px / lg=基准 / xl=+4px / 2xl=+8px / 3xl=+14px），预设可覆盖 `--radius` 整体缩放，逐档枚举式覆盖已废止
 - **护栏**: `scripts/check-palette-escape.mjs` 随根 `pnpm check` 执行（CI 同步卡口），扫描 `apps/admin/src` + `packages/ui/src` 的 palette 逃逸色；web 官网豁免
 

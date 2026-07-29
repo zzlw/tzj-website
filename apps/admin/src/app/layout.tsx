@@ -29,8 +29,9 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // 配色预设服务端预置：首屏直接带 theme-* 类渲染，避免水合后闪变；
+  // 无 cookie 时回退品牌红（与 ActiveThemeProvider 的 DEFAULT_THEME 保持一致）；
   // 明暗模式由 next-themes 的内联脚本处理（suppressHydrationWarning 配套）
-  const activeTheme = (await cookies()).get('active_theme')?.value;
+  const activeTheme = (await cookies()).get('active_theme')?.value ?? 'brand';
   return (
     <html lang="zh-CN" className={inter.variable} suppressHydrationWarning>
       <head>

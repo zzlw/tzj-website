@@ -24,7 +24,8 @@ async function main() {
       username: adminUsername,
       password: adminHash,
       nickname: '超级管理员',
-      email: adminUsername.includes('@') ? adminUsername : undefined,
+      // email 写入统一小写归一化（多标识登录按 lower(email) 精确匹配）
+      email: adminUsername.includes('@') ? adminUsername.trim().toLowerCase() : undefined,
       role: 'admin',
       isActive: true,
     },

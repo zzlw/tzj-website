@@ -84,7 +84,9 @@ async function loadModule(
     }
     return mod.default as Record<string, unknown>;
   } catch (err) {
-    console.error(`[i18n] Failed to load module ${locale}/${name}:`, err);
+    if (process.env.NODE_ENV === 'development') {
+      console.error(`[i18n] Failed to load module ${locale}/${name}:`, err);
+    }
     return null;
   }
 }
@@ -97,7 +99,9 @@ async function loadPageFile(
     const mod = await import(`@/messages/${locale}/pages/${id}.json`);
     return mod.default as Record<string, unknown>;
   } catch (err) {
-    console.error(`[i18n] Failed to load page ${locale}/${id}:`, err);
+    if (process.env.NODE_ENV === 'development') {
+      console.error(`[i18n] Failed to load page ${locale}/${id}:`, err);
+    }
     return null;
   }
 }

@@ -1,9 +1,10 @@
 import type { SitePublicSettings } from '@tzj/types';
+import { env } from './env';
 import { getS3PublicDomain } from './media-url';
 import { siteConfig } from './site';
 import { DEFAULT_SITE_PUBLIC_SETTINGS } from './site-defaults';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+const API_BASE = env.apiUrl;
 
 /** 合并 CMS 设置与环境变量 / 静态默认值（env 优先于 CMS 用于部署级覆盖） */
 export function mergeSiteSettings(cms: SitePublicSettings): SitePublicSettings {

@@ -28,8 +28,8 @@ export const createUserSchema = baseSchema.extend({
   password: z.string().min(8, '密码至少 8 位').max(128),
 });
 
+// 编辑表单不含 password：改密统一走行操作「重置密码」单一入口（G3）
 export const updateUserSchema = baseSchema.extend({
-  password: z.string().min(8, '密码至少 8 位').max(128).optional().or(z.literal('')),
   lockedUntil: z.string().optional().or(z.literal('')).or(z.null()),
 });
 
@@ -76,13 +76,6 @@ export function buildUserEditFields(roleOptions: RoleOption[]): FieldDef[] {
       help: '设置后该账号在指定时间前无法登录，留空则不锁定',
       emptyAsNull: true,
     },
-    {
-      name: 'password',
-      label: '新密码',
-      type: 'text',
-      colSpan: 2,
-      help: '留空则不修改密码',
-    },
   ];
 }
 
@@ -103,5 +96,4 @@ export const userEditDefaults = {
   role: 'admin',
   isActive: true,
   lockedUntil: '',
-  password: '',
 };

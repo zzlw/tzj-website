@@ -47,13 +47,11 @@ export function UserEditor({ id }: { id?: string }) {
       role: item.role,
       isActive: item.isActive,
       lockedUntil: item.lockedUntil ?? '',
-      password: '',
     };
   }, [isEdit, item]);
 
   async function handleSubmit(values: Record<string, unknown>) {
     const payload = { ...values };
-    if (isEdit && !payload.password) delete payload.password;
     if (!payload.email) payload.email = undefined;
     if (!payload.nickname) payload.nickname = undefined;
     if (!payload.phone) payload.phone = undefined;
