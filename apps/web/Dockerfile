@@ -25,7 +25,8 @@ COPY packages/types/package.json packages/types/
 COPY packages/ui/package.json packages/ui/
 
 RUN corepack enable && corepack prepare pnpm@11.9.0 --activate
-RUN pnpm install --frozen-lockfile
+# deps 阶段仅有 package.json，跳过 postinstall（copy-vditor-assets 在 builder 阶段显式执行）
+RUN pnpm install --frozen-lockfile --ignore-scripts
 
 # ── Stage 3: Builder (Turbo Build) ───────────────────────────
 FROM base AS builder
@@ -44,6 +45,7 @@ ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 ENV NEXT_PUBLIC_WEB_URL=$NEXT_PUBLIC_WEB_URL
 
 RUN corepack enable && corepack prepare pnpm@11.9.0 --activate
+RUN node apps/web/scripts/copy-vditor-assets.mjs
 RUN npx turbo run build --filter=@tzj/web
 
 # ── Stage 4: Runner (Standalone 模式提取) ────────────────────
