@@ -357,7 +357,7 @@ export function SearchBar({
               'search-input-no-native-clear w-full bg-transparent text-neutral-900 placeholder:text-neutral-500 focus:outline-none',
               isLarge
                 ? 'px-5 py-4 pr-10 text-base md:px-6 md:py-5 md:text-lg'
-                : 'px-4 py-3 pr-9 text-sm md:text-base',
+                : 'px-4 py-3 pr-9 text-base sm:text-sm md:text-base',
             )}
           />
           {query ? (

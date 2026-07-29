@@ -22,8 +22,9 @@ import {
   validateContactForm,
 } from '@/lib/validation/contact';
 
+// 移动端 text-base（≥16px）防 iOS Safari 聚焦放大；sm+ 维持 14px 视觉不变
 const FIELD_CLASS =
-  'w-full border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900 placeholder:text-neutral-500 transition-colors focus:border-neutral-900 focus:outline-none';
+  'w-full border border-neutral-300 bg-white px-4 py-3 text-base sm:text-sm text-neutral-900 placeholder:text-neutral-500 transition-colors focus:border-neutral-900 focus:outline-none';
 const FIELD_ERROR_CLASS = 'border-red-600 focus:border-red-600';
 const LABEL_CLASS = 'mb-1.5 block text-sm font-medium text-neutral-700';
 

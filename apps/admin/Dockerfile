@@ -59,11 +59,12 @@ ENV HOSTNAME="0.0.0.0"
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
-# 复制 public 静态资源
-COPY --from=builder /app/apps/admin/public ./public
-
 # 复制 .next/standalone (自动打包好的所有依赖)
 COPY --from=builder --chown=nextjs:nodejs /app/apps/admin/.next/standalone ./
+
+# 复制 public 静态资源：monorepo standalone 下必须与 server.js 同级
+# （/app/apps/admin/public），放根目录 /app/public 会导致整站 public 资源 404
+COPY --from=builder --chown=nextjs:nodejs /app/apps/admin/public ./apps/admin/public
 
 # 复制静态产物
 COPY --from=builder --chown=nextjs:nodejs /app/apps/admin/.next/static ./apps/admin/.next/static

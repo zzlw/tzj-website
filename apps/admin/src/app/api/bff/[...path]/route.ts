@@ -30,15 +30,29 @@ async function proxy(req: NextRequest, path: string[]) {
       cache: 'no-store',
     }); // 仅 GET/HEAD/OPTIONS 自动重试，写操作不重试
 
-  let apiRes = await forward(accessToken);
+  let apiRes: Response;
   let rotated = null;
 
-  if (apiRes.status === 401) {
-    rotated = await refreshAccessToken(refreshToken);
-    if (rotated) {
-      accessToken = rotated.accessToken;
-      apiRes = await forward(accessToken);
+  try {
+    apiRes = await forward(accessToken);
+
+    if (apiRes.status === 401) {
+      rotated = await refreshAccessToken(refreshToken);
+      if (rotated) {
+        accessToken = rotated.accessToken;
+        apiRes = await forward(accessToken);
+      }
     }
+  } catch {
+    // 上游 API 不可达（滚动重启/网络瞬断）：返回可判别的 502 JSON，
+    // 避免 fetch 异常未捕获变成 Next 500 HTML，前端轮询可据此退避重试
+    return NextResponse.json(
+      {
+        success: false,
+        error: { code: 'UPSTREAM_UNAVAILABLE', message: '服务暂时不可用，请稍后重试' },
+      },
+      { status: 502 },
+    );
   }
 
   const text = await apiRes.text();

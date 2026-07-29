@@ -35,8 +35,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="zh-CN" className={inter.variable} suppressHydrationWarning>
       <head>
-        {/* 提前拉取 Vditor 的 lute 解析引擎，避免编辑器初始化时的网络等待 */}
-        <link rel="preload" as="script" href="/vditor-assets/dist/js/lute/lute.min.js" />
+        {/* 空闲预取 Vditor 的 lute 解析引擎，缩短编辑器初始化等待；用 prefetch
+            而非 preload：该脚本仅在打开 Markdown 编辑器时才执行，preload 会触发
+            「预加载未及时使用」控制台警告并抢占首屏带宽（与 web 端修复对齐） */}
+        <link rel="prefetch" as="script" href="/vditor-assets/dist/js/lute/lute.min.js" />
       </head>
       <body
         className={`bg-background text-foreground antialiased${

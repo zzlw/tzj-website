@@ -1023,7 +1023,9 @@ export function ChatWidget({
               }}
               rows={1}
               placeholder={t.inputPlaceholder}
-              className="block w-full min-h-0 resize-none border-0 bg-transparent shadow-none px-3.5 pt-2.5 pb-1 text-sm leading-relaxed text-zinc-900 [scrollbar-width:none] transition-colors placeholder:text-zinc-400 focus:ring-0 focus:outline-none focus-visible:ring-0"
+              // 移动端字号必须 ≥ 16px（text-base）：iOS Safari 对 <16px 的输入框聚焦时
+              // 会自动放大页面且收起键盘后不回缩；桌面端（sm+）维持 14px 视觉不变
+              className="block w-full min-h-0 resize-none border-0 bg-transparent shadow-none px-3.5 pt-2.5 pb-1 text-base sm:text-sm leading-relaxed text-zinc-900 [scrollbar-width:none] transition-colors placeholder:text-zinc-400 focus:ring-0 focus:outline-none focus-visible:ring-0"
             />
             <div className="flex items-center justify-between px-1.5 pb-1.5">
               <div className="flex items-center gap-0.5">

@@ -78,6 +78,9 @@ services:
     mem_limit: 320m
     environment:
       NODE_OPTIONS: "--max-old-space-size=256"
+      # BFF 服务端直连 compose 内网 api，避免回落到构建期烘入的公网域名
+      # 绕行 gateway 回环（链路长、依赖公网 DNS/TLS，抖动会放大为 5xx）
+      ADMIN_API_URL: "http://api:4000/api/v1"
     depends_on:
       api:
         condition: service_healthy

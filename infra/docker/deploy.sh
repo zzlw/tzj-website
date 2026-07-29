@@ -140,9 +140,19 @@ wait_api_healthy() {
 
 smoke_test() {
   compose exec -T api wget -qO- http://127.0.0.1:4000/api/v1/health
-  compose exec -T web wget -qO- http://127.0.0.1:3000/ >/dev/null
+  # public 资源断言：曾因 standalone public 目录错位导致整站 public 404
+  # （favicon 可最快甄别「整体错位」，vditor/browser-support 验证复制链路）
+  compose exec -T web sh -c '
+    wget -qO /dev/null http://127.0.0.1:3000/ &&
+    wget -qO /dev/null http://127.0.0.1:3000/favicon.ico &&
+    wget -qO /dev/null http://127.0.0.1:3000/browser-support.js &&
+    wget -qO /dev/null http://127.0.0.1:3000/vditor-assets/dist/js/lute/lute.min.js
+  '
   echo "web:ok"
-  compose exec -T admin wget -qO- http://127.0.0.1:3000/ >/dev/null
+  compose exec -T admin sh -c '
+    wget -qO /dev/null http://127.0.0.1:3000/login &&
+    wget -qO /dev/null http://127.0.0.1:3000/vditor-assets/dist/js/lute/lute.min.js
+  '
   echo "admin:ok"
 }
 
@@ -217,8 +227,7 @@ compose up -d --no-deps acme
 
 compose ps $SERVICES gateway
 
-if [[ "$SERVICE" == "all" || "$SERVICE" == "api" ]]; then
-  smoke_test
-fi
+# 冒烟断言：不论部署哪个服务都全量跑（历史上 public 404 曾因缺部署后验证两次进入生产）
+smoke_test
 
 echo "✅ Deploy done: $SERVICES → $TAG"
