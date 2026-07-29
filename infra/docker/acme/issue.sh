@@ -1,11 +1,11 @@
 #!/bin/sh
-# 首次签发：make cert-issue（compose exec acme sh /scripts/issue.sh）
-# 与 REDACTED-NAMESPACE-deploy 相同：Let's Encrypt + DNS-01 泛域名 + install-cert + CDN hook
-# jiawen.live NS 在 Cloudflare → 优先 dns_cf；若 NS 在阿里云则用 dns_ali
+# 首次签发：make -C /opt/tzj cert-issue（compose exec acme sh /scripts/issue.sh）
+# Let's Encrypt + DNS-01 泛域名 + install-cert；续期后 nginx 由 90-periodic-reload.sh 自动 reload
+# tzjii.com NS 在阿里云 → 用 dns_ali（CF_* 留空；若域名 NS 迁到 Cloudflare 才配 CF_API_TOKEN）
 set -e
 
 : "${ACME_EMAIL:?配置 ACME_EMAIL}"
-: "${BASE_DOMAIN:?配置 BASE_DOMAIN（如 jiawen.live）}"
+: "${BASE_DOMAIN:?配置 BASE_DOMAIN（如 tzjii.com）}"
 
 if [ -n "${CF_API_TOKEN:-}" ]; then
   export CF_Token="$CF_API_TOKEN"
@@ -26,8 +26,7 @@ acme.sh --register-account -m "$ACME_EMAIL" --server letsencrypt
 echo "==> DNS-01 签发泛域名：$BASE_DOMAIN + *.$BASE_DOMAIN"
 acme.sh --issue --server letsencrypt --keylength 2048 \
   --dns "$DNS_PROVIDER" \
-  -d "$BASE_DOMAIN" -d "*.$BASE_DOMAIN" \
-  --renew-hook "sh /scripts/deploy-cdn.sh"
+  -d "$BASE_DOMAIN" -d "*.$BASE_DOMAIN"
 
 echo "==> 安装证书到 /certs/live（续期后自动重装）"
 mkdir -p /certs/live
@@ -35,9 +34,4 @@ acme.sh --install-cert -d "$BASE_DOMAIN" \
   --fullchain-file /certs/live/fullchain.pem \
   --key-file /certs/live/privkey.pem
 
-if [ -n "${STATIC_DOMAIN:-}" ] && [ -n "${Ali_Key:-}" ]; then
-  echo "==> 推送 CDN 证书（$STATIC_DOMAIN）"
-  sh /scripts/deploy-cdn.sh || echo "WARN: CDN 推送失败（域名未接入阿里云 CDN 可忽略）"
-fi
-
-echo "==> 完成。执行 make prod-gateway-reload"
+echo "==> 完成。执行 make -C /opt/tzj gateway-reload"

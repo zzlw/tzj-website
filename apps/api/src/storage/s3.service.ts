@@ -1,9 +1,9 @@
 // ============================================================
 // TZJ API — S3-compatible Unified Storage Service
 // ============================================================
-// 一套 SDK 打通本地 MinIO 和线上阿里云 OSS
+// 一套 SDK 打通本地 MinIO 和线上自托管 MinIO
 // - 本地: MinIO (http://localhost:9000)
-// - 线上: 阿里云 OSS (https://oss-cn-hangzhou.aliyuncs.com)
+// - 线上: MinIO 经 nginx 反代 (https://static.tzjii.com)
 // 关键: 通过环境变量切换 Endpoint, 代码逻辑零差异
 // ============================================================
 
@@ -53,10 +53,12 @@ export class S3Service implements OnModuleInit {
         accessKeyId: this.config.get<string>('S3_ACCESS_KEY_ID', 'minioadmin'),
         secretAccessKey: this.config.get<string>('S3_ACCESS_KEY_SECRET', 'minioadmin'),
       },
-      // MinIO 使用 Path Style, 阿里云 OSS 使用 Virtual Hosted Style
+      // MinIO 使用 Path Style, 阿里云 OSS 等使用 Virtual Hosted Style
       // Path:   http://domain/bucket/key (MinIO)
       // Virtual: http://bucket.domain/key (OSS)
+      // 生产端点（如 https://static.tzjii.com）不含 localhost/minio，由显式开关控制
       forcePathStyle:
+        this.config.get<string>('S3_FORCE_PATH_STYLE') === 'true' ||
         this.config.get<string>('S3_ENDPOINT', '').includes('localhost') ||
         this.config.get<string>('S3_ENDPOINT', '').includes('minio'),
     });

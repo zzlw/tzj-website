@@ -31,6 +31,8 @@ const envSchema = z.object({
   S3_ACCESS_KEY_ID: z.string().default('minioadmin'),
   S3_ACCESS_KEY_SECRET: z.string().default('minioadmin'),
   S3_PUBLIC_DOMAIN: z.string().default('http://localhost:9000/tzj-uploads-dev'),
+  /** 生产端点不含 localhost/minio 时需显式开启 path-style（自托管 MinIO 必填 true） */
+  S3_FORCE_PATH_STYLE: z.enum(['true', 'false']).default('false'),
 
   // Analytics
   /** 高德 Web 服务 Key — GPS 逆地理（优先读后台集成凭证，env 兜底） */

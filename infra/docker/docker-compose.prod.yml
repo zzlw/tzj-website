@@ -4,6 +4,7 @@ services:
   postgres:
     image: postgres:15-alpine
     restart: unless-stopped
+    mem_limit: 384m
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-tzj}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?required}
@@ -16,26 +17,39 @@ services:
       timeout: 5s
       retries: 5
 
-  redis:
-    image: redis:7-alpine
+  minio:
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z # 锁定版本，生产禁 latest
     restart: unless-stopped
-    command: ["redis-server", "--appendonly", "yes"]
+    mem_limit: 256m
+    command: server /data
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?required}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?required}
+      # 浏览器预签名直传所需 CORS（与 dev 对齐，域名换生产值）
+      MINIO_API_CORS_ALLOW_ORIGIN: "https://${WEB_DOMAIN},https://${ADMIN_DOMAIN}"
+      MINIO_API_CORS_ALLOW_METHODS: "GET,PUT,POST,HEAD"
+      MINIO_API_CORS_ALLOW_HEADERS: "*"
     volumes:
-      - redisdata:/data
+      - miniodata:/data
+    expose:
+      - "9000" # 仅 compose 内网，不映射宿主机端口；生产不开 9001 Console
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   api:
     image: ${IMAGE_REGISTRY}/tzj-api:${API_TAG:-${IMAGE_TAG:-latest}}
     restart: unless-stopped
+    mem_limit: 512m
     env_file: .env.prod
+    environment:
+      NODE_OPTIONS: "--max-old-space-size=384"
     depends_on:
       postgres:
         condition: service_healthy
-      redis:
+      minio:
         condition: service_healthy
     expose:
       - "4000"
@@ -49,6 +63,9 @@ services:
   web:
     image: ${IMAGE_REGISTRY}/tzj-web:${WEB_TAG:-${IMAGE_TAG:-latest}}
     restart: unless-stopped
+    mem_limit: 320m
+    environment:
+      NODE_OPTIONS: "--max-old-space-size=256"
     depends_on:
       api:
         condition: service_healthy
@@ -58,6 +75,9 @@ services:
   admin:
     image: ${IMAGE_REGISTRY}/tzj-admin:${ADMIN_TAG:-${IMAGE_TAG:-latest}}
     restart: unless-stopped
+    mem_limit: 320m
+    environment:
+      NODE_OPTIONS: "--max-old-space-size=256"
     depends_on:
       api:
         condition: service_healthy
@@ -75,7 +95,7 @@ services:
       ADMIN_DOMAIN: ${ADMIN_DOMAIN}
       API_DOMAIN: ${API_DOMAIN}
       STATIC_DOMAIN: ${STATIC_DOMAIN}
-      OSS_DOMAIN: ${OSS_DOMAIN}
+      BASE_DOMAIN: ${BASE_DOMAIN}
       NGINX_ENVSUBST_FILTER: "DOMAIN"
     volumes:
       - ./nginx/templates:/etc/nginx/templates:ro
@@ -108,4 +128,4 @@ services:
 volumes:
   pgdata:
   acme-data:
-  redisdata:
+  miniodata:
