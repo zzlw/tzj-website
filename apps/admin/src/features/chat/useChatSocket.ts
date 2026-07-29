@@ -2,9 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Socket } from 'socket.io-client';
+import { API_BASE } from '@/lib/config';
 import type { ChatMessage, ChatRoom, PresenceStatus } from './types';
 
-const SOCKET_URL = (process.env.NEXT_PUBLIC_CHAT_SOCKET_URL ?? 'http://localhost:4000').replace(
+// 聊天 Socket.IO 地址：默认取主 API 的 origin（复用已注入的 NEXT_PUBLIC_ADMIN_API_URL），
+// 独立部署时可用 NEXT_PUBLIC_CHAT_SOCKET_URL 覆盖。切勿写死 localhost：那会在构建
+// 时烤进镜像导致生产环境连到 ws://localhost:4000。
+const SOCKET_URL = (process.env.NEXT_PUBLIC_CHAT_SOCKET_URL ?? new URL(API_BASE).origin).replace(
   /\/$/,
   '',
 );
