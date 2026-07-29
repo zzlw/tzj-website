@@ -79,10 +79,10 @@ server {
         proxy_http_version 1.1;
         proxy_set_header Host $host;    # 关键：保留 Host，SigV4 签名才能校验通过
         proxy_set_header X-Real-IP $remote_addr;
-        # 大文件上传（后台媒体上传 / 迁移同步）：默认 proxy_request_buffering on 会先把整个
-        # body 缓冲到临时文件再转发，慢上行下逼近 60s 超时导致断连；关闭缓冲直接流式转发，
-        # 并放宽读写/请求体超时到 300s，覆盖低带宽下 ~100MB 单次 PUT。
-        proxy_request_buffering off;
+        # 大文件上传（后台媒体上传 / 迁移同步）：不能关 proxy_request_buffering！MinIO SigV4
+        # 用 aws-chunked 流式签名，body 帧与 Content-Length 必须原样透传；关缓冲会让 nginx 改
+        # 用 chunked 重编码转发，破坏签名导致 minio 返 400。保留默认缓冲（原样保留 body），
+        # 仅放宽读写/请求体超时到 300s，覆盖低带宽下 ~100MB 单次 PUT 的缓冲耗时。
         proxy_read_timeout 300s;
         proxy_send_timeout 300s;
         client_body_timeout 300s;
