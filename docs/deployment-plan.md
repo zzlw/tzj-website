@@ -413,6 +413,10 @@ docker run --rm --network tzj_default --env-file /opt/tzj/.env.prod \
 
 > ⚠️ 顺序硬约束：`ci.yml` 的 docker-build job 引用 `vars.NEXT_PUBLIC_*` 作 build-args，web 的 `lib/env.ts` 缺值会 fail-fast——**先配齐上表 Vars，再把本地 main 推上 GitHub**，否则首次 CI 直接飘红。
 
+> ⚠️ **旧配置残留坑（首次部署实测）**：仓库 `zzlw/tzj-website` 曾用于旧项目（jiawen.live / OSS / `ECS_HOST=REDACTED-IP` / `ECS_USER=root`），残留了一批 24 天前的 Vars/Secrets。**首次部署前必须逐项 `gh variable list` / `gh secret list` 核对并覆盖上表 9 个 Vars + 3 个 Secrets**——尤其 `ECS_HOST`/`ECS_USER`/`NEXT_PUBLIC_*` 全指向旧环境；`NEXT_PUBLIC_*` 是构建期烤进镜像，配错会导致前端连错域名。其余无 workflow 引用的残留项（`DATABASE_URL`/`CORS_ORIGINS`/`S3_*`/secret 版 `ECS_HOST` 等）是旧 SSH-注入式部署遗物，当前架构运行时 env 走服务器 `/opt/tzj/.env.prod`，可忽略。
+
+> 🔑 **专用部署密钥**：CI 用 `~/.ssh/tzj_deploy`（ed25519，与个人密钥隔离），公钥已装入 deploy 用户 `authorized_keys`，私钥进 `gh secret set ECS_SSH_KEY`。若换机重建 CI，需重新 `ssh-keygen` 并把公钥追加到服务器。
+
 ### 5.3 部署脚本
 
 复用 `infra/docker/deploy.sh`（tag 持久化 → pull → prisma migrate → 滚动更新 → 健康检查 → smoke test），无需改动；MinIO 属基础设施容器，随 `compose up -d` 常驻，不参与滚动更新。
@@ -567,7 +571,7 @@ rsync -av infra/docker/docker-compose.prod.yml infra/docker/docker-compose.acme.
 | 3 | ~~改造 infra：compose（+minio/−redis/mem_limit）+ nginx 模板（minio 反代 + 裸域 301）+ env example（域名段 + S3 段）+ s3.service.ts forcePathStyle（§4.1–4.6）~~ ✅ | PR 合入 main |
 | 4 | ~~ECS 铺环境文件，启动 postgres/minio/acme/gateway，出证书~~ ✅ | 基础设施就绪 |
 | 5 | ~~MinIO bucket 初始化 + 本地媒体对象同步（§4.4 / §4.5.2）~~ ✅（1153 对象/556MiB 已对齐） | 静态资源可访问 |
-| 6 | GitHub Secrets/Vars 配置，触发 `deploy.yml` | 首次上线（表结构就绪） |
+| 6 | ~~GitHub Secrets/Vars 配置，触发 `deploy.yml`~~ ✅（9 Vars + 3 Secrets 已刷新，专用部署密钥 `~/.ssh/tzj_deploy` 已建；run 30462440474 构建 3 镜像 + 部署成功，30 表已建，web/admin/api 全 healthy） | 首次上线（表结构就绪） |
 | 7 | 本地内容数据导入生产库（§4.5.1，11 个后台模块） | 站点内容就绪 |
 | 8 | 备份 crontab + 云监控 + 拨测（§7） | 运维闭环 |
 
