@@ -56,6 +56,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # 生成 Prisma Client（typecheck/build 依赖生成后的类型，generate 无需 DATABASE_URL）
+      - name: Generate Prisma Client
+        run: pnpm --filter @tzj/api exec prisma generate
+
       - name: Lint (Biome)
         run: pnpm run check
 

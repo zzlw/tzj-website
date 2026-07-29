@@ -23,7 +23,6 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY apps/web/package.json apps/web/
 COPY packages/types/package.json packages/types/
 COPY packages/ui/package.json packages/ui/
-COPY packages/theme/package.json packages/theme/
 
 RUN corepack enable && corepack prepare pnpm@11.9.0 --activate
 RUN pnpm install --frozen-lockfile
