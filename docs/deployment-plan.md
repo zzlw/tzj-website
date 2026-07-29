@@ -301,6 +301,8 @@ ssh tzj-prod "cd /opt/tzj && docker compose -f docker-compose.prod.yml \
 1. **只能对空表导入**：首次 migrate 后表是空的可直接导；若需重跑，先在生产 `TRUNCATE` 上述表（`--single-transaction` 保证失败不留半截数据）。
 2. 密码哈希（bcrypt）自包含、跨环境有效，本地账号用原密码即可登录生产 admin；但 2FA 密文依赖 `SECRETS_ENCRYPTION_KEY`，§8 要求生产密钥独立随机 → 密文跨环境不可解，故 2FA 状态一律重置（步骤 ④）、上线后重新绑定；**上线后立即为所有账号改强密码**。
 3. `settings` 整表迁移即同时覆盖「站点设置」与「客服设置」（chatPrompts 等 key 同表存储）；其中静态资源引用（如 `content/wechat.jpg`）存的是对象 key，不受前缀替换影响。
+4. **应用启动会自动初始化 `access_roles`（10 行预置角色→实际 7）与 `settings.site.public`（实测首次部署后）** ——非空表，直接导入会撞唯一键。导入前先 `TRUNCATE access_roles, settings;`（两表均无外部外键引用，users.role 是普通字符串非外键，可安全 TRUNCATE），再以 dev 为准重导。
+5. **schema 漂移坑（首次部署实测）**：`schema.prisma` 已定义 `InternalDocument.sortOrder`（`@map("sort_order")`）及 `@@index([folderId, sortOrder])`，但长期缺对应 migration——dev 经 `db push` 有该列，生产经 `migrate deploy` 建表时缺列，导致 `internal_documents` 导入报 `column "sort_order" does not exist`，且生产文档中心查询运行时也会报错。已热修补列（`ADD COLUMN IF NOT EXISTS` + 索引）并补 migration `20260729160000_internal_document_sort_order`（幂等）。教训：**导入前应先比对 dev/prod 两库列结构，`db push` 的 schema 变更必须同步生成 migration**。
 
 #### 4.5.2 本地 MinIO 媒体对象 → 生产 MinIO
 
@@ -572,7 +574,7 @@ rsync -av infra/docker/docker-compose.prod.yml infra/docker/docker-compose.acme.
 | 4 | ~~ECS 铺环境文件，启动 postgres/minio/acme/gateway，出证书~~ ✅ | 基础设施就绪 |
 | 5 | ~~MinIO bucket 初始化 + 本地媒体对象同步（§4.4 / §4.5.2）~~ ✅（1153 对象/556MiB 已对齐） | 静态资源可访问 |
 | 6 | ~~GitHub Secrets/Vars 配置，触发 `deploy.yml`~~ ✅（9 Vars + 3 Secrets 已刷新，专用部署密钥 `~/.ssh/tzj_deploy` 已建；run 30462440474 构建 3 镜像 + 部署成功，30 表已建，web/admin/api 全 healthy） | 首次上线（表结构就绪） |
-| 7 | 本地内容数据导入生产库（§4.5.1，11 个后台模块） | 站点内容就绪 |
+| 7 | ~~本地内容数据导入生产库（§4.5.1，11 个后台模块）~~ ✅（users/cases/news/blogs/trade_shows/pages/media_assets/settings/access_roles/文档中心已导入，行数与 dev 一致；`admin@example.com` 登录实测通过） | 站点内容就绪 |
 | 8 | 备份 crontab + 云监控 + 拨测（§7） | 运维闭环 |
 
 ## 10. 全 CLI 操作手册（aliyun CLI + GitHub CLI）
