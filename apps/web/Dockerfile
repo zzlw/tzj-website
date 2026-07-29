@@ -62,7 +62,10 @@ RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
 # 复制 public 静态资源
-COPY --from=builder /app/apps/web/public ./public
+# standalone server.js 位于 /app/apps/web/server.js 且启动时 process.chdir(__dirname)，
+# Next 从 cwd/public 提供静态资源 → 必须落到 /app/apps/web/public（与 .next/static 同级），
+# 否则 public 资源（如 vditor-assets）全部 404。
+COPY --from=builder /app/apps/web/public ./apps/web/public
 
 # 复制 .next/standalone (自动打包好的所有依赖)
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
