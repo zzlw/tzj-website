@@ -148,6 +148,12 @@ export class RolesService implements OnModuleInit {
   }
 
   async getPermissionsForSlug(slug: string): Promise<string[]> {
+    // 超级管理员恒等于代码全量权限：不吃库行、不吃缓存，避免「库里有行但缺新权限点」
+    // （换库/未重启 sync、手工改库）导致 admin 丢权限。新权限点上线即对 admin 生效。
+    if (slug === 'admin') {
+      return [...ALL_PERMISSION_IDS];
+    }
+
     const cached = this.cache.get(slug);
     if (cached && cached.expireAt > Date.now()) return cached.perms;
 

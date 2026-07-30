@@ -1,6 +1,11 @@
 import { ForbiddenException } from '@nestjs/common';
 import type { PrismaService } from '../prisma/prisma.service';
-import { assertValidPermissions, PRESET_ROLES, RESERVED_ROLE_SLUGS } from './permissions';
+import {
+  ALL_PERMISSION_IDS,
+  assertValidPermissions,
+  PRESET_ROLES,
+  RESERVED_ROLE_SLUGS,
+} from './permissions';
 import { RolesService } from './roles.service';
 
 /**
@@ -78,6 +83,32 @@ const CUSTOM_ROLE: RoleRow = {
   permissions: ['chat.view'],
   isSystem: false,
 };
+
+describe('RolesService.getPermissionsForSlug', () => {
+  it('admin 恒返回代码全量权限，即使库行缺失新权限点', async () => {
+    const staleAdmin: RoleRow = {
+      id: 'r-admin',
+      slug: 'admin',
+      name: '超级管理员',
+      description: null,
+      permissions: ['content.view'], // 故意残缺，模拟灵犀上线前的生产快照
+      isSystem: true,
+    };
+    const { prisma } = buildFakePrisma([staleAdmin]);
+    const service = new RolesService(prisma);
+
+    const perms = await service.getPermissionsForSlug('admin');
+    expect(perms).toEqual([...ALL_PERMISSION_IDS]);
+    expect(perms).toContain('lingxi.use');
+  });
+
+  it('非 admin 角色仍优先吃数据库行', async () => {
+    const { prisma } = buildFakePrisma([CUSTOM_ROLE]);
+    const service = new RolesService(prisma);
+
+    await expect(service.getPermissionsForSlug('ops')).resolves.toEqual(['chat.view']);
+  });
+});
 
 describe('RolesService 角色写操作 admin 硬校验（防相邻提权）', () => {
   const createDto = { name: '测试角色', slug: 'test-role', permissions: ['chat.view'] };
