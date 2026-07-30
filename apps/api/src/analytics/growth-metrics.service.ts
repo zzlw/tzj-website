@@ -317,9 +317,29 @@ export class GrowthMetricsService {
       _count: { id: true },
     });
 
-    // 逐渠道串行计算（渠道枚举仅 7 个，串行可接受；每渠道 fetch→map→count 三步）
+    // 逐渠道串行计算（渠道枚举仅 7 个，串行可接受）
     const funnelData: ChannelFunnelRow[] = [];
     for (const channel of channels) {
+      // 访客/深度浏览两层身份口径与 getSources 对齐：COALESCE(visitorId, sessionId)，
+      // 兼容无 visitorId 的历史数据（生产旧 schema 未采集 visitorId）
+      const [stat] = await this.prisma.$queryRaw<Array<{ visitors: bigint; engaged: bigint }>>`
+        SELECT
+          COUNT(*)::bigint AS visitors,
+          (COUNT(*) FILTER (WHERE pv >= 2))::bigint AS engaged
+        FROM (
+          SELECT COALESCE("visitorId", "sessionId") AS ident, COUNT(*) AS pv
+          FROM "page_views"
+          WHERE "isBot" = false
+            AND "createdAt" >= ${range.from} AND "createdAt" <= ${range.to}
+            AND "trafficSource" IS NOT DISTINCT FROM ${channel.trafficSource}
+            AND COALESCE("visitorId", "sessionId") IS NOT NULL
+          GROUP BY 1
+        ) t
+      `;
+      const visitors = Number(stat?.visitors ?? 0n);
+      const engaged = Number(stat?.engaged ?? 0n);
+
+      // 询盘/客户两层仍按真实 visitorId 关联（sessionId 无法关联转化记录）
       const rows = await this.prisma.pageView.findMany({
         where: {
           trafficSource: channel.trafficSource,
@@ -331,26 +351,8 @@ export class GrowthMetricsService {
         select: { visitorId: true },
       });
       const ids = rows.map((r) => r.visitorId as string);
-      const visitors = ids.length;
 
-      // 深度浏览（Phase1 简化：同一访客 PV ≥ 2 即视为 engaged，
-      // 规避 localePrefix 路径维护；行为事件表延至 Phase2）
-      const engaged = visitors
-        ? (
-            await this.prisma.pageView.groupBy({
-              by: ['visitorId'],
-              where: {
-                trafficSource: channel.trafficSource,
-                createdAt: { gte: range.from, lte: range.to },
-                visitorId: { in: ids },
-              },
-              _count: { id: true },
-              having: { id: { _count: { gte: 2 } } },
-            })
-          ).length
-        : 0;
-
-      const [inquiries, customers] = visitors
+      const [inquiries, customers] = ids.length
         ? await Promise.all([
             this.prisma.contact.count({
               where: {
