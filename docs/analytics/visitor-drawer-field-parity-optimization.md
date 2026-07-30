@@ -1,7 +1,7 @@
 # 访客详情抽屉信息补齐优化方案（表格 ↔ 抽屉字段对齐）
 
 **日期**: 2026-07-30
-**状态**: 待评审
+**状态**: 已代码级核查（v1.1，修正实现位置勘误）
 **问题来源**: 访客中心「按访客」表格展示的多项信息（来源渠道明细、兼容性、入口页、最后访问 IP 等）在访客详情抽屉中缺失或弱化，用户下钻后反而丢失上下文。
 **适用前提**: 小而美团队（后台用户 ≤ 100 人），防止过度设计、保持简洁实用。
 
@@ -52,8 +52,8 @@
 改动文件：`apps/admin/src/components/analytics/VisitorActivityTimeline.tsx`
 
 1. **兼容性**：`TechInfoBar` 新增「兼容性」项，复用 `classifyBrowserSupport(browser, browserVersion)` + `BROWSER_SUPPORT_LABELS`，徽标样式与 `device-columns.tsx` 保持一致（可将徽标渲染小函数提取到 `browser-support.ts` 或 device-columns 导出复用，避免两处样式漂移）。
-2. **最近访问时段**：「最近访问」值追加时段副注，复用 `PeopleVisitorLens` 中的时段格式化逻辑（若该函数目前是模块私有，提升到 `features/analytics.ts` 共享）。
-3. **入口页（推导版）**：`TechInfoBar` 新增「入口页」项，取 `sessions` 按时间最早会话的第一条 view 的 path；无会话数据时显示 `—`。等宽字体 + 截断，与表格列口径一致。
+2. **最近访问时段**：「最近访问」值追加时段副注，直接 import 复用 `features/analytics.ts` 已导出的 `formatTimeOfDay`（无需任何抽取/提升——该函数早已导出，`PeopleVisitorLens` 即从此处 import）。
+3. **入口页（推导版）**：`TechInfoBar` 新增「入口页」项，取**时间最早**会话的第一条 view 的 path。⚠️ 注意 `sessions` 由后端 `groupVisitorSessions` 按 `startedAt` **降序**排列，`sessions[0]` 是最近会话而非最早，落地页须取 `sessions[sessions.length - 1].views[0].path`。无会话数据时显示 `—`。等宽字体 + 截断，与表格列口径一致。
 4. **最后访问 IP 显式化**：「历史网络 / 地区」区块标题行右侧或首条标注「最近」，并在 `TechInfoBar` 新增「最后访问 IP」项（取 `networks[0]`，即最近网络），使用 `CopyableIp` 可复制。networks 为空（IP 抽屉场景传 undefined）时不渲染该项。
 
 ### P1 — 后端补返 + 前端渠道归因区块
@@ -74,7 +74,7 @@
    }
    ```
 
-   数据来源与列表查询同源（首触会话记录），无需新查询模式，仅在现有首触取值处多带几个字段。
+   ⚠️ 实现位置勘误：`getVisitorActivity` 走的是**独立的 Prisma `findMany`**（`analytics.service.ts` L1525-1552），其 `select` **未选** utm*/gclid；列表行的 UTM 来自**另一条原生 SQL**（L1250+ `ARRAY_AGG`），二者**不同源**。因此需三步改动：①`findMany` 的 `select` 追加 5 个 UTM 字段 + `gclid`；②`VisitorPageViewRow` 接口（L158-180）补齐这些字段；③用现有 `firstValue()`（L196，首触取值）组装 `attribution`，`landingPath` 亦可用 `firstValue(views, v => v.path)`（views 全局升序，首条即落地页）。机制现成、工时不变，但勿去改列表 SQL。
 2. `resolveVisitorIdentity` 透出 `identifiedAt: string | null`（该值已查询，只是未放入返回对象）。
 
 前端改动：
