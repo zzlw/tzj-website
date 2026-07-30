@@ -1,6 +1,6 @@
 # 灵犀 · AI 投放报告助手 — v1 设计方案
 
-> 状态：待评审（r3，两轮代码核查后修订：鉴权链路、审计口径、类型导入约束等 9 项）
+> 状态：待评审（r4，三轮代码/部署核查后修订：鉴权链路、审计口径、类型导入约束、SSE 反代链路等 13 项）
 > 日期：2026-07-30
 > 范围：B 端（apps/admin）「灵犀」菜单首个落地能力 —— 一句话生成投放报告与建议
 > 参考实现：`~/Desktop/resume/aftersales-agent`（LangGraph + RAG 售后客服 Agent，Python/FastAPI）
@@ -148,7 +148,7 @@ apps/api/src/lingxi/
 SSE 实现注意事项（NestJS/Express 环境实测易踩坑，实现时逐条核对）：
 
 1. 用 `@Res()` 拿原生 Response 手写 `text/event-stream`，**天然绕过** `TransformInterceptor` 的统一包装（该拦截器只作用于返回值路径）。
-2. 响应头：`Content-Type: text/event-stream`、`Cache-Control: no-cache, no-transform`、`X-Accel-Buffering: no`（nginx 反代关闭缓冲），并在每帧后 `res.flush?.()`——全局 `compression()` 会缓冲响应，必须显式 flush 或在该路由禁用压缩。
+2. 响应头：`Content-Type: text/event-stream`、`Cache-Control: no-cache, no-transform`、`X-Accel-Buffering: no`（nginx 反代关闭缓冲），并在每帧后 `res.flush?.()`——全局 `compression()` 会缓冲响应，必须显式 flush 或在该路由禁用压缩。另每 15~20s 发一条 SSE 注释心跳（`: ping\n\n`），防帧间隔超过反代 read timeout（LLM 首 token 慢、长聚合查询时）断连。
 3. 前端不用 `EventSource`：`fetch` POST + `ReadableStream` 手写 SSE 解析器（admin 侧 `lib/sse.ts`）。请求**不直连 API**——admin 的 access token 在 httpOnly cookie 中，须经专用流式 BFF 路由换 Bearer 后透传（见 §7.1；通用 BFF `[...path]` 会全量缓冲响应，不可复用）。
 4. `AuditInterceptor` 按「HTTP 写方法 + 已登录」判定：`POST /lingxi/chat` **会每次落一条审计**（resource=`lingxi`，action=`create`）——接受它，AI 使用行为天然留痕；`lingxi` 不入 `DETAIL_RESOURCES` 白名单，提问内容不进审计详情。会话删除等普通写端点照常被审计。
 5. 全局限流之外，对 `/lingxi/chat` 单独 `@Throttle`（建议 10 次/分）。注意现有 `ClientIpThrottlerGuard` 的 tracker 是**客户端 IP**（BFF 已透传真实 IP），非用户维度；v1 按 IP 口径即可（小团队 IP≈用户），若需严格按用户计数再在 LingxiController 自定义按 `req.user.id` 的 tracker。
@@ -257,6 +257,7 @@ model LingxiMessage {
 配套改动（M1 落地，均为加法）：
 
 - `User` 模型补 `lingxiConversations LingxiConversation[]` 反向关系字段（Prisma 双向关系要求，不影响既有列与数据）；
+- 迁移用 `prisma migrate dev` 产出迁移文件，禁止只 `db push`（开发库/生产库 schema 漂移前车之鉴），生产照常走 `migrate deploy`；
 - `cleanup/trash-cleanup.service.ts` 是**逐模型枚举**清理（现仅 contact / customer / chatRoom），需新增 `lingxiConversation` 的 30 天到期物理删除分支，软删除才能真正闭环。
 
 ### 5.8 权限与 RBAC
@@ -328,7 +329,10 @@ apps/admin/src/app/api/lingxi/stream/route.ts  # 流式 BFF：读 httpOnly cooki
                                                # return new Response(apiRes.body, …) 透传 ReadableStream；
                                                # 401 刷新在开流前完成（复用 tokenRefresh）；
                                                # 同时导出 POST（发起生成）与 GET（重连续播，?cid= 传会话 ID）
-                                               # ——GET 重连同样会被通用 BFF 缓冲，两路都必须走这里
+                                               # ——GET 重连同样会被通用 BFF 缓冲，两路都必须走这里；
+                                               # 须在自身 Response 上重建 SSE 头（Content-Type/Cache-Control/
+                                               # X-Accel-Buffering）——new Response 不继承上游头，nginx 只认这里；
+                                               # 上游地址复用 ADMIN_API_URL（compose 内网直连，勿回落公网域名）
 apps/admin/src/lib/sse.ts           # SSE 解析器（fetch ReadableStream，借鉴参考项目 lib/sse.ts）
 apps/admin/src/hooks/useLingxiChat.ts  # 发送/消费流/重连恢复 状态机 hook
 ```
@@ -387,7 +391,7 @@ packages/types/src/
 ## 9. 环境变量与部署
 
 - 新增 3 个 env（见 §5.9），生产在 ECS `.env` 与后台集成中心二选一配置。
-- SSE 链路有**两跳**：nginx → Next（流式 BFF）→ NestJS，逐跳确认不缓冲——nginx 侧 `proxy_buffering off`（或依赖 `X-Accel-Buffering: no` 响应头）+ `proxy_read_timeout` ≥ 300s；Next 路由须直接透传上游 `ReadableStream`，禁止 `await res.text()`（前车之鉴见 `docs/prod-static-404-and-chat-bff-500-502-fix.md`）。
+- SSE 链路实际只有**一跳 nginx**：浏览器 → nginx → Next（流式 BFF）；Next → NestJS 走 compose 内网 `ADMIN_API_URL`，无反代。因此关键在 Next 的响应：① 流式 BFF 须直接透传上游 `ReadableStream` 并在自身响应上重建 SSE 头（含 `X-Accel-Buffering: no`），禁止 `await res.text()`（前车之鉴见 `docs/prod-static-404-and-chat-bff-500-502-fix.md`）；② **现网 `infra/docker/nginx/tzj.conf` 的 admin server block 未设 `proxy_read_timeout`（默认 60s）也未关缓冲**，M3 交付物包含为该 block 补 `proxy_read_timeout 300s`；缓冲靠 `X-Accel-Buffering: no` 响应头即可，帧间隔靠 §5.2 的心跳兜底。
 - 单实例部署，RunBuffer 进程内存即可；未来横向扩容时替换为 Redis Pub/Sub（接口已按可替换设计）。
 
 ---
@@ -411,7 +415,7 @@ packages/types/src/
 | 成本失控 | 端点级限流（10 次/分/用户）+ 8 轮工具上限 + 结果裁剪 + DeepSeek 单价极低，预估月成本 < ¥10（小而美用户规模） |
 | 数据出境/隐私 | 只传聚合指标，明细接口不注册为工具；LLM 厂商选择国内合规服务（DeepSeek） |
 | 样本量小导致误导性结论 | prompt 强制小样本声明置信度；报告标注数据边界 |
-| SSE 被压缩/缓冲中间件截断 | §5.2 逐条核对（flush、no-transform、X-Accel-Buffering） |
+| SSE 被压缩/缓冲中间件截断 | §5.2/§9 逐条核对：flush、no-transform、SSE 头在 BFF 响应上重建、心跳、nginx read timeout |
 
 ---
 
@@ -419,9 +423,9 @@ packages/types/src/
 
 | 阶段 | 内容 | 验收 |
 |---|---|---|
-| M1 后端骨架 | LingxiModule、Prisma 迁移（含 User 反向关系）、trash-cleanup 注册、LlmClient、权限点三处同步（清单/预设角色/控制器）、env 校验 | Swagger 可见端点；check-permissions.mjs 通过；至少一个预设角色能实际调通；未配置 Key 时返回明确错误 |
+| M1 后端骨架 | LingxiModule、Prisma 迁移（含 User 反向关系；`migrate dev` 产出迁移文件，非 `db push`）、trash-cleanup 注册、LlmClient、权限点三处同步（清单/预设角色/控制器）、env 校验 | Swagger 可见端点；check-permissions.mjs 通过；至少一个预设角色能实际调通；未配置 Key 时返回明确错误 |
 | M2 Agent 核心 | 工具注册表、tool-calling 循环、SSE 8 帧、消息落库 | curl 全帧序列正确；报告含真实聚合数据；域外输入被拒绝 |
-| M3 前端页面 | 流式 BFF 路由、/lingxi 页、SSE 解析、流式 Markdown、时间线、溯源卡片、Sidebar 转正 | 一句话 → 流式完整报告（经 BFF 仍逐帧到达）；刷新后历史完整回放 |
+| M3 前端页面 | 流式 BFF 路由（含 SSE 头重建）、nginx admin block 补 `proxy_read_timeout`、/lingxi 页、SSE 解析、流式 Markdown、时间线、溯源卡片、Sidebar 转正 | 一句话 → 流式完整报告（经 BFF 仍逐帧到达）；刷新后历史完整回放 |
 | M4 流恢复+打磨 | RunBuffer 重连续播、suggest、快捷问题、限流、错误降级 | 生成中刷新不丢回答；typecheck + biome + CI 全绿 |
 
 每阶段独立可合并、可回滚；M1/M2 不影响现有任何页面。
