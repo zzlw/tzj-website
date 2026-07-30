@@ -1,6 +1,6 @@
 # 灵犀 · AI 投放报告助手 — v1 设计方案
 
-> 状态：待评审
+> 状态：待评审（r2，已按代码核查修订鉴权链路等 5 项）
 > 日期：2026-07-30
 > 范围：B 端（apps/admin）「灵犀」菜单首个落地能力 —— 一句话生成投放报告与建议
 > 参考实现：`~/Desktop/resume/aftersales-agent`（LangGraph + RAG 售后客服 Agent，Python/FastAPI）
@@ -70,7 +70,8 @@
 | 前端：快捷问题、折叠时间线、流式 Markdown、建议追问、错误降级 | ✅ 借鉴 UI 交互模式 | 组件用 `@tzj/ui`（Base UI 底座）重写，不复制 shadcn 代码 |
 | Motion 动画库 | ❌ 不引入 | 用现有 `tw-animate-css` + CSS 过渡，避免新依赖 |
 | DeepSeek（OpenAI 兼容） | ✅ 采用 | 按量付费成本极低，与公司规模匹配；OpenAI 兼容协议保留换模型自由 |
-| 前端 Route Handler 代理层 | ❌ 不需要 | admin 已有 `apiClient` 直连 API（fetch 可携带 Authorization 头做 SSE，无 EventSource 限制） |
+| 前端 Route Handler 代理层 | ✅ 需要（专用流式 BFF 路由） | admin 的 access token 存 httpOnly cookie、所有请求经 `/api/bff` 代理（`apiClient.ts`），浏览器拿不到 JWT 无法直连；且通用 BFF `[...path]` 用 `await res.text()` 全量缓冲，SSE 必须走**新增的流式透传路由**（见 §7.1） |
+| SSE（vs 复用现有 Socket.IO） | ✅ 选 SSE | support 模块虽有 `chat.gateway.ts` + admin 已装 socket.io-client，但其房间/在线语义面向人工客服；灵犀是单向流式输出，SSE 的 HTTP 语义与 RunBuffer「从第 0 帧重放」模型天然契合，也不与客服 gateway 耦合 |
 
 ---
 
@@ -80,9 +81,11 @@
 flowchart TB
     subgraph ADMIN["apps/admin — /lingxi 页面"]
         UI["对话 UI（fetch POST + SSE 解析）<br/>流式 Markdown · 取数时间线 · 数据溯源卡片 · 建议追问"]
+        BFF["流式 BFF 路由 /api/lingxi/stream<br/>（httpOnly cookie → Bearer，ReadableStream 透传）"]
+        UI -- "fetch（同源，cookie）" --> BFF
     end
 
-    UI -- "POST /api/v1/lingxi/chat（SSE，JWT）" --> CTRL
+    BFF -- "POST /api/v1/lingxi/chat（SSE，JWT）" --> CTRL
 
     subgraph API["apps/api — LingxiModule（NestJS）"]
         CTRL["LingxiController<br/>chat / stream 重连 / conversations CRUD"]
@@ -146,9 +149,9 @@ SSE 实现注意事项（NestJS/Express 环境实测易踩坑，实现时逐条�
 
 1. 用 `@Res()` 拿原生 Response 手写 `text/event-stream`，**天然绕过** `TransformInterceptor` 的统一包装（该拦截器只作用于返回值路径）。
 2. 响应头：`Content-Type: text/event-stream`、`Cache-Control: no-cache, no-transform`、`X-Accel-Buffering: no`（nginx 反代关闭缓冲），并在每帧后 `res.flush?.()`——全局 `compression()` 会缓冲响应，必须显式 flush 或在该路由禁用压缩。
-3. 前端不用 `EventSource`（无法携带 Authorization 头），沿用参考项目做法：`fetch` POST + `ReadableStream` 手写 SSE 解析器（admin 侧 `lib/sse.ts`）。
+3. 前端不用 `EventSource`：`fetch` POST + `ReadableStream` 手写 SSE 解析器（admin 侧 `lib/sse.ts`）。请求**不直连 API**——admin 的 access token 在 httpOnly cookie 中，须经专用流式 BFF 路由换 Bearer 后透传（见 §7.1；通用 BFF `[...path]` 会全量缓冲响应，不可复用）。
 4. `AuditInterceptor`：SSE 端点为读操作 + 长连接，不参与写审计；会话删除等普通 JSON 端点照常被审计。
-5. 全局限流之外，对 `/lingxi/chat` 单独 `@Throttle`（建议 10 次/分/用户），控成本也防滥用。
+5. 全局限流之外，对 `/lingxi/chat` 单独 `@Throttle`（建议 10 次/分）。注意现有 `ClientIpThrottlerGuard` 的 tracker 是**客户端 IP**（BFF 已透传真实 IP），非用户维度；v1 按 IP 口径即可（小团队 IP≈用户），若需严格按用户计数再在 LingxiController 自定义按 `req.user.id` 的 tracker。
 
 ### 5.3 SSE 帧协议（8 帧，借鉴参考项目并本地化）
 
@@ -215,7 +218,7 @@ SSE 实现注意事项（NestJS/Express 环境实测易踩坑，实现时逐条�
 - 生成任务用独立 async 函数启动，持强引用防 GC；客户端断连（`res.on('close')`）只终止本订阅者的写出，**不 abort LLM 请求**，跑完照常落库。
 - 前端逻辑：进入会话先 GET `conversations/:id`，若 `generating=true` 则连 `stream/:id` 重放续播——刷新页面不丢正在生成的报告。
 
-### 5.7 Prisma 模型（新增，不动已发布模型）
+### 5.7 Prisma 模型（新增两模型；对 `User` 仅加法式补一个反向关系字段）
 
 ```prisma
 // 灵犀对话（v1: 投放报告助手）
@@ -224,7 +227,7 @@ model LingxiConversation {
   userId    String
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   title     String?   // 首条用户消息截断生成
-  deletedAt DateTime? // 软删除，随现有清理任务物理删除
+  deletedAt DateTime? // 软删除；trash-cleanup 为逐模型枚举，需显式注册（见下方说明）
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   messages  LingxiMessage[]
@@ -250,6 +253,11 @@ model LingxiMessage {
 ```
 
 > 会话隔离：所有查询强制 `where userId = req.user.id`，不同管理员互不可见。
+
+配套改动（M1 落地，均为加法）：
+
+- `User` 模型补 `lingxiConversations LingxiConversation[]` 反向关系字段（Prisma 双向关系要求，不影响既有列与数据）；
+- `cleanup/trash-cleanup.service.ts` 是**逐模型枚举**清理（现仅 contact / customer / chatRoom），需新增 `lingxiConversation` 的 30 天到期物理删除分支，软删除才能真正闭环。
 
 ### 5.8 权限与 RBAC
 
@@ -315,12 +323,15 @@ apps/admin/src/components/lingxi/
 ├── LingxiSuggests.tsx              # 建议追问 chips
 ├── LingxiEmptyState.tsx            # 空状态：灵犀声波 icon + 快捷问题预设
 └── LingxiConversationList.tsx      # 会话历史侧列（新建/切换/删除）
+apps/admin/src/app/api/lingxi/stream/route.ts  # 流式 BFF：读 httpOnly cookie 附 Bearer 转发，
+                                               # return new Response(apiRes.body, …) 透传 ReadableStream；
+                                               # 401 刷新在开流前完成（复用 tokenRefresh）
 apps/admin/src/lib/sse.ts           # SSE 解析器（fetch ReadableStream，借鉴参考项目 lib/sse.ts）
 apps/admin/src/hooks/useLingxiChat.ts  # 发送/消费流/重连恢复 状态机 hook
 ```
 
-- 数据请求走既有 `apiClient`（携带 JWT、token 刷新链路复用）；SSE 用同源封装的 `fetch` 流式变体（`apiClient` 补一个 `stream()` 方法，复用其鉴权头与 401 刷新逻辑）。
-- Markdown 渲染复用 `packages/ui` 已有的 `react-markdown`（若未导出渲染组件，则在 `@tzj/ui` 新增 `Markdown` 导出，admin 不直接加依赖）。
+- 普通 JSON 请求（会话列表/详情/删除）照旧走 `apiClient` → 通用 BFF `[...path]`；**仅 SSE 走上述专用流式 BFF 路由**——通用 BFF 用 `await res.text()` 全量缓冲，流经它会退化为一次性吐出。流式路由为同源请求，浏览器自动带 cookie，无 CORS 与 token 暴露问题（备选方案：仿 `api/chat/token` 的作用域短令牌直连 API，v1 不采用，避免扩大令牌面）。
+- Markdown 渲染直接用 `@tzj/ui` 既有的 `MarkdownBody`（react-markdown + `rehypeSanitize`，正好覆盖 LLM 输出的 XSS 面；不用 Vditor 版 `MarkdownPreview`，流式场景太重）。注意 react-markdown 每帧全量重解析，delta 拼接后对渲染做 ~100ms 节流。
 - 组件全部使用 `@tzj/ui`（Base UI 底座）：Button / Textarea / Badge / Collapsible / ScrollArea / Tooltip 等，不复制参考项目的 shadcn 组件源码。
 
 ### 7.2 交互细节（借鉴参考项目 Chat.tsx）
@@ -371,7 +382,7 @@ packages/types/src/
 ## 9. 环境变量与部署
 
 - 新增 3 个 env（见 §5.9），生产在 ECS `.env` 与后台集成中心二选一配置。
-- nginx 反代需确认 SSE 透传：`proxy_buffering off`（或依赖 `X-Accel-Buffering: no` 响应头）、`proxy_read_timeout` ≥ 300s。
+- SSE 链路有**两跳**：nginx → Next（流式 BFF）→ NestJS，逐跳确认不缓冲——nginx 侧 `proxy_buffering off`（或依赖 `X-Accel-Buffering: no` 响应头）+ `proxy_read_timeout` ≥ 300s；Next 路由须直接透传上游 `ReadableStream`，禁止 `await res.text()`（前车之鉴见 `docs/prod-static-404-and-chat-bff-500-502-fix.md`）。
 - 单实例部署，RunBuffer 进程内存即可；未来横向扩容时替换为 Redis Pub/Sub（接口已按可替换设计）。
 
 ---
@@ -382,7 +393,7 @@ packages/types/src/
 |---|---|---|---|
 | `openai` | `apps/api` | OpenAI 兼容 LLM 客户端（DeepSeek） | 官方 SDK，零传递依赖负担；不引 LangChain/ai-sdk |
 
-仅此一个。前端零新增（Markdown 走 `@tzj/ui` 既有 `react-markdown`，SSE 解析手写 ~60 行，动画用现有方案）。
+仅此一个。前端零新增（Markdown 用 `@tzj/ui` 既有 `MarkdownBody`，SSE 解析手写 ~60 行，动画用现有方案）。
 
 ---
 
@@ -403,9 +414,9 @@ packages/types/src/
 
 | 阶段 | 内容 | 验收 |
 |---|---|---|
-| M1 后端骨架 | LingxiModule、Prisma 迁移、LlmClient、权限点、env 校验 | Swagger 可见端点；未配置 Key 时返回明确错误 |
+| M1 后端骨架 | LingxiModule、Prisma 迁移（含 User 反向关系）、trash-cleanup 注册、LlmClient、权限点、env 校验 | Swagger 可见端点；未配置 Key 时返回明确错误 |
 | M2 Agent 核心 | 工具注册表、tool-calling 循环、SSE 8 帧、消息落库 | curl 全帧序列正确；报告含真实聚合数据；域外输入被拒绝 |
-| M3 前端页面 | /lingxi 页、SSE 解析、流式 Markdown、时间线、溯源卡片、Sidebar 转正 | 一句话 → 流式完整报告；刷新后历史完整回放 |
+| M3 前端页面 | 流式 BFF 路由、/lingxi 页、SSE 解析、流式 Markdown、时间线、溯源卡片、Sidebar 转正 | 一句话 → 流式完整报告（经 BFF 仍逐帧到达）；刷新后历史完整回放 |
 | M4 流恢复+打磨 | RunBuffer 重连续播、suggest、快捷问题、限流、错误降级 | 生成中刷新不丢回答；typecheck + biome + CI 全绿 |
 
 每阶段独立可合并、可回滚；M1/M2 不影响现有任何页面。
