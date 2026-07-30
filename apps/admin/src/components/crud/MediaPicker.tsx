@@ -27,6 +27,7 @@ import {
 } from '@/features/media';
 import type { MediaAsset } from '@/features/types';
 import { notifyError, notifySuccess } from '@/lib/notify';
+import { WatermarkOptOutToggle } from './WatermarkOptOutToggle';
 
 const PAGE_SIZE_OPTIONS = [24, 48, 96] as const;
 const DEFAULT_PAGE_SIZE = PAGE_SIZE_OPTIONS[0];
@@ -102,6 +103,14 @@ function MediaPickerTile({
           ) : asset.usageCount && asset.usageCount > 0 ? (
             <span className="absolute left-1 top-1 rounded bg-background/90 px-1 py-0.5 text-xs text-muted-foreground">
               使用中
+            </span>
+          ) : null}
+          {asset.watermarked === true ? (
+            <span
+              className="absolute bottom-1 right-1 rounded bg-background/90 px-1 py-0.5 text-xs text-muted-foreground"
+              title="已烧录水印"
+            >
+              水印
             </span>
           ) : null}
         </button>
@@ -182,6 +191,7 @@ export function MediaPicker({
   const [deleteTarget, setDeleteTarget] = useState<MediaAsset | null>(null);
   const [photoPreviewOpen, setPhotoPreviewOpen] = useState(false);
   const [dismissCooldown, setDismissCooldown] = useState(false);
+  const [skipWatermark, setSkipWatermark] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const dismissBlocked =
@@ -238,6 +248,7 @@ export function MediaPicker({
       setDeleteTarget(null);
       setPhotoPreviewOpen(false);
       setDismissCooldown(false);
+      setSkipWatermark(false);
     }
   }, [open]);
 
@@ -274,7 +285,7 @@ export function MediaPicker({
     let ok = 0;
     for (const file of Array.from(files)) {
       try {
-        await upload.mutateAsync(file);
+        await upload.mutateAsync({ file, watermark: skipWatermark ? 'skip' : undefined });
         ok += 1;
       } catch (e) {
         notifyError(e, `「${file.name}」上传失败`);
@@ -411,19 +422,26 @@ export function MediaPicker({
               className="hidden"
               onChange={(e) => onFiles(e.target.files)}
             />
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => fileRef.current?.click()}
-              disabled={upload.isPending}
-            >
-              {upload.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Upload className="mr-2 h-4 w-4" />
-              )}
-              {upload.isPending ? '上传中…' : '上传新文件'}
-            </Button>
+            <div className="flex flex-wrap items-center gap-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => fileRef.current?.click()}
+                disabled={upload.isPending}
+              >
+                {upload.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Upload className="mr-2 h-4 w-4" />
+                )}
+                {upload.isPending ? '上传中…' : '上传新文件'}
+              </Button>
+              <WatermarkOptOutToggle
+                checked={skipWatermark}
+                onCheckedChange={setSkipWatermark}
+                disabled={upload.isPending}
+              />
+            </div>
             {upload.isError && (
               <p className="mt-2 text-xs text-destructive">
                 上传失败：{(upload.error as Error)?.message}

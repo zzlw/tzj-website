@@ -15,6 +15,7 @@ export async function POST(req: NextRequest) {
   const incoming = await req.formData();
   const file = incoming.get('file');
   const folder = (incoming.get('folder') as string | null) ?? 'uploads';
+  const watermark = incoming.get('watermark');
 
   if (!(file instanceof File)) {
     return NextResponse.json(
@@ -27,6 +28,8 @@ export async function POST(req: NextRequest) {
     const fd = new FormData();
     fd.append('file', file, file.name);
     fd.append('folder', folder);
+    // 单次水印覆盖参数：仅透传合法值，缺省不追加（后端按 auto 处理）
+    if (watermark === 'skip' || watermark === 'force') fd.append('watermark', watermark);
     return fd;
   };
 

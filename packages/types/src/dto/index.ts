@@ -158,6 +158,7 @@ export type {
   WatermarkFolder,
   WatermarkLayout,
   WatermarkMode,
+  WatermarkOverride,
   WatermarkPosition,
 } from './site-media.js';
 export { WATERMARK_POSITION_LABELS } from './site-media.js';

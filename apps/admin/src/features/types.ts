@@ -144,6 +144,8 @@ export interface MediaAsset {
   usageCount?: number;
   /** 是否可通过「替换站点资源」覆盖固定 key */
   isReplaceable?: boolean;
+  /** 水印烧录状态：true=已烧录；false=确认未烧录；null/undefined=未知（历史数据/直传登记） */
+  watermarked?: boolean | null;
 }
 
 export interface ContactItem extends BaseEntity {

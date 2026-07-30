@@ -1,6 +1,6 @@
 # 媒体水印按次覆盖（Opt-out / Force）设计方案
 
-> 状态：设计定稿（v2，经评审修订），待实施
+> 状态：设计定稿（v3，经三轮评审修订，已冻结），待实施
 > 日期：2026-07-30
 > 关联模块：`apps/api/src/media/`、`apps/admin`（媒体库 / MediaPicker）、`packages/types`
 
@@ -38,7 +38,7 @@
 
 | 候选 | 描述 | 结论 |
 |------|------|------|
-| A. 上传时豁免 + 资产标记 | `/media/upload` 增加 `watermark` 覆盖参数；`MediaAsset` 增加 `watermarked` 字段 | ✅ **采纳**。~6 个文件的小改动，直接解决痛点 1/3 |
+| A. 上传时豁免 + 资产标记 | `/media/upload` 增加 `watermark` 覆盖参数；`MediaAsset` 增加 `watermarked` 字段 | ✅ **采纳**。12 处小改动（见第 5 节），直接解决痛点 1 与痛点 3 |
 | B. 双副本 | 原图 + 水印衍生图各存一份 | ⏸ 暂缓。本项目为小而美官网后台（个位数运营人员），存储翻倍与逻辑复杂度不划算；列为演进方向 |
 | C. 交付时叠加 | 生产走 OSS 图片处理参数，本地 MinIO 走代理 | ⏸ 暂缓。本地/生产行为不一致 + URL 改造面大；若未来防盗需求升级再评估 |
 
@@ -79,7 +79,7 @@ model MediaAsset {
 }
 ```
 
-- 迁移：`prisma migrate dev --name media-asset-watermarked`（历史行保持 null，不回填、不猜测）；
+- 迁移：`prisma migrate dev --name media-asset-watermarked`（历史行保持 null，不回填、不猜测）。**必须产出迁移文件、禁止 `db push`**：生产库靠 `migrate deploy` 应用，本项目踩过"开发 db push 与生产 migrate deploy 漂移"的坑，新增列若不经迁移文件会在生产发布时丢失；
 - 赋值来源是**实际处理结果**而非请求参数：`WatermarkService` 返回"是否真的烧录了"（见 4.3），跳过（尺寸不足、SVG/GIF、ffmpeg 缺失、处理异常回退）一律记 `false`。这保证字段语义是"文件事实"而不是"用户意图"；
 - **`false` 与 `null` 严格区分**：`false` 仅在服务端亲手处理过文件buffer 且未烧录时写入；服务端没经手文件内容的链路（presign 直传登记、历史数据）一律 `null`。这一区分是未来"批量补水印"工具（第 7 节）按 `false` 筛选时不误伤的前提。
 
@@ -139,8 +139,10 @@ export async function uploadMedia(
   file: File, folder = 'uploads',
   watermark: WatermarkOverride = 'auto',
 ): Promise<MediaAsset>
-// FormData 追加 fd.append('watermark', watermark)
-// useUploadMedia 的 mutationFn 参数改为 { file, watermark? } 或追加可选参数
+// 仅在非默认值时追加字段，与 BFF "缺省不透传"保持一致：
+// if (watermark !== 'auto') fd.append('watermark', watermark)
+// useUploadMedia 的 mutationFn 参数定为对象形式 { file, watermark? }：
+// 两个调用方（media/page.tsx 循环、MediaPicker）都需传 toggle 状态，对象形式改造点最少
 ```
 
 #### BFF `app/api/media/upload/route.ts`
@@ -154,7 +156,7 @@ export async function uploadMedia(
 | 媒体库页 `media/page.tsx` 上传按钮 | 上传按钮旁增加一个 Switch/Checkbox「本次上传不加水印」，**恒显示、不做全局状态联动**；选中后本批次所有文件带 `watermark=skip`，上传完成后自动复位为不选中（防遗忘常开）。tooltip 注明「全局水印关闭时此选项无效果」 |
 | `MediaPicker.tsx` 上传区 | 同上，复用同一个小组件（建议抽 `WatermarkOptOutToggle`），置于上传按钮附近 |
 | `MarkdownEditor.tsx`（Vditor 拖拽上传） | **不加开关**，恒为 `auto`。编辑器内贴图是 CMS 正文配图，正是水印的目标场景；需要无水印图时先去媒体库上传再插入 |
-| 媒体库列表/卡片 | `watermarked === true` 的资产显示一个小徽标（如 Stamp 图标 + tooltip「已烧录水印」）；`false` 不显示；`null`（历史数据）不显示。可选：列表筛选器增加"含水印/无水印"（低优先级，可后做） |
+| 媒体库列表/卡片 | `watermarked === true` 的资产显示一个小徽标（如 Stamp 图标 + tooltip「已烧录水印」）；`false` 不显示；`null`（历史数据）不显示。`MediaPicker` 网格同步显示同一徽标（选图时能直接看出"这张带水印"）。可选：列表筛选器增加"含水印/无水印"（低优先级，可后做） |
 
 **明确不做"仅全局开启时显示"的联动**：读全局水印状态需 `GET /settings/site/media`（要求 `settings.view` 权限），若在上传入口拉取，无权限的上传者每次进页都会打一个 403（apiClient 的 403 特判只针对 2FA，其余走错误路径产生噪音），且会导致不同角色看到不同 UI。恒显示 + tooltip 是更简单一致的方案：勾了但全局关闭 → 本来就不加水印，无副作用；净省一个查询和整段条件逻辑。
 
@@ -163,7 +165,8 @@ export async function uploadMedia(
 1. `skip` 只作用于"本次上传的文件"，不触碰全局配置，**消除了"关全局→上传→开回来"期间其他人上传漏水印的并发窗口**——这是本方案相对现状最重要的安全改进；
 2. `force` 不会绕过 `enabled=false`：全局关闭意味着"本站当前不使用水印"，单次上传不应能激活一个未配置/已停用的水印样式；
 3. C 端（apps/web）零改动、零感知：交付的仍是 S3 上的最终文件；
-4. `watermarked` 为可空布尔，历史数据不回填，任何展示逻辑必须容忍 `null`。
+4. `watermarked` 为可空布尔，历史数据不回填，任何展示逻辑必须容忍 `null`；
+5. **发布兼容性：零风险、无部署顺序要求**——可空新列 + 纯可选参数，旧 admin 前端打新 API 不传字段走 `auto`，新前端打旧 API 多余的 multipart 字段被忽略；回滚时先退代码即可，残留列多余但无害，无不可逆操作。
 
 ---
 
@@ -180,10 +183,11 @@ export async function uploadMedia(
 | 7 | `apps/admin/src/app/api/media/upload/route.ts` | BFF 透传 `watermark` |
 | 8 | `apps/admin/src/components/crud/WatermarkOptOutToggle.tsx`（新增） | 「本次上传不加水印」开关小组件 |
 | 9 | `apps/admin/src/app/(dashboard)/media/page.tsx` | 集成开关 + 列表水印徽标 |
-| 10 | `apps/admin/src/components/crud/MediaPicker.tsx` | 集成开关 |
+| 10 | `apps/admin/src/components/crud/MediaPicker.tsx` | 集成开关 + 网格水印徽标 |
 | 11 | `apps/admin/src/features/types.ts`（MediaAsset 前端类型） | 补 `watermarked?: boolean \| null` |
+| 12 | `apps/api/src/media/watermark.service.spec.ts`（新增） | 第 6 节测试计划的单测与接口层用例（media 模块首个 spec） |
 
-> 所有权注记（AGENTS.md）：#1 涉及 `packages/types` 新增类型，属"仅允许新增"范围（A1 审批项，本文档即提案）；其余均为 A2 业务代码。
+> 所有权注记（AGENTS.md）：#1 涉及 `packages/types` 新增类型，属"仅允许新增"范围；#2 涉及 `prisma/schema.prisma`，按所有权矩阵为"A2 提议, A1 审批"。两项均为 A1 审批项，本文档即提案；其余均为 A2 业务代码。
 
 ## 6. 测试计划
 
@@ -194,7 +198,7 @@ export async function uploadMedia(
    - `override=auto` → 与现有行为逐项一致（回归）；
    - 小图/SVG/GIF 在 `force` 下仍跳过（`watermarked=false`）；
    - 视频 + ffmpeg 不可用（stub `checkFfmpeg` 为 false）→ 回退原文件，`watermarked=false`。
-2. **接口测试**：`watermark` 传非法值（如 `"yes"`）按 `auto` 处理，不报 400；不传字段行为与改造前完全一致；`register` 登记后 `watermarked` 为 `null`。
+2. **接口层单测**（并入 controller/service 层 spec，用 Nest Testing Module，与现有测试形态一致，**不新搭 supertest e2e 基建**）：`watermark` 传非法值（如 `"yes"`）按 `auto` 处理，不报 400（归一化逻辑抽纯函数即可直接测）；不传字段行为与改造前完全一致；`register` 登记后 `watermarked` 为 `null`。
 3. **E2E 手工**：全局开启水印 → 媒体库勾选"不加水印"上传 → 下载校验无水印、列表无徽标；不勾选上传 → 有水印、有徽标；MarkdownEditor 贴图 → 有水印；替换站点资源 → 该记录 `watermarked` 变回 `null`。
 4. **迁移验证**：迁移后历史 `MediaAsset` 行 `watermarked` 为 null，媒体库列表正常渲染。
 

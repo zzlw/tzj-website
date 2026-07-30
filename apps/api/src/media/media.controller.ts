@@ -21,6 +21,7 @@ import type { AuthUser } from '../auth/roles';
 import { S3Service } from '../storage/s3.service';
 import { PresignDto, RegisterMediaDto } from './dto/media.dto';
 import { MediaService } from './media.service';
+import { normalizeWatermarkOverride } from './watermark.service';
 
 @ApiTags('media')
 @ApiBearerAuth()
@@ -72,16 +73,28 @@ export class MediaController {
       properties: {
         file: { type: 'string', format: 'binary' },
         folder: { type: 'string', default: 'uploads' },
+        watermark: {
+          type: 'string',
+          enum: ['auto', 'skip', 'force'],
+          default: 'auto',
+          description: '单次水印覆盖：skip=本次不加；force=本次强制加（仍受全局总开关约束）',
+        },
       },
     },
   })
   async upload(
     @UploadedFile() file: Express.Multer.File,
     @Body('folder') folder: string | undefined,
+    @Body('watermark') watermark: string | undefined,
     @CurrentUser() user: AuthUser,
   ) {
     if (!file) throw new BadRequestException('未接收到文件');
-    return this.media.uploadAndRegister(file, folder, user?.id);
+    return this.media.uploadAndRegister(
+      file,
+      folder,
+      user?.id,
+      normalizeWatermarkOverride(watermark),
+    );
   }
 
   @RequirePermissions('media.upload')

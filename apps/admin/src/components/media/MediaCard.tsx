@@ -10,7 +10,16 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@tzj/ui';
-import { Check, Copy, Download, ExternalLink, RefreshCw, RotateCcw, Trash2 } from 'lucide-react';
+import {
+  Check,
+  Copy,
+  Download,
+  Droplets,
+  ExternalLink,
+  RefreshCw,
+  RotateCcw,
+  Trash2,
+} from 'lucide-react';
 import { Can } from '@/components/Can';
 import { isMediaDeletable } from '@/features/media';
 import type { MediaAsset } from '@/features/types';
@@ -24,7 +33,8 @@ import {
 } from './media-utils';
 
 function MediaStatusBadges({ asset }: { asset: MediaAsset }) {
-  if (!asset.isSiteResource && !(asset.usageCount && asset.usageCount > 0)) {
+  const hasWatermark = asset.watermarked === true;
+  if (!asset.isSiteResource && !(asset.usageCount && asset.usageCount > 0) && !hasWatermark) {
     return null;
   }
   return (
@@ -38,6 +48,17 @@ function MediaStatusBadges({ asset }: { asset: MediaAsset }) {
         <Badge variant="secondary" className="h-5 px-1.5 text-xs">
           使用中 · {asset.usageCount}
         </Badge>
+      ) : null}
+      {hasWatermark ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Badge variant="secondary" className="h-5 gap-0.5 px-1.5 text-xs">
+              <Droplets className="h-3 w-3" />
+              水印
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent>已烧录水印</TooltipContent>
+        </Tooltip>
       ) : null}
     </div>
   );

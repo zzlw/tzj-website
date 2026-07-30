@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { WatermarkOverride } from '@tzj/types';
 import { ApiError, api, type ListResult } from '@/lib/apiClient';
 import { BASE_PATH } from '@/lib/config';
 import type { MediaAsset } from './types';
@@ -16,10 +17,16 @@ export function useMediaList(params?: Params) {
 }
 
 /** 上传单个文件到媒体库（走媒体专用 BFF，multipart）。 */
-export async function uploadMedia(file: File, folder = 'uploads'): Promise<MediaAsset> {
+export async function uploadMedia(
+  file: File,
+  folder = 'uploads',
+  watermark: WatermarkOverride = 'auto',
+): Promise<MediaAsset> {
   const fd = new FormData();
   fd.append('file', file);
   fd.append('folder', folder);
+  // 仅在非默认值时追加，与 BFF“缺省不透传”保持一致
+  if (watermark !== 'auto') fd.append('watermark', watermark);
 
   const res = await fetch(`${BASE_PATH}/api/media/upload`, {
     method: 'POST',
@@ -41,7 +48,8 @@ export async function uploadMedia(file: File, folder = 'uploads'): Promise<Media
 export function useUploadMedia(folder = 'uploads') {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (file: File) => uploadMedia(file, folder),
+    mutationFn: ({ file, watermark }: { file: File; watermark?: WatermarkOverride }) =>
+      uploadMedia(file, folder, watermark),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['media'] }),
   });
 }

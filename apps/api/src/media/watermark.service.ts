@@ -5,7 +5,12 @@ import * as path from 'node:path';
 import { promisify } from 'node:util';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import type { SiteMediaSettings, WatermarkLayout, WatermarkPosition } from '@tzj/types';
+import type {
+  SiteMediaSettings,
+  WatermarkLayout,
+  WatermarkOverride,
+  WatermarkPosition,
+} from '@tzj/types';
 import sharp from 'sharp';
 import { SettingsService } from '../settings/settings.service';
 import { S3Service } from '../storage/s3.service';
@@ -20,11 +25,18 @@ const FONT_STACK =
 
 type WatermarkConfig = SiteMediaSettings['watermark'];
 
+/** 宽容解析单次上传的水印覆盖参数：非法/缺省值一律回退 auto，不报 400 */
+export function normalizeWatermarkOverride(value: unknown): WatermarkOverride {
+  return value === 'skip' || value === 'force' ? value : 'auto';
+}
+
 export interface ProcessedMedia {
   buffer: Buffer;
   mimeType: string;
   width?: number;
   height?: number;
+  /** 本次是否真的烧录了水印（按实际处理结果，非请求意图） */
+  watermarked: boolean;
 }
 
 @Injectable()
@@ -38,10 +50,19 @@ export class WatermarkService {
     private readonly config: ConfigService,
   ) {}
 
-  async processUpload(buffer: Buffer, mimeType: string, folder: string): Promise<ProcessedMedia> {
+  async processUpload(
+    buffer: Buffer,
+    mimeType: string,
+    folder: string,
+    override: WatermarkOverride = 'auto',
+  ): Promise<ProcessedMedia> {
+    if (override === 'skip') {
+      return { buffer, mimeType, watermarked: false };
+    }
+
     const config = (await this.settings.getSiteMediaSettings()).watermark;
-    if (!this.shouldProcess(config, mimeType, folder)) {
-      return { buffer, mimeType };
+    if (!this.shouldProcess(config, mimeType, folder, override)) {
+      return { buffer, mimeType, watermarked: false };
     }
 
     try {
@@ -55,17 +76,26 @@ export class WatermarkService {
       this.logger.warn(`水印处理失败，已回退为原文件 (${mimeType}): ${(err as Error).message}`);
     }
 
-    return { buffer, mimeType };
+    return { buffer, mimeType, watermarked: false };
   }
 
-  private shouldProcess(config: WatermarkConfig, mimeType: string, folder: string) {
+  private shouldProcess(
+    config: WatermarkConfig,
+    mimeType: string,
+    folder: string,
+    override: WatermarkOverride,
+  ) {
+    // force 仅要求全局 enabled（总开关兼水印内容校验门槛），跳过目录/类型适用范围检查；
+    // SVG/GIF 与最小尺寸等“技术不可行”检查对 force 仍生效。
     if (!config.enabled) return false;
-    if (!config.applyToFolders.includes(folder as 'uploads' | 'cms')) return false;
+    if (override !== 'force' && !config.applyToFolders.includes(folder as 'uploads' | 'cms')) {
+      return false;
+    }
     if (mimeType.startsWith('image/')) {
-      return config.applyToImages && !SKIP_IMAGE_MIME.has(mimeType);
+      return (override === 'force' || config.applyToImages) && !SKIP_IMAGE_MIME.has(mimeType);
     }
     if (mimeType.startsWith('video/')) {
-      return config.applyToVideos;
+      return override === 'force' || config.applyToVideos;
     }
     return false;
   }
@@ -81,7 +111,7 @@ export class WatermarkService {
     const height = metadata.height ?? 0;
 
     if (width < config.minWidth || height < config.minHeight) {
-      return { buffer, mimeType, width, height };
+      return { buffer, mimeType, width, height, watermarked: false };
     }
 
     const overlay = await this.buildFullOverlay(config, width, height);
@@ -103,6 +133,7 @@ export class WatermarkService {
       mimeType: outMime,
       width: output.info.width,
       height: output.info.height,
+      watermarked: true,
     };
   }
 
@@ -300,7 +331,7 @@ export class WatermarkService {
   ): Promise<ProcessedMedia> {
     if (!(await this.checkFfmpeg())) {
       this.logger.warn('未检测到 ffmpeg，已跳过视频水印');
-      return { buffer, mimeType };
+      return { buffer, mimeType, watermarked: false };
     }
 
     const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'tzj-wm-'));
@@ -350,7 +381,7 @@ export class WatermarkService {
       );
 
       const out = await fs.readFile(outputPath);
-      return { buffer: out, mimeType };
+      return { buffer: out, mimeType, watermarked: true };
     } finally {
       await fs.rm(tmpDir, { recursive: true, force: true }).catch(() => undefined);
     }

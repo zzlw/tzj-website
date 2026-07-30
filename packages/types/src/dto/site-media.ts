@@ -15,6 +15,9 @@ export type WatermarkMode = 'text' | 'image';
 /** 可加水印的媒体库目录（不含 content 站点静态资源） */
 export type WatermarkFolder = 'uploads' | 'cms';
 
+/** 单次上传的水印覆盖参数：auto=按全局设置；skip=本次不加；force=本次强制加（仍受 enabled 总开关约束） */
+export type WatermarkOverride = 'auto' | 'skip' | 'force';
+
 /** 后台媒体处理设置（不暴露给 C 端） */
 export interface SiteMediaSettings {
   watermark: {

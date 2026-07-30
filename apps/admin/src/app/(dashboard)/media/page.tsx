@@ -23,6 +23,7 @@ import {
 import { ImageOff, Loader2, Search, Upload, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Can } from '@/components/Can';
+import { WatermarkOptOutToggle } from '@/components/crud/WatermarkOptOutToggle';
 import { MediaCard } from '@/components/media/MediaCard';
 import { MediaPreviewDialog } from '@/components/media/MediaPreviewDialog';
 import {
@@ -88,6 +89,7 @@ export default function MediaPage() {
   const [replaceTarget, setReplaceTarget] = useState<MediaAsset | null>(null);
   const [replaceFile, setReplaceFile] = useState<File | null>(null);
   const [previewAsset, setPreviewAsset] = useState<MediaAsset | null>(null);
+  const [skipWatermark, setSkipWatermark] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const replaceFileRef = useRef<HTMLInputElement>(null);
 
@@ -125,7 +127,7 @@ export default function MediaPage() {
     let ok = 0;
     for (const file of Array.from(files)) {
       try {
-        await upload.mutateAsync(file);
+        await upload.mutateAsync({ file, watermark: skipWatermark ? 'skip' : undefined });
         ok += 1;
       } catch (e) {
         notifyError(e, `「${file.name}」上传失败`);
@@ -225,14 +227,21 @@ export default function MediaPage() {
                 className="hidden"
                 onChange={(e) => onFiles(e.target.files)}
               />
-              <Button onClick={() => fileRef.current?.click()} disabled={upload.isPending}>
-                {upload.isPending ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Upload className="mr-2 h-4 w-4" />
-                )}
-                {upload.isPending ? '上传中…' : '上传文件'}
-              </Button>
+              <div className="flex items-center gap-4">
+                <WatermarkOptOutToggle
+                  checked={skipWatermark}
+                  onCheckedChange={setSkipWatermark}
+                  disabled={upload.isPending}
+                />
+                <Button onClick={() => fileRef.current?.click()} disabled={upload.isPending}>
+                  {upload.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Upload className="mr-2 h-4 w-4" />
+                  )}
+                  {upload.isPending ? '上传中…' : '上传文件'}
+                </Button>
+              </div>
             </Can>
           ) : undefined
         }

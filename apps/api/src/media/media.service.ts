@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { Prisma } from '@prisma/client/index';
+import type { WatermarkOverride } from '@tzj/types';
 import { PrismaService } from '../prisma/prisma.service';
 import { S3Service } from '../storage/s3.service';
 import { RegisterMediaDto } from './dto/media.dto';
@@ -122,10 +123,16 @@ export class MediaService {
     file: { buffer: Buffer; originalname: string; mimetype: string; size: number },
     folder: string | undefined,
     userId: string | undefined,
+    watermark: WatermarkOverride = 'auto',
   ) {
     const dir = this.normalizeUploadFolder(folder);
     const key = this.buildKey(dir, file.originalname);
-    const processed = await this.watermark.processUpload(file.buffer, file.mimetype, dir);
+    const processed = await this.watermark.processUpload(
+      file.buffer,
+      file.mimetype,
+      dir,
+      watermark,
+    );
     const result = await this.s3.upload(processed.buffer, key, processed.mimeType);
     return this.prisma.mediaAsset.create({
       data: {
@@ -138,6 +145,8 @@ export class MediaService {
         height: processed.height,
         folder: dir,
         uploadedById: userId,
+        // 按实际处理结果记录：true=已烧录；false=服务端经手但未烧录（skip/跳过/回退）
+        watermarked: processed.watermarked,
       },
     });
   }
@@ -283,6 +292,8 @@ export class MediaService {
         mimeType: file.mimetype,
         size: file.size ?? result.size,
         uploadedById: userId ?? asset.uploadedById,
+        // 替换链路不经水印处理，新文件状态未知，回置为 null
+        watermarked: null,
       },
     });
 

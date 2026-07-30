@@ -59,6 +59,7 @@ export type {
   WatermarkFolder,
   WatermarkLayout,
   WatermarkMode,
+  WatermarkOverride,
   WatermarkPosition,
 } from './dto/index.js';
 export { AD_PLATFORMS, TWOFA_ENROLLMENT_REQUIRED } from './dto/index.js';

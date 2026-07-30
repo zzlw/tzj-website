@@ -340,6 +340,8 @@ model MediaAsset {
   height       Int?
   folder       String    @default("uploads")
   alt          String?
+  // 水印烧录状态：true=服务端已烧录；false=服务端经手但确认未烧录；null=未知（历史数据/直传登记/替换链路）
+  watermarked  Boolean?
   uploadedById String?
   uploadedBy   User?     @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
   deletedAt    DateTime?
@@ -924,7 +926,7 @@ model AdSpendRecord {
   id          String   @id @default(cuid())
   // 平台标识：baidu / google / wechat / other（应用层常量约束，不用 DB enum 便于扩平台）
   platform    String
-  // 记账区间（日历日，无时区语义，含首尾；运算口径见设计文档 §3「时间口径」） ；单日记录 periodStart == periodEnd
+  // 记账区间（日历日，无时区语义，含首尾；运算口径见设计文档 §3「时间口径」）；单日记录 periodStart == periodEnd
   periodStart DateTime @db.Date
   periodEnd   DateTime @db.Date
   // 金额（元，两位小数）
