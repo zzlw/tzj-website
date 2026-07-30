@@ -1,14 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  NotFoundException,
-  Param,
-  Post,
-  Query,
-  Res,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Query, Res } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
@@ -40,9 +30,13 @@ export class LingxiController {
 
   @RequirePermissions('lingxi.use')
   @Get('chat/stream/:conversationId')
-  @ApiOperation({ summary: '流恢复：重放缓冲帧并续播（M4 接入 RunBuffer 后可用）' })
-  resumeStream(@Param('conversationId') _conversationId: string): never {
-    throw new NotFoundException('该会话没有进行中的生成');
+  @ApiOperation({ summary: '流恢复：重放缓冲帧并续播直到 done（无进行中/刚完成的生成时 404）' })
+  async resumeStream(
+    @Param('conversationId') conversationId: string,
+    @CurrentUser() user: AuthUser,
+    @Res() res: Response,
+  ): Promise<void> {
+    await this.agent.resume(user, conversationId, res);
   }
 
   @RequirePermissions('lingxi.use')

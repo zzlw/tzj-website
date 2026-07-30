@@ -159,3 +159,6 @@ export interface Customer extends BaseEntity {
   lastContactAt: Date | null;
   nextFollowAt: Date | null;
 }
+
+// 灵犀 AI 投放报告（docs/lingxi-ai-report-design.md §8）
+export type * from './lingxi.js';
