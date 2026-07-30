@@ -67,6 +67,8 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $remote_addr;
         proxy_set_header X-Forwarded-Proto $scheme;
+        # 灵犀 SSE 长连接：默认 60s 会断流，放宽到 300s（缓冲由 X-Accel-Buffering: no 响应头关闭）
+        proxy_read_timeout 300s;
     }
 }
 

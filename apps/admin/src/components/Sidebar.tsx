@@ -97,6 +97,8 @@ type NavItemDef = {
   anyPerm?: readonly string[];
   /** 当前路径在此前缀下时不激活（避免 /documents 误匹配 /documents/mine） */
   activeExcludePrefix?: string;
+  /** 图标附加类名（如灵犀声波动画 lingxi-icon） */
+  iconClassName?: string;
   /** 未上线的预告项：渲染 SOON 徽标与畅想 tooltip，不可点击 */
   soon?: { tagline: string; description: string; footer: string };
 };
@@ -116,11 +118,9 @@ const NAV_GROUPS: Array<{
         label: '灵犀',
         href: '/lingxi',
         icon: AudioLines,
-        soon: {
-          tagline: '实时语音智能体',
-          description: '实时语音操作后台：语音查询数据、口述创建内容、调出报表。',
-          footer: 'Coming Soon · Powered by GPT-Live',
-        },
+        // 声波动画保留：波形是灵犀的品牌符号，语音在未来演进（方案 §13）
+        iconClassName: 'lingxi-icon',
+        anyPerm: ['lingxi.use'],
       },
     ],
   },
@@ -256,7 +256,7 @@ function NavItem({ item, pathname }: { item: NavItemDef; pathname: string }) {
     <SidebarMenuItem>
       <SidebarMenuButton asChild isActive={isActive(pathname, item)} tooltip={item.label}>
         <Link href={item.href}>
-          <item.icon />
+          <item.icon className={item.iconClassName} />
           <span>{item.label}</span>
           {item.href === '/chat' && <ChatNavBadge />}
         </Link>
