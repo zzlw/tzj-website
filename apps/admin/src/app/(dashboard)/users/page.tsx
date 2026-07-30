@@ -16,7 +16,10 @@ import {
   SelectTrigger,
   SelectValue,
   TablePagination,
+  Tooltip,
+  TooltipContent,
   TooltipProvider,
+  TooltipTrigger,
 } from '@tzj/ui';
 import { KeyRound, LockOpen, Plus, Search, ShieldOff, Trash2, UserCog } from 'lucide-react';
 import Link from 'next/link';
@@ -249,58 +252,80 @@ export default function UsersPage() {
         renderActions={(r) => (
           <div className="flex justify-end gap-1">
             {isLocked(r) && (
-              <Button
-                size="icon-sm"
-                variant="ghost"
-                className="text-warning-foreground hover:text-warning-foreground/80"
-                onClick={() => void handleUnlock(r)}
-                disabled={updateMut.isPending}
-                aria-label="解锁"
-                title="解锁"
-              >
-                <LockOpen className="h-4 w-4" />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="icon-sm"
+                    variant="ghost"
+                    className="text-warning-foreground hover:text-warning-foreground/80"
+                    onClick={() => void handleUnlock(r)}
+                    disabled={updateMut.isPending}
+                    aria-label="解锁"
+                  >
+                    <LockOpen className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>解锁</TooltipContent>
+              </Tooltip>
             )}
-            <Button size="icon-sm" variant="ghost" asChild>
-              <Link href={`/users/${r.id}/edit`} aria-label="编辑">
-                <UserCog className="h-4 w-4" />
-              </Link>
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button size="icon-sm" variant="ghost" asChild>
+                  <Link href={`/users/${r.id}/edit`} aria-label="编辑">
+                    <UserCog className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>编辑</TooltipContent>
+            </Tooltip>
             {/* 重置密码：不对自己展示（自改走个人设置）；ADMIN 目标仅 admin 操作者可见（后端另有硬校验） */}
             {r.username !== currentUsername && (r.role !== 'admin' || sessionRole === 'admin') && (
-              <Button
-                size="icon-sm"
-                variant="ghost"
-                onClick={() => setResetTarget(r)}
-                aria-label="重置密码"
-                title="重置密码"
-              >
-                <KeyRound className="h-4 w-4" />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="icon-sm"
+                    variant="ghost"
+                    onClick={() => setResetTarget(r)}
+                    aria-label="重置密码"
+                  >
+                    <KeyRound className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>重置密码</TooltipContent>
+              </Tooltip>
             )}
             {/* 强制解除 2FA：后端 @Roles('admin') 硬约束，非 admin 不渲染入口 */}
             {r.twoFactorEnabled && sessionRole === 'admin' && (
-              <Button
-                size="icon-sm"
-                variant="ghost"
-                className="text-warning-foreground hover:text-warning-foreground/80"
-                onClick={() => setDisable2faTarget(r)}
-                aria-label="强制解除两步验证"
-                title="强制解除两步验证"
-              >
-                <ShieldOff className="h-4 w-4" />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="icon-sm"
+                    variant="ghost"
+                    className="text-warning-foreground hover:text-warning-foreground/80"
+                    onClick={() => setDisable2faTarget(r)}
+                    aria-label="强制解除两步验证"
+                  >
+                    <ShieldOff className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>强制解除两步验证</TooltipContent>
+              </Tooltip>
             )}
             {r.username !== currentUsername && (
-              <Button
-                size="icon-sm"
-                variant="ghost"
-                className="text-destructive hover:text-destructive"
-                onClick={() => setDeleteTarget(r)}
-                aria-label="删除"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="icon-sm"
+                    variant="ghost"
+                    className="text-destructive hover:text-destructive"
+                    onClick={() => setDeleteTarget(r)}
+                    aria-label="删除"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>删除</TooltipContent>
+              </Tooltip>
             )}
           </div>
         )}
