@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import type OpenAI from 'openai';
+import { AdSpendService } from '../analytics/ad-spend.service';
 import { AnalyticsService } from '../analytics/analytics.service';
 import { GrowthMetricsService } from '../analytics/growth-metrics.service';
 
@@ -46,6 +47,7 @@ export class LingxiToolsService {
   constructor(
     private readonly analytics: AnalyticsService,
     private readonly growth: GrowthMetricsService,
+    private readonly adSpend: AdSpendService,
   ) {}
 
   /** openai SDK 的 tools 参数（function calling JSON Schema） */
@@ -71,13 +73,13 @@ export class LingxiToolsService {
       ),
       this.def(
         'get_conversion_metrics',
-        '访客→客户转化率、付费渠道归因（广告访客/客户/询盘数）、询盘成本 CPL',
+        '访客→客户转化率、付费渠道归因（广告访客/客户/询盘数）、询盘成本 CPL（花费为期间台账分摊值）',
         RANGE_PROPS,
       ),
       this.def(
         'get_ad_spend',
-        '手录广告花费总额。注意：为全期累计口径，无时间/渠道维度，不可当作所选期间花费',
-        {},
+        '所选期间分平台广告花费（台账按天分摊聚合，跨区间记录为均匀分摊近似）',
+        RANGE_PROPS,
       ),
       this.def('list_top_pages', `热门落地页 Top ${TOP_LIMIT}（PV/UV）`, RANGE_PROPS),
       this.def('list_top_regions', `访客地区分布 Top ${TOP_LIMIT}`, RANGE_PROPS),
@@ -102,7 +104,7 @@ export class LingxiToolsService {
         case 'get_conversion_metrics':
           return await this.getConversionMetrics(args as RangeArgs);
         case 'get_ad_spend':
-          return await this.getAdSpend();
+          return await this.getAdSpend(args as RangeArgs);
         case 'list_top_pages':
           return await this.listTopPages(args as RangeArgs);
         case 'list_top_regions':
@@ -181,6 +183,7 @@ export class LingxiToolsService {
       adConversionRate: raw.adConversionRate,
       adInquiries: raw.adInquiries,
       adSpend: raw.adSpend,
+      adSpendByPlatform: raw.adSpendByPlatform,
       inquiryCost: raw.inquiryCost,
     };
     return {
@@ -191,13 +194,19 @@ export class LingxiToolsService {
     };
   }
 
-  private async getAdSpend(): Promise<LingxiToolResult> {
-    const raw = await this.growth.getGrowthSettings();
+  private async getAdSpend(args: RangeArgs): Promise<LingxiToolResult> {
+    // 与看板同口径：台账按天分摊聚合（白名单只透 byPlatform/total，不透逐条记录）
+    const raw = await this.adSpend.list(args.from, args.to);
+    const parts = raw.byPlatform.map((p) => `${p.platform} ¥${p.spend}`).join(' / ');
     return {
-      data: { adSpendTotal: raw.adSpend, note: '手动录入的全期累计口径，无时间/渠道维度' },
-      summary: `广告花费累计 ¥${raw.adSpend}`,
-      rows: 1,
-      range: '全期',
+      data: {
+        byPlatform: raw.byPlatform,
+        total: raw.total,
+        note: '台账按天分摊口径，跨区间记录为均匀分摊近似；total=0 表示该期间未录入花费',
+      },
+      summary: raw.total > 0 ? `期间广告花费 ¥${raw.total}（${parts}）` : '该期间未录入广告花费',
+      rows: raw.items.length,
+      range: args.from || args.to ? this.rangeLabel(args) : '近 365 天（默认）',
     };
   }
 

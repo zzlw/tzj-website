@@ -2,7 +2,9 @@ import {
   Body,
   Controller,
   DefaultValuePipe,
+  Delete,
   Get,
+  Param,
   ParseIntPipe,
   Post,
   Put,
@@ -14,18 +16,21 @@ import { Throttle } from '@nestjs/throttler';
 import type { Request } from 'express';
 import { Public } from '../auth/decorators/public.decorator';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
+import type { AuthUser } from '../auth/roles';
 // biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
 import { SecurityService } from '../security/security.service';
+// biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
+import { AdSpendService } from './ad-spend.service';
 // biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
 import { AnalyticsService } from './analytics.service';
 // 注意：DTO 必须值导入（非 import type）。@Body() 的校验依赖
 // emitDecoratorMetadata 在运行时解析出真实类（design:paramtypes）；import type 会被擦除。
 // biome-ignore lint/style/useImportType: NestJS 校验需要 DTO 作为运行期值（design:paramtypes）
+import { AdSpendRecordDto } from './dto/ad-spend-record.dto';
+// biome-ignore lint/style/useImportType: NestJS 校验需要 DTO 作为运行期值（design:paramtypes）
 import { CollectPageViewDto } from './dto/collect-pageview.dto';
 // biome-ignore lint/style/useImportType: NestJS 校验需要 DTO 作为运行期值（design:paramtypes）
 import { IdentifyDto } from './dto/identify.dto';
-// biome-ignore lint/style/useImportType: NestJS 校验需要 DTO 作为运行期值（design:paramtypes）
-import { UpdateGrowthSettingsDto } from './dto/update-growth-settings.dto';
 // biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
 import { GrowthMetricsService } from './growth-metrics.service';
 
@@ -36,6 +41,7 @@ export class AnalyticsController {
     private readonly analyticsService: AnalyticsService,
     private readonly securityService: SecurityService,
     private readonly growthMetricsService: GrowthMetricsService,
+    private readonly adSpendService: AdSpendService,
   ) {}
 
   @Public()
@@ -115,20 +121,47 @@ export class AnalyticsController {
     return this.growthMetricsService.getSupportMetrics(from, to);
   }
 
+  // ── 广告花费台账（docs/ad-spend-ledger-design.md §5）────────────────
+
   @RequirePermissions('analytics.view')
   @ApiBearerAuth()
-  @Get('growth-settings')
-  @ApiOperation({ summary: '获取增长看板设置（广告花费，手动录入）' })
-  growthSettings() {
-    return this.growthMetricsService.getGrowthSettings();
+  @Get('ad-spend')
+  @ApiOperation({ summary: '广告花费台账：区间相交记录列表 + 分摊聚合（缺省近 365 天）' })
+  @ApiQuery({ name: 'from', required: false, description: 'YYYY-MM-DD' })
+  @ApiQuery({ name: 'to', required: false, description: 'YYYY-MM-DD' })
+  listAdSpend(@Query('from') from?: string, @Query('to') to?: string) {
+    return this.adSpendService.list(from, to);
   }
 
   @RequirePermissions('settings.manage')
   @ApiBearerAuth()
-  @Put('growth-settings')
-  @ApiOperation({ summary: '更新增长看板设置（广告花费，参与询盘成本计算）' })
-  updateGrowthSettings(@Body() dto: UpdateGrowthSettingsDto) {
-    return this.growthMetricsService.updateGrowthSettings(dto.adSpend);
+  @Post('ad-spend')
+  @ApiOperation({ summary: '新增台账记录（同平台区间重叠 409）' })
+  async createAdSpend(@Body() dto: AdSpendRecordDto, @Req() req: Request & { user?: AuthUser }) {
+    const record = await this.adSpendService.create(dto, req.user?.id ?? '');
+    // 花费参与 inquiryCost 计算：清空 T+1 缓存，避免历史区间返回旧花费
+    this.growthMetricsService.clearCache();
+    return record;
+  }
+
+  @RequirePermissions('settings.manage')
+  @ApiBearerAuth()
+  @Put('ad-spend/:id')
+  @ApiOperation({ summary: '编辑台账记录（重叠校验排除自身）' })
+  async updateAdSpend(@Param('id') id: string, @Body() dto: AdSpendRecordDto) {
+    const record = await this.adSpendService.update(id, dto);
+    this.growthMetricsService.clearCache();
+    return record;
+  }
+
+  @RequirePermissions('settings.manage')
+  @ApiBearerAuth()
+  @Delete('ad-spend/:id')
+  @ApiOperation({ summary: '删除台账记录（硬删）' })
+  async removeAdSpend(@Param('id') id: string) {
+    const result = await this.adSpendService.remove(id);
+    this.growthMetricsService.clearCache();
+    return result;
   }
 
   @RequirePermissions('analytics.view')

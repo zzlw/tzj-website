@@ -160,5 +160,7 @@ export interface Customer extends BaseEntity {
   nextFollowAt: Date | null;
 }
 
+// 广告花费台账（docs/ad-spend-ledger-design.md）
+export type * from './ad-spend.js';
 // 灵犀 AI 投放报告（docs/lingxi-ai-report-design.md §8）
 export type * from './lingxi.js';

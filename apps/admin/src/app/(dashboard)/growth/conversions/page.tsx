@@ -4,10 +4,18 @@ import { Button, Card, CardContent, DateRangePicker, PageHeader } from '@tzj/ui'
 import { Pencil } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Can } from '@/components/Can';
-import { AdSpendDialog } from '@/components/growth/AdSpendDialog';
+import { AdSpendManagerDialog } from '@/components/growth/AdSpendManagerDialog';
 import { formatCny, formatPercent, MetricCard } from '@/components/growth/MetricCard';
 import { useConversionMetrics } from '@/features/growth';
 import { stringField, useUrlState } from '@/lib/use-url-state';
+
+/** 分平台花费小字的中文平台名（admin 自定义 UI 常量，不导入 @tzj/types 值常量） */
+const PLATFORM_LABELS: Record<string, string> = {
+  baidu: '百度',
+  google: 'Google',
+  wechat: '微信',
+  other: '其他',
+};
 
 /** 转化看板：访客→客户核心转化指标 + 付费渠道归因（Phase1-MVP，默认近 7 天）。 */
 export default function GrowthConversionsPage() {
@@ -68,7 +76,7 @@ export default function GrowthConversionsPage() {
         <MetricCard
           label="询盘成本"
           value={formatCny(data?.inquiryCost)}
-          hint="广告花费 ÷ 广告询盘（花费手动录入）"
+          hint="区间内录入花费 ÷ 广告询盘（台账按天分摊）"
           loading={loading}
         />
       </div>
@@ -79,7 +87,7 @@ export default function GrowthConversionsPage() {
         <Can perm="settings.manage">
           <Button variant="outline" size="sm" onClick={() => setAdSpendOpen(true)}>
             <Pencil className="mr-1.5 h-3.5 w-3.5" />
-            录入广告花费
+            管理广告花费
           </Button>
         </Can>
       </div>
@@ -105,10 +113,20 @@ export default function GrowthConversionsPage() {
         <MetricCard
           label="广告转化率"
           value={formatPercent(data?.adConversionRate)}
-          hint={`广告花费：${formatCny(data?.adSpend)}`}
+          hint={`区间广告花费：${formatCny(data?.adSpend)}（台账分摊）`}
           loading={loading}
         />
       </div>
+
+      {/* 分平台花费小字：有台账数据时展示 */}
+      {data?.adSpendByPlatform?.length ? (
+        <p className="-mt-3 mb-6 text-xs text-muted-foreground">
+          分平台花费：
+          {data.adSpendByPlatform
+            .map((p) => `${PLATFORM_LABELS[p.platform] ?? p.platform} ${formatCny(p.spend)}`)
+            .join(' · ')}
+        </p>
+      ) : null}
 
       {data?.metricsDate ? (
         <p className="text-xs text-muted-foreground">
@@ -116,11 +134,7 @@ export default function GrowthConversionsPage() {
         </p>
       ) : null}
 
-      <AdSpendDialog
-        open={adSpendOpen}
-        onOpenChange={setAdSpendOpen}
-        currentAdSpend={data?.adSpend ?? 0}
-      />
+      <AdSpendManagerDialog open={adSpendOpen} onOpenChange={setAdSpendOpen} />
     </>
   );
 }

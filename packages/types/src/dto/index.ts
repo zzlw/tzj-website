@@ -120,6 +120,8 @@ export interface CreateUserDto {
   role?: string;
 }
 
+export type { AdSpendRecordDto } from './ad-spend.js';
+export { AD_PLATFORMS } from './ad-spend.js';
 export type {
   AnalyticsIpTrafficRow,
   BlockedIpItem,

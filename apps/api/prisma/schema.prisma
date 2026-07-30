@@ -915,3 +915,28 @@ model LingxiMessage {
   @@index([conversationId, createdAt])
   @@map("lingxi_messages")
 }
+
+// ═══════════════════════════════════════════
+// 广告花费台账（分平台分时段；手工录入 + 未来 API 同步共用）
+// docs/ad-spend-ledger-design.md
+// ═══════════════════════════════════════════
+model AdSpendRecord {
+  id          String   @id @default(cuid())
+  // 平台标识：baidu / google / wechat / other（应用层常量约束，不用 DB enum 便于扩平台）
+  platform    String
+  // 记账区间（日历日，无时区语义，含首尾；运算口径见设计文档 §3「时间口径」） ；单日记录 periodStart == periodEnd
+  periodStart DateTime @db.Date
+  periodEnd   DateTime @db.Date
+  // 金额（元，两位小数）
+  spend       Decimal  @db.Decimal(12, 2)
+  // 来源：manual（手工）/ baidu_api（升级 2 预留）
+  source      String   @default("manual")
+  note        String?
+  createdBy   String? // 操作人 userId（API 同步为 null）
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([platform, periodStart])
+  @@index([periodStart, periodEnd])
+  @@map("ad_spend_records")
+}

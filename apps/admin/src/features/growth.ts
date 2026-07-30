@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { AdSpendListResponse, AdSpendRecord, AdSpendRecordDto } from '@tzj/types';
 import type { ContentOperatorUser } from '@/features/types';
 import { api } from '@/lib/apiClient';
 
@@ -19,7 +20,8 @@ export interface ConversionMetrics {
   adCustomers: number;
   adConversionRate: number; // %
   adInquiries: number;
-  adSpend: number; // 元（Setting KV：growth.adSpend，手动录入）
+  adSpend: number; // 元（台账区间分摊聚合，docs/ad-spend-ledger-design.md §4）
+  adSpendByPlatform: Array<{ platform: AdSpendRecord['platform']; spend: number }>;
   inquiryCost: number; // 元/询盘
   metricsDate: string; // ISO 8601，计算时间标记
 }
@@ -81,28 +83,49 @@ export function useSourcesFunnel(params?: Params) {
   });
 }
 
-// ── 增长看板设置（广告花费手动录入，参与询盘成本计算） ────────────────
+// ── 广告花费台账（分平台分时段记账，参与询盘成本计算） ────────────────
 
-export interface GrowthSettings {
-  adSpend: number; // 元
-}
+export type { AdSpendListResponse, AdSpendRecord, AdSpendRecordDto };
 
-export function useGrowthSettings() {
-  return useQuery<GrowthSettings>({
-    queryKey: ['growth', 'settings'],
-    queryFn: () => api.query<GrowthSettings>('analytics/growth-settings'),
+/** 台账列表 + 区间分摊聚合（后端缺省近 365 天） */
+export function useAdSpendRecords(params?: Params) {
+  return useQuery<AdSpendListResponse>({
+    queryKey: ['growth', 'ad-spend', params ?? {}],
+    queryFn: () => api.query<AdSpendListResponse>('analytics/ad-spend', params),
+    placeholderData: (prev) => prev,
   });
 }
 
-/** 更新广告花费（需 settings.manage）：成功后刷新设置与转化指标（inquiryCost 依赖花费）。 */
-export function useUpdateGrowthSettings() {
+/** 台账写操作后统一刷新：列表 + 转化指标（inquiryCost/adSpend 依赖台账） */
+function useInvalidateGrowth() {
   const qc = useQueryClient();
+  return () => {
+    void qc.invalidateQueries({ queryKey: ['growth'] });
+  };
+}
+
+export function useCreateAdSpend() {
+  const invalidate = useInvalidateGrowth();
   return useMutation({
-    mutationFn: (payload: GrowthSettings) =>
-      api.put<GrowthSettings>('analytics/growth-settings', payload),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['growth', 'settings'] });
-      void qc.invalidateQueries({ queryKey: ['growth', 'conversion-metrics'] });
-    },
+    mutationFn: (payload: AdSpendRecordDto) =>
+      api.post<AdSpendRecord>('analytics/ad-spend', payload),
+    onSuccess: invalidate,
+  });
+}
+
+export function useUpdateAdSpend() {
+  const invalidate = useInvalidateGrowth();
+  return useMutation({
+    mutationFn: ({ id, ...payload }: AdSpendRecordDto & { id: string }) =>
+      api.put<AdSpendRecord>(`analytics/ad-spend/${id}`, payload),
+    onSuccess: invalidate,
+  });
+}
+
+export function useDeleteAdSpend() {
+  const invalidate = useInvalidateGrowth();
+  return useMutation({
+    mutationFn: (id: string) => api.del<{ id: string }>(`analytics/ad-spend/${id}`),
+    onSuccess: invalidate,
   });
 }

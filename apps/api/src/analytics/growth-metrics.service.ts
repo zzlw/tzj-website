@@ -1,8 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import type { AdSpendSummary } from '@tzj/types';
 import { LAST_OPERATOR_USER_SELECT, mapOperatorUser } from '../common/utils/content-list';
 // biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
 import { PrismaService } from '../prisma/prisma.service';
+import { AdSpendService } from './ad-spend.service';
 
 /**
  * 增长指标服务（转化率看板 Phase1-MVP）：
@@ -46,9 +48,6 @@ interface CacheEntry {
 
 const CACHE_TTL_MS = 24 * 3600 * 1000;
 
-/** 广告花费 Setting KV 键（Phase1 手动录入，参与询盘成本计算） */
-const AD_SPEND_SETTING_KEY = 'growth.adSpend';
-
 export interface ConversionMetricsResponse {
   dateRange: { from: Date; to: Date };
   totalVisitors: number;
@@ -58,7 +57,8 @@ export interface ConversionMetricsResponse {
   adCustomers: number;
   adConversionRate: number; // %
   adInquiries: number;
-  adSpend: number; // 元（Setting KV：growth.adSpend，手动录入）
+  adSpend: number; // 元（台账按天分摊聚合的区间花费，docs/ad-spend-ledger-design.md §4）
+  adSpendByPlatform: AdSpendSummary['byPlatform']; // 分平台区间花费
   inquiryCost: number; // 元/询盘
   metricsDate: string; // ISO 8601，计算时间标记
 }
@@ -97,7 +97,10 @@ export class GrowthMetricsService {
   /** T+1 历史区间结果缓存：key = 指标名:fromISO|toISO */
   private readonly cache = new Map<string, CacheEntry>();
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly adSpend: AdSpendService,
+  ) {}
 
   // ── 转化率核心指标 ──────────────────────────────────────────────
 
@@ -166,9 +169,9 @@ export class GrowthMetricsService {
 
     const adConversionRate = adVisitors > 0 ? (adCustomers / adVisitors) * 100 : 0;
 
-    // 4. 询盘成本（CAC 近似）：广告预算 Phase1 手动录入 Setting KV（growth.adSpend）
-    const { adSpend } = await this.getGrowthSettings();
-    const inquiryCost = adInquiries > 0 ? adSpend / adInquiries : 0;
+    // 4. 询盘成本（CAC 近似）：台账按天分摊聚合的区间花费，分子分母同口径
+    const spendSummary = await this.adSpend.sumAdSpend(toYmd(range.from), toYmd(range.to));
+    const inquiryCost = adInquiries > 0 ? spendSummary.total / adInquiries : 0;
 
     const result: ConversionMetricsResponse = {
       dateRange: { from: range.from, to: range.to },
@@ -179,7 +182,8 @@ export class GrowthMetricsService {
       adCustomers,
       adConversionRate: round2(adConversionRate),
       adInquiries,
-      adSpend,
+      adSpend: spendSummary.total,
+      adSpendByPlatform: spendSummary.byPlatform,
       inquiryCost: round2(inquiryCost),
       metricsDate: new Date().toISOString(),
     };
@@ -382,25 +386,6 @@ export class GrowthMetricsService {
     return funnelData;
   }
 
-  // ── 增长看板设置（广告花费手动录入） ──────────────────────────────
-
-  async getGrowthSettings(): Promise<{ adSpend: number }> {
-    const row = await this.prisma.setting.findUnique({ where: { key: AD_SPEND_SETTING_KEY } });
-    return { adSpend: typeof row?.value === 'number' ? row.value : 0 };
-  }
-
-  async updateGrowthSettings(adSpend: number): Promise<{ adSpend: number }> {
-    await this.prisma.setting.upsert({
-      where: { key: AD_SPEND_SETTING_KEY },
-      update: { value: adSpend },
-      create: { key: AD_SPEND_SETTING_KEY, value: adSpend, group: 'growth', label: '广告花费' },
-    });
-    // 花费参与 inquiryCost 计算：清空 T+1 缓存，避免历史区间返回旧花费
-    this.cache.clear();
-    this.logger.log(`广告花费已更新：¥${adSpend}`);
-    return { adSpend };
-  }
-
   // ── T+1 预计算：凌晨 2 点预热默认区间缓存 ───────────────────────
 
   @Cron(CronExpression.EVERY_DAY_AT_2AM)
@@ -422,6 +407,11 @@ export class GrowthMetricsService {
   }
 
   // ── 进程内缓存（仅历史区间；重启即空，miss 回退实时计算） ────────
+
+  /** 台账写操作后由 Controller 调用：花费参与 inquiryCost，历史区间缓存须失效 */
+  clearCache(): void {
+    this.cache.clear();
+  }
 
   private cacheKey(kind: string, range: DateRange): string {
     return `${kind}:${range.from.toISOString()}|${range.to.toISOString()}`;

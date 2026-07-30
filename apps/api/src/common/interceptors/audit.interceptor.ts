@@ -27,7 +27,15 @@ const ACTION_BY_METHOD: Record<string, string> = {
  *
  * 扩展依据：docs/operation-audit-system-assessment.md §7.2 方案 A / §9 第二阶段。
  */
-const DETAIL_RESOURCES = new Set(['users', 'access', 'auth', 'customers', 'contact', 'settings']);
+const DETAIL_RESOURCES = new Set([
+  'users',
+  'access',
+  'auth',
+  'customers',
+  'contact',
+  'settings',
+  'analytics', // 广告花费台账写操作（记录 changedFields 字段名；DELETE 无 detail 为已知限制）
+]);
 const SENSITIVE_KEYS = new Set(['password', 'actorPassword', 'newPassword', 'currentPassword']);
 
 /**

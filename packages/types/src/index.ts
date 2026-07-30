@@ -5,6 +5,7 @@
 
 // DTOs
 export type {
+  AdSpendRecordDto,
   AgentProfile,
   AnalyticsGeoMode,
   AnalyticsIpTrafficRow,
@@ -60,9 +61,14 @@ export type {
   WatermarkMode,
   WatermarkPosition,
 } from './dto/index.js';
-export { TWOFA_ENROLLMENT_REQUIRED } from './dto/index.js';
+export { AD_PLATFORMS, TWOFA_ENROLLMENT_REQUIRED } from './dto/index.js';
 // Entities
 export type {
+  AdPlatform,
+  AdSpendListResponse,
+  AdSpendRecord,
+  AdSpendSource,
+  AdSpendSummary,
   BaseEntity,
   Blog,
   Case,
