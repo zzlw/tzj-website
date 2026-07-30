@@ -117,12 +117,13 @@ https://www.tzjii.com/zh-CN/{落地页}?utm_source=baidu&utm_medium=cpc&utm_camp
   库表迁移 `20260730000000_page_view_bd_vid`；
 - admin 后台人物抽屉与 CSV 导出已展示「百度点击 ID」列。
 
-### P0-2 接入百度统计（hm.js）
+### P0-2 接入百度统计（hm.js）✅ 已实现
 
 - 在 `apps/web` 的根 layout 以延迟方式注入百度统计代码
-  （站点 ID 走环境变量，如 `NEXT_PUBLIC_BAIDU_HM_ID`，未配置则不注入——遵守"禁止硬编码"约束）；
+  （[BaiduAnalytics.tsx](file:///Users/gavin/Documents/tzj/tzj-website-reconstruction/apps/web/src/components/analytics/BaiduAnalytics.tsx)，`afterInteractive` 加载 `hm.js`，避开内联脚本——遵守宪法级禁令）；
+- **站点 ID 取值：后台配置优先、环境变量兜底。** 首选在 admin 后台「站点设置 → 访客分析」填写（运行时可改、非技术同事可操作、无需重新构建），下发链路复用备案号范式（`GET /api/v1/settings/site/public` + ISR 缓存，SSR 注入）；`NEXT_PUBLIC_BAIDU_HM_ID` 仅作部署级兜底（首次部署后台未配时保底）。两者皆空则不注入；
 - App Router 是 SPA 式导航，需在路由变化时手动调用
-  `_hmt.push(['_trackPageview', path])`，可挂在现有 `trackPageView` 的调用点上；
+  `_hmt.push(['_trackPageview', path])`——已在 `BaiduAnalytics` 内监听 `pathname` 补报（跳过挂载首帧，避免与 hm.js 自动首屏 PV 重复计数）；
 - 用途：百度推广后台与百度统计打通后，才能看到关键词级的到访/转化报表，也是落地页体验评分的数据来源。
 
 ### P1-1 OCPC 转化回传（API 回传方式，推荐）
@@ -159,7 +160,7 @@ https://www.tzjii.com/zh-CN/{落地页}?utm_source=baidu&utm_medium=cpc&utm_camp
 | 步骤 | 负责 | 内容 | 依赖 |
 |------|------|------|------|
 | 1 | 工程 | nginx 旧 URL 301 **部署上线**（规则已写入模板并本地实测通过）+ 百度站长平台提交改版规则 | 无 |
-| 2 | 工程 | 接入百度统计 hm.js（环境变量注入） | 投放同事提供统计站点 ID |
+| 2 | 工程/投放 | 接入百度统计 hm.js（✅ 已实现）→ 在 admin「站点设置 → 访客分析」填站点 ID | 投放同事提供统计站点 ID |
 | 3 | 投放 | 按 3.1/3.2 批量替换落地页 URL（先小计划灰度 3~5 天） | 步骤 1、2 |
 | 4 | 工程 | ~~`bd_vid` 采集~~（✅ 已完成）+ 询盘 OCPC 服务端回传 | 投放同事提供回传 token |
 | 5 | 投放 | 全量切换 → 观察 1~2 周 → 开启 OCPC 出价 | 步骤 4 |
@@ -212,3 +213,27 @@ A：不用。按 URL 模式粗映射到对应栏目页即可；只有历史上�
 - **已实现**：在 `infra/docker/nginx/templates/tzj.conf.template` 的 `${WEB_DOMAIN}` server 块内、`location /` 之前加入一组正则 `location`（proshow/prolist→towers、caseshow/caselist→cases、newsshow/newslist→resources/news、page→why-us、index.html→首页、article→news、project→cases、其余 `.html` 兜底→首页），均带 `$is_args$args` 保留 query；
 - **验证**：隔离环境（envsubst 只替换域名变量 + 自签证书）下 `nginx -t` 语法校验通过（仅余既有的 `listen...http2` 弃用 warn）；容器功能实测 9 类 URL 均正确 301，`proshow-36-1.html?bd_vid=TESTVID&utm_source=baidu` → `location: https://www.tzjii.com/zh-CN/towers?bd_vid=TESTVID&utm_source=baidu`（query 保留）；
 - **待办**：未部署到生产（本地未 push）；上线后需到百度站长平台提交改版规则。
+
+### 2026-07-30 六评（百度统计后台实测：老 URL 真实流量盘点 + 301 覆盖率核对 + bd_vid 实链验证）
+
+> 数据源：百度统计「河南拓之迹1」账户（ucUserId=42166358）下 tzjii.com 站点
+> （siteId=18359892，免费版）的「概况 → 访问分析 → 受访页面」报告，时间窗
+> 2026/07/01~07/30。注：账户无「分析」模块付费权限，仅能看免费版基础报告。
+
+- **流量体量很小**：近 30 天全站 **389 PV / 325 UV**。流量集中在**首页**（`https/http` × `www/裸域` 四种写法合计 ~144 PV，占约 37%）+ 少量产品/案例列表页；印证第六节「老站 240+ 页面不必逐个精确 301」的判断。
+- **老 URL 模板已收全（翻至第 3 页收敛，无新模板）**，与第二节映射表 8 类完全吻合，且逐条命中现有 nginx 301 规则：
+  | 老 URL 模板 | 实测出现的实例 ID | 命中规则 → 落地 |
+  |---|---|---|
+  | `/`（首页，4 种域名写法） | — | `location /` → `/zh-CN` |
+  | `prolist-{id}.html` | 35/44/46/47/72–77 | → `/zh-CN/towers` |
+  | `proshow-{cat}-{id}.html` | 72-150/72-155/51-150/44-147/46-134/47-148/76-147 | → `/zh-CN/towers` |
+  | `caselist-{id}.html` | 36/52 | → `/zh-CN/cases` |
+  | `caseshow-{cat}-{id}.html` | 53-43/53-76/53-79 | → `/zh-CN/cases` |
+  | `newslist-{id}.html` | 39 | → `/zh-CN/resources/news` |
+  | `newsshow-{cat}-{id}.html` | 64-26/66-36/67-42 | → `/zh-CN/resources/news` |
+  | `page-{id}.html` | 38/40/41/58/63 | → `/zh-CN/why-us` |
+  - 分页 `?page=N`、来源参数 `?spm=`、`?bd_vid=` 均为 query string，不参与 nginx `location` 路径匹配，由 `$is_args$args` 原样保留。
+  - **结论：现有 P1-2 的 301 规则 100% 覆盖真实存在的所有老 URL 模板，无遗漏模式。**
+- **bd_vid 实链验证（本轮最有价值的一条）**：受访页面里抓到一条真实百度推广落地 URL `http://www.tzjii.com/prolist-35.html?bd_vid=10747107760560032222`。实锤：①老创意落地页就是这些 `.html`；②广告点击确实带 `bd_vid`；③经 301（保留 query）→ 新站 → 新站 `analytics.ts` 已采 `bd_vid`。**整条 OCPC 回传链路（P1-1）的数据入口已实测可用**，仅差投放同事提供回传 token。
+- **噪音域名**：报告中混入 `nqim.cqjbip.com`、`nqi.cqjbip.com`、`REDACTED-IP` 等，非本站页面（镜像站/扫描器），301 无需处理。
+- **精调评估**：唯一可精调项是 `page-{id}.html`（5 个单页现全兜到 `/why-us`），但其 30 天合计仅个位数 PV，投入产出比低，**维持粗映射，暂不精调**。

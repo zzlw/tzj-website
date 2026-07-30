@@ -157,6 +157,7 @@ export function mergeSitePublicSettings(
     },
     analytics: {
       geoMode: partial.analytics?.geoMode ?? DEFAULT_SITE_PUBLIC_SETTINGS.analytics.geoMode,
+      baiduHmId: partial.analytics?.baiduHmId,
     },
     businessHours: {
       enabled: partial.businessHours?.enabled ?? DEFAULT_SITE_PUBLIC_SETTINGS.businessHours.enabled,

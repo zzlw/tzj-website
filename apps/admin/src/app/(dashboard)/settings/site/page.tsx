@@ -566,6 +566,27 @@ export default function SiteSettingsPage() {
               text={GEO_MODES.find((m) => m.id === form.analytics.geoMode)?.hint ?? ''}
               className="mt-2 text-xs text-muted-foreground"
             />
+            <Label htmlFor="baiduHmId" className="mt-5 block">
+              百度统计站点 ID
+            </Label>
+            <Input
+              id="baiduHmId"
+              className="mt-1.5"
+              placeholder="如 018d0a41e7842e20b4cfa398f03259e2，留空则不加载百度统计"
+              value={form.analytics.baiduHmId ?? ''}
+              onChange={(e) =>
+                patch((p) => ({
+                  ...p,
+                  analytics: { ...p.analytics, baiduHmId: e.target.value },
+                }))
+              }
+            />
+            <RichHint
+              text={
+                '百度统计 hm.js 的站点 ID（hash）。在[百度统计](https://tongji.baidu.com)「管理 → 代码获取」中查看。留空则官网不加载统计脚本；此处配置优先于部署环境变量。'
+              }
+              className="mt-2 text-xs text-muted-foreground"
+            />
           </CardContent>
           <CardFooter className="items-center justify-end border-t bg-muted/20 px-6 pt-4! pb-4">
             <ModuleSaveButton

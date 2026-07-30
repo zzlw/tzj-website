@@ -101,6 +101,11 @@ export interface SitePublicSettings {
   analytics: {
     /** 默认 ip — 业内惯例，无需用户授权、隐私友好 */
     geoMode: AnalyticsGeoMode;
+    /**
+     * 百度统计站点 ID（hm.js 的 hash）。留空则不加载百度统计脚本。
+     * 后台配置优先，环境变量 NEXT_PUBLIC_BAIDU_HM_ID 作兜底（见 apps/web 消费逻辑）。
+     */
+    baiduHmId?: string;
   };
   /** 客服在线时间配置（后端下发，前端兜底判定离线） */
   businessHours: BusinessHours;

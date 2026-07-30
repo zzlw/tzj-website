@@ -1,11 +1,12 @@
+import type { Metadata } from 'next';
 import { Archivo, Geist } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server';
 import { ViewTransitions } from 'next-view-transitions';
-import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { Suspense } from 'react';
+import { BaiduAnalytics } from '@/components/analytics/BaiduAnalytics';
 import { ConsoleBranding } from '@/components/ConsoleBranding';
 import { ChatWidget } from '@/components/chat/ChatWidget';
 import { LanguageSelectorProvider } from '@/components/i18n/LanguageSelector';
@@ -119,6 +120,7 @@ export default async function LocaleLayout({ children, params }: Props) {
               <Suspense fallback={null}>
                 <DeferredVisitorTracker />
               </Suspense>
+              <BaiduAnalytics hmId={siteSettings.analytics.baiduHmId} />
               <ConsoleBranding />
               <ChatWidget
                 businessHours={siteSettings.businessHours}

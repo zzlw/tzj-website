@@ -63,4 +63,6 @@ export const env = {
   chatSocketUrl:
     optionalUrl('NEXT_PUBLIC_CHAT_SOCKET_URL', process.env.NEXT_PUBLIC_CHAT_SOCKET_URL) ??
     new URL(apiUrl).origin,
+  /** 百度统计站点 ID（hm.js hash）兜底：优先用后台「站点设置 → 访客分析」，未配置时回退此值 */
+  baiduHmId: process.env.NEXT_PUBLIC_BAIDU_HM_ID || undefined,
 } as const;
