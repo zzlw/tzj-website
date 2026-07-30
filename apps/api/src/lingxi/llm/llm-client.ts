@@ -4,7 +4,7 @@ import { IntegrationsService } from '../../integrations/integrations.service';
 
 export const LINGXI_LLM_SLUG = 'lingxi-llm';
 const DEFAULT_BASE_URL = 'https://api.deepseek.com';
-const DEFAULT_MODEL = 'deepseek-chat';
+const DEFAULT_MODEL = 'deepseek-v4-flash';
 
 export interface ResolvedLlm {
   client: OpenAI;

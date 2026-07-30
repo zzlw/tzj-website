@@ -278,7 +278,7 @@ model LingxiMessage {
 # ── 灵犀 LLM（OpenAI 兼容；推荐在后台「集成与凭证」维护，此处为 env 兜底）──
 LINGXI_LLM_BASE_URL="https://api.deepseek.com"
 LINGXI_LLM_API_KEY=""
-LINGXI_LLM_MODEL="deepseek-chat"
+LINGXI_LLM_MODEL="deepseek-v4-flash"
 ```
 
 - `env.validation.ts` 同步补 Zod 校验（全部 optional，未配置时灵犀端点返回明确的「未配置」错误帧，不影响其他模块启动）。

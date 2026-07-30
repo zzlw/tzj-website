@@ -268,7 +268,7 @@ export const INTEGRATION_REGISTRY: IntegrationDef[] = [
       {
         title: '切换到硅基流动（可选）',
         content:
-          'DeepSeek 官方拥堵或需要其它模型时，可将 Base URL 改为 https://api.siliconflow.cn/v1、模型名改为 deepseek-ai/DeepSeek-V3 并更换对应平台的 API Key，无需改代码。',
+          'DeepSeek 官方拥堵或需要其它模型时，可将 Base URL 改为 https://api.siliconflow.cn/v1、模型名改为该平台提供的 DeepSeek 型号（以平台列表为准）并更换对应 API Key，无需改代码。',
       },
     ],
     secretFields: [
@@ -292,7 +292,7 @@ export const INTEGRATION_REGISTRY: IntegrationDef[] = [
         key: 'model',
         label: '模型名',
         description:
-          '对话模型标识。DeepSeek 官方：deepseek-chat；硅基流动：deepseek-ai/DeepSeek-V3。留空时默认 deepseek-chat。',
+          '对话模型标识。DeepSeek 官方推荐 deepseek-v4-flash（默认），更强可选 deepseek-v4-pro；旧名 deepseek-chat / deepseek-reasoner 已废弃。留空时默认 deepseek-v4-flash。',
       },
     ],
   },
