@@ -1,6 +1,6 @@
 # 灵犀 · AI 投放报告助手 — v1 设计方案
 
-> 状态：待评审（r2，已按代码核查修订鉴权链路等 5 项）
+> 状态：待评审（r3，两轮代码核查后修订：鉴权链路、审计口径、类型导入约束等 9 项）
 > 日期：2026-07-30
 > 范围：B 端（apps/admin）「灵犀」菜单首个落地能力 —— 一句话生成投放报告与建议
 > 参考实现：`~/Desktop/resume/aftersales-agent`（LangGraph + RAG 售后客服 Agent，Python/FastAPI）
@@ -150,7 +150,7 @@ SSE 实现注意事项（NestJS/Express 环境实测易踩坑，实现时逐条�
 1. 用 `@Res()` 拿原生 Response 手写 `text/event-stream`，**天然绕过** `TransformInterceptor` 的统一包装（该拦截器只作用于返回值路径）。
 2. 响应头：`Content-Type: text/event-stream`、`Cache-Control: no-cache, no-transform`、`X-Accel-Buffering: no`（nginx 反代关闭缓冲），并在每帧后 `res.flush?.()`——全局 `compression()` 会缓冲响应，必须显式 flush 或在该路由禁用压缩。
 3. 前端不用 `EventSource`：`fetch` POST + `ReadableStream` 手写 SSE 解析器（admin 侧 `lib/sse.ts`）。请求**不直连 API**——admin 的 access token 在 httpOnly cookie 中，须经专用流式 BFF 路由换 Bearer 后透传（见 §7.1；通用 BFF `[...path]` 会全量缓冲响应，不可复用）。
-4. `AuditInterceptor`：SSE 端点为读操作 + 长连接，不参与写审计；会话删除等普通 JSON 端点照常被审计。
+4. `AuditInterceptor` 按「HTTP 写方法 + 已登录」判定：`POST /lingxi/chat` **会每次落一条审计**（resource=`lingxi`，action=`create`）——接受它，AI 使用行为天然留痕；`lingxi` 不入 `DETAIL_RESOURCES` 白名单，提问内容不进审计详情。会话删除等普通写端点照常被审计。
 5. 全局限流之外，对 `/lingxi/chat` 单独 `@Throttle`（建议 10 次/分）。注意现有 `ClientIpThrottlerGuard` 的 tracker 是**客户端 IP**（BFF 已透传真实 IP），非用户维度；v1 按 IP 口径即可（小团队 IP≈用户），若需严格按用户计数再在 LingxiController 自定义按 `req.user.id` 的 tracker。
 
 ### 5.3 SSE 帧协议（8 帧，借鉴参考项目并本地化）
@@ -261,8 +261,9 @@ model LingxiMessage {
 
 ### 5.8 权限与 RBAC
 
-- 新增权限点 `lingxi.use`，纳入现有 AccessModule 权限清单；预设角色中授予需要投放分析能力的角色（至少与 `analytics.view` 同组，因为灵犀输出的就是 analytics 数据的加工结果）。
-- 控制器统一 `@RequirePermissions('lingxi.use')`；JWT / 2FA / IP 封禁由全局守卫链自动覆盖。
+- 新增权限点 `lingxi.use`，必须同步三处才能调通：① `access/permissions.ts` 权限清单（建议入「运营分析」分组，与 `analytics.view` 同组）；② 需要投放分析能力的预设角色的基线权限集；③ 控制器 `@RequirePermissions('lingxi.use')`。只标控制器、漏注册清单/角色时，`getPermissionsForSlug` 查不到该权限 → 所有人 403。
+- `RolesGuard` 为 fail-closed（无注解端点直接 403），CI 有 `scripts/check-permissions.mjs` 静态门禁强制每个端点显式声明保护状态——本模块 5 个端点全部标注，新增端点须过该脚本。
+- JWT / 2FA / IP 封禁由全局守卫链自动覆盖；`@RequirePermissions` 为 OR 语义，单权限点无歧义。
 
 ### 5.9 LLM 凭证与配置
 
@@ -325,7 +326,9 @@ apps/admin/src/components/lingxi/
 └── LingxiConversationList.tsx      # 会话历史侧列（新建/切换/删除）
 apps/admin/src/app/api/lingxi/stream/route.ts  # 流式 BFF：读 httpOnly cookie 附 Bearer 转发，
                                                # return new Response(apiRes.body, …) 透传 ReadableStream；
-                                               # 401 刷新在开流前完成（复用 tokenRefresh）
+                                               # 401 刷新在开流前完成（复用 tokenRefresh）；
+                                               # 同时导出 POST（发起生成）与 GET（重连续播，?cid= 传会话 ID）
+                                               # ——GET 重连同样会被通用 BFF 缓冲，两路都必须走这里
 apps/admin/src/lib/sse.ts           # SSE 解析器（fetch ReadableStream，借鉴参考项目 lib/sse.ts）
 apps/admin/src/hooks/useLingxiChat.ts  # 发送/消费流/重连恢复 状态机 hook
 ```
@@ -368,12 +371,14 @@ apps/admin/src/hooks/useLingxiChat.ts  # 发送/消费流/重连恢复 状态机
 ```
 packages/types/src/
 ├── entities/lingxi.ts     # LingxiConversation / LingxiMessage / LingxiMessageMeta
+│                          # + LingxiSseEvent / LingxiStage（字符串字面量联合类型）
 ├── dto/lingxi.ts          # ChatRequestDto 形状
-├── enums/lingxi.ts        # LingxiSseEvent（8 帧枚举）、LingxiStage
 └── responses/lingxi.ts    # 会话列表/详情响应、各帧 payload 类型
 ```
 
 前后端共用帧类型定义，SSE 解析器与 Agent 编排器引用同一份 `LingxiSseEvent`，协议不漂移。
+
+> ⚠️ 帧类型**不得做成 TS `enum`**（不放 `enums/lingxi.ts`）：admin 无法值导入 `@tzj/types`（Turbopack + NodeNext `.js` 后缀解析问题，见 `apiClient.ts` 头注释，现有 admin 代码全部 `import type`）。统一用字符串字面量联合类型（type-only），前端 switch 裸字符串即可；api 侧同样用类型收窄，不依赖运行时枚举值。
 
 > 按 AGENTS.md：`packages/types` 仅新增文件与导出，不改已发布类型（A1 审批项，见 §10）。
 
@@ -414,7 +419,7 @@ packages/types/src/
 
 | 阶段 | 内容 | 验收 |
 |---|---|---|
-| M1 后端骨架 | LingxiModule、Prisma 迁移（含 User 反向关系）、trash-cleanup 注册、LlmClient、权限点、env 校验 | Swagger 可见端点；未配置 Key 时返回明确错误 |
+| M1 后端骨架 | LingxiModule、Prisma 迁移（含 User 反向关系）、trash-cleanup 注册、LlmClient、权限点三处同步（清单/预设角色/控制器）、env 校验 | Swagger 可见端点；check-permissions.mjs 通过；至少一个预设角色能实际调通；未配置 Key 时返回明确错误 |
 | M2 Agent 核心 | 工具注册表、tool-calling 循环、SSE 8 帧、消息落库 | curl 全帧序列正确；报告含真实聚合数据；域外输入被拒绝 |
 | M3 前端页面 | 流式 BFF 路由、/lingxi 页、SSE 解析、流式 Markdown、时间线、溯源卡片、Sidebar 转正 | 一句话 → 流式完整报告（经 BFF 仍逐帧到达）；刷新后历史完整回放 |
 | M4 流恢复+打磨 | RunBuffer 重连续播、suggest、快捷问题、限流、错误降级 | 生成中刷新不丢回答；typecheck + biome + CI 全绿 |
