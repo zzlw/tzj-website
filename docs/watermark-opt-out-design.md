@@ -1,6 +1,6 @@
-# 媒体水印按次豁免（Opt-out）设计方案
+# 媒体水印按次覆盖（Opt-out / Force）设计方案
 
-> 状态：设计定稿，待实施
+> 状态：设计定稿（v2，经评审修订），待实施
 > 日期：2026-07-30
 > 关联模块：`apps/api/src/media/`、`apps/admin`（媒体库 / MediaPicker）、`packages/types`
 
@@ -60,13 +60,13 @@ watermark: 'auto' | 'skip' | 'force'   // 默认 'auto'
 |------|------|
 | `auto` | 默认。完全遵循全局设置（现有行为，向后兼容） |
 | `skip` | 本次上传强制不加水印（即使全局开启、目录/类型匹配） |
-| `force` | 本次上传强制加水印（全局已开启但目录不在 `applyToFolders`、或类型开关关闭时也加；全局 `enabled=false` 或水印内容未配置时仍不加，因为没有可用的水印样式来源；SVG/GIF、小于 min 尺寸的硬性跳过仍然生效） |
+| `force` | 本次上传强制加水印（全局已开启但目录不在 `applyToFolders`、或类型开关关闭时也加；全局 `enabled=false` 时仍不加——没有已启用的水印样式来源；SVG/GIF、小于 min 尺寸的硬性跳过仍然生效） |
 
 设计说明：
 
 - 用三值枚举而非 `skipWatermark: boolean`，一次把"豁免"和"补打"两个方向都覆盖，避免后续再改契约；
 - **权限**：不新增权限点。持有 `media.upload` 即可使用 `skip/force`。理由：本项目运营团队极小且互信，水印目的是 C 端防盗图而非内部管控，为一个勾选框引入新权限点属于过度设计。若未来需要收紧，在 controller 处加 `media.watermark.override` 权限即可（预留说明，不实施）；
-- **审计**：`uploadAndRegister` 的现有操作审计（若有记录上传行为）无需额外埋点——`MediaAsset.watermarked` 字段本身即留痕。
+- **审计**：media 模块当前没有操作审计埋点（已核实），本方案也不新增——`MediaAsset.watermarked + uploadedById` 两个字段即构成留痕（谁上传的、是否烧录了水印），足够本项目规模的追溯需求。
 
 ### 4.2 数据模型
 
@@ -75,12 +75,13 @@ watermark: 'auto' | 'skip' | 'force'   // 默认 'auto'
 ```prisma
 model MediaAsset {
   // ...现有字段
-  watermarked Boolean? // null=历史数据（未知）；true=已烧录；false=确认无水印
+  watermarked Boolean? // true=服务端已烧录；false=服务端确认未烧录；null=未知（历史数据/服务端未经手文件）
 }
 ```
 
 - 迁移：`prisma migrate dev --name media-asset-watermarked`（历史行保持 null，不回填、不猜测）；
-- 赋值来源是**实际处理结果**而非请求参数：`WatermarkService` 返回"是否真的烧录了"（见 4.3），跳过（尺寸不足、SVG/GIF、ffmpeg 缺失、处理异常回退）一律记 `false`。这保证字段语义是"文件事实"而不是"用户意图"。
+- 赋值来源是**实际处理结果**而非请求参数：`WatermarkService` 返回"是否真的烧录了"（见 4.3），跳过（尺寸不足、SVG/GIF、ffmpeg 缺失、处理异常回退）一律记 `false`。这保证字段语义是"文件事实"而不是"用户意图"；
+- **`false` 与 `null` 严格区分**：`false` 仅在服务端亲手处理过文件buffer 且未烧录时写入；服务端没经手文件内容的链路（presign 直传登记、历史数据）一律 `null`。这一区分是未来"批量补水印"工具（第 7 节）按 `false` 筛选时不误伤的前提。
 
 ### 4.3 后端改动
 
@@ -107,23 +108,26 @@ async processUpload(
 
 ```
 override === 'skip'  → 直接返回原文件（watermarked: false）
-override === 'force' → 仅要求 config.enabled 且水印内容有效（text 非空或 imageKey 存在），
-                       跳过 applyToFolders / applyToImages / applyToVideos 检查；
+override === 'force' → 仅要求 config.enabled，跳过 applyToFolders /
+                       applyToImages / applyToVideos 检查；
                        SVG/GIF 与 min 尺寸检查仍生效
 override === 'auto'  → 现有 shouldProcess 全量检查（行为不变）
 ```
+
+> `force` 不额外校验水印内容：`buildStamp` 对空 text 本就回退 `'Watermark'` 占位，且 settings schema 的 `superRefine` 在 `enabled=true` 时已拦截空内容，"enabled 但内容未配置"到不了运行时，不要重复校验。
 
 `checkFfmpeg` 失败、处理异常回退等现有兜底逻辑一律不变。
 
 #### `media.service.ts` / `media.controller.ts`
 
 - `uploadAndRegister(file, folder, userId, watermark)` 透传 override，并把 `processed.watermarked` 写入 `mediaAsset.create`；
-- controller 的 `upload()` 新增 `@Body('watermark') watermark?: string`，归一化：非 `skip`/`force` 值一律按 `auto` 处理（宽容解析，不抛 400），Swagger `@ApiBody` 补充该字段。
+- controller 的 `upload()` 新增 `@Body('watermark') watermark?: string`，归一化：非 `skip`/`force` 值一律按 `auto` 处理（宽容解析，不抛 400），Swagger `@ApiBody` 补充该字段；
+- `replaceSiteAsset`（替换站点静态资源）：该链路直接 `s3.upload` 覆盖同 key、随后 `update` 同一条 `MediaAsset` 记录。替换不走水印（站点资源在 `content/`，不在水印目录范围），但**必须在 update 时把 `watermarked` 置回 `null`**——文件内容已换，旧标记即失效，不处理会留下过期数据。
 
 #### 旁路链路（明确不改，写入文档留痕）
 
-- `POST /storage/upload`：历史通用上传口，本来就无水印，保持现状；
-- `presign + register` 直传链路：服务端拿不到文件内容，天然无法烧录。`register` 登记时 `watermarked` 记 `false`；
+- `POST /storage/upload`：历史通用上传口，本来就无水印，不产生 `MediaAsset` 记录，保持现状；
+- `presign + register` 直传链路：服务端拿不到文件内容，天然无法烧录。`register` 登记时 `watermarked` 记 **`null`（未知）而非 `false`**——上传者可能直传一张本身已带水印的图，服务端没经手就不能"确认无水印"（语义定义见 4.2）；
 - 结论：**"要水印，走 `/media/upload`"** 是唯一约定，本方案不试图在旁路上补水印。
 
 ### 4.4 Admin 前端改动
@@ -147,12 +151,12 @@ export async function uploadMedia(
 
 | 入口 | 改动 |
 |------|------|
-| 媒体库页 `media/page.tsx` 上传按钮 | 上传按钮旁增加一个 Switch/Checkbox「本次上传不加水印」，仅当**全局水印开启**时显示（避免关着水印还展示无意义选项）；选中后本批次所有文件带 `watermark=skip`，上传完成后自动复位为不选中（防遗忘常开） |
+| 媒体库页 `media/page.tsx` 上传按钮 | 上传按钮旁增加一个 Switch/Checkbox「本次上传不加水印」，**恒显示、不做全局状态联动**；选中后本批次所有文件带 `watermark=skip`，上传完成后自动复位为不选中（防遗忘常开）。tooltip 注明「全局水印关闭时此选项无效果」 |
 | `MediaPicker.tsx` 上传区 | 同上，复用同一个小组件（建议抽 `WatermarkOptOutToggle`），置于上传按钮附近 |
 | `MarkdownEditor.tsx`（Vditor 拖拽上传） | **不加开关**，恒为 `auto`。编辑器内贴图是 CMS 正文配图，正是水印的目标场景；需要无水印图时先去媒体库上传再插入 |
 | 媒体库列表/卡片 | `watermarked === true` 的资产显示一个小徽标（如 Stamp 图标 + tooltip「已烧录水印」）；`false` 不显示；`null`（历史数据）不显示。可选：列表筛选器增加"含水印/无水印"（低优先级，可后做） |
 
-"全局水印是否开启"的判断：媒体库页与 MediaPicker 通过现有 `useSiteMediaSettings()`（`GET /settings/site/media`）获取。注意该接口需要 `settings.view` 权限——对无此权限的上传者，开关**照常显示但不做全局状态联动**（fallback：始终显示）；实现时以 `useSiteMediaSettings` 查询失败/无权限 → 显示开关为兜底，避免权限差异导致功能不可达。
+**明确不做"仅全局开启时显示"的联动**：读全局水印状态需 `GET /settings/site/media`（要求 `settings.view` 权限），若在上传入口拉取，无权限的上传者每次进页都会打一个 403（apiClient 的 403 特判只针对 2FA，其余走错误路径产生噪音），且会导致不同角色看到不同 UI。恒显示 + tooltip 是更简单一致的方案：勾了但全局关闭 → 本来就不加水印，无副作用；净省一个查询和整段条件逻辑。
 
 ### 4.5 安全与边界
 
@@ -170,7 +174,7 @@ export async function uploadMedia(
 | 1 | `packages/types/src/dto/site-media.ts` | 新增 `WatermarkOverride` 类型导出 |
 | 2 | `apps/api/prisma/schema.prisma` | `MediaAsset.watermarked Boolean?` + 迁移 |
 | 3 | `apps/api/src/media/watermark.service.ts` | `ProcessedMedia.watermarked`；`processUpload` 支持 override 三态 |
-| 4 | `apps/api/src/media/media.service.ts` | `uploadAndRegister` 透传 override、落库 `watermarked`；`register` 记 `false` |
+| 4 | `apps/api/src/media/media.service.ts` | `uploadAndRegister` 透传 override、落库 `watermarked`；`register` 记 `null`；`replaceSiteAsset` 更新时置 `null` |
 | 5 | `apps/api/src/media/media.controller.ts` | `upload()` 接收并归一化 `watermark` 字段，Swagger 更新 |
 | 6 | `apps/admin/src/features/media.ts` | `uploadMedia` / `useUploadMedia` 增加 watermark 参数 |
 | 7 | `apps/admin/src/app/api/media/upload/route.ts` | BFF 透传 `watermark` |
@@ -183,14 +187,15 @@ export async function uploadMedia(
 
 ## 6. 测试计划
 
-1. **单测（watermark.service）**：
+1. **单测（watermark.service）**——注意这是 media 模块的第一个 spec（现有测试集中在 access/auth/support/users），mock 策略：**sharp 真跑不 mock**（合成逻辑就是被测对象，用 sharp 现场生成纯色测试图作输入，断言输出 buffer 与输入不同/相同即可判定是否烧录）；`SettingsService.getSiteMediaSettings` 与 `S3Service` 用 stub 注入。用例：
    - `override=skip` + 全局开启 → 返回原 buffer，`watermarked=false`；
    - `override=force` + 目录不在 `applyToFolders` → 烧录，`watermarked=true`；
    - `override=force` + `enabled=false` → 不烧录；
    - `override=auto` → 与现有行为逐项一致（回归）；
-   - 小图/SVG/GIF 在 `force` 下仍跳过。
-2. **接口测试**：`watermark` 传非法值（如 `"yes"`）按 `auto` 处理，不报 400；不传字段行为与改造前完全一致。
-3. **E2E 手工**：全局开启水印 → 媒体库勾选"不加水印"上传 → 下载校验无水印、列表无徽标；不勾选上传 → 有水印、有徽标；MarkdownEditor 贴图 → 有水印。
+   - 小图/SVG/GIF 在 `force` 下仍跳过（`watermarked=false`）；
+   - 视频 + ffmpeg 不可用（stub `checkFfmpeg` 为 false）→ 回退原文件，`watermarked=false`。
+2. **接口测试**：`watermark` 传非法值（如 `"yes"`）按 `auto` 处理，不报 400；不传字段行为与改造前完全一致；`register` 登记后 `watermarked` 为 `null`。
+3. **E2E 手工**：全局开启水印 → 媒体库勾选"不加水印"上传 → 下载校验无水印、列表无徽标；不勾选上传 → 有水印、有徽标；MarkdownEditor 贴图 → 有水印；替换站点资源 → 该记录 `watermarked` 变回 `null`。
 4. **迁移验证**：迁移后历史 `MediaAsset` 行 `watermarked` 为 null，媒体库列表正常渲染。
 
 ## 7. 未来演进（不在本期范围）
