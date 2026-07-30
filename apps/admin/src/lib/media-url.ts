@@ -18,7 +18,10 @@ function getPublicDomainBase(): string {
 function getConfiguredBucket(): string | null {
   try {
     const u = new URL(getPublicDomainBase());
-    const segments = u.pathname.replace(/^\/+|\/+$/g, '').split('/').filter(Boolean);
+    const segments = u.pathname
+      .replace(/^\/+|\/+$/g, '')
+      .split('/')
+      .filter(Boolean);
     return segments.length > 0 ? segments[segments.length - 1]! : null;
   } catch {
     return null;
