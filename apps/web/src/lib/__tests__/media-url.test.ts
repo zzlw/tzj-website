@@ -39,6 +39,19 @@ describe('extractMediaObjectKey', () => {
     );
   });
 
+  it('生产 static.tzjii.com（公开域含 bucket）正确剥离，并折叠误重复的 bucket', () => {
+    // 模拟生产：env 默认是本地 DOMAIN；直接测相对 key 折叠 + 绝对 URL 含重复 bucket
+    expect(extractMediaObjectKey('tzj-uploads-prod/content/tower-eastside.jpg')).toBe(
+      'content/tower-eastside.jpg',
+    );
+    expect(
+      extractMediaObjectKey(
+        'tzj-uploads-prod/tzj-uploads-prod/tzj-uploads-prod/content/tower-eastside.jpg',
+      ),
+    ).toBe('content/tower-eastside.jpg');
+    expect(extractMediaObjectKey(`${DOMAIN}/tzj-uploads-dev/content/a.jpg`)).toBe('content/a.jpg');
+  });
+
   it('无法定位 key 的绝对 URL 返回 undefined', () => {
     expect(extractMediaObjectKey('http://example.com/')).toBeUndefined();
     expect(extractMediaObjectKey('http://example.com/bucket-only')).toBeUndefined();
@@ -82,6 +95,12 @@ describe('resolveMediaUrl', () => {
   it('绝对 URL 走 normalizeStorageUrl 归一', () => {
     expect(resolveMediaUrl('https://tzj-static.jiawen.live/content/tower.jpg')).toBe(
       `${DOMAIN}/content/tower.jpg`,
+    );
+  });
+
+  it('误拼多重 bucket 的绝对 URL 归一到单次公开域前缀', () => {
+    expect(resolveMediaUrl(`${DOMAIN}/tzj-uploads-dev/tzj-uploads-dev/content/a.jpg`)).toBe(
+      `${DOMAIN}/content/a.jpg`,
     );
   });
 });
