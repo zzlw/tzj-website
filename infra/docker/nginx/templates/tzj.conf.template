@@ -22,6 +22,25 @@ server {
     server_name ${WEB_DOMAIN};
     include /etc/nginx/snippets/ssl.conf;
 
+    # ── 老站（静态 PHP 站）URL 301 承接 ─────────────────────────────
+    # 百度老创意/历史收录指向 proshow-*.html 等路径，新站（Next.js）无此路径会 404。
+    # 按“URL 模式 → 新站栏目页”粗映射（映射依据见 docs/baidu-sem-migration-guide.md 第二节）。
+    # 正则 location 优先级高于前缀 location /，且按书写顺序匹配；具体模式在前、兜底在后。
+    # $is_args$args：保留老创意可能携带的 ?bd_vid=...&utm_* 参数，避免转化追踪丢失。
+    location ~* ^/proshow-.*\.html$   { return 301 https://$host/zh-CN/towers$is_args$args; }
+    location ~* ^/prolist-.*\.html$   { return 301 https://$host/zh-CN/towers$is_args$args; }
+    location ~* ^/caseshow-.*\.html$  { return 301 https://$host/zh-CN/cases$is_args$args; }
+    location ~* ^/caselist-.*\.html$  { return 301 https://$host/zh-CN/cases$is_args$args; }
+    location ~* ^/newsshow-.*\.html$  { return 301 https://$host/zh-CN/resources/news$is_args$args; }
+    location ~* ^/newslist-.*\.html$  { return 301 https://$host/zh-CN/resources/news$is_args$args; }
+    location ~* ^/page-.*\.html$      { return 301 https://$host/zh-CN/why-us$is_args$args; }
+    location = /index.html            { return 301 https://$host/zh-CN$is_args$args; }
+    # 老子目录：article≈资讯、project≈案例
+    location ~* ^/article(/|$)         { return 301 https://$host/zh-CN/resources/news$is_args$args; }
+    location ~* ^/project(/|$)         { return 301 https://$host/zh-CN/cases$is_args$args; }
+    # 兜底：任何其它未匹配的 .html → 首页（新站不供应任何 .html，故可安全兜底）
+    location ~* \.html$               { return 301 https://$host/zh-CN$is_args$args; }
+
     location / {
         include /etc/nginx/snippets/proxy-docker.conf;
         set $upstream_web web:3000;

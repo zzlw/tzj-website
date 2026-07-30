@@ -1,6 +1,8 @@
 # 百度广告投放迁移指南（老站 → 新站）
 
-> 编写日期：2026-07-30（同日复评：生产实测校验全部断言，P0-1 已落地，修正备案号/老 URL 状态两处过时描述）
+> 编写日期：2026-07-30（同日二评：生产实测校验全部断言；同日三评：SEO 阶段一
+> 代码合入后复核；同日四评：实测确认 SEO 阶段一**已部署生效**（根路径已
+> 为 308、首页 metadata/canonical/hreflang 均已上线），已更新全文跳转与 SEO 相关描述）
 > 读者：负责百度推广（SEM）投放的同事 + 前端/运维工程师
 > 背景：公司百度广告以前投的是老站（静态 PHP 站，`proshow-*.html` 一类 URL），
 > 现已换成本仓库的新站（Next.js，`https://www.tzjii.com/zh-CN/...`）。
@@ -15,7 +17,7 @@
    - **① 旧 URL 301 承接**（工程侧，最先做）——历史创意、历史收录点进来不能 404；
    - **② 广告后台批量替换落地页 URL**（投放侧）——全部换成带 `/zh-CN` 前缀的新 URL + 统一 UTM 参数；
    - **③ 转化追踪重建**（工程 + 投放）——`bd_vid` 采集已完成（见 P0-1）；但新站仍**没有**百度统计、**没有** OCPC 回传，这两项不补上，投放就回到"只看消费不看效果"的盲投状态。
-3. 一个新站特有的坑：**落地页 URL 必须写带语言前缀的完整地址**（如 `https://www.tzjii.com/zh-CN/modular-tower`）。不带前缀的 URL（如 `/modular-tower`）会被 next-intl 做一次 **307 跳转**，百度落地页审核对跳转敏感，且白白损失打开速度和质量度。
+3. 一个新站特有的坑：**落地页 URL 必须写带语言前缀的完整地址**（如 `https://www.tzjii.com/zh-CN/modular-tower`）。不带前缀的 URL（如 `/modular-tower`）会被跳转一次（生产已为 **308 永久跳转**，SEO 阶段一已部署生效；实测跳转会完整保留 `?bd_vid=...&utm_*` 等参数，故即便发生跳转也不会丢失埋点参数）——但**308 依然是多一跳**：百度落地页审核对跳转敏感，且白白损失打开速度和质量度，结论不变：永远投带前缀的最终 URL。
 
 ---
 
@@ -44,14 +46,14 @@
 | `index.html` / `/` | 1 | `/zh-CN` |
 | `article/*`、其余未匹配 `.html` | — | 兜底 301 到 `/zh-CN` |
 
-> 落地方式：在 `infra/docker/nginx/templates/tzj.conf.template` 加一组
-> `location ~ ^/(proshow|prolist|caseshow|caselist|newsshow|newslist|page)-.*\.html$`
-> 的 301 规则（先按"模式 → 栏目页"粗映射即可，不必逐条精确映射 240+ 个老 URL；
-> 若某几条老 URL 历史上是广告主力落地页，可单独精确映射）。
-> **实测确认（2026-07-30）：老 URL 目前在生产环境直接返回 404**（如
-> `https://www.tzjii.com/proshow-36-1.html`），nginx 模板尚未加任何 `.html` 规则——
-> 若百度老创意仍在线消费，每次点击都在付费买 404，**这是当前最紧急的一项**。
-> 在广告切换前先上线这一步，保证任何时刻点进来都不 404。
+> 落地方式：在 `infra/docker/nginx/templates/tzj.conf.template` 的 `${WEB_DOMAIN}`
+> server 块内、`location /` 之前加一组正则 `location`（按 `proshow|prolist|caseshow|
+> caselist|newsshow|newslist|page` 等模式 → 栏目页粗映射，带 `$is_args$args` 保留 query）。
+> **✅ 已实现（2026-07-30）**：规则已写入模板，本地经 `nginx -t` 语法校验 + 容器
+> 功能实测通过（proshow→towers、caseshow→cases、newsshow→resources/news、page→why-us、
+> 兜底→首页，query 参数完整保留）；**尚未部署到生产**（生产实测 `proshow-36-1.html`
+> 仍 404，需随下次部署上线）。若百度老创意仍在线消费，部署前每次点击仍在买 404，
+> **部署这一步是当前最紧急的事**。
 
 ---
 
@@ -90,6 +92,11 @@ https://www.tzjii.com/zh-CN/{落地页}?utm_source=baidu&utm_medium=cpc&utm_camp
 - 这样即使百度统计还没装好，**admin 后台的访客分析立刻就能区分"百度付费流量"**，并能看到每个计划/单元带来的询盘归属；
 - 开启百度 OCPC 后，百度会自动在 URL 追加 `bd_vid=xxx` 参数，工程侧会采集（见下节），投放侧无需处理。
 
+> ⚠️ **`utm_medium` 取值约束（关系后台能否认出“付费”，勿随意填）**：
+> 后端按**白名单精确匹配** medium——只有 `cpc / ppc / paid / paidsearch / display / cpm / banner`
+> 等固定值才会归为“付费（paid）”；其它值（如 `feed`、中文、拼错）会被归成“引荐（referral）”而非付费，
+> 导致 admin 后台付费流量对不上账。因此：**搜索推广统一用 `utm_medium=cpc`；百度信息流（native/feed）用 `utm_medium=display`或 `cpm`**（同属白名单），不要自创 `feed` 等取值。若已开 OCPC、URL 带了 `bd_vid`，则无论 medium 填什么都会被强制归为付费（bd_vid 优先级最高）。
+
 ### 3.3 账户设置检查
 
 - 推广 URL / 显示 URL 里若有老路径（`.html`），全部更新；
@@ -120,17 +127,22 @@ https://www.tzjii.com/zh-CN/{落地页}?utm_source=baidu&utm_medium=cpc&utm_camp
 
 ### P1-1 OCPC 转化回传（API 回传方式，推荐）
 
-- 转化事件：**询盘表单提交成功**（ContactSection 提交成功回调处）为主转化；
-  在线聊天发起、电话点击可作为辅助转化；
-- 由 `apps/api` 侧在询盘落库后，携带该访客会话的 `bd_vid` 调用百度 OCPC
-  转化回传 API（服务端回传，避免前端丢数）；
-- 回传 token、账户参数全部走环境变量。
+> ⚡ 代码核实（阶段三评）：**回传所需的数据链路已现成，无需额外埋点或改前端**。
+> 询盘提交时前端已携带 `visitorId`（[api.ts](file:///Users/gavin/Documents/tzj/tzj-website-reconstruction/apps/web/src/lib/api.ts) `submitContact`，与埋点同源），
+> `Contact` 表落库存 `visitorId`；`page_views` 表已按 `visitorId` 存首触 `bdVid`（P0-1）。
+> 因此可直接“询盘 → visitorId → page_views 首触 bdVid”反查（代码中已有
+> `buildContactMatchOr` 等按 visitorId 反查询盘的成熟范式可复用）。
+
+- 转化事件：**询盘表单提交成功**为主转化；在线聊天发起、电话点击可作辅助转化；
+- 实现：`apps/api` 在询盘落库后，按 `Contact.visitorId` 反查该访客首触 `bdVid`，
+  有值则服务端调百度 OCPC 回传 API（服务端回传，避免前端丢数；无 bdVid 的自然/其他渠道询盘直接跳过）；
+- 回传 token、账户参数全部走环境变量；
 - 做完这一步才能开 OCPC 智能出价，这是百度投放降本的关键。
 
 ### P1-2 旧 URL 301（见第二节）
 
-- nginx 模板加规则，随下一次部署上线；
-- 同时把这批老 URL 的 301 提交到百度站长平台的"改版工具"，加速权重迁移（对自然流量也有收益）。
+- **✅ 规则已写入** `infra/docker/nginx/templates/tzj.conf.template`（`${WEB_DOMAIN}` server 块），本地 `nginx -t` + 功能实测均通过，**待下次部署上线**；
+- 上线后同时把这批老 URL 的 301 提交到百度站长平台的"改版工具"，加速权重迁移（对自然流量也有收益）。
 
 ### P2 落地页合规自查
 
@@ -146,7 +158,7 @@ https://www.tzjii.com/zh-CN/{落地页}?utm_source=baidu&utm_medium=cpc&utm_camp
 
 | 步骤 | 负责 | 内容 | 依赖 |
 |------|------|------|------|
-| 1 | 工程 | nginx 旧 URL 301 上线 + 百度站长平台提交改版规则 | 无 |
+| 1 | 工程 | nginx 旧 URL 301 **部署上线**（规则已写入模板并本地实测通过）+ 百度站长平台提交改版规则 | 无 |
 | 2 | 工程 | 接入百度统计 hm.js（环境变量注入） | 投放同事提供统计站点 ID |
 | 3 | 投放 | 按 3.1/3.2 批量替换落地页 URL（先小计划灰度 3~5 天） | 步骤 1、2 |
 | 4 | 工程 | ~~`bd_vid` 采集~~（✅ 已完成）+ 询盘 OCPC 服务端回传 | 投放同事提供回传 token |
@@ -161,7 +173,42 @@ https://www.tzjii.com/zh-CN/{落地页}?utm_source=baidu&utm_medium=cpc&utm_camp
 A：百度审核和质量度绑定的是"最终访问 URL"。老创意里的 `xxx.html` 现在**实测全部 404**（301 规则尚未上线），不改会导致审核拒登、质量度下滑、点击浪费。
 
 **Q：能不能直接投 `https://www.tzjii.com/`？**
-A：不建议。根路径目前是 307 临时跳转到 `/zh-CN`（实测复核 2026-07-30 仍如此；背景见 `docs/web-seo-assessment-and-plan.md` P0-2），审核可能判"跳转页"，速度也多一跳。永远投带 `/zh-CN` 前缀的最终 URL。
+A：不建议。根路径是跳转页（生产实测已为 308 永久跳转到 `/zh-CN`，SEO 阶段一已部署生效；背景见 `docs/web-seo-assessment-and-plan.md` P0-2）。即便是 308，它依然是跳转页、依然多一跳，审核仍可能判"跳转页"。永远投带 `/zh-CN` 前缀的最终 URL。
 
 **Q：老站那 240 多个页面要逐个 301 吗？**
 A：不用。按 URL 模式粗映射到对应栏目页即可；只有历史上做过广告主力落地页的个别 URL 值得精确映射（可从老百度账户的"访问 URL 报告"里导出消费 Top 的落地页清单来决定）。
+
+---
+
+## 七、复核记录（代码核实）
+
+> 本节记录每轮针对本文断言的实测/代码核实，供后续维护追源。
+
+### 2026-07-30 一评（生产实测）
+
+- 根路径 `/` 实测 307 → `/zh-CN/`；`/cases` 同为 307；
+- 老 URL `proshow-36-1.html` 实测 **纯 404**（nginx 无任何 `.html` 规则）；
+- 页脚备案号实测为真实值「豫ICP备20013982号」（非占位符）。
+
+### 2026-07-30 二评（P0-1 落地）
+
+- `bd_vid` 采集已全链路打通（前端解析 → DTO → 渠道分类 paid → `page_views.bdVid` 落库 → admin 展示/导出），typecheck 全绿，本地迁移已应用。
+
+### 2026-07-30 三评（SEO 阶段一合入后）
+
+- **代码层**（commit `2f04818`，已合入 main）：`proxy.ts` 将 locale 补前缀跳转 307→308＋no-store；`seo.ts` canonical/hreflang/og:locale 补 locale 前缀，首页 metadata 补齐；
+- **生产层**：三评当时实测 `/` 与 `/cases` 仍为 307，判定未生效（部署流水线曾在 `@tzj/types` 构建阶段 `@parcel/watcher` 环境问题失败，非代码问题）——**此结论已被四评推翻，见下**；
+- **P1-1 可行性核实**：回传数据链路已现成——`submitContact` 提交已携 `visitorId`（[api.ts:151](file:///Users/gavin/Documents/tzj/tzj-website-reconstruction/apps/web/src/lib/api.ts#L151)）、`Contact.visitorId` 落库、`page_views.bdVid` 按 visitorId 存储，可“询盘→visitorId→首触 bdVid”反查（已有 `buildContactMatchOr` 范式可复用）；
+- **P1-2 可行性核实**：第二节 301 映射表与第三节落地页表引用的新路由（`modular-tower/series`、`fixed-tower/climbing-tower`、`burn-rooms/cfbt`、`accessories/*`、`specialized-training/*` 等）逐条比对 app router，**全部真实存在**，301 不会落到另一个 404。
+
+### 2026-07-30 四评（生产实测：SEO 阶段一已生效 + query 存活验证）
+
+- **订正三评的“未生效”结论**：重试后部署已成功，实测：`/` 与 `/cases` 均为 **308 + `cache-control: no-store`**；`/zh-CN` 首页 `<title>` 为「拓之迹 | 应急救援训练装备专业制造商」、canonical `https://www.tzjii.com/zh-CN`（带前缀）、hreflang 三语言 + x-default 均已上线；
+- **跳转保留 query 参数**：实测 `curl '/cases?bd_vid=TEST&utm_source=baidu&utm_medium=cpc'` → `location: /zh-CN/cases?bd_vid=TEST&utm_source=baidu&utm_medium=cpc`，参数全保留——**即便发生跳转，bd_vid/utm 也不会丢失**，埋点首触归因成立。
+- **仅剩**：老 `.html` URL 仍 404（`proshow-36-1.html` 实测 404），nginx 301 仍未上线——P1-2 依然是当前最紧急项。
+
+### 2026-07-30 五评（开工：P1-2 nginx 301 规则已实现并本地实测）
+
+- **已实现**：在 `infra/docker/nginx/templates/tzj.conf.template` 的 `${WEB_DOMAIN}` server 块内、`location /` 之前加入一组正则 `location`（proshow/prolist→towers、caseshow/caselist→cases、newsshow/newslist→resources/news、page→why-us、index.html→首页、article→news、project→cases、其余 `.html` 兜底→首页），均带 `$is_args$args` 保留 query；
+- **验证**：隔离环境（envsubst 只替换域名变量 + 自签证书）下 `nginx -t` 语法校验通过（仅余既有的 `listen...http2` 弃用 warn）；容器功能实测 9 类 URL 均正确 301，`proshow-36-1.html?bd_vid=TESTVID&utm_source=baidu` → `location: https://www.tzjii.com/zh-CN/towers?bd_vid=TESTVID&utm_source=baidu`（query 保留）；
+- **待办**：未部署到生产（本地未 push）；上线后需到百度站长平台提交改版规则。
