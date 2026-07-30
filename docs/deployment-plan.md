@@ -166,7 +166,7 @@ server {
 
 ### 4.3 环境变量变更（`.env.prod` / `.env.prod.example`）
 
-**域名段整体迁移（现 example 仍是 jiawen.live 测试域，漏改会导致 CORS 拦截生产前端）**：
+**域名段（漏改会导致 CORS 拦截生产前端）**：
 
 ```bash
 WEB_DOMAIN=www.tzjii.com
@@ -220,7 +220,7 @@ forcePathStyle:
 - compose `gateway` 服务的 `environment` 去掉 `OSS_DOMAIN`
 - GitHub Vars 里 `NEXT_PUBLIC_S3_PUBLIC_DOMAIN` 同步改为新值（构建期注入 Next.js）
 - **`IMAGE_REGISTRY` 必须等于 GitHub Vars 的 `ACR_REGISTRY/ACR_NAMESPACE` 拼接值**——现 example 里是 `.../REDACTED-NAMESPACE`（旧项目命名空间），若 CI 推新命名空间而服务器端不改，pull 阶段拉错/拉不到镜像
-- **`.env.prod.local` 的 `CF_API_TOKEN`/`CF_ZONE_ID` 必须留空**——`issue.sh` 判定 CF 凭证优先于阿里云，tzjii.com NS 在阿里云，残留 CF 配置会导致 DNS-01 签发必败（顺带更新 issue.sh 头注释里「jiawen.live NS 在 Cloudflare」的过时说明）
+- **`.env.prod.local` 的 `CF_API_TOKEN`/`CF_ZONE_ID` 必须留空**——`issue.sh` 判定 CF 凭证优先于阿里云，tzjii.com NS 在阿里云，残留 CF 配置会导致 DNS-01 签发必败
 - ~~`next.config.ts` 的 `images.remotePatterns`~~ 已验证满足：动态读 `NEXT_PUBLIC_S3_PUBLIC_DOMAIN` 注入 + 静态兜底已含 `**.tzjii.com`，无需改动
 
 ### 4.4 Bucket 初始化（一次性，ECS 上执行）
@@ -382,7 +382,7 @@ docker run --rm --network tzj_default --env-file /opt/tzj/.env.prod \
 | `ci.yml` | PR / push(main, develop) | lint + typecheck + 权限门禁 + 构建 + Trivy 扫描 | Node 20 → **22**（与 engines 对齐，含 perf.yml 共 3 处）；`npm install -g @lhci/cli` 改 `pnpm dlx`（AGENTS 禁止条款 8）；`trivy-action@master` 锁版本 |
 | `deploy.yml` | **push(main) + 手动** | 构建 3 镜像 → 推 ACR → SSH 部署 | 触发器从仅手动改为 `push: branches: [main]`（保留 `workflow_dispatch`）；**scp 清单删掉幽灵路径 `infra/docker/scripts`（目录不存在，scp-action 会直接失败）**；头注释去「云效主路径」过时文案 |
 | `deploy-ssh.yml` | 手动 | 不构建，仅按 tag 重新部署 = **回滚通道** | 同上：删 `infra/docker/scripts` 幽灵路径 + 更新云效过时注释（tag 描述改 git sha） |
-| `perf.yml` | 手动 | 性能基线 | `base_url` 默认值 `tzj-admin.jiawen.live` → `admin.tzjii.com`；Node 20 → 22 |
+| `perf.yml` | 手动 | 性能基线 | `base_url` 默认值 `admin.tzjii.com`；Node 20 → 22 |
 
 发布流：`PR → main`（CI 门禁）→ 合并后 `deploy.yml` 自动构建部署 → 失败/回滚用 `deploy-ssh.yml` 指定旧 sha。
 并发控制已具备（`concurrency: deploy-production`），不会双部署。
@@ -415,7 +415,7 @@ docker run --rm --network tzj_default --env-file /opt/tzj/.env.prod \
 
 > ⚠️ 顺序硬约束：`ci.yml` 的 docker-build job 引用 `vars.NEXT_PUBLIC_*` 作 build-args，web 的 `lib/env.ts` 缺值会 fail-fast——**先配齐上表 Vars，再把本地 main 推上 GitHub**，否则首次 CI 直接飘红。
 
-> ⚠️ **旧配置残留坑（首次部署实测）**：仓库 `zzlw/tzj-website` 曾用于旧项目（jiawen.live / OSS / `ECS_HOST=REDACTED-IP` / `ECS_USER=root`），残留了一批 24 天前的 Vars/Secrets。**首次部署前必须逐项 `gh variable list` / `gh secret list` 核对并覆盖上表 9 个 Vars + 3 个 Secrets**——尤其 `ECS_HOST`/`ECS_USER`/`NEXT_PUBLIC_*` 全指向旧环境；`NEXT_PUBLIC_*` 是构建期烤进镜像，配错会导致前端连错域名。其余无 workflow 引用的残留项（`DATABASE_URL`/`CORS_ORIGINS`/`S3_*`/secret 版 `ECS_HOST` 等）是旧 SSH-注入式部署遗物，当前架构运行时 env 走服务器 `/opt/tzj/.env.prod`，可忽略。
+> ⚠️ **旧配置残留坑（首次部署实测）**：仓库曾残留指向废弃服务器 `REDACTED-IP` 的 Vars/Secrets。**部署前必须逐项 `gh variable list` / `gh secret list` 核对并覆盖上表 9 个 Vars + 3 个 Secrets**——尤其 `ECS_HOST`/`ECS_USER`/`NEXT_PUBLIC_*`；`NEXT_PUBLIC_*` 是构建期烤进镜像，配错会导致前端连错域名。其余无 workflow 引用的残留项（`DATABASE_URL`/`CORS_ORIGINS`/`S3_*`/secret 版 `ECS_HOST` 等）是旧 SSH-注入式部署遗物，当前架构运行时 env 走服务器 `/opt/tzj/.env.prod`，可忽略。
 
 > 🔑 **专用部署密钥**：CI 用 `~/.ssh/tzj_deploy`（ed25519，与个人密钥隔离），公钥已装入 deploy 用户 `authorized_keys`，私钥进 `gh secret set ECS_SSH_KEY`。若换机重建 CI，需重新 `ssh-keygen` 并把公钥追加到服务器。
 

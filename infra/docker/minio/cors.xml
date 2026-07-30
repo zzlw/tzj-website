@@ -8,7 +8,7 @@
 
   允许的源：
     - 本地开发：web(3001) / admin(3002) / 历史端口 3000
-    - 生产：tzj.jiawen.live（web） / tzj-admin.jiawen.live（admin）
+    - 生产：www.tzjii.com（web） / admin.tzjii.com（admin）
   允许的方法：GET(PUT 后读取) / PUT(预签名直传) / POST / HEAD
 -->
 <CORSConfiguration>
@@ -16,8 +16,8 @@
     <AllowedOrigin>http://localhost:3000</AllowedOrigin>
     <AllowedOrigin>http://localhost:3001</AllowedOrigin>
     <AllowedOrigin>http://localhost:3002</AllowedOrigin>
-    <AllowedOrigin>https://tzj.jiawen.live</AllowedOrigin>
-    <AllowedOrigin>https://tzj-admin.jiawen.live</AllowedOrigin>
+    <AllowedOrigin>https://www.tzjii.com</AllowedOrigin>
+    <AllowedOrigin>https://admin.tzjii.com</AllowedOrigin>
     <AllowedMethod>GET</AllowedMethod>
     <AllowedMethod>PUT</AllowedMethod>
     <AllowedMethod>POST</AllowedMethod>

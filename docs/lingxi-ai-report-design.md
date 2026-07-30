@@ -393,7 +393,7 @@ packages/types/src/
 ## 9. 环境变量与部署
 
 - 新增 3 个 env（见 §5.9），生产在 ECS `.env` 与后台集成中心二选一配置。
-- SSE 链路实际只有**一跳 nginx**：浏览器 → nginx → Next（流式 BFF）；Next → NestJS 走 compose 内网 `ADMIN_API_URL`，无反代。因此关键在 Next 的响应：① 流式 BFF 须直接透传上游 `ReadableStream` 并在自身响应上重建 SSE 头（含 `X-Accel-Buffering: no`），禁止 `await res.text()`（前车之鉴见 `docs/prod-static-404-and-chat-bff-500-502-fix.md`）；② **现网 `infra/docker/nginx/tzj.conf` 的 admin server block 未设 `proxy_read_timeout`（默认 60s）也未关缓冲**，M3 交付物包含为该 block 补 `proxy_read_timeout 300s`；缓冲靠 `X-Accel-Buffering: no` 响应头即可，帧间隔靠 §5.2 的心跳兜底。
+- SSE 链路实际只有**一跳 nginx**：浏览器 → nginx → Next（流式 BFF）；Next → NestJS 走 compose 内网 `ADMIN_API_URL`，无反代。因此关键在 Next 的响应：① 流式 BFF 须直接透传上游 `ReadableStream` 并在自身响应上重建 SSE 头（含 `X-Accel-Buffering: no`），禁止 `await res.text()`（前车之鉴见 `docs/prod-static-404-and-chat-bff-500-502-fix.md`）；② **compose gateway 的 `infra/docker/nginx/templates/tzj.conf.template` admin server block 须设 `proxy_read_timeout 300s`**；缓冲靠 `X-Accel-Buffering: no` 响应头即可，帧间隔靠 §5.2 的心跳兜底。
 - 单实例部署，RunBuffer 进程内存即可；未来横向扩容时替换为 Redis Pub/Sub（接口已按可替换设计）。
 
 ---

@@ -63,7 +63,7 @@ const SOCIAL_HOSTS = [
   'weixin', // 微信内打开（weixin110.qq.com 等安全跳转域）
 ];
 // 自家域名（self-referral）：站内跳转不算引荐，参照 GA4 排除自引荐，归 direct
-const INTERNAL_HOSTS = ['localhost', '127.0.0.1', 'tzjii.com', 'jiawen.live'];
+const INTERNAL_HOSTS = ['localhost', '127.0.0.1', 'tzjii.com'];
 
 function classifyByReferrer(host: string): TrafficSource {
   const h = host.toLowerCase();

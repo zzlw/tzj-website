@@ -35,7 +35,7 @@ export function useUpdateSiteMediaSettings() {
 }
 
 /** MediaPicker URL → 存储 key（与 API normalizeWatermarkImageKey 对齐）
- *  兼容不同环境的 bucket 名（tzj-uploads-dev / tzj-static 等） */
+ *  兼容不同环境的 bucket 名（tzj-uploads-dev / tzj-uploads-prod） */
 export function watermarkImageKeyFromUrl(url: string | undefined): string | undefined {
   if (!url?.trim()) return undefined;
   let s = url.trim();

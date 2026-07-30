@@ -17,9 +17,9 @@
 
 ```
 ├── apps/
-│   ├── web/          # C 端官网 (tzj.jiawen.live)
-│   ├── admin/        # CMS 管理后台 (tzj-admin.jiawen.live)
-│   └── api/          # REST API (tzj-api.jiawen.live)
+│   ├── web/          # C 端官网 (www.tzjii.com)
+│   ├── admin/        # CMS 管理后台 (admin.tzjii.com)
+│   └── api/          # REST API (api.tzjii.com)
 ├── packages/
 │   ├── ui/           # 共享 UI 组件 (@tzj/ui)
 │   ├── types/        # 共享类型 (@tzj/types)

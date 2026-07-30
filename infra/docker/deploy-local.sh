@@ -48,11 +48,11 @@ if [[ -n "${ECS_SSH_KEY:-}" ]]; then
 fi
 DOCKER_PLATFORM="${DOCKER_PLATFORM:-linux/amd64}"
 
-NEXT_PUBLIC_API_URL="${NEXT_PUBLIC_API_URL:-https://tzj-api.jiawen.live/api/v1}"
-NEXT_PUBLIC_ADMIN_API_URL="${NEXT_PUBLIC_ADMIN_API_URL:-https://tzj-api.jiawen.live/api/v1}"
-NEXT_PUBLIC_S3_PUBLIC_DOMAIN="${NEXT_PUBLIC_S3_PUBLIC_DOMAIN:-https://tzj-static.jiawen.live}"
-NEXT_PUBLIC_SITE_URL="${NEXT_PUBLIC_SITE_URL:-https://tzj.jiawen.live}"
-NEXT_PUBLIC_WEB_URL="${NEXT_PUBLIC_WEB_URL:-https://tzj.jiawen.live}"
+NEXT_PUBLIC_API_URL="${NEXT_PUBLIC_API_URL:-https://api.tzjii.com/api/v1}"
+NEXT_PUBLIC_ADMIN_API_URL="${NEXT_PUBLIC_ADMIN_API_URL:-https://api.tzjii.com/api/v1}"
+NEXT_PUBLIC_S3_PUBLIC_DOMAIN="${NEXT_PUBLIC_S3_PUBLIC_DOMAIN:-https://static.tzjii.com/tzj-uploads-prod}"
+NEXT_PUBLIC_SITE_URL="${NEXT_PUBLIC_SITE_URL:-https://www.tzjii.com}"
+NEXT_PUBLIC_WEB_URL="${NEXT_PUBLIC_WEB_URL:-https://www.tzjii.com}"
 
 APPS=(web admin api)
 DO_BUILD=1

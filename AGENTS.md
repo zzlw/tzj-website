@@ -186,7 +186,7 @@ interface AgentMessage {
 | 角色 | 地址 | 说明 |
 |------|------|------|
 | ✅ **真生产（唯一）** | `ssh root@REDACTED-IP` | 主机名 iZ2ze4eo1wugjdg5t97d79Z；运行 tzj-web/admin/api（CI 持续部署）、tzj-postgres-1（`-U tzj -d tzj_prod`，新 schema）、tzj-minio-1、tzj-gateway-1、tzj-acme-1 |
-| ❌ **废弃（严禁使用）** | `REDACTED-IP` | 旧项目（jiawen.live 时代）遗留服务器，镜像与数据均已过期，禁止用于数据同步/备份/部署/验证 |
+| ❌ **废弃（严禁使用）** | `REDACTED-IP` | 旧项目遗留服务器，镜像与数据均已过期，禁止用于数据同步/备份/部署/验证 |
 
 ### 铁律
 1. 任何生产数据操作（pg_dump / 同步 / 排查）前，必须确认目标为 `REDACTED-IP`

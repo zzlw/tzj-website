@@ -30,17 +30,7 @@ describe('extractMediaObjectKey', () => {
     ).toBe('images/202601/b.webp');
   });
 
-  it('自定义 CDN 域名（.jiawen.live / 含 static）path 即完整 key', () => {
-    expect(extractMediaObjectKey('https://tzj-static.jiawen.live/content/tower.jpg')).toBe(
-      'content/tower.jpg',
-    );
-    expect(extractMediaObjectKey('https://cdn-static.example.com/uploads/c.png')).toBe(
-      'uploads/c.png',
-    );
-  });
-
-  it('生产 static.tzjii.com（公开域含 bucket）正确剥离，并折叠误重复的 bucket', () => {
-    // 模拟生产：env 默认是本地 DOMAIN；直接测相对 key 折叠 + 绝对 URL 含重复 bucket
+  it('公开域含 bucket 时正确剥离，并折叠误重复的 bucket', () => {
     expect(extractMediaObjectKey('tzj-uploads-prod/content/tower-eastside.jpg')).toBe(
       'content/tower-eastside.jpg',
     );
@@ -59,7 +49,7 @@ describe('extractMediaObjectKey', () => {
 });
 
 describe('normalizeStorageUrl', () => {
-  it('历史环境 URL 归一到当前 MinIO 域名', () => {
+  it('OSS path-style URL 归一到当前公开域', () => {
     expect(
       normalizeStorageUrl('https://oss-cn-beijing.aliyuncs.com/tzj-uploads/images/x.jpg'),
     ).toBe(`${DOMAIN}/images/x.jpg`);
@@ -80,7 +70,7 @@ describe('resolveMediaUrl', () => {
     expect(resolveMediaUrl('/media/hero.mp4')).toBe(`${DOMAIN}/content/hero.mp4`);
   });
 
-  it('相对对象 key 拼接 MinIO 域名', () => {
+  it('相对对象 key 拼接公开域', () => {
     expect(resolveMediaUrl('uploads/202601/a.jpg')).toBe(`${DOMAIN}/uploads/202601/a.jpg`);
   });
 
@@ -93,9 +83,9 @@ describe('resolveMediaUrl', () => {
   });
 
   it('绝对 URL 走 normalizeStorageUrl 归一', () => {
-    expect(resolveMediaUrl('https://tzj-static.jiawen.live/content/tower.jpg')).toBe(
-      `${DOMAIN}/content/tower.jpg`,
-    );
+    expect(
+      resolveMediaUrl('https://oss-cn-beijing.aliyuncs.com/tzj-uploads/content/tower.jpg'),
+    ).toBe(`${DOMAIN}/content/tower.jpg`);
   });
 
   it('误拼多重 bucket 的绝对 URL 归一到单次公开域前缀', () => {

@@ -1,7 +1,7 @@
 {
   "CORSRule": [
     {
-      "AllowedOrigin": ["https://tzj.jiawen.live", "https://tzj-admin.jiawen.live"],
+      "AllowedOrigin": ["https://www.tzjii.com", "https://admin.tzjii.com"],
       "AllowedMethod": ["GET", "PUT", "POST", "HEAD"],
       "AllowedHeader": ["*"],
       "ExposeHeader": ["ETag", "x-oss-request-id"],

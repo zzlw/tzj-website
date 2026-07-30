@@ -8,7 +8,7 @@ export function getS3PublicDomain(): string {
 /** MinIO 中站点静态资源的 key 前缀（与 sync-content-media 上传路径一致）。 */
 export const STATIC_MEDIA_OBJECT_PREFIX = 'content';
 
-/** 已知 bucket 名：用于折叠历史误拼的重复前缀（与对象真实 key 目录不冲突）。 */
+/** 已知 bucket 名：用于折叠误拼的重复前缀（与对象真实 key 目录不冲突）。 */
 const KNOWN_BUCKET_NAMES = ['tzj-uploads-prod', 'tzj-uploads-dev', 'tzj-uploads'] as const;
 
 function getPublicDomainBase(): string {
@@ -47,9 +47,10 @@ export function collapseRepeatedBucketPrefix(key: string): string {
   return k;
 }
 
-/** 从 MediaPicker / 历史数据中的绝对 URL 提取对象 key
- *  兼容不同环境的 bucket 名（tzj-uploads-dev / tzj-static 等）
- *  支持所有路径前缀（uploads/、content/、cases/、images/ 等） */
+/**
+ * 从绝对/相对 URL 提取对象 key。
+ * 公开域为 path-style（如 https://static.tzjii.com/tzj-uploads-prod），path 含 bucket。
+ */
 export function extractMediaObjectKey(url?: string | null): string | undefined {
   if (!url?.trim()) return undefined;
   const src = url.trim();
@@ -92,19 +93,7 @@ export function extractMediaObjectKey(url?: string | null): string | undefined {
         /* ignore malformed public domain */
       }
 
-      // 历史自定义 CDN（jiawen.live）：域名直指 bucket，path 即 key
-      if (hostname === 'jiawen.live' || hostname.endsWith('.jiawen.live')) {
-        const key = collapseRepeatedBucketPrefix(path);
-        return key || undefined;
-      }
-
-      // 其它含 static 的历史 CDN（排除上面已处理的当前公开域主机）
-      if (hostname.includes('static')) {
-        const key = collapseRepeatedBucketPrefix(path);
-        return key || undefined;
-      }
-
-      // MinIO/OSS 原生域名（path-style）：剥第一段 bucket
+      // MinIO/OSS path-style：剥第一段 bucket
       const slashIdx = path.indexOf('/');
       if (slashIdx > 0) {
         const key = collapseRepeatedBucketPrefix(path.slice(slashIdx + 1));
@@ -123,21 +112,21 @@ function toMinioUrl(key: string): string {
   return `${getPublicDomainBase()}/${collapseRepeatedBucketPrefix(key)}`;
 }
 
-/** 将任意存储 URL 规范为当前环境的 MinIO 公开访问地址 */
+/** 将任意存储 URL 规范为当前环境的公开访问地址 */
 export function normalizeStorageUrl(url: string): string {
   const key = extractMediaObjectKey(url);
   if (key) return toMinioUrl(key);
   return url;
 }
 
-/** 社媒二维码 — 与 resolveMediaUrl 一致，统一走 MinIO */
+/** 社媒二维码 — 与 resolveMediaUrl 一致 */
 export function resolveSocialQrUrl(raw?: string | null): string {
   return resolveMediaUrl(raw);
 }
 
 /**
- * 将 CMS 路径解析为 MinIO 绝对 URL。
- * - uploads/…、content/…、cases/…、images/… → MinIO 对象
+ * 将 CMS 路径解析为对象存储绝对 URL。
+ * - uploads/…、content/…、cases/…、images/… → 对象 key
  * - /media/…、/wechat.jpg 等 public 根路径 → content/…（sync-content-media 同步目标）
  */
 export function resolveMediaUrl(url?: string | null): string {
@@ -165,7 +154,7 @@ export function resolveMediaUrl(url?: string | null): string {
   return src;
 }
 
-/** 默认二维码 MinIO key（content/ 前缀，sync-content-media 同步目标） */
+/** 默认二维码对象 key（content/ 前缀，sync-content-media 同步目标） */
 export function defaultSocialQrPath(
   platform: 'wechat' | 'douyin' | 'weibo' | 'xiaohongshu',
 ): string {

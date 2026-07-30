@@ -31,7 +31,7 @@ RUN apk add --no-cache wget openssl vips vips-dev libc6-compat
    S3_ENDPOINT=https://oss-cn-beijing.aliyuncs.com
    S3_ACCESS_KEY_ID=<你的阿里云 AccessKey ID>
    S3_ACCESS_KEY_SECRET=<你的阿里云 AccessKey Secret>
-   S3_PUBLIC_DOMAIN=https://tzj-static.jiawen.live
+   S3_PUBLIC_DOMAIN=https://static.tzjii.com/tzj-uploads-prod
    ```
 
 ### 3. png-to-ico 库兼容性问题（✅ 已添加测试）

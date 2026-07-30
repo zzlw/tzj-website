@@ -75,7 +75,7 @@ proxy_set_header X-Forwarded-For $remote_addr;
 - 本架构 nginx 为唯一入口（无上游 CDN/LB），`$remote_addr` 即真实客户端 IP
 - 影响：`extractClientIp` / `IpBanGuard` / `AuditLog` / `Throttler` / 访客归因全部修正
 - 若未来加 CDN，需在 CDN 与 nginx 间用 `set_real_ip_from` + `real_ip_header` 处理
-- 相关文件说明：`infra/docker/nginx/tzj.conf`（文件头已注明宿主机 Nginx 弃用版）含相同 3 处旧配置，不参与部署、无需修改；`tzj-bootstrap.conf`（首次部署 HTTP 引导配置）不设置 XFF 头，该窗口期 API 收不到 XFF，`extractClientIp` 回退直连地址，行为安全
+- 相关文件：生产以 `infra/docker/nginx/templates/tzj.conf.template` 为准（compose gateway）；宿主机弃用版 nginx 配置已删除
 
 **验证**:
 ```bash

@@ -64,7 +64,6 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
       { protocol: 'https', hostname: '**.tzjii.com', pathname: '/**' },
-      { protocol: 'https', hostname: '**.jiawen.live', pathname: '/**' },
       { protocol: 'https', hostname: 'localhost', pathname: '/**' },
       // 运行时 S3/OSS 域名（聊天附件等媒体），从环境变量注入
       ...s3RemotePatterns,

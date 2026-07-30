@@ -46,7 +46,7 @@ services:
       # ── 开发环境 CORS（MinIO 原生全局配置，启动即生效，无需额外初始化容器）──
       # 允许 web(3001) / admin(3002) 用预签名 PUT URL 直传，并公开 GET。
       # 生产 OSS 的 CORS 走 infra/docker/oss/apply-cors.sh（bucket 级）。
-      MINIO_API_CORS_ALLOW_ORIGIN: "http://localhost:3000,http://localhost:3001,http://localhost:3002,https://tzj.jiawen.live,https://tzj-admin.jiawen.live"
+      MINIO_API_CORS_ALLOW_ORIGIN: "http://localhost:3000,http://localhost:3001,http://localhost:3002,https://www.tzjii.com,https://admin.tzjii.com"
       MINIO_API_CORS_ALLOW_METHODS: "GET,PUT,POST,HEAD"
       MINIO_API_CORS_ALLOW_HEADERS: "*"
       MINIO_API_CORS_MAX_AGE: "3000"

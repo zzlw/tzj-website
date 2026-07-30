@@ -19,15 +19,15 @@ variables:
   - key: IMAGE_TAG
     value: ${CI_COMMIT_ID}
   - key: NEXT_PUBLIC_API_URL
-    value: https://tzj-api.jiawen.live/api/v1
+    value: https://api.tzjii.com/api/v1
   - key: NEXT_PUBLIC_ADMIN_API_URL
-    value: https://tzj-api.jiawen.live/api/v1
+    value: https://api.tzjii.com/api/v1
   - key: NEXT_PUBLIC_S3_PUBLIC_DOMAIN
-    value: https://tzj-static.jiawen.live
+    value: https://static.tzjii.com/tzj-uploads-prod
   - key: NEXT_PUBLIC_SITE_URL
-    value: https://tzj.jiawen.live
+    value: https://www.tzjii.com
   - key: NEXT_PUBLIC_WEB_URL
-    value: https://tzj.jiawen.live
+    value: https://www.tzjii.com
 
 sources:
   tzj_repo:

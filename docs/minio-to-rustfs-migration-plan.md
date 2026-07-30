@@ -82,6 +82,7 @@
 | `infra/docker/nginx/templates/tzj.conf.template` | `set $upstream_minio minio:9000` → `set $upstream_rustfs rustfs:9000`（同文件近期有灵犀 SSE 的 `proxy_read_timeout` 改动落在 admin server block，与本方案改的 static block 不冲突，但实施 PR 前先合并/落地该改动，避免模板双头修改） |
 | `infra/docker/.env.prod.example`（及服务器上 `.env.prod`） | `MINIO_ROOT_*` → `RUSTFS_ACCESS_KEY/SECRET_KEY`；S3 段不变 |
 | `infra/docker/Makefile` | `up -d --no-deps postgres minio acme gateway` 中服务名 |
+| ECS crontab 备份任务（服务器现场，不在仓库内） | deployment-plan.md §7 的每周 `mc mirror` MinIO→OSS 归档桶（`tzj-prod-backup`）：alias 端点 `minio:9000`→`rustfs:9000`、凭证换 `RUSTFS_*`。**仓库 grep 扫不到，切流后不改则媒体异地备份静默中断** |
 
 ### 3.2 无需改动（验证过）
 
@@ -98,7 +99,7 @@
 - `AGENTS.md`「对象存储规范」章节（存储架构表、Bucket 政策描述）
 - 注释中的「MinIO」字样（`s3.service.ts` 头注释、`media.service.ts`、`env.validation.ts` 等）——不影响功能，随迁移 PR 一并清理
 - `apps/api/src/integrations/integration.registry.ts` 的**用户可见文案**「MinIO / 阿里云 OSS / AWS S3 的 Secret Access Key…」（集成中心后台 UI 展示，非代码注释，需改为 RustFS 表述）
-- `apps/admin/src/lib/media-url.ts` 的 `toMinioUrl()` 函数名（纯命名遗留，功能走 `NEXT_PUBLIC_S3_PUBLIC_DOMAIN`，可更名 `toStorageUrl`）
+- `apps/admin/src/lib/media-url.ts` 的公开域拼接（已用 `toStorageUrl`，走 `NEXT_PUBLIC_S3_PUBLIC_DOMAIN`）
 - dev compose 陈旧注释「生产 OSS 的 CORS 走 infra/docker/oss/apply-cors.sh」（生产早已是自托管而非 OSS，改写 dev compose 时顺手修正，避免带进 rustfs 服务块）
 
 ---
@@ -151,7 +152,7 @@
       RUSTFS_SECRET_KEY: rustfsadmin
       RUSTFS_CONSOLE_ENABLE: "true"
       # CORS：仅 origin 维度（RustFS 不提供 method/header 粒度配置）
-      RUSTFS_CORS_ALLOWED_ORIGINS: "http://localhost:3000,http://localhost:3001,http://localhost:3002,https://tzj.jiawen.live,https://tzj-admin.jiawen.live"
+      RUSTFS_CORS_ALLOWED_ORIGINS: "http://localhost:3000,http://localhost:3001,http://localhost:3002,https://www.tzjii.com,https://admin.tzjii.com"
       RUSTFS_CONSOLE_CORS_ALLOWED_ORIGINS: "http://localhost:9001"
     volumes:
       - rustfs_data:/data
@@ -171,7 +172,7 @@
 3. 根目录 `.env`：`S3_ACCESS_KEY_ID` / `S3_ACCESS_KEY_SECRET` 改为与 `RUSTFS_ACCESS_KEY/SECRET_KEY` 一致；`.env.example` 同步（`minioadmin` → `rustfsadmin`）
 4. 其余 S3 变量（端点 `http://localhost:9000`、桶名、公开域名）**全部不变**
 
-dev 存量数据迁移（本机一次性，两容器同网时执行）：
+dev 存量数据迁移（本机一次性，两容器同网时执行）。**注意：dev 桶中是从生产恢复的真实业务媒体（本地库持续合并生产数据，见 AGENTS.md「数据库工作流规范」），不是可丢弃的测试数据**：末尾 `mc du` 两端总量核对是切换前的**强制关卡**（与 prod 同标准），不一致则禁止把 9000 端口切给 rustfs：
 
 ```bash
 # 注意：compose 项目名取 compose 文件所在目录名（infra/docker/ → docker），
@@ -182,13 +183,13 @@ docker run --rm --network docker_tzj-dev --entrypoint sh minio/mc -c "
   mc mb -p new/tzj-uploads-dev &&
   mc anonymous set download new/tzj-uploads-dev &&
   mc mirror --overwrite old/tzj-uploads-dev new/tzj-uploads-dev &&
-  mc du old/tzj-uploads-dev && mc du new/tzj-uploads-dev    # 核对两端总量一致
+  mc du old/tzj-uploads-dev && mc du new/tzj-uploads-dev    # 强制关卡：两端总量必须一致方可切换端口
 "
 ```
 
 > 匿名读兜底：dev 下 `S3Service.ensureBucket()` 启动时会自动 PutBucketPolicy 整桶公开读，即使上面 `mc anonymous` 失败也会被应用侧补齐。
 
-> 观察期回退路径：若遇阻断性存储缺陷，将 9000/9001 端口映射还给 minio 服务块 + `.env` 凭证改回 `minioadmin` 即可，分钟级完成；`minio_data` 全程只读未动，无数据风险（回退后 rustfs 期间新上传的对象需反向 mirror 补回，dev 数据不重要时可直接舍弃）。
+> 观察期回退路径：若遇阻断性存储缺陷，将 9000/9001 端口映射还给 minio 服务块 + `.env` 凭证改回 `minioadmin` 即可，分钟级完成；`minio_data` 全程只读未动，存量无风险。**回退后必须反向 mirror（new→old）补回 rustfs 期间新上传的对象**——dev 媒体同样是真实业务数据，不存在“可直接舍弃”的选项。
 
 ### 5.3 prod compose 改造（`docker-compose.prod.yml`）
 
@@ -225,6 +226,8 @@ docker run --rm --network docker_tzj-dev --entrypoint sh minio/mc -c "
 5. `infra/docker/Makefile`：`up -d --no-deps postgres minio acme gateway` → `postgres rustfs acme gateway`
 
 ### 5.4 prod Bucket 与应用账号初始化（一次性，ECS 上执行）
+
+> **执行主机声明（§5.4–§5.5 全部命令适用）**：唯一生产 ECS 为 **REDACTED-IP**（AGENTS.md「生产服务器唯一事实」）；REDACTED-IP 是旧项目废弃服务器，**严禁在其上执行任何迁移操作**。
 
 沿用现有 mc 工具链（RustFS 实现 MinIO 兼容 admin API；若个别 `mc admin` 命令不被接受，等价改用 RustFS 官方 CLI `rc` 或临时开 Console 操作）：
 
@@ -287,6 +290,9 @@ prod exec gateway nginx -s reload
 
 # 4. 验证清单（§7）全绿后：
 prod stop minio   # 停容器但不删 volume
+
+# 5. 更新备份 crontab（§3.1 末行）：每周 mc mirror 的源端 minio→rustfs、凭证换 RUSTFS_*，
+#    改完手动跑一次验证媒体→OSS 归档桶备份链路恢复（否则停 minio 后异地备份静默中断）
 ```
 
 **T+7 天（回滚窗口关闭）**
@@ -335,7 +341,7 @@ docker volume rm tzj_miniodata
 
 1. dev 环境切换后稳定运行 ≥ 2 周，验证清单 12 项全绿，无存储相关缺陷
 2. RustFS 发布 1.0 GA，或团队明确接受 beta 上生产的风险并记录决策——实施时检查 [releases](https://github.com/rustfs/rustfs/releases)。**现实校准（2026-07-30 实测）**：官方路线图承诺的「GA 2026-07」已跳票，当日最新仍为 1.0.0-beta.12（pre-release），GA 时点未知；若 dev 观察期结束后仍未 GA，需显式走「接受 beta 风险并记录决策」分支做 Go/No-Go 表决，而非无限期等待
-3. 生产媒体已有近期备份（`miniodata` volume 快照或对象级导出）
+3. 生产媒体已有近期备份——具体指 deployment-plan.md §7 的两条腿：确认最近一次每周 `mc mirror`→OSS 归档桶（`tzj-prod-backup`）任务成功，必要时切流前手动补跑一次；另确认 ECS 快照在位
 4. 选定低峰窗口，且当日无其他部署计划
 
 任一不满足 → 推迟，dev 继续观察（dev/prod 短期异构可接受：应用层走标准 S3 API，两端行为差异已被本方案 §2.2 枚举）。

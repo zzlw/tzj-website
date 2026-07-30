@@ -47,11 +47,11 @@ function collapseRepeatedBucketPrefix(key: string): string {
   return k;
 }
 
-function toMinioUrl(key: string): string {
+function toStorageUrl(key: string): string {
   return `${getPublicDomainBase()}/${collapseRepeatedBucketPrefix(key)}`;
 }
 
-/** 将 MediaPicker URL 规范为 MinIO 对象 key（保存到 CMS 时使用） */
+/** 将 MediaPicker URL 规范为对象 key（保存到 CMS 时使用） */
 export function normalizeSocialQrForSave(url?: string | null): string {
   if (!url?.trim()) return '';
   const src = url.trim();
@@ -70,7 +70,7 @@ export function normalizeSocialQrForSave(url?: string | null): string {
     try {
       const u = new URL(s);
       s = u.pathname.replace(/^\/+/, '');
-      // Strip any bucket name (first path segment) to get the object key
+      // path-style：剥第一段 bucket
       const slashIdx = s.indexOf('/');
       if (slashIdx > 0) s = s.slice(slashIdx + 1);
     } catch {
@@ -89,7 +89,7 @@ export function normalizeSocialQrForSave(url?: string | null): string {
   return src;
 }
 
-/** 将 CMS 路径解析为 MinIO 绝对 URL（与 C 端 resolveMediaUrl 对齐） */
+/** 将 CMS 路径解析为对象存储绝对 URL（与 C 端 resolveMediaUrl 对齐） */
 export function resolveMediaUrl(url?: string | null): string {
   if (!url?.trim()) return '';
   const src = url.trim();
@@ -99,7 +99,7 @@ export function resolveMediaUrl(url?: string | null): string {
     if (src === base || src.startsWith(`${base}/`)) {
       const raw = src === base ? '' : src.slice(base.length + 1);
       const key = collapseRepeatedBucketPrefix(raw);
-      return key ? toMinioUrl(key) : src;
+      return key ? toStorageUrl(key) : src;
     }
 
     try {
@@ -118,27 +118,17 @@ export function resolveMediaUrl(url?: string | null): string {
             key = key === pubPath ? '' : key.slice(pubPath.length + 1);
           }
           key = collapseRepeatedBucketPrefix(key);
-          return key ? toMinioUrl(key) : src;
+          return key ? toStorageUrl(key) : src;
         }
       } catch {
         /* ignore */
       }
 
-      // 历史自定义 CDN：.jiawen.live — 保留原 URL（域名直指对象）
-      if (hostname === 'jiawen.live' || hostname.endsWith('.jiawen.live')) {
-        return src;
-      }
-
-      // 其它含 static 的历史 CDN（当前公开域主机已在上面处理）
-      if (hostname.includes('static')) {
-        return src;
-      }
-
-      // MinIO/OSS 原生域名：剥离 bucket 后拼到当前环境
+      // MinIO/OSS path-style：剥离 bucket 后拼到当前环境
       const slashIdx = path.indexOf('/');
       if (slashIdx > 0) {
         const key = collapseRepeatedBucketPrefix(path.slice(slashIdx + 1));
-        if (key) return toMinioUrl(key);
+        if (key) return toStorageUrl(key);
       }
     } catch {
       return src;
@@ -147,18 +137,18 @@ export function resolveMediaUrl(url?: string | null): string {
   }
 
   if (src.startsWith('/media/')) {
-    return toMinioUrl(`${OBJECT_PREFIX}/${src.slice('/media/'.length)}`);
+    return toStorageUrl(`${OBJECT_PREFIX}/${src.slice('/media/'.length)}`);
   }
 
   // Any relative path containing "/" is treated as an S3 object key
   if (!src.startsWith('/') && !src.startsWith('//') && src.includes('/')) {
-    return toMinioUrl(src);
+    return toStorageUrl(src);
   }
 
   if (src.startsWith('/') && !src.startsWith('//')) {
     const filename = src.slice(1);
     if (filename && !filename.includes('/')) {
-      return toMinioUrl(`${OBJECT_PREFIX}/${filename}`);
+      return toStorageUrl(`${OBJECT_PREFIX}/${filename}`);
     }
   }
 
