@@ -32,7 +32,7 @@ ACR_REGISTRY="${ACR_REGISTRY:-REDACTED-ACR}"
 ACR_NAMESPACE="${ACR_NAMESPACE:-REDACTED-NAMESPACE}"
 IMAGE_PREFIX="${ACR_REGISTRY}/${ACR_NAMESPACE}"
 IMAGE_TAG="${IMAGE_TAG:-$(git rev-parse --short HEAD)}"
-ECS_HOST="${ECS_HOST:-REDACTED-IP}"
+ECS_HOST="${ECS_HOST:-REDACTED-IP}" # 真生产；REDACTED-IP 是旧项目废弃服务器，严禁使用
 ECS_USER="${ECS_USER:-root}"
 if [[ -z "${ECS_SSH_KEY:-}" ]]; then
   for candidate in "${HOME}/.ssh/id_ed25519" "${HOME}/.ssh/id_rsa"; do

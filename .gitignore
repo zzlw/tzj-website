@@ -141,3 +141,4 @@ apps/admin/.visual-regression/
 
 # ── UAT/验证过程截图（本地调试产物）──
 .qoder/*.png
+.backups/

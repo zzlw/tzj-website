@@ -158,6 +158,43 @@ interface AgentMessage {
 
 ---
 
+## 数据库工作流规范（Constitutional，2026-07-30 起生效）
+
+> 背景：本地开发库 `tzj_dev` 已从生产快照恢复，含真实业务数据（案例/新闻/媒体/询盘/浏览记录等）。其 `_prisma_migrations` 历史与仓库 `prisma/migrations/` 目录不一致，任何 `migrate dev` 都会要求 reset 并**清空整库**。
+
+### 绝对禁止（本地环境）
+1. ❌ `prisma migrate dev` / `prisma migrate reset` —— 会清空已恢复的业务数据（`pnpm prisma:migrate` 脚本已改为硬拦截报错）
+2. ❌ `DROP DATABASE` / `TRUNCATE` 等破坏性 SQL —— 除非用户当次明确授权
+3. ❌ `prisma db push` 出现 data loss 警告时直接加 `--accept-data-loss` —— 必须先逐条核实警告并向用户确认
+
+### 标准流程
+| 场景 | 命令 |
+|------|------|
+| 本地 schema 变更 | `pnpm --filter @tzj/api prisma:push`（非破坏性同步） |
+| 新功能迁移产出 | 在 `prisma/migrations/` 手写迁移 SQL（供生产使用，本地不 apply） |
+| 生产部署 | `prisma migrate deploy`（deploy.sh 自动执行） |
+| 本地数据恢复 | 真生产直接 `pg_dump`（或 OSS `_db-sync/` 最新快照）→ drop+recreate 后 `pg_restore`（--clean 因 FK 会失败）→ `db push` 补齐 schema |
+
+---
+
+## 生产环境唯一事实（Constitutional，2026-07-30 起生效）
+
+> 背景：2026-07-30 曾误将旧项目废弃服务器当作生产源做数据同步，导致本地恢复了过期数据。为杜绝复发，生产环境信息以本节为唯一权威，任何脚本/文档/记忆与本节冲突时以本节为准。
+
+### 服务器
+
+| 角色 | 地址 | 说明 |
+|------|------|------|
+| ✅ **真生产（唯一）** | `ssh root@REDACTED-IP` | 主机名 iZ2ze4eo1wugjdg5t97d79Z；运行 tzj-web/admin/api（CI 持续部署）、tzj-postgres-1（`-U tzj -d tzj_prod`，新 schema）、tzj-minio-1、tzj-gateway-1、tzj-acme-1 |
+| ❌ **废弃（严禁使用）** | `REDACTED-IP` | 旧项目（jiawen.live 时代）遗留服务器，镜像与数据均已过期，禁止用于数据同步/备份/部署/验证 |
+
+### 铁律
+1. 任何生产数据操作（pg_dump / 同步 / 排查）前，必须确认目标为 `REDACTED-IP`
+2. 对生产数据时效有疑问时，先比对「线上后台实际显示」与「查询结果」，对不上即怀疑连错源
+3. 新写的脚本涉及生产地址时，必须引用本节地址并附注废弃服务器警告
+
+---
+
 ## 对象存储规范 (S3/MinIO/OSS)
 
 ### 存储架构
