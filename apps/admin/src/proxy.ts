@@ -130,13 +130,22 @@ function applyRefreshedTokens(
   accessToken: string,
   refreshToken: string,
 ): NextResponse {
-  const all = req.cookies.getAll();
-  const map = new Map(all.map((c) => [c.name, c.value]));
-  map.set(COOKIE.access, accessToken);
-  map.set(COOKIE.refresh, refreshToken);
-  const cookieHeader = Array.from(map.entries())
-    .map(([k, v]) => `${k}=${v}`)
-    .join('; ');
+  // 基于「原始」cookie 头替换两个 token，而不是 req.cookies.getAll() 解码后重拼：
+  // getAll() 会对值做 decodeURIComponent，若浏览器带有 %-编码中文的 cookie
+  //（如 .tzjii.com 域下的第三方 cookie），解码后写回请求头会因非 Latin-1
+  // 字符抛 ByteString TypeError，导致整页 500。
+  const rawCookie = req.headers.get('cookie') ?? '';
+  const kept = rawCookie.split(/; */).filter((pair) => {
+    if (!pair) return false;
+    const eq = pair.indexOf('=');
+    const name = eq === -1 ? pair : pair.slice(0, eq);
+    return name !== COOKIE.access && name !== COOKIE.refresh;
+  });
+  const cookieHeader = [
+    ...kept,
+    `${COOKIE.access}=${accessToken}`,
+    `${COOKIE.refresh}=${refreshToken}`,
+  ].join('; ');
 
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set('cookie', cookieHeader);
