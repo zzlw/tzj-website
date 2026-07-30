@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
+import { getLocale, getTranslations } from 'next-intl/server';
 import { SearchPageHero } from '@/components/search/SearchPageHero';
 import { SearchPagination } from '@/components/search/SearchPagination';
 import { SearchResultsList } from '@/components/search/SearchResultsList';
@@ -24,12 +24,14 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   const q = spString(raw.q).trim();
   const t = await getTranslations('search');
   const tCommon = await getTranslations('common');
+  const locale = await getLocale();
 
   const title = q ? t('meta.titleWithQuery', { query: q }) : t('meta.title');
 
   return generateSeo({
     title,
     description: t('meta.description'),
+    locale,
     path: q ? `/search?q=${encodeURIComponent(q)}` : '/search',
     siteName: tCommon('brandName'),
   });

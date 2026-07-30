@@ -8,9 +8,11 @@ import { getSitePublicSettings, localizedAddress } from '@/lib/site-settings';
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('contact.page');
   const tCommon = await getTranslations('common');
+  const locale = await getLocale();
   return generateSeo({
     title: t('title'),
     description: t('metaDescription'),
+    locale,
     path: '/contact',
     siteName: tCommon('brandName'),
   });

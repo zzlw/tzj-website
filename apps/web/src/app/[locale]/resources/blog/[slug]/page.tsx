@@ -25,11 +25,13 @@ export async function generateMetadata({ params, searchParams }: BlogPageProps):
   const post = await fetchBySlug((s) => getBlog(s, previewParams(previewToken)), slug);
   if (!post) return {};
 
+  const locale = await getLocale();
   const excerpt = pickSummary((post as { excerpt?: string }).excerpt, post.content);
 
   const seo = generateSeo({
     title: (post as { seoTitle?: string }).seoTitle || post.title,
     description: (post as { seoDesc?: string }).seoDesc || excerpt,
+    locale,
     path: `/resources/blog/${slug}`,
     image: pickCoverImage(post.coverImage),
     type: 'article',

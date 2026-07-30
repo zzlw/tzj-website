@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server';
 import { ViewTransitions } from 'next-view-transitions';
+import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { Suspense } from 'react';
 import { ConsoleBranding } from '@/components/ConsoleBranding';
@@ -18,6 +19,7 @@ import { type AppLocale, routing } from '@/i18n/routing';
 import { organizationJsonLd } from '@/lib/jsonld';
 import { LOCALE_HTML_LANG } from '@/lib/locale-config';
 import { getMediaOrigin } from '@/lib/media-origin';
+import { metadataBase } from '@/lib/seo';
 import { getFaviconUrl, getSitePublicSettings, localizedAddress } from '@/lib/site-settings';
 import { cn } from '@/lib/utils';
 import '../globals.css';
@@ -42,6 +44,26 @@ type Props = {
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
+}
+
+/**
+ * 全站 metadata 兜底：未定义 generateMetadata 的页面至少拥有本地化的
+ * title/description；子页裸 title 经 title.template 统一追加品牌后缀。
+ * 注意：兜底层不输出 canonical/hreflang（否则无自定义 metadata 的子页
+ * canonical 会错指首页），该信息由各页 generateSeo 按真实 path 输出。
+ */
+export async function generateMetadata({ params }: Omit<Props, 'children'>): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'common' });
+  const brand = t('brandName');
+  return {
+    metadataBase,
+    title: {
+      default: t('siteTitle'),
+      template: `%s | ${brand}`,
+    },
+    description: t('siteDescription'),
+  };
 }
 
 export default async function LocaleLayout({ children, params }: Props) {

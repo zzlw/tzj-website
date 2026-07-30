@@ -2,7 +2,7 @@ import { ArrowRight, Check } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
+import { getLocale, getTranslations } from 'next-intl/server';
 import { JsonLd } from '@/components/JsonLd';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { FeatureGrid } from '@/components/sections/blocks';
@@ -28,9 +28,11 @@ export async function generateMetadata({ params }: SolutionPageProps): Promise<M
 
   const t = await getTranslations('pages.solutionDetail');
   const tCommon = await getTranslations('common');
+  const locale = await getLocale();
   return generateSeo({
     title: `${solution.name}${t('meta.titleSuffix')}`,
     description: solution.tagline,
+    locale,
     path: `/solutions/${slug}`,
     image: solution.image,
     siteName: tCommon('brandName'),

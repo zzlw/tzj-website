@@ -28,11 +28,13 @@ export async function generateMetadata({
   const item = await fetchBySlug((s) => getTradeShow(s, previewParams(previewToken)), slug);
   if (!item) return {};
 
+  const locale = await getLocale();
   const summary = pickSummary(item.summary, item.content);
 
   const seo = generateSeo({
     title: (item as { seoTitle?: string }).seoTitle || item.title,
     description: (item as { seoDesc?: string }).seoDesc || summary,
+    locale,
     path: `/resources/trade-shows/${slug}`,
     image: pickCoverImage(item.coverImage),
     type: 'article',

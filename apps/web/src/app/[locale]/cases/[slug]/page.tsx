@@ -25,6 +25,7 @@ export async function generateMetadata({ params, searchParams }: CasePageProps):
   const caseStudy = await fetchBySlug((s) => getCase(s, previewParams(previewToken)), slug);
   if (!caseStudy) return {};
 
+  const locale = await getLocale();
   const summary =
     (caseStudy as { summary?: string }).summary ??
     (caseStudy as { description?: string }).description ??
@@ -33,6 +34,7 @@ export async function generateMetadata({ params, searchParams }: CasePageProps):
   const seo = generateSeo({
     title: (caseStudy as { seoTitle?: string }).seoTitle || caseStudy.title,
     description: (caseStudy as { seoDesc?: string }).seoDesc || summary,
+    locale,
     path: `/cases/${slug}`,
     image: pickCoverImage(caseStudy.coverImage),
     type: 'article',
