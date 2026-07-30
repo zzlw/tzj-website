@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { LAST_OPERATOR_USER_SELECT, mapOperatorUser } from '../common/utils/content-list';
 // biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -71,6 +72,8 @@ export interface SupportMetricsResponse {
   };
   agentRankings: Array<{
     maskedId: string;
+    /** 坐席账号信息（供 B 端 hover 资料卡展示，复用 content 模块 OperatorUser 结构） */
+    agentUser: ReturnType<typeof mapOperatorUser>;
     totalRooms: number;
     avgFirstResponseTime: number; // 分钟
     conversionRate: number; // %
@@ -224,7 +227,8 @@ export class GrowthMetricsService {
     const avgFirstResponseTime = Number(avgRows[0]?.avg_minutes ?? 0);
 
     // 坐席排行：按 senderEmail 聚合（sender='agent' 且 senderEmail 非空；访客消息无邮箱）。
-    // maskedId 脱敏口径：邮箱本地部分末位字符，其余 ***（如 agent3@tzj.com → ***3）
+    // maskedId 脱敏口径：邮箱本地部分末位字符，其余 ***（如 agent3@tzj.com → ***3），
+    // 作为账号已删除等查不到 agentUser 时的兜底展示。
     const agentRows = await this.prisma.$queryRaw<
       Array<{
         agentEmail: string;
@@ -253,11 +257,29 @@ export class GrowthMetricsService {
       LIMIT 10
     `;
 
+    // 批量查询坐席账号信息（B 端 hover 资料卡用），单次 IN 查询避免 N+1。
+    // 坐席以 username=邮箱 登录，User.email 可能为空，须 OR 双字段匹配（同 chat-room.service）。
+    const agentEmails = agentRows.map((r) => r.agentEmail);
+    const agentUsers = agentEmails.length
+      ? await this.prisma.user.findMany({
+          where: {
+            OR: [{ email: { in: agentEmails } }, { username: { in: agentEmails } }],
+          },
+          select: LAST_OPERATOR_USER_SELECT,
+        })
+      : [];
+    const agentUserMap = new Map<string, (typeof agentUsers)[number]>();
+    for (const u of agentUsers) {
+      if (u.email) agentUserMap.set(u.email.toLowerCase(), u);
+      agentUserMap.set(u.username.toLowerCase(), u);
+    }
+
     const agentRankings = agentRows.map((r) => {
       const total = Number(r.totalRooms);
       const converted = Number(r.convertedRooms);
       return {
         maskedId: maskAgentEmail(r.agentEmail),
+        agentUser: mapOperatorUser(agentUserMap.get(r.agentEmail.toLowerCase())),
         totalRooms: total,
         avgFirstResponseTime: round1(Number(r.avgMinutes ?? 0)),
         conversionRate: round2(total > 0 ? (converted / total) * 100 : 0),

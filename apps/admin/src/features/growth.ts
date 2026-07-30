@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { ContentOperatorUser } from '@/features/types';
 import { api } from '@/lib/apiClient';
 
 /**
@@ -31,7 +32,10 @@ export interface SupportMetrics {
     avgFirstResponseTime: number; // 分钟
   };
   agentRankings: Array<{
+    /** 脱敏 ID（如 ***3）：账号已删除等查不到 agentUser 时的兜底展示 */
     maskedId: string;
+    /** 坐席账号信息（供 hover 资料卡展示） */
+    agentUser?: ContentOperatorUser | null;
     totalRooms: number;
     avgFirstResponseTime: number; // 分钟
     conversionRate: number; // %

@@ -10,6 +10,7 @@ import {
 } from '@tzj/ui';
 import { useMemo } from 'react';
 import { formatMinutes, formatPercent, MetricCard } from '@/components/growth/MetricCard';
+import { LastOperatorCell } from '@/components/LastOperatorCell';
 import { type SupportMetrics, useSupportMetrics } from '@/features/growth';
 import { stringField, useUrlState } from '@/lib/use-url-state';
 
@@ -20,8 +21,8 @@ const AGENT_COLUMNS: DataTableColumn<AgentRow>[] = [
   {
     key: 'maskedId',
     header: '坐席',
-    className: 'font-mono',
-    cell: (r) => r.maskedId,
+    // 复用公共资料卡组件：展示姓名/昵称，hover 弹出账号信息卡片；账号查不到时回退脱敏 ID
+    cell: (r) => <LastOperatorCell user={r.agentUser} fallback={r.maskedId} />,
   },
   {
     key: 'totalRooms',
@@ -43,7 +44,7 @@ const AGENT_COLUMNS: DataTableColumn<AgentRow>[] = [
   },
 ];
 
-/** 客服绩效：团队会话概览 + 坐席排行（脱敏展示，默认近 7 天）。 */
+/** 客服绩效：团队会话概览 + 坐席排行（默认近 7 天）。 */
 export default function GrowthSupportPage() {
   const [dateState, setDate] = useUrlState({
     from: stringField(),
@@ -67,7 +68,7 @@ export default function GrowthSupportPage() {
     <>
       <PageHeader
         title="客服绩效"
-        description="在线客服会话的团队概览与坐席排行：首响时长、会话转化率（坐席身份脱敏展示）。"
+        description="在线客服会话的团队概览与坐席排行：首响时长、会话转化率。"
       />
 
       <Card className="mb-6 border-border/80 py-0">
