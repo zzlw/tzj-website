@@ -27,6 +27,7 @@ import { CopyableText } from '@/components/CopyableText';
 import { VisitorConvertToLeadDialog } from '@/components/visitor-drawer/VisitorConvertToLeadDialog';
 import {
   type AnalyticsVisitorInquiry,
+  formatShortDate,
   useAnalyticsVisitorActivity,
   useVisitorInquiries,
   type VisitorIdentityBlock,
@@ -420,6 +421,7 @@ function VisitorStatusBadge({ identified }: { identified: boolean }) {
 /** 抽屉头：返回按钮（聊天线程级）+ 身份标题徽章 + 联系行 + 转化入口。抽出以收敛主组件复杂度。 */
 function VisitorSheetHeader({
   visitor,
+  identifiedAt,
   displayName,
   showBack,
   onBack,
@@ -428,6 +430,8 @@ function VisitorSheetHeader({
   onConvertClick,
 }: {
   visitor: VisitorProfileIdentity | null;
+  /** 识别时间（ISO）：已识别访客方有，追加到身份徽标旁作副注 */
+  identifiedAt?: string | null;
   displayName: string;
   showBack: boolean;
   onBack: () => void;
@@ -454,6 +458,11 @@ function VisitorSheetHeader({
         <SheetTitle className="flex items-center gap-2 text-base">
           {displayName}
           {visitor ? <VisitorStatusBadge identified={visitor.identified} /> : null}
+          {visitor?.identified && identifiedAt ? (
+            <span className="text-muted-foreground text-xs font-normal">
+              识别于 {formatShortDate(identifiedAt)}
+            </span>
+          ) : null}
         </SheetTitle>
       </div>
       <SheetDescription className="flex flex-wrap items-center gap-x-2 text-xs">
@@ -807,6 +816,7 @@ export function VisitorProfileSheet({
         >
           <VisitorSheetHeader
             visitor={visitor}
+            identifiedAt={activityQuery.data?.identity?.identifiedAt ?? null}
             displayName={displayName}
             showBack={showBack}
             onBack={handleHeaderBack}

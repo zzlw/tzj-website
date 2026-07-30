@@ -433,13 +433,14 @@ model PageView {
   osVersion    String?
   // 内嵌浏览器宿主 App（微信/抖音/微博…），独立浏览器为 null
   clientApp    String?
-  // 营销归因（会话首触）：UTM 五参数 + Google Ads 点击 ID
+  // 营销归因（会话首触）：UTM 五参数 + 广告点击 ID（Google gclid / 百度 OCPC bd_vid）
   utmSource    String?
   utmMedium    String?
   utmCampaign  String?
   utmContent   String?
   utmTerm      String?
   gclid        String?
+  bdVid        String?
   // 服务端计算的渠道分组：direct/organic/paid/social/email/referral/other
   trafficSource String?
   isBot        Boolean  @default(false)

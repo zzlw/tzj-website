@@ -6,8 +6,9 @@
  * 「访客分析 · 访客明细」抽屉（按 IP/ipHash）复用，二者仅取数 hook 不同。
  */
 import { Badge, Skeleton } from '@tzj/ui';
-import { Activity, ChevronDown, ChevronRight, Network } from 'lucide-react';
+import { Activity, ChevronDown, ChevronRight, Megaphone, Network } from 'lucide-react';
 import { useState } from 'react';
+import { BrowserSupportBadge } from '@/components/analytics/device-columns';
 import { CopyableIp } from '@/components/CopyableText';
 import {
   type AnalyticsVisitorActivity,
@@ -17,6 +18,7 @@ import {
   formatDeviceModel,
   formatDuration,
   formatLastSeen,
+  formatTimeOfDay,
   regionLabel,
   sourceLabel,
 } from '@/features/analytics';
@@ -27,8 +29,8 @@ function formatClock(iso: string): string {
   return d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
 }
 
-/** 技术信息条中的单项（label / value） */
-function TechRow({ label, value }: { label: string; value: string }) {
+/** 技术信息条中的单项（label / value），value 支持纯文本或自定义节点（徽标/可复制 IP 等） */
+function TechRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-0.5">
       <dt className="text-muted-foreground">{label}</dt>
@@ -65,9 +67,9 @@ function TouchedBadges({
   );
 }
 
-/** 技术信息条：设备型号/系统/浏览器/访问软件、地区、来源、访问次数、首末访问 + 关键页触达标签 */
+/** 技术信息条：设备型号/系统/浏览器/兼容性/访问软件、地区、来源、访问次数、首末访问、入口页、最后 IP + 关键页触达标签 */
 function TechInfoBar({ activity }: { activity: AnalyticsVisitorActivity }) {
-  const { techInfo, summary } = activity;
+  const { techInfo, summary, sessions, networks, attribution } = activity;
   const deviceType = techInfo.deviceType ? deviceLabel(techInfo.deviceType) : null;
   // 型号带厂商（型号串未含厂商名时补注），如「SM-S911B（Samsung）」
   const model = formatDeviceModel(techInfo.deviceModel, techInfo.deviceVendor);
@@ -77,12 +79,22 @@ function TechInfoBar({ activity }: { activity: AnalyticsVisitorActivity }) {
     [techInfo.browser, techInfo.browserVersion].filter(Boolean).join(' ') || '未知';
   const region = regionLabel(techInfo, '未知');
   const source = techInfo.channel ? sourceLabel(techInfo.channel) : '直接访问';
+  // 入口页：后端首触权威值优先，回退到时间最早会话（sessions 降序，末位最早）的首条 view
+  const landingPath = attribution?.landingPath ?? sessions[sessions.length - 1]?.views[0]?.path;
+  // 最后访问 IP：历史网络按 lastSeenAt 降序，首条即最近；IP 抽屉无 networks 则不展示
+  const lastNetwork = networks?.[0];
   return (
     <div className="bg-muted/30 rounded-lg border p-3 text-xs">
       <dl className="grid grid-cols-2 gap-x-4 gap-y-2">
         <TechRow label="设备" value={device} />
         <TechRow label="系统" value={osValue} />
         <TechRow label="浏览器" value={browserValue} />
+        <TechRow
+          label="兼容性"
+          value={
+            <BrowserSupportBadge browser={techInfo.browser} version={techInfo.browserVersion} />
+          }
+        />
         <TechRow label="访问软件" value={techInfo.clientApp ?? '独立浏览器'} />
         <TechRow label="地区" value={region} />
         <TechRow
@@ -99,8 +111,37 @@ function TechInfoBar({ activity }: { activity: AnalyticsVisitorActivity }) {
         />
         <TechRow
           label="最近访问"
-          value={summary.lastSeenAt ? formatLastSeen(summary.lastSeenAt) : '—'}
+          value={
+            summary.lastSeenAt ? (
+              <span>
+                {formatLastSeen(summary.lastSeenAt)}
+                <span className="text-muted-foreground ml-1">
+                  （{formatTimeOfDay(summary.lastSeenAt)}活跃）
+                </span>
+              </span>
+            ) : (
+              '—'
+            )
+          }
         />
+        <TechRow
+          label="入口页"
+          value={
+            landingPath ? (
+              <span className="block truncate font-mono" title={landingPath}>
+                {landingPath}
+              </span>
+            ) : (
+              '—'
+            )
+          }
+        />
+        {lastNetwork ? (
+          <TechRow
+            label="最后访问 IP"
+            value={<CopyableIp ip={lastNetwork.ip} ipMasked={lastNetwork.ipMasked} />}
+          />
+        ) : null}
       </dl>
       <TouchedBadges touchedContact={summary.touchedContact} touchedCase={summary.touchedCase} />
     </div>
@@ -188,6 +229,49 @@ function NetworksSection({ networks }: { networks: AnalyticsVisitorNetwork[] }) 
 }
 
 /**
+ * 渠道归因（首触）：UTM 五参数 + Google Ads 点击 ID，默认折叠。
+ * 仅当存在任一非空参数时渲染（直接访问型访客无归因参数，整块不渲染，避免一排 —）。
+ */
+function AttributionSection({
+  attribution,
+}: {
+  attribution: NonNullable<AnalyticsVisitorActivity['attribution']>;
+}) {
+  const [open, setOpen] = useState(false);
+  const rows: Array<{ label: string; value: string | null }> = [
+    { label: 'UTM Source', value: attribution.utmSource },
+    { label: 'UTM Medium', value: attribution.utmMedium },
+    { label: 'UTM Campaign', value: attribution.utmCampaign },
+    { label: 'UTM Content', value: attribution.utmContent },
+    { label: 'UTM Term', value: attribution.utmTerm },
+    { label: '广告点击 ID', value: attribution.gclid },
+    { label: '百度点击 ID', value: attribution.bdVid },
+  ];
+  const present = rows.filter((r) => r.value);
+  if (present.length === 0) return null;
+  return (
+    <div className="mt-4 rounded-lg border text-xs">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="hover:bg-muted/40 flex w-full items-center gap-1.5 rounded-lg p-3 font-medium"
+      >
+        {open ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+        <Megaphone className="h-3.5 w-3.5" />
+        渠道归因（{present.length}）
+      </button>
+      {open ? (
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-2 border-t p-3">
+          {present.map((r) => (
+            <TechRow key={r.label} label={r.label} value={r.value} />
+          ))}
+        </dl>
+      ) : null}
+    </div>
+  );
+}
+
+/**
  * 浏览行为时间线（纯展示）：技术信息条 + 会话时间线（含加载骨架 / 空态）。
  * 入参仅 { data, isLoading }，取数由外层 hook 负责，保证两处抽屉观感一致。
  */
@@ -222,6 +306,7 @@ export function VisitorActivityTimeline({
   return (
     <div className="flex-1 overflow-y-auto px-5 py-4">
       <TechInfoBar activity={data} />
+      {data.attribution ? <AttributionSection attribution={data.attribution} /> : null}
       {data.networks ? <NetworksSection networks={data.networks} /> : null}
       <div className="mt-4 space-y-2">
         {data.sessions.map((s, i) => (

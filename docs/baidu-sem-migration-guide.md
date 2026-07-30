@@ -100,12 +100,12 @@ https://www.tzjii.com/zh-CN/{落地页}?utm_source=baidu&utm_medium=cpc&utm_camp
 
 这是目前最大的缺口。新站 [analytics.ts](file:///Users/gavin/Documents/tzj/tzj-website-reconstruction/apps/web/src/lib/analytics.ts) 只采集了 UTM + `gclid`（Google 点击 ID），百度体系完全没接。按优先级：
 
-### P0-1 采集 `bd_vid`（百度 OCPC 点击 ID）
+### P0-1 采集 `bd_vid`（百度 OCPC 点击 ID） ✅ 已完成（2026-07-30）
 
-- 在 `analytics.ts` 的 `parseAttributionFromUrl()` 中比照 `gclid` 增加 `bd_vid` 字段，
-  随会话归因持久化并随 PV/identify 上报；
-- API 侧（`apps/api` analytics 模块）与库表同步加字段。
-- 这是后续 OCPC 转化回传的前提（回传必须带 `bd_vid`）。
+- 前端 `analytics.ts` 已比照 `gclid` 增加 `bd_vid` 解析，随会话归因持久化并随 PV 上报；
+- API 侧 DTO/渠道分类（bd_vid → paid）/落库/人物抽屉/导出全链路已打通，
+  库表迁移 `20260730000000_page_view_bd_vid`；
+- admin 后台人物抽屉与 CSV 导出已展示「百度点击 ID」列。
 
 ### P0-2 接入百度统计（hm.js）
 

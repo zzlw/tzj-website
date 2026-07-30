@@ -117,7 +117,7 @@ export interface TrackPageViewInput {
   title?: string;
 }
 
-/** 会话首触营销归因（UTM 五参数 + gclid）。 */
+/** 会话首触营销归因（UTM 五参数 + gclid/bd_vid 广告点击 ID）。 */
 interface SessionAttribution {
   utmSource?: string;
   utmMedium?: string;
@@ -125,6 +125,7 @@ interface SessionAttribution {
   utmContent?: string;
   utmTerm?: string;
   gclid?: string;
+  bdVid?: string;
 }
 
 function parseAttributionFromUrl(): SessionAttribution {
@@ -137,6 +138,8 @@ function parseAttributionFromUrl(): SessionAttribution {
     utmContent: pick('utm_content'),
     utmTerm: pick('utm_term'),
     gclid: params.get('gclid')?.slice(0, 512) || undefined,
+    // 百度 OCPC 点击 ID（开启 OCPC 后百度自动追加，转化回传必须携带）
+    bdVid: params.get('bd_vid')?.slice(0, 512) || undefined,
   };
   // 剔除全空键，便于判断“本次 URL 是否携带归因”
   for (const key of Object.keys(attr) as Array<keyof SessionAttribution>) {

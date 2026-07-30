@@ -162,6 +162,14 @@ interface VisitorPageViewRow {
   createdAt: Date;
   referrerHost: string | null;
   trafficSource: string | null;
+  // 营销归因（首触）：UTM 五参数 + 广告点击 ID（gclid/bd_vid）；仅人物抽屉（按 visitorId）查询，IP 抽屉不选，故可选
+  utmSource?: string | null;
+  utmMedium?: string | null;
+  utmCampaign?: string | null;
+  utmContent?: string | null;
+  utmTerm?: string | null;
+  gclid?: string | null;
+  bdVid?: string | null;
   deviceType: string | null;
   deviceModel: string | null;
   deviceVendor: string | null;
@@ -262,6 +270,21 @@ function buildVisitorTechInfo(views: VisitorPageViewRow[]) {
     country: latestValue(views, (v) => v.country),
     channel: firstValue(views, (v) => v.trafficSource),
     referrerHost: firstValue(views, (v) => v.referrerHost),
+  };
+}
+
+// 营销归因（首触）：UTM 五参数 + gclid/bd_vid + 落地页；取首触非空值（views 已按时间升序）
+function buildVisitorAttribution(views: VisitorPageViewRow[]) {
+  return {
+    utmSource: firstValue(views, (v) => v.utmSource ?? null),
+    utmMedium: firstValue(views, (v) => v.utmMedium ?? null),
+    utmCampaign: firstValue(views, (v) => v.utmCampaign ?? null),
+    utmContent: firstValue(views, (v) => v.utmContent ?? null),
+    utmTerm: firstValue(views, (v) => v.utmTerm ?? null),
+    gclid: firstValue(views, (v) => v.gclid ?? null),
+    bdVid: firstValue(views, (v) => v.bdVid ?? null),
+    // 落地页：全局首条 view 的 path（views 升序，首条即最早一次访问）
+    landingPath: views[0]?.path ?? null,
   };
 }
 
@@ -454,6 +477,7 @@ export class AnalyticsService {
       utmMedium: dto.utmMedium,
       utmSource: dto.utmSource,
       gclid: dto.gclid,
+      bdVid: dto.bdVid,
       referrerHost,
     });
 
@@ -488,6 +512,7 @@ export class AnalyticsService {
         utmContent: nullableTrim(dto.utmContent),
         utmTerm: nullableTrim(dto.utmTerm),
         gclid: nullableTrim(dto.gclid),
+        bdVid: nullableTrim(dto.bdVid),
         trafficSource,
         isBot: parsed.isBot,
       },
@@ -1237,6 +1262,7 @@ export class AnalyticsService {
         utmContent: string | null;
         utmTerm: string | null;
         gclid: string | null;
+        bdVid: string | null;
         touchedContact: boolean | null;
         touchedCase: boolean | null;
         userId: string | null;
@@ -1274,6 +1300,7 @@ export class AnalyticsService {
           pv."utmContent",
           pv."utmTerm",
           pv."gclid",
+          pv."bdVid",
           pv."ip",
           pv."ipMasked",
           pv."ipHash",
@@ -1317,13 +1344,14 @@ export class AnalyticsService {
         (ARRAY_AGG("ipMasked" ORDER BY "createdAt" DESC) FILTER (WHERE "ipMasked" IS NOT NULL))[1] AS "lastIpMasked",
         (ARRAY_AGG("ipHash" ORDER BY "createdAt" DESC) FILTER (WHERE "ipHash" IS NOT NULL))[1] AS "lastIpHash",
         (ARRAY_AGG("referrerHost" ORDER BY "createdAt" ASC) FILTER (WHERE "referrerHost" IS NOT NULL))[1] AS "referrerHost",
-        -- 营销归因（首触）：UTM 五参数 + Google Ads 点击 ID，供导出做投放分析
+        -- 营销归因（首触）：UTM 五参数 + 广告点击 ID（gclid/bd_vid），供导出做投放分析
         (ARRAY_AGG("utmSource" ORDER BY "createdAt" ASC) FILTER (WHERE "utmSource" IS NOT NULL))[1] AS "utmSource",
         (ARRAY_AGG("utmMedium" ORDER BY "createdAt" ASC) FILTER (WHERE "utmMedium" IS NOT NULL))[1] AS "utmMedium",
         (ARRAY_AGG("utmCampaign" ORDER BY "createdAt" ASC) FILTER (WHERE "utmCampaign" IS NOT NULL))[1] AS "utmCampaign",
         (ARRAY_AGG("utmContent" ORDER BY "createdAt" ASC) FILTER (WHERE "utmContent" IS NOT NULL))[1] AS "utmContent",
         (ARRAY_AGG("utmTerm" ORDER BY "createdAt" ASC) FILTER (WHERE "utmTerm" IS NOT NULL))[1] AS "utmTerm",
         (ARRAY_AGG("gclid" ORDER BY "createdAt" ASC) FILTER (WHERE "gclid" IS NOT NULL))[1] AS "gclid",
+        (ARRAY_AGG("bdVid" ORDER BY "createdAt" ASC) FILTER (WHERE "bdVid" IS NOT NULL))[1] AS "bdVid",
         ${keyPageTouchedSql(CONTACT_PATH_SEGMENTS)} AS "touchedContact",
         ${keyPageTouchedSql(CASE_PATH_SEGMENTS)} AS "touchedCase",
         (ARRAY_AGG("userId" ORDER BY "createdAt" DESC) FILTER (WHERE "userId" IS NOT NULL))[1] AS "userId",
@@ -1398,6 +1426,7 @@ export class AnalyticsService {
         utmContent: row.utmContent,
         utmTerm: row.utmTerm,
         gclid: row.gclid,
+        bdVid: row.bdVid,
         touchedContact: Boolean(row.touchedContact),
         touchedCase: Boolean(row.touchedCase),
         // 人物级转化：最近一条询盘 ID（转化去重锚点）+ 已转客户 ID（列表徽标/档案链接）
@@ -1548,11 +1577,20 @@ export class AnalyticsService {
         ipHash: true,
         ipMasked: true,
         ip: true,
+        // 营销归因（首触）：仅人物抽屉需要，供抽屉渠道归因块展示
+        utmSource: true,
+        utmMedium: true,
+        utmCampaign: true,
+        utmContent: true,
+        utmTerm: true,
+        gclid: true,
+        bdVid: true,
       },
     });
 
     const sessions = groupVisitorSessions(views);
     const techInfo = buildVisitorTechInfo(views);
+    const attribution = buildVisitorAttribution(views);
     const networks = buildVisitorNetworks(views);
     const identity = await this.resolveVisitorIdentity(visitorId);
     const first = views[0];
@@ -1563,6 +1601,7 @@ export class AnalyticsService {
       identity,
       sessions,
       techInfo,
+      attribution,
       networks,
       summary: {
         totalPageViews: views.length,
@@ -1700,6 +1739,8 @@ export class AnalyticsService {
       phone: visitor?.phone ?? customer?.phone ?? contact?.phone ?? null,
       company: visitor?.company ?? customer?.company ?? contact?.company ?? null,
       identified: Boolean(visitor?.identifiedAt),
+      // 识别时间（前台自报身份/转化回写时间）：抽屉头部展示「已识别 · 日期」
+      identifiedAt: visitor?.identifiedAt?.toISOString() ?? null,
       // 人物级转化：最近一条询盘 contactId 作去重锚点，任一已关联 Customer 则标记已转
       latestContactId: lead.latestContactId,
       convertedCustomerId: lead.convertedCustomerId,

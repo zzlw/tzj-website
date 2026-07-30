@@ -144,13 +144,14 @@ export interface AnalyticsVisitorRow {
   lastIpMasked: string | null;
   lastIpHash: string | null;
   referrerHost: string | null;
-  /** 营销归因（会话首触）：UTM 五参数 + Google Ads 点击 ID */
+  /** 营销归因（会话首触）：UTM 五参数 + 广告点击 ID（gclid/bd_vid） */
   utmSource: string | null;
   utmMedium: string | null;
   utmCampaign: string | null;
   utmContent: string | null;
   utmTerm: string | null;
   gclid: string | null;
+  bdVid: string | null;
   touchedContact?: boolean;
   touchedCase?: boolean;
   /** 最近一条询盘 ID（转化去重锚点，无询盘为 null） */
@@ -232,6 +233,17 @@ export interface AnalyticsVisitorActivity {
     channel: string | null;
     referrerHost: string | null;
   };
+  /** 营销归因（首触）：UTM 五参数 + gclid/bd_vid + 落地页；仅人物抽屉返回，IP 抽屉为 undefined */
+  attribution?: {
+    utmSource: string | null;
+    utmMedium: string | null;
+    utmCampaign: string | null;
+    utmContent: string | null;
+    utmTerm: string | null;
+    gclid: string | null;
+    bdVid: string | null;
+    landingPath: string | null;
+  };
   summary: {
     totalPageViews: number;
     totalSessions: number;
@@ -307,6 +319,8 @@ export type VisitorProfileIdentity = Pick<
  * 由 getVisitorActivity 返回；seed 占位仅满足 VisitorProfileIdentity 子集，故转化字段仅加载后可用。
  */
 export interface VisitorIdentityBlock extends VisitorProfileIdentity {
+  /** 识别时间（ISO）：已识别访客才有；旧响应/seed 占位可能无此字段 */
+  identifiedAt?: string | null;
   /** 最近一条询盘 contactId：人物级转化去重锚点（无询盘为 null） */
   latestContactId: string | null;
   /** 该访客任一询盘已关联的 Customer id（已转标记；未转为 null） */

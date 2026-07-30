@@ -109,9 +109,9 @@ export function DocumentPermissionDialog({
       targetId?: string | null;
     }) => api.post<PermissionItem>(`documents/${documentId}/permissions`, payload),
     onSuccess: () => {
-      qc.invalidateQueries({
-        queryKey: ['documents', documentId, 'permissions'],
-      });
+      // 前缀失效同时覆盖本弹窗的 permissions 查询与文档列表/详情缓存，
+      // 保证列表上的可见范围标签（visibility）随权限变更立即刷新
+      qc.invalidateQueries({ queryKey: ['documents'] });
       notifySuccess('已添加权限');
     },
     onError: (e) => notifyError(e, '添加权限失败'),
@@ -121,9 +121,7 @@ export function DocumentPermissionDialog({
   const removeMut = useMutation({
     mutationFn: (permId: string) => api.remove(`documents/${documentId}/permissions`, permId),
     onSuccess: () => {
-      qc.invalidateQueries({
-        queryKey: ['documents', documentId, 'permissions'],
-      });
+      qc.invalidateQueries({ queryKey: ['documents'] });
       notifySuccess('已移除权限');
     },
     onError: (e) => notifyError(e, '移除权限失败'),

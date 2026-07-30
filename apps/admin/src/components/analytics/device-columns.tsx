@@ -34,8 +34,9 @@ const SUPPORT_BADGE_CLASS: Record<BrowserSupportStatus, string> = {
   unknown: 'border-border bg-muted text-muted-foreground',
 };
 
-/** 依据浏览器名+版本渲染站点兼容性徽标（title 悬浮显示判定依据，便于统计溯源）。 */
-function BrowserSupportBadge({
+/** 依据浏览器名+版本渲染站点兼容性徽标（title 悬浮显示判定依据，便于统计溯源）。
+    表格兼容性列与抽屉技术信息条共用，保证两处视觉一致。 */
+export function BrowserSupportBadge({
   browser,
   version,
 }: {

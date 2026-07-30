@@ -91,4 +91,10 @@ export class CollectPageViewDto {
   @IsString()
   @MaxLength(512)
   gclid?: string;
+
+  @ApiPropertyOptional({ description: '百度 OCPC 点击 ID（bd_vid）' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(512)
+  bdVid?: string;
 }

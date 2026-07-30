@@ -14,6 +14,7 @@ export interface TrafficSourceInput {
   utmMedium?: string | null;
   utmSource?: string | null;
   gclid?: string | null;
+  bdVid?: string | null;
   referrerHost?: string | null;
 }
 
@@ -73,7 +74,7 @@ function classifyByReferrer(host: string): TrafficSource {
  */
 export function classifyTrafficSource(input: TrafficSourceInput): TrafficSource {
   const medium = input.utmMedium?.trim().toLowerCase();
-  if (input.gclid?.trim()) return 'paid';
+  if (input.gclid?.trim() || input.bdVid?.trim()) return 'paid';
   if (medium) return MEDIUM_CHANNEL[medium] ?? 'referral';
   // 有 utm_source 但无 medium：视为带标记的引荐
   if (input.utmSource?.trim()) return 'referral';

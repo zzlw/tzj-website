@@ -85,6 +85,7 @@ export const PEOPLE_EXPORT_COLUMNS: CsvColumn<AnalyticsVisitorExportRow>[] = [
   { header: 'UTM Content', value: (r) => r.utmContent ?? '' },
   { header: 'UTM Term', value: (r) => r.utmTerm ?? '' },
   { header: '广告点击ID(gclid)', value: (r) => r.gclid ?? '' },
+  { header: '百度点击ID(bd_vid)', value: (r) => r.bdVid ?? '' },
   { header: '入口页', value: (r) => r.landingPath },
   // ── 设备环境 ──
   { header: '设备类型', value: (r) => deviceLabel(r.deviceType) },
