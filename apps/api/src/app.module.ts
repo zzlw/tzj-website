@@ -23,6 +23,7 @@ import { CustomersModule } from './customers/customers.module';
 import { DocumentsModule } from './documents/documents.module';
 import { HealthModule } from './health/health.module';
 import { IntegrationsModule } from './integrations/integrations.module';
+import { LingxiModule } from './lingxi/lingxi.module';
 import { MediaModule } from './media/media.module';
 import { NewsModule } from './news/news.module';
 import { NotificationModule } from './notifications/notification.module';
@@ -80,6 +81,7 @@ import { UsersModule } from './users/users.module';
     SecurityModule,
     SettingsModule,
     IntegrationsModule,
+    LingxiModule,
     NotificationModule,
     SystemModule,
     DocumentsModule,

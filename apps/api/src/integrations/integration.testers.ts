@@ -59,4 +59,29 @@ export const INTEGRATION_TESTERS: Record<string, IntegrationTester> = {
       message: `凭证已配置，发信地址 ${accountName}（保存后可在站点设置配置通知收件人）`,
     };
   },
+
+  'lingxi-llm': async (service) => {
+    const apiKey = await service.resolveSecret('lingxi-llm', 'apiKey');
+    if (!apiKey) {
+      return { ok: false, message: '未配置 API Key' };
+    }
+    const baseURL =
+      (await service.resolveConfig('lingxi-llm', 'baseURL')) || 'https://api.deepseek.com';
+    try {
+      // OpenAI 兼容平台通用探活：GET /models 验证 Key 与端点可达
+      const res = await fetch(`${baseURL.replace(/\/$/, '')}/models`, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+        signal: AbortSignal.timeout(5000),
+      });
+      if (res.ok) {
+        return { ok: true, message: '连接成功，API Key 有效' };
+      }
+      if (res.status === 401) {
+        return { ok: false, message: 'API Key 无效或已删除，请到平台重新创建' };
+      }
+      return { ok: false, message: `平台返回 HTTP ${res.status}，请检查 Base URL 与账户状态` };
+    } catch {
+      return { ok: false, message: '无法连接大模型平台，请检查网络与 Base URL' };
+    }
+  },
 };

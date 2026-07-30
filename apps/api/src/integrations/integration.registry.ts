@@ -41,6 +41,13 @@ export const INTEGRATION_ENV_FALLBACK: Record<
       region: 'ALIYUN_DM_REGION',
     },
   },
+  'lingxi-llm': {
+    secrets: { apiKey: 'LINGXI_LLM_API_KEY' },
+    config: {
+      baseURL: 'LINGXI_LLM_BASE_URL',
+      model: 'LINGXI_LLM_MODEL',
+    },
+  },
 };
 
 /** 第三方集成注册表（slug 与字段定义的唯一来源） */
@@ -233,6 +240,59 @@ export const INTEGRATION_REGISTRY: IntegrationDef[] = [
         key: 'region',
         label: '地域',
         description: '默认 cn-hangzhou。中国内地实例一般填 cn-hangzhou 即可。',
+      },
+    ],
+  },
+  {
+    slug: 'lingxi-llm',
+    label: '灵犀 AI（LLM）',
+    description:
+      '后台「灵犀」智能投放报告的大模型服务。默认接入 DeepSeek 官方 API；也可切换为硅基流动等任意 OpenAI 兼容平台（改 Base URL 与模型名即可，零代码切换）。',
+    docUrl: 'https://platform.deepseek.com/docs',
+    setupGuide: [
+      {
+        title: '1. 注册 DeepSeek 开放平台',
+        content:
+          '访问 [DeepSeek 开放平台](https://platform.deepseek.com/)，注册并充值（按量计费，新用户通常有赠送额度）。',
+      },
+      {
+        title: '2. 创建 API Key',
+        content:
+          '进入 [API Keys](https://platform.deepseek.com/api_keys) 页面创建密钥，创建时仅显示一次，复制后填入下方「API Key」字段。**切勿将 Key 发给他人或粘贴到聊天工具**，泄露后请立即在平台删除重建。',
+      },
+      {
+        title: '3. 启用并测试',
+        content:
+          '保存后点击「测试连接」，系统会请求模型列表接口验证 Key 有效性。通过后，拥有「使用灵犀 AI」权限的角色即可在后台使用灵犀。',
+      },
+      {
+        title: '切换到硅基流动（可选）',
+        content:
+          'DeepSeek 官方拥堵或需要其它模型时，可将 Base URL 改为 https://api.siliconflow.cn/v1、模型名改为 deepseek-ai/DeepSeek-V3 并更换对应平台的 API Key，无需改代码。',
+      },
+    ],
+    secretFields: [
+      {
+        key: 'apiKey',
+        label: 'API Key',
+        description:
+          '大模型平台的 API 密钥，仅保存在服务端加密数据库中，用于服务端调用 Chat Completions 接口。',
+        helpUrl: 'https://platform.deepseek.com/api_keys',
+        required: true,
+      },
+    ],
+    configFields: [
+      {
+        key: 'baseURL',
+        label: 'Base URL',
+        description:
+          'OpenAI 兼容接口地址。DeepSeek 官方：https://api.deepseek.com；硅基流动：https://api.siliconflow.cn/v1。留空时默认 DeepSeek 官方。',
+      },
+      {
+        key: 'model',
+        label: '模型名',
+        description:
+          '对话模型标识。DeepSeek 官方：deepseek-chat；硅基流动：deepseek-ai/DeepSeek-V3。留空时默认 deepseek-chat。',
       },
     ],
   },

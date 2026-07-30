@@ -79,6 +79,11 @@ export const PERMISSION_GROUPS: PermissionGroupDef[] = [
         label: '查看访客分析',
         description: '官网 PV/UV、页面排行、来源与设备分布（只读）',
       },
+      {
+        id: 'lingxi.use',
+        label: '使用灵犀 AI',
+        description: '一句话生成投放报告与建议（读取访客分析与增长指标）',
+      },
     ],
   },
   {
@@ -277,6 +282,7 @@ export const PRESET_ROLES: PresetRoleDef[] = [
       'media.replaceSite',
       'contacts.view',
       'analytics.view',
+      'lingxi.use',
       'docs.view',
       'docs.create',
       'docs.edit',
@@ -323,6 +329,7 @@ export const PRESET_ROLES: PresetRoleDef[] = [
       'contacts.view',
       'customers.view',
       'analytics.view',
+      'lingxi.use',
       'docs.view',
       'tickets.view',
       'audit.view',

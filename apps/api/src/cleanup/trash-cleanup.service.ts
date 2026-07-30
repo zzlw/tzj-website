@@ -6,7 +6,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ChatRoomService } from '../support/chat-room.service';
 
 /**
- * 回收站到期清理（询盘/客户/会话）：
+ * 回收站到期清理（询盘/客户/会话/灵犀会话）：
  * 软删超过保留期（默认 30 天）的行由本任务每日物理清除。
  * 复用各模块 Service 的 purge（联动断链 + 审计快照同口径），不在此重写删除逻辑；
  * 审计 userId 记为 null 表示系统任务。凌晨 4 点执行，错开 3 点的聊天附件清理。
@@ -29,9 +29,10 @@ export class TrashCleanupService {
     const contacts = await this.purgeExpiredContacts(cutoff);
     const customers = await this.purgeExpiredCustomers(cutoff);
     const chatRooms = await this.purgeExpiredChatRooms(cutoff);
-    if (contacts + customers + chatRooms > 0) {
+    const lingxi = await this.purgeExpiredLingxiConversations(cutoff);
+    if (contacts + customers + chatRooms + lingxi > 0) {
       this.logger.log(
-        `回收站到期清理完成：询盘 ${contacts} 条，客户 ${customers} 条，会话 ${chatRooms} 条`,
+        `回收站到期清理完成：询盘 ${contacts} 条，客户 ${customers} 条，会话 ${chatRooms} 条，灵犀会话 ${lingxi} 条`,
       );
     }
   }
@@ -89,5 +90,18 @@ export class TrashCleanupService {
       }
     }
     return done;
+  }
+
+  /** 到期灵犀会话：无外部关联断链需求，直接批量物理删除（消息随外键级联清除） */
+  private async purgeExpiredLingxiConversations(cutoff: Date): Promise<number> {
+    try {
+      const result = await this.prisma.lingxiConversation.deleteMany({
+        where: { deletedAt: { lt: cutoff } },
+      });
+      return result.count;
+    } catch (err) {
+      this.logger.warn(`到期灵犀会话清理失败: ${(err as Error).message}`);
+      return 0;
+    }
   }
 }

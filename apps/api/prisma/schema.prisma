@@ -288,6 +288,7 @@ model User {
   docTagsCreated        DocTag[] @relation("DocTagCreatedBy")
   docPermissionsGranted DocumentPermission[] @relation("DocPermissionGrantor")
   docPermissionsAsUser  DocumentPermission[] @relation("DocPermissionUser")
+  lingxiConversations   LingxiConversation[]
 
   @@map("users")
 }
@@ -878,4 +879,39 @@ model MessageReadReceipt {
 
   @@index([messageId])
   @@map("message_read_receipts")
+}
+
+// ═══════════════════════════════════════════
+// 灵犀 AI 投放报告 — 会话与消息
+// ═══════════════════════════════════════════
+
+/// 灵犀会话：按用户隔离，软删（deletedAt）+ 回收站 30 天后物理清除（级联删消息）。
+model LingxiConversation {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String?
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  messages LingxiMessage[]
+
+  @@index([userId, updatedAt])
+  @@index([deletedAt])
+  @@map("lingxi_conversations")
+}
+
+/// 灵犀消息：role = user | assistant | tool；meta 存工具调用/数据引用等结构化信息。
+model LingxiMessage {
+  id             String             @id @default(cuid())
+  conversationId String
+  conversation   LingxiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           String
+  content        String             @db.Text
+  meta           Json?
+  createdAt      DateTime           @default(now())
+
+  @@index([conversationId, createdAt])
+  @@map("lingxi_messages")
 }

@@ -11,5 +11,7 @@ import { IpLocationService } from './ip-location.service';
   imports: [SettingsModule, IntegrationsModule, SecurityModule],
   controllers: [AnalyticsController],
   providers: [AnalyticsService, GrowthMetricsService, IpLocationService],
+  // 供灵犀（LingxiModule）工具集复用同口径聚合，保证报表页与 AI 报告数据一致
+  exports: [AnalyticsService, GrowthMetricsService],
 })
 export class AnalyticsModule {}

@@ -49,6 +49,11 @@ const envSchema = z.object({
   ALIYUN_CAPTCHA_REGION: z.string().optional(),
   ANALYTICS_IP_SALT: z.string().optional(),
 
+  // 灵犀 AI（LLM）— 优先读后台集成凭证，env 兜底；未配置时端点返回明确错误而非启动失败
+  LINGXI_LLM_BASE_URL: z.string().optional(),
+  LINGXI_LLM_API_KEY: z.string().optional(),
+  LINGXI_LLM_MODEL: z.string().optional(),
+
   // 2FA（TOTP）
   /** 预鉴权令牌（pendingToken）有效期秒数 */
   TWOFA_PENDING_TTL_SECONDS: z.coerce.number().default(300),
