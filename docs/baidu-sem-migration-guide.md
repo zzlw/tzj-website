@@ -1,6 +1,6 @@
 # 百度广告投放迁移指南（老站 → 新站）
 
-> 编写日期：2026-07-30
+> 编写日期：2026-07-30（同日复评：生产实测校验全部断言，P0-1 已落地，修正备案号/老 URL 状态两处过时描述）
 > 读者：负责百度推广（SEM）投放的同事 + 前端/运维工程师
 > 背景：公司百度广告以前投的是老站（静态 PHP 站，`proshow-*.html` 一类 URL），
 > 现已换成本仓库的新站（Next.js，`https://www.tzjii.com/zh-CN/...`）。
@@ -14,7 +14,7 @@
 2. 迁移的核心工作是三件事，按顺序做：
    - **① 旧 URL 301 承接**（工程侧，最先做）——历史创意、历史收录点进来不能 404；
    - **② 广告后台批量替换落地页 URL**（投放侧）——全部换成带 `/zh-CN` 前缀的新 URL + 统一 UTM 参数；
-   - **③ 转化追踪重建**（工程 + 投放）——新站目前**没有**百度统计、**没有**采集 `bd_vid`、**没有** OCPC 回传，这三项不补上，投放就回到"只看消费不看效果"的盲投状态。
+   - **③ 转化追踪重建**（工程 + 投放）——`bd_vid` 采集已完成（见 P0-1）；但新站仍**没有**百度统计、**没有** OCPC 回传，这两项不补上，投放就回到"只看消费不看效果"的盲投状态。
 3. 一个新站特有的坑：**落地页 URL 必须写带语言前缀的完整地址**（如 `https://www.tzjii.com/zh-CN/modular-tower`）。不带前缀的 URL（如 `/modular-tower`）会被 next-intl 做一次 **307 跳转**，百度落地页审核对跳转敏感，且白白损失打开速度和质量度。
 
 ---
@@ -26,7 +26,7 @@
 | 域名 | www.tzjii.com | www.tzjii.com（不变） |
 | URL 形态 | `proshow-{栏目}-{ID}.html` 等静态路径 | `/zh-CN/{栏目}/{子页}` 语义化路径 |
 | 语言 | 单语言 | zh-CN / zh-TW / en 三语言，URL 强制带前缀 |
-| 统计 | 老站自带（具体不详） | 自建埋点（PV/UTM/gclid/访客归并），**无百度统计** |
+| 统计 | 老站自带（具体不详） | 自建埋点（PV/UTM/gclid/bd_vid/访客归并），**无百度统计** |
 | 转化点 | 留言/电话 | 询盘表单（带验证码）、在线聊天、电话点击 |
 
 ### 老 URL → 新路由映射（工程侧 301 用，投放侧对照用）
@@ -48,7 +48,10 @@
 > `location ~ ^/(proshow|prolist|caseshow|caselist|newsshow|newslist|page)-.*\.html$`
 > 的 301 规则（先按"模式 → 栏目页"粗映射即可，不必逐条精确映射 240+ 个老 URL；
 > 若某几条老 URL 历史上是广告主力落地页，可单独精确映射）。
-> **在广告切换前先上线这一步**，保证任何时刻点进来都不 404。
+> **实测确认（2026-07-30）：老 URL 目前在生产环境直接返回 404**（如
+> `https://www.tzjii.com/proshow-36-1.html`），nginx 模板尚未加任何 `.html` 规则——
+> 若百度老创意仍在线消费，每次点击都在付费买 404，**这是当前最紧急的一项**。
+> 在广告切换前先上线这一步，保证任何时刻点进来都不 404。
 
 ---
 
@@ -98,7 +101,7 @@ https://www.tzjii.com/zh-CN/{落地页}?utm_source=baidu&utm_medium=cpc&utm_camp
 
 ## 四、工程侧：转化追踪改造清单（TODO）
 
-这是目前最大的缺口。新站 [analytics.ts](file:///Users/gavin/Documents/tzj/tzj-website-reconstruction/apps/web/src/lib/analytics.ts) 只采集了 UTM + `gclid`（Google 点击 ID），百度体系完全没接。按优先级：
+新站自建埋点（[analytics.ts](file:///Users/gavin/Documents/tzj/tzj-website-reconstruction/apps/web/src/lib/analytics.ts)）已采集 UTM 五参数 + `gclid` + `bd_vid`（P0-1 已完成），但百度统计与 OCPC 回传仍未接。按优先级：
 
 ### P0-1 采集 `bd_vid`（百度 OCPC 点击 ID） ✅ 已完成（2026-07-30）
 
@@ -131,8 +134,9 @@ https://www.tzjii.com/zh-CN/{落地页}?utm_source=baidu&utm_medium=cpc&utm_camp
 
 ### P2 落地页合规自查
 
-- **备案号**：`site-defaults.ts` 里兜底值仍是占位符 `豫ICP备XXXXXXXX号`，
-  需确认 admin 后台站点设置里已配置真实备案号（百度落地页审核会核对备案与推广主体一致性）；
+- **备案号**：✅ 生产实测（2026-07-30）页脚已展示真实备案号「豫ICP备20013982号」
+  （admin 后台站点设置已配置；`site-defaults.ts` 的代码兜底值仍为占位符，
+  仅在后台配置丢失时才会露出，非阻塞项）；
 - 落地页底部保留公司全称、联系方式；宣传语避免"最/第一/国家级"等广告法禁用词；
 - 三语言站点投国内广告一律落 `zh-CN` 页面，勿把英文页当落地页。
 
@@ -145,7 +149,7 @@ https://www.tzjii.com/zh-CN/{落地页}?utm_source=baidu&utm_medium=cpc&utm_camp
 | 1 | 工程 | nginx 旧 URL 301 上线 + 百度站长平台提交改版规则 | 无 |
 | 2 | 工程 | 接入百度统计 hm.js（环境变量注入） | 投放同事提供统计站点 ID |
 | 3 | 投放 | 按 3.1/3.2 批量替换落地页 URL（先小计划灰度 3~5 天） | 步骤 1、2 |
-| 4 | 工程 | `bd_vid` 采集 + 询盘 OCPC 服务端回传 | 投放同事提供回传 token |
+| 4 | 工程 | ~~`bd_vid` 采集~~（✅ 已完成）+ 询盘 OCPC 服务端回传 | 投放同事提供回传 token |
 | 5 | 投放 | 全量切换 → 观察 1~2 周 → 开启 OCPC 出价 | 步骤 4 |
 | 6 | 双方 | 每周对照：百度后台消费 vs admin 后台 `utm_source=baidu` 的询盘数 | 持续 |
 
@@ -154,10 +158,10 @@ https://www.tzjii.com/zh-CN/{落地页}?utm_source=baidu&utm_medium=cpc&utm_camp
 ## 六、常见问题
 
 **Q：域名没变，为什么广告还要动？**
-A：百度审核和质量度绑定的是"最终访问 URL"。老创意里的 `xxx.html` 现在全是 404/301，不改会导致审核拒登、质量度下滑、点击浪费。
+A：百度审核和质量度绑定的是"最终访问 URL"。老创意里的 `xxx.html` 现在**实测全部 404**（301 规则尚未上线），不改会导致审核拒登、质量度下滑、点击浪费。
 
 **Q：能不能直接投 `https://www.tzjii.com/`？**
-A：不建议。根路径目前是 307 临时跳转到 `/zh-CN`（详见 `docs/web-seo-assessment-and-plan.md` P0-2），审核可能判"跳转页"，速度也多一跳。永远投带 `/zh-CN` 前缀的最终 URL。
+A：不建议。根路径目前是 307 临时跳转到 `/zh-CN`（实测复核 2026-07-30 仍如此；背景见 `docs/web-seo-assessment-and-plan.md` P0-2），审核可能判"跳转页"，速度也多一跳。永远投带 `/zh-CN` 前缀的最终 URL。
 
 **Q：老站那 240 多个页面要逐个 301 吗？**
 A：不用。按 URL 模式粗映射到对应栏目页即可；只有历史上做过广告主力落地页的个别 URL 值得精确映射（可从老百度账户的"访问 URL 报告"里导出消费 Top 的落地页清单来决定）。
