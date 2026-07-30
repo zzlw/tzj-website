@@ -12,12 +12,22 @@ import {
 } from '@tzj/ui';
 import { useMemo } from 'react';
 import { HorizontalBarChart } from '@/components/analytics/AnalyticsCharts';
-import { sourceLabel } from '@/features/analytics';
+import { SOURCE_LABELS, sourceLabel } from '@/features/analytics';
 import { type ChannelFunnelRow, useSourcesFunnel } from '@/features/growth';
 import { stringField, useUrlState } from '@/lib/use-url-state';
 
 /** DataTable 需要 id 字段：channel 在漏斗结果中唯一，直接充当行 id。 */
 type FunnelTableRow = ChannelFunnelRow & { id: string };
+
+/** 无数据渠道的占位行（API 只返回区间内有流量的渠道，表格补全至完整枚举）。 */
+function emptyFunnelRow(channel: string): FunnelTableRow {
+  return {
+    id: channel,
+    channel,
+    funnel: { visitors: 0, engaged: 0, inquiries: 0, customers: 0 },
+    conversionRates: { visitToEngage: 0, engageToInquiry: 0, inquiryToCustomer: 0, overall: 0 },
+  };
+}
 
 const FUNNEL_COLUMNS: DataTableColumn<FunnelTableRow>[] = [
   {
@@ -93,10 +103,16 @@ export default function GrowthChannelsPage() {
   const { data, isLoading, isFetching } = useSourcesFunnel(params);
   const loading = isLoading || isFetching;
 
-  const rows = useMemo<FunnelTableRow[]>(
-    () => (data ?? []).map((r) => ({ ...r, id: r.channel })),
-    [data],
-  );
+  // 有数据渠道按 API 顺序（访客数降序）在前，零数据渠道按枚举顺序补 0 行在后；首次加载（data 未到达）不补行，交给 DataTable 的 loading 态
+  const rows = useMemo<FunnelTableRow[]>(() => {
+    if (!data) return [];
+    const withData = data.map((r) => ({ ...r, id: r.channel }));
+    const seen = new Set(withData.map((r) => r.channel));
+    const padded = Object.keys(SOURCE_LABELS)
+      .filter((c) => !seen.has(c))
+      .map(emptyFunnelRow);
+    return [...withData, ...padded];
+  }, [data]);
 
   const chartItems = useMemo(
     () =>
