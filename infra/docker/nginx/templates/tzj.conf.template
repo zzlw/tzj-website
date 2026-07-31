@@ -22,6 +22,15 @@ server {
     server_name ${WEB_DOMAIN};
     include /etc/nginx/snippets/ssl.conf;
 
+    # ── 百度站长平台文件校验 ──────────────────────────────────────
+    # 站点归属校验：根 / 会 308→/zh-CN、任意 *.html 会被下方兜底 301，百度校验器
+    # 不跟随跳转，取不到 200 即报「无法连接到您网站的服务器」。exact-match location
+    # 优先级高于正则，故此处直出 200 + 校验串（内容取自站长平台下载的校验文件）。
+    location = /baidu_verify_codeva-uyyRhMh9Qw.html {
+        default_type text/html;
+        return 200 "1ceccbb19f78dde15b5c116f24ff3590";
+    }
+
     # ── 老站（静态 PHP 站）URL 301 承接 ─────────────────────────────
     # 百度老创意/历史收录指向 proshow-*.html 等路径，新站（Next.js）无此路径会 404。
     # 按“URL 模式 → 新站栏目页”粗映射（映射依据见 docs/baidu-sem-migration-guide.md 第二节）。
