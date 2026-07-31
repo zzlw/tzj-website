@@ -3,7 +3,12 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { API_BASE, COOKIE } from '@/lib/config';
 import { retryFetch } from '@/lib/fetch-retry';
 import { forwardMetaHeaders } from '@/lib/forward-meta';
-import { applyTokenCookies, refreshAccessToken } from '@/lib/tokenRefresh';
+import {
+  applyTokenCookies,
+  refreshAccessToken,
+  type TokenPair,
+  UPSTREAM_UNAVAILABLE_BODY,
+} from '@/lib/tokenRefresh';
 
 async function proxy(req: NextRequest, path: string[]) {
   const store = await cookies();
@@ -31,28 +36,28 @@ async function proxy(req: NextRequest, path: string[]) {
     }); // 仅 GET/HEAD/OPTIONS 自动重试，写操作不重试
 
   let apiRes: Response;
-  let rotated = null;
+  let rotated: TokenPair | null = null;
 
   try {
     apiRes = await forward(accessToken);
 
     if (apiRes.status === 401) {
-      rotated = await refreshAccessToken(refreshToken);
-      if (rotated) {
+      const refreshed = await refreshAccessToken(refreshToken);
+      if (refreshed.ok) {
+        rotated = refreshed.tokens;
         accessToken = rotated.accessToken;
         apiRes = await forward(accessToken);
+      } else if (refreshed.transient) {
+        // 续期因上游临时故障失败：不能把原始 401 透传给前端——那会触发
+        // React Query 的 401 硬跳登录，把部署窗口的瞬断升级成强制登出
+        return NextResponse.json(UPSTREAM_UNAVAILABLE_BODY, { status: 502 });
       }
+      // 续期被明确拒绝（会话真失效）→ 透传原始 401，前端跳登录
     }
   } catch {
     // 上游 API 不可达（滚动重启/网络瞬断）：返回可判别的 502 JSON，
     // 避免 fetch 异常未捕获变成 Next 500 HTML，前端轮询可据此退避重试
-    return NextResponse.json(
-      {
-        success: false,
-        error: { code: 'UPSTREAM_UNAVAILABLE', message: '服务暂时不可用，请稍后重试' },
-      },
-      { status: 502 },
-    );
+    return NextResponse.json(UPSTREAM_UNAVAILABLE_BODY, { status: 502 });
   }
 
   const text = await apiRes.text();

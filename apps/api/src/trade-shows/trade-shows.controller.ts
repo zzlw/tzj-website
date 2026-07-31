@@ -4,6 +4,7 @@ import {
   DefaultValuePipe,
   Delete,
   Get,
+  Header,
   Param,
   ParseIntPipe,
   Post,
@@ -11,11 +12,13 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
 import type { AuthUser } from '../auth/roles';
 import { PreviewTokenService } from '../preview/preview-token.service';
+import { PopupEventDto } from './dto/popup-event.dto';
 import { CreateTradeShowDto, UpdateTradeShowDto } from './dto/trade-show.dto';
 import { TradeShowsService } from './trade-shows.service';
 
@@ -65,6 +68,23 @@ export class TradeShowsController {
       status,
       includeUnpublished: !!user,
     });
+  }
+
+  // 声明在 @Get(':slug') 之前（可读性考虑；:slug 为单段参数不会匹配两段路径，先后均可正确路由）
+  @Public()
+  @Get('marketing/active')
+  @Header('Cache-Control', 'public, max-age=30')
+  @ApiOperation({ summary: '获取当前生效的营销弹窗活动（最多 1 条）' })
+  getActiveMarketing() {
+    return this.tradeShowsService.findActiveMarketing();
+  }
+
+  @Public()
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  @Post(':id/popup-event')
+  @ApiOperation({ summary: '记录营销弹窗曝光/点击' })
+  recordPopupEvent(@Param('id') id: string, @Body() dto: PopupEventDto) {
+    return this.tradeShowsService.recordPopupEvent(id, dto.type);
   }
 
   @Public()

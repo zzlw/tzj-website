@@ -2,6 +2,7 @@
 
 import Markdown, { type Components } from 'react-markdown';
 import rehypeSanitize from 'rehype-sanitize';
+import remarkBreaks from 'remark-breaks';
 import remarkGfm from 'remark-gfm';
 
 function isExternalHref(href?: string): boolean {
@@ -100,7 +101,9 @@ export type MarkdownComponents = Components;
 
 /**
  * 统一的 CMS 正文 Markdown 渲染组件（react-markdown 引擎）。
- * 默认施加 GFM 与 rehype-sanitize（防 XSS）；基础组件映射见 markdownBaseComponents。
+ * 默认施加 GFM、软换行转 <br>（remark-breaks，与后台 Vditor 编辑器所见一致，
+ * 否则运营单回车换行被标准 Markdown 折叠成空格）与 rehype-sanitize（防 XSS）；
+ * 基础组件映射见 markdownBaseComponents。
  * 消费端可传入 components 覆盖任意元素（典型：把 img 换成 next/image 优化版本）。
  */
 export function MarkdownBody({
@@ -116,7 +119,11 @@ export function MarkdownBody({
   const merged: Components = { ...markdownBaseComponents, ...components };
   return (
     <div className={className}>
-      <Markdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]} components={merged}>
+      <Markdown
+        remarkPlugins={[remarkGfm, remarkBreaks]}
+        rehypePlugins={[rehypeSanitize]}
+        components={merged}
+      >
         {content}
       </Markdown>
     </div>

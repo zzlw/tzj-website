@@ -9,7 +9,7 @@ import { MediaImage as Image } from '@/components/MediaImage';
 import { Container, Eyebrow, RbButton, RbLink } from '@/components/ui';
 import { getTradeShow, getTradeShows } from '@/lib/api';
 import { fetchBySlug, previewParams } from '@/lib/content-detail';
-import { formatContentDate, tradeShowTypeLabel } from '@/lib/content-labels';
+import { formatContentDateRange, tradeShowTypeLabel } from '@/lib/content-labels';
 import { pickCoverImage, pickSummary } from '@/lib/content-list';
 import { breadcrumbJsonLd, eventJsonLd } from '@/lib/jsonld';
 import { generateSeo } from '@/lib/seo';
@@ -56,7 +56,8 @@ export default async function TradeShowDetailPage({ params, searchParams }: Trad
 
   const summary = pickSummary(item.summary, item.content);
   const coverImage = pickCoverImage(item.coverImage);
-  const dateLabel = formatContentDate(item.startDate, locale);
+  const dateLabel =
+    item.eventDateLabel || formatContentDateRange(item.startDate, item.endDate, locale);
 
   let related: Awaited<ReturnType<typeof getTradeShows>>['data'] = [];
   try {

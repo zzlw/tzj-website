@@ -1,8 +1,9 @@
 # 百度广告投放迁移指南（老站 → 新站）
 
 > 编写日期：2026-07-30（同日二评：生产实测校验全部断言；同日三评：SEO 阶段一
-> 代码合入后复核；同日四评：实测确认 SEO 阶段一**已部署生效**（根路径已
-> 为 308、首页 metadata/canonical/hreflang 均已上线），已更新全文跳转与 SEO 相关描述）
+> 代码合入后复核；同日四评：实测确认 SEO 阶段一**已部署生效**；同日五评：P1-2
+> nginx 301 规则已实现；同日六评：百度统计实测 301 覆盖率与 bd_vid 实链；**同日七评：
+> P1-2 nginx 301 已部署上线 + 改版规则已提交 + P1-1 OCPC 回传已实现，已更新全文状态描述**）
 > 读者：负责百度推广（SEM）投放的同事 + 前端/运维工程师
 > 背景：公司百度广告以前投的是老站（静态 PHP 站，`proshow-*.html` 一类 URL），
 > 现已换成本仓库的新站（Next.js，`https://www.tzjii.com/zh-CN/...`）。
@@ -126,7 +127,7 @@ https://www.tzjii.com/zh-CN/{落地页}?utm_source=baidu&utm_medium=cpc&utm_camp
   `_hmt.push(['_trackPageview', path])`——已在 `BaiduAnalytics` 内监听 `pathname` 补报（跳过挂载首帧，避免与 hm.js 自动首屏 PV 重复计数）；
 - 用途：百度推广后台与百度统计打通后，才能看到关键词级的到访/转化报表，也是落地页体验评分的数据来源。
 
-### P1-1 OCPC 转化回传（API 回传方式，推荐）
+### P1-1 OCPC 转化回传（API 回传方式，推荐）✅ 已实现（2026-07-30 七评）
 
 > ⚡ 代码核实（阶段三评）：**回传所需的数据链路已现成，无需额外埋点或改前端**。
 > 询盘提交时前端已携带 `visitorId`（[api.ts](file:///Users/gavin/Documents/tzj/tzj-website-reconstruction/apps/web/src/lib/api.ts) `submitContact`，与埋点同源），
@@ -135,15 +136,15 @@ https://www.tzjii.com/zh-CN/{落地页}?utm_source=baidu&utm_medium=cpc&utm_camp
 > `buildContactMatchOr` 等按 visitorId 反查询盘的成熟范式可复用）。
 
 - 转化事件：**询盘表单提交成功**为主转化；在线聊天发起、电话点击可作辅助转化；
-- 实现：`apps/api` 在询盘落库后，按 `Contact.visitorId` 反查该访客首触 `bdVid`，
-  有值则服务端调百度 OCPC 回传 API（服务端回传，避免前端丢数；无 bdVid 的自然/其他渠道询盘直接跳过）；
-- 回传 token、账户参数全部走环境变量；
-- 做完这一步才能开 OCPC 智能出价，这是百度投放降本的关键。
+- 实现：[baidu-ocpc.service.ts](file:///Users/gavin/Documents/tzj/tzj-website-reconstruction/apps/api/src/integrations/baidu-ocpc.service.ts) 在询盘落库后（[contact.service.ts](file:///Users/gavin/Documents/tzj/tzj-website-reconstruction/apps/api/src/contact/contact.service.ts) `create()` fire-and-forget），按 `Contact.visitorId` 反查该访客首触 `bdVid`，
+  有值则服务端调百度 OCPC `uploadConvertData` API 回传（失败不阻断询盘；无 bdVid 的自然/其他渠道询盘静默跳过；失败最多重试 3 次）；
+- 凭证走**集成注册表**（slug=`baidu-ocpc`）：优先读 admin「站点设置 → 集成与凭证」（加密入库、可运行时改），env（`BAIDU_OCPC_TOKEN` / `BAIDU_OCPC_CONVERT_TYPE` / `BAIDU_OCPC_SITE_URL`）兜底；后台支持「测试连接」（哨兵 bd_vid 探活，不产生真实转化）；
+- **启用只差最后一步**：投放同事在百度营销后台「转化追踪 → API 接入」创建回传，把得到的 **Token**、**转化类型编码（newType）**、**落地页域名** 填入 admin 后台即可开 OCPC 智能出价，这是百度投放降本的关键。
 
 ### P1-2 旧 URL 301（见第二节）
 
-- **✅ 规则已写入** `infra/docker/nginx/templates/tzj.conf.template`（`${WEB_DOMAIN}` server 块），本地 `nginx -t` + 功能实测均通过，**待下次部署上线**；
-- 上线后同时把这批老 URL 的 301 提交到百度站长平台的"改版工具"，加速权重迁移（对自然流量也有收益）。
+- **✅ 已部署上线（七评实测）**：规则写入 `infra/docker/nginx/templates/tzj.conf.template`（`${WEB_DOMAIN}` server 块），生产实测 `proshow-36-1.html`/`caseshow-53-43.html`/`newsshow-64-26.html`/`page-38.html`/`prolist-35.html` 均已 301 到对应新栏目页；
+- **✅ 改版规则已提交**百度站长平台（「新旧URL对」32 条改版映射，规则校验中，加速权重迁移）。
 
 ### P2 落地页合规自查
 
@@ -159,10 +160,10 @@ https://www.tzjii.com/zh-CN/{落地页}?utm_source=baidu&utm_medium=cpc&utm_camp
 
 | 步骤 | 负责 | 内容 | 依赖 |
 |------|------|------|------|
-| 1 | 工程 | nginx 旧 URL 301 **部署上线**（规则已写入模板并本地实测通过）+ 百度站长平台提交改版规则 | 无 |
+| 1 | 工程 | nginx 旧 URL 301（✅ 已部署上线）+ 百度站长平台改版规则（✅ 已提交，校验中） | 无 |
 | 2 | 工程/投放 | 接入百度统计 hm.js（✅ 已实现）→ 在 admin「站点设置 → 访客分析」填站点 ID | 投放同事提供统计站点 ID |
 | 3 | 投放 | 按 3.1/3.2 批量替换落地页 URL（先小计划灰度 3~5 天） | 步骤 1、2 |
-| 4 | 工程 | ~~`bd_vid` 采集~~（✅ 已完成）+ 询盘 OCPC 服务端回传 | 投放同事提供回传 token |
+| 4 | 工程/投放 | ~~`bd_vid` 采集~~（✅ 已完成）+ ~~询盘 OCPC 服务端回传~~（✅ 已实现）→ 在 admin 后台填 Token/转化类型/域名启用 | 投放同事在百度后台创建 API 回传取 Token |
 | 5 | 投放 | 全量切换 → 观察 1~2 周 → 开启 OCPC 出价 | 步骤 4 |
 | 6 | 双方 | 每周对照：百度后台消费 vs admin 后台 `utm_source=baidu` 的询盘数 | 持续 |
 
@@ -171,7 +172,7 @@ https://www.tzjii.com/zh-CN/{落地页}?utm_source=baidu&utm_medium=cpc&utm_camp
 ## 六、常见问题
 
 **Q：域名没变，为什么广告还要动？**
-A：百度审核和质量度绑定的是"最终访问 URL"。老创意里的 `xxx.html` 现在**实测全部 404**（301 规则尚未上线），不改会导致审核拒登、质量度下滑、点击浪费。
+A：百度审核和质量度绑定的是"最终访问 URL"。老创意里的 `xxx.html` 虽已由 nginx 301 承接到新栏目页（七评已部署，不再 404），但**创意里仍写老 URL 会多一跳、且落地页与创意 URL 不一致**，仍建议在账户内改为带 `/zh-CN` 前缀的最终 URL，避免审核判跳转、质量度下滑。
 
 **Q：能不能直接投 `https://www.tzjii.com/`？**
 A：不建议。根路径是跳转页（生产实测已为 308 永久跳转到 `/zh-CN`，SEO 阶段一已部署生效；背景见 `docs/web-seo-assessment-and-plan.md` P0-2）。即便是 308，它依然是跳转页、依然多一跳，审核仍可能判"跳转页"。永远投带 `/zh-CN` 前缀的最终 URL。
@@ -237,3 +238,12 @@ A：不用。按 URL 模式粗映射到对应栏目页即可；只有历史上�
 - **bd_vid 实链验证（本轮最有价值的一条）**：受访页面里抓到一条真实百度推广落地 URL `http://www.tzjii.com/prolist-35.html?bd_vid=10747107760560032222`。实锤：①老创意落地页就是这些 `.html`；②广告点击确实带 `bd_vid`；③经 301（保留 query）→ 新站 → 新站 `analytics.ts` 已采 `bd_vid`。**整条 OCPC 回传链路（P1-1）的数据入口已实测可用**，仅差投放同事提供回传 token。
 - **噪音域名**：报告中混入 `nqim.cqjbip.com`、`nqi.cqjbip.com`、`REDACTED-IP` 等，非本站页面（镜像站/扫描器），301 无需处理。
 - **精调评估**：唯一可精调项是 `page-{id}.html`（5 个单页现全兜到 `/why-us`），但其 30 天合计仅个位数 PV，投入产出比低，**维持粗映射，暂不精调**。
+
+### 2026-07-30 七评（P1-2 已部署上线 + 改版规则已提交 + P1-1 OCPC 回传已实现）
+
+- **订正五评「未部署」结论**：nginx 301 已上线，生产实测 `proshow-36-1.html`→`/zh-CN/towers`、`caseshow-53-43.html`→`/zh-CN/cases`、`newsshow-64-26.html`→`/zh-CN/resources/news`、`page-38.html`→`/zh-CN/why-us`、`prolist-35.html`→`/zh-CN/towers`，全部 **301** 命中，`.html` 不再 404；
+- **百度站长平台改版规则已提交**：以「新旧URL对」方式提交 32 条改版映射，改版记录已落库、规则校验中（72 小时内校验推送）；
+- **P1-1 OCPC 回传已实现（本轮开工）**：
+  - 新建 [baidu-ocpc.service.ts](file:///Users/gavin/Documents/tzj/tzj-website-reconstruction/apps/api/src/integrations/baidu-ocpc.service.ts)：`reportInquiryConversion(contact)` 在 [contact.service.ts](file:///Users/gavin/Documents/tzj/tzj-website-reconstruction/apps/api/src/contact/contact.service.ts) `create()` 里 fire-and-forget 调用，按 `visitorId` 反查首触 `bdVid`，拼 `logidUrl`（含 `&bd_vid=`）后 POST 百度 `uploadConvertData`；据返回 `header.status`（0成功/3token失败/4重试）判定，失败最多重试 3 次、5s 超时、异常全吞不阻断询盘；
+  - 凭证接入既有**集成注册表**（slug=`baidu-ocpc`，[integration.registry.ts](file:///Users/gavin/Documents/tzj/tzj-website-reconstruction/apps/api/src/integrations/integration.registry.ts)）：secret=`token`、config=`convertType`/`siteUrl`，admin 后台可加密维护 + env 兜底（`BAIDU_OCPC_TOKEN`/`BAIDU_OCPC_CONVERT_TYPE`/`BAIDU_OCPC_SITE_URL`），[integration.testers.ts](file:///Users/gavin/Documents/tzj/tzj-website-reconstruction/apps/api/src/integrations/integration.testers.ts) 加哨兵 bd_vid「测试连接」（不产生真实转化）；
+  - **仅剩人工一步**：投放同事在百度营销后台「转化追踪 → API 接入」创建回传，把 Token / 转化类型编码（newType）/ 落地页域名填入 admin「站点设置 → 集成与凭证」即可启用 OCPC 智能出价。至此 P0/P1/P2 工程项全部完成，投放侧无技术阻塞。

@@ -64,6 +64,19 @@ const INTERNAL_KEYS = [
   'lastOperator',
   'lastOperatorId',
   'lastOperatorUser',
+  // 营销弹窗字段（仅 TradeShow 存在；delete 不存在的键无害，cases/news/blogs 不受影响）：
+  // 公开面不暴露营销配置与计数，弹窗组件只从 marketing/active 白名单端点取数
+  'isMarketing',
+  'triggerMode',
+  'delaySeconds',
+  'frequency',
+  'excludePages',
+  'targetDevice',
+  'ctaText',
+  'ctaUrl',
+  'popupContent',
+  'popupViewCount',
+  'popupClickCount',
 ] as const;
 
 /** 前台公开列表不暴露内部审计字段 */

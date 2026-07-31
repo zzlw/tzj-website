@@ -64,7 +64,8 @@
         "types": {
           "exhibition": "Exhibition",
           "seminar": "Seminar",
-          "roadshow": "Roadshow"
+          "roadshow": "Roadshow",
+          "promotion": "Promotion"
         }
       }
     },
@@ -119,7 +120,7 @@
       "bookConsultArrow": "Book a Consultation →",
       "booth": "Booth:",
       "ctaTitleTradeShow": "Want to learn more about this event?",
-      "ctaDescriptionTradeShow": "Talk with our industry experts for exhibition advice and collaboration opportunities.",
+      "ctaDescriptionTradeShow": "Talk with our industry experts for event advice and collaboration opportunities.",
       "breadcrumbs": {
         "cases": "Projects",
         "blog": "Blog",

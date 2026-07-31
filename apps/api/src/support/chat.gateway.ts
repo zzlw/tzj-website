@@ -1215,14 +1215,26 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   handleUserIdle(@ConnectedSocket() client: Socket) {
     const auth = this.getAuth(client);
     if (!auth) return;
-    void this.setStatusAndBroadcast(`${auth.email}:${auth.type}`, 'away');
+    const userKey = `${auth.email}:${auth.type}`;
+    // 空闲只做 online → away 降级：手动离线（manualOffline）/手动离开不被覆盖。
+    // 否则坐席手动切离线后切走标签页（客户端 2s 上报 user-idle）会被改回 away。
+    void (async () => {
+      if ((await this.presence.getPresence(userKey)) !== 'online') return;
+      await this.setStatusAndBroadcast(userKey, 'away');
+    })();
   }
 
   @SubscribeMessage('user-active')
   handleUserActive(@ConnectedSocket() client: Socket) {
     const auth = this.getAuth(client);
     if (!auth) return;
-    void this.setStatusAndBroadcast(`${auth.email}:${auth.type}`, 'online');
+    const userKey = `${auth.email}:${auth.type}`;
+    // 手动离线者不因活动信号自动复活（与重连路径的 manualOffline 保护对称）
+    void (async () => {
+      const meta = await this.presence.getMeta(userKey);
+      if (meta?.manualOffline) return;
+      await this.setStatusAndBroadcast(userKey, 'online');
+    })();
   }
 
   /**

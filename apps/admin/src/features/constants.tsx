@@ -62,6 +62,7 @@ export const TRADE_SHOW_TYPE_OPTIONS: Option[] = [
   { label: '展览会', value: 'exhibition' },
   { label: '研讨会', value: 'seminar' },
   { label: '巡回活动', value: 'roadshow' },
+  { label: '营销活动', value: 'promotion' },
 ];
 
 // ═══════════════════════════════════════════
@@ -165,6 +166,15 @@ export function formatDate(v?: string | null): string {
   const d = new Date(v);
   if (Number.isNaN(d.getTime())) return '—';
   return d.toLocaleDateString('zh-CN');
+}
+
+/** 日期区间：有结束日且与开始日不同天时显示“开始 – 结束”，否则只显示开始日。 */
+export function formatDateRange(start?: string | null, end?: string | null): string {
+  const startLabel = formatDate(start);
+  if (startLabel === '—') return startLabel;
+  const endLabel = formatDate(end);
+  if (endLabel === '—' || endLabel === startLabel) return startLabel;
+  return `${startLabel} – ${endLabel}`;
 }
 
 export function formatDateTime(v?: string | null): string {

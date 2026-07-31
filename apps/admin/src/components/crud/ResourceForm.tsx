@@ -30,6 +30,7 @@ import {
   type FieldValues,
   type Resolver,
   useForm,
+  useWatch,
 } from 'react-hook-form';
 import type { ZodType } from 'zod';
 import { slugifyTitle } from '@/features/constants';
@@ -344,6 +345,14 @@ export function ResourceForm({
     Boolean(defaultValues.slug && String(defaultValues.slug).length > 0),
   );
 
+  // 条件渲染（visibleWhen）需订阅全部实时表单值；无条件字段的资源禁用订阅，
+  // 避免整表单随输入重渲染，现有行为完全不变
+  const hasConditionalFields = fields.some((f) => f.visibleWhen);
+  const watchedValues = useWatch({ control, disabled: !hasConditionalFields }) as Record<
+    string,
+    unknown
+  >;
+
   useEffect(() => {
     if (!autoSlug || slugLockedRef.current) return;
     const next = slugifyTitle(titleValue ?? '');
@@ -374,6 +383,7 @@ export function ResourceForm({
     >
       {autoSlug ? <input type="hidden" {...register('slug')} /> : null}
       {fields.map((f) => {
+        if (f.visibleWhen && !f.visibleWhen(watchedValues ?? {})) return null;
         const err = errors[f.name]?.message as string | undefined;
         const span = f.colSpan === 2 ? 'sm:col-span-2' : '';
         const placeholder = fieldPlaceholder(f);

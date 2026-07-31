@@ -39,6 +39,10 @@ export interface FieldDef {
   folder?: string;
   /** 空值时向 API 提交 null（用于可清空的关联字段）。 */
   emptyAsNull?: boolean;
+  /** 条件显示：返回 false 时该字段不渲染（纯显示过滤，提交值不做剔除——
+   *  隐藏字段随表单提交默认值，服务端以总开关字段为准）。
+   *  注意：zod resolver 仍会校验隐藏字段，条件字段的 zod 端应保持宽松（严格校验放服务端 DTO）。 */
+  visibleWhen?: (values: Record<string, unknown>) => boolean;
 }
 
 export type ColumnDef<T> = DataTableColumn<T>;

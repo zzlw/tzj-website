@@ -112,14 +112,19 @@ export function ChatPresenceProvider({
   );
 
   useEffect(() => {
+    // my-presence 是服务端下发的权威状态：只同步本地 state，禁止回射 set-presence。
+    // 旧实现调用完整版 setPresence 会把状态原样 emit 回服务端，而服务端对任何
+    // 非 offline 值都会清掉 manualOffline 标记——手动离线一旦被旁路（如 user-idle）
+    // 污染成 away，回射就让「手动离线」保护永久失效（刷新后漂回在线/离开）。
     const handleMyPresence = (payload: { status: PresenceStatus }) => {
-      setPresence(payload.status);
+      setAgentStatus(payload.status);
+      idleAwayRef.current = false;
     };
     socket.on('my-presence', handleMyPresence);
     return () => {
       socket.off('my-presence', handleMyPresence);
     };
-  }, [socket, setPresence]);
+  }, [socket]);
 
   // 兜底：服务端在断线宽限期、scanPresence、set-presence 等路径会广播 presence-changed，
   // 但旧实现只认 my-presence（连接时一次性下发）。刷新场景下新连接若在旧 socket 尚未

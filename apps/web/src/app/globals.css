@@ -650,3 +650,16 @@ body[data-scroll-locked] {
   text-decoration: underline;
   text-underline-offset: 2px;
 }
+
+/* ============================================================
+   第三方客服挂件层级收编（百度商桥 #newBridge / 爱番番 #aff-im-root）
+   它们内部用 z-index: 2147483647，若不管控会盖住站内一切浮层。
+   在注入根容器上强制建立堆叠上下文，把整个挂件封顶到站内
+   z 刻度的 60 档（与自有 ChatWidget 同层）：仍浮在页面内容之上，
+   但低于语言抽屉 70 / 搜索 80 / 营销弹窗 90 / Toast 100。
+   ============================================================ */
+#newBridge,
+#aff-im-root {
+  position: relative !important;
+  z-index: 60 !important;
+}

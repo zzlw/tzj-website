@@ -250,7 +250,7 @@ export class AuthService {
    * refresh token 发起轮换：第一个成功轮换并撤销旧令牌，其余请求随即命中「已撤销」。
    * 若一律按盗用处理撤销全部会话，坐席会被频繁强制登出。
    *
-   * 策略：宽限期（默认 10s，可配 JWT_REFRESH_GRACE_SECONDS）内复用视为竞态——
+   * 策略：宽限期（默认 60s，可配 JWT_REFRESH_GRACE_SECONDS）内复用视为竞态——
    * 签发一组新令牌并新建会话（不撤销任何现存会话），同时把旧会话的 rotatedToHash
    * 指向新会话，保证后续复用总能找到可用继任者。宽限期外的复用才判定为盗用。
    */
@@ -283,9 +283,14 @@ export class AuthService {
     return tokens;
   }
 
-  /** 轮换宽限期毫秒数（默认 10s，环境变量 JWT_REFRESH_GRACE_SECONDS 可配）。 */
+  /**
+   * 轮换宽限期毫秒数（默认 60s，环境变量 JWT_REFRESH_GRACE_SECONDS 可配）。
+   * 60s 而非 10s：轮换后新令牌靠 Set-Cookie 送达浏览器，请求中止/休眠合盖/标签页被杀
+   * 都可能让新令牌丢失，客户端下次仍带旧令牌续期。10s 窗口吸收不了这类场景，
+   * 表现为「偶发要求重新登录」。宽限期内复用仅签发继任令牌，不放大安全面。
+   */
   private refreshGraceMs(): number {
-    const sec = this.config.get<number>('JWT_REFRESH_GRACE_SECONDS') ?? 10;
+    const sec = this.config.get<number>('JWT_REFRESH_GRACE_SECONDS') ?? 60;
     return sec * 1000;
   }
 

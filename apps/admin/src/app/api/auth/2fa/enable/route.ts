@@ -2,7 +2,12 @@ import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 import { API_BASE, COOKIE } from '@/lib/config';
 import { forwardMetaHeaders } from '@/lib/forward-meta';
-import { applyTokenCookies, refreshAccessToken } from '@/lib/tokenRefresh';
+import {
+  applyTokenCookies,
+  refreshAccessToken,
+  type TokenPair,
+  UPSTREAM_UNAVAILABLE_BODY,
+} from '@/lib/tokenRefresh';
 
 /**
  * 2FA enable 专门路由（不走通用 bff 代理）：
@@ -34,11 +39,12 @@ export async function POST(req: NextRequest) {
     });
 
   let apiRes = await forward(accessToken);
-  let rotated = null;
+  let rotated: TokenPair | null = null;
 
   if (apiRes.status === 401) {
-    rotated = await refreshAccessToken(refreshToken);
-    if (rotated) {
+    const refreshed = await refreshAccessToken(refreshToken);
+    if (refreshed.ok) {
+      rotated = refreshed.tokens;
       accessToken = rotated.accessToken;
       // 注意：刷新已轮换 refreshToken，改用新令牌标识当前会话
       apiRes = await fetch(`${API_BASE}/auth/2fa/enable`, {
@@ -51,6 +57,9 @@ export async function POST(req: NextRequest) {
         body: JSON.stringify({ code: payload.code, refreshToken: rotated.refreshToken }),
         cache: 'no-store',
       });
+    } else if (refreshed.transient) {
+      // 上游临时故障：不透传 401（会被前端当会话失效），返回 502 让用户稍后重试
+      return NextResponse.json(UPSTREAM_UNAVAILABLE_BODY, { status: 502 });
     }
   }
 

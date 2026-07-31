@@ -217,10 +217,11 @@ export function useChatSocket(params: { token: string | null }): UseChatSocketRe
       sock.on('connect', () => {
         setConnected(true);
         sock.emit('register-agent');
-        // 刷新/重连后主动声明在线——pagehide 时 client-gone 已将服务端状态置为
-        // offline，仅靠 register-agent 返回的 my-presence 会延续 offline，
-        // 必须显式 set-presence: online 才能恢复坐席在线状态。
-        sock.emit('set-presence', { status: 'online' });
+        // 坐席在线态以服务端为唯一权威：网关 handleConnectPresence 已实现
+        // 「连上即在线（manualOffline 除外）」，刷新/重连后无需客户端再报
+        // set-presence: online——旧实现的无条件上报会走 handleSetPresence 清掉
+        // 服务端 manualOffline 标记，导致「手动离线 → 刷新 → 又变在线」。
+        // 真实状态由 register-agent 回的 my-presence 同步（见下方监听）。
         hasEverBeenOnlineRef.current = true;
         // 连接即拉取未读聚合计数（P2 M1）
         sock.emit('get-notification-counts');
@@ -234,6 +235,12 @@ export function useChatSocket(params: { token: string | null }): UseChatSocketRe
       });
       sock.on('disconnect', () => setConnected(false));
       sock.on('connect_error', () => setConnected(false));
+      // 同步服务端权威的手动离线标记：网关「连上即在线」后，register-agent 时
+      // 仍为 offline 必然是 manualOffline。ref 随页面重载归零，靠此处从服务端恢复，
+      // 保证刷新/换设备后 visibilitychange 的自动报 online 不会冲掉手动离线。
+      sock.on('my-presence', (payload: { status?: PresenceStatus }) => {
+        manualOfflineRef.current = payload?.status === 'offline';
+      });
       sock.on('auth-error', () => {
         setConnected(false);
         // 服务端 auth-error + disconnect(true) 会禁止 Socket.IO 自动重连。
@@ -255,7 +262,9 @@ export function useChatSocket(params: { token: string | null }): UseChatSocketRe
         if (document.hidden) {
           if (idleDelayTimer) clearTimeout(idleDelayTimer);
           idleDelayTimer = setTimeout(() => {
-            if (sock.connected) sock.emit('user-idle');
+            // 手动离线时不上报 user-idle：服务端虽有 online→away 门槛兜底，
+            // 但离线状态本就无需空闲信号（纵深防御）
+            if (sock.connected && !manualOfflineRef.current) sock.emit('user-idle');
           }, USER_IDLE_DELAY_MS);
         } else {
           if (idleDelayTimer) {

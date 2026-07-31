@@ -37,12 +37,18 @@ import {
   useRef,
   useState,
 } from 'react';
-import { presignChatAttachment, sendMessageHTTP } from '@/features/chat/api';
+import {
+  fetchAgentAvailability,
+  presignChatAttachment,
+  sendMessageHTTP,
+} from '@/features/chat/api';
+import { OPEN_CHAT_EVENT, type OpenChatDetail } from '@/features/chat/open-chat';
 import type { ChatAttachment, ChatMessage } from '@/features/chat/types';
 import { useAgentPresence } from '@/features/chat/useAgentPresence';
 import { useChatMessages } from '@/features/chat/useChatMessages';
 import { useChatSession } from '@/features/chat/useChatSession';
 import { useVisitorChat } from '@/features/chat/useVisitorChat';
+import { isDialableMobile } from '@/lib/device';
 import { resolveMediaUrl } from '@/lib/media-url';
 import { AgentAvatar } from './AgentAvatar';
 import {
@@ -64,10 +70,13 @@ export function ChatWidget({
   businessHours,
   agentProfile,
   chatPrompts,
+  phone,
 }: {
   businessHours?: BusinessHours;
   agentProfile?: AgentProfile;
   chatPrompts?: ChatPrompts;
+  /** 客服电话（站点设置 contact.phone）：可拨号手机 + 无人在线时启动器/气泡直接拨号 */
+  phone?: string;
 }) {
   const locale = useLocale() as string;
   const t = resolveChatI18n(locale);
@@ -83,6 +92,12 @@ export function ChatWidget({
     map?.[locale as keyof LocalizedText]?.trim() || fallback;
   const offlineHintText = pickPrompt(chatPrompts?.offlineMessage, t.offlineHint);
   const noAgentHintText = pickPrompt(chatPrompts?.noAgentMessage, t.noAgentHint);
+
+  // 可拨号手机标记：navigator 仅客户端可用，挂载后判定一次（SSR/水合两端一致）
+  const [dialable, setDialable] = useState(false);
+  useEffect(() => {
+    setDialable(isDialableMobile());
+  }, []);
 
   const [token, setToken] = useState<string | null>(null);
 
@@ -369,6 +384,13 @@ export function ChatWidget({
   // 预览气泡文案：
   //  - 有真实客服/AI 消息 → 取最近一条首段作预览
   //  - 否则（仅问候语）→ 用专门的邀请语（而非裸「您好」）
+  // 拨号邀请形态：可拨号手机 + 配了电话 + 展示态真正无人（offline/无人值守）→
+  // 气泡改拨号邀请语并隐藏底部状态行；away（离开但仍连接）不算无人，与
+  // tryDialInstead 的「online + away = 0 才拨号」口径一致，避免气泡说拨号、
+  // 点击却开面板的自相矛盾。点击时仍会实时复核（见 tryDialInstead）
+  const callInviteMode =
+    dialable && Boolean(phone?.trim()) && (displayPresence === 'offline' || noAgentOnline);
+
   const bubblePreview = useMemo(() => {
     const lastAgent = [...displayMessages]
       .reverse()
@@ -376,15 +398,18 @@ export function ChatWidget({
     if (lastAgent) {
       return lastAgent.content.split('\n')[0]?.trim() || lastAgent.content;
     }
-    // 在线且有坐席 → 常规邀请；无人值守/离线/离开 → 改为离线邀请语，
-    // 避免在无人响应时仍写「有什么可以帮您」
+    // 在线且有坐席 → 常规邀请；可拨号手机无人在线 → 拨号邀请；
+    // 其余无人值守/离线/离开 → 离线邀请语，避免无人响应时仍写「有什么可以帮您」
     if (displayPresence === 'online' && !noAgentOnline) return t.launcherInvite;
+    if (callInviteMode) return t.launcherInviteCall;
     return noAgentOnline ? t.noAgentInvite : t.launcherInviteOffline;
   }, [
     displayMessages,
     displayPresence,
     noAgentOnline,
+    callInviteMode,
     t.launcherInvite,
+    t.launcherInviteCall,
     t.launcherInviteOffline,
     t.noAgentInvite,
   ]);
@@ -577,6 +602,34 @@ export function ChatWidget({
     }
   };
 
+  // 跨组件打开协议（见 features/chat/open-chat.ts）：营销弹窗 CTA 等入口在客服
+  // 在线时跳转到聊天并自动发送首条消息（如「我想了解…」）
+  useEffect(() => {
+    const onOpenChat = (e: Event) => {
+      const detail = (e as CustomEvent<OpenChatDetail>).detail;
+      setOpen(true);
+      setShowBubble(false);
+      const message = detail?.message?.trim();
+      if (message) handleSend(undefined, message);
+    };
+    window.addEventListener(OPEN_CHAT_EVENT, onOpenChat);
+    return () => window.removeEventListener(OPEN_CHAT_EVENT, onOpenChat);
+  }, [handleSend]);
+
+  // 点击启动器/预览气泡的实时分流（与营销弹窗 CTA 同一策略：点击瞬间请求，
+  // 不用可能滞后的 presence 快照）：可拨号手机 + 此刻确认无坐席连接 → 直接拨号。
+  // 口径：online + away 都为 0 才算无人——away 坐席仍持有存活连接可接消息
+  //（且展示层对瞬时 away 有 90s 防抖仍显示「在线」），只看 online 会误拨。
+  // 接口失败不拦截（宁可照常开面板，也不在状态未知时误触拨号）。
+  const tryDialInstead = useCallback(async (): Promise<boolean> => {
+    const tel = phone?.trim();
+    if (!dialable || !tel) return false;
+    const avail = await fetchAgentAvailability().catch(() => null);
+    if (!avail || avail.online + avail.away > 0) return false;
+    window.location.href = `tel:${tel.replace(/-/g, '')}`;
+    return true;
+  }, [dialable, phone]);
+
   // 粘贴文件（截图 / 复制的文件）→ 直接进入上传链路；纯文本粘贴保持默认行为
   const handlePaste = (e: ClipboardEvent<HTMLTextAreaElement>) => {
     const items = e.clipboardData?.items;
@@ -665,8 +718,12 @@ export function ChatWidget({
             <button
               type="button"
               onClick={() => {
-                setOpen(true);
-                setShowBubble(false);
+                void (async () => {
+                  // 拨号分流先行：命中则保留气泡（用户从拨号面板返回后仍可再拨）
+                  if (await tryDialInstead()) return;
+                  setOpen(true);
+                  setShowBubble(false);
+                })();
               }}
               className="flex w-full items-start gap-2.5 pr-5 text-left"
             >
@@ -690,39 +747,61 @@ export function ChatWidget({
                 <p className="mt-0.5 line-clamp-2 text-[13px] leading-snug text-zinc-600">
                   {bubblePreview}
                 </p>
-                <p className="mt-1.5 flex items-center gap-1 text-[11px] text-zinc-400">
-                  <span
-                    className={cn(
-                      'h-1.5 w-1.5 shrink-0 rounded-full',
-                      displayPresence === 'online'
-                        ? 'bg-emerald-500'
-                        : displayPresence === 'away'
-                          ? 'bg-amber-400'
-                          : 'bg-zinc-300',
-                    )}
-                  />
-                  {hasRealAgentMsg ? `${bubbleTime} · ${presenceLabel}` : presenceLabel}
-                </p>
+                {/* 拨号邀请形态隐藏「已离线·留言…」状态行：与拨号引导语义矛盾；
+                    有真实客服消息预览时仍照常展示 */}
+                {!(callInviteMode && !hasRealAgentMsg) && (
+                  <p className="mt-1.5 flex items-center gap-1 text-[11px] text-zinc-400">
+                    <span
+                      className={cn(
+                        'h-1.5 w-1.5 shrink-0 rounded-full',
+                        displayPresence === 'online'
+                          ? 'bg-emerald-500'
+                          : displayPresence === 'away'
+                            ? 'bg-amber-400'
+                            : 'bg-zinc-300',
+                      )}
+                    />
+                    {hasRealAgentMsg ? `${bubbleTime} · ${presenceLabel}` : presenceLabel}
+                  </p>
+                )}
               </div>
             </button>
           </div>
         </div>
       )}
 
-      {/* ── 浮动按钮：纯黑圆形 + 白色聊天气泡 + 右上角未读徽章（Klipy 风格） ── */}
+      {/* ── 浮动按钮：品牌红圆形 + 白色聊天气泡 + 右上角未读徽章。
+          底色用品牌主色而非深灰（Intercom/Drift 同款做法）：白底正文与深色页脚上
+          均醒目，避免深灰按钮落在深色区域隐身；有未读时叠一层 ping 光环引导注意 ── */}
       <button
         type="button"
         aria-label={t.brand}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          void (async () => {
+            // 面板已开 → 维持原有切换语义；未开 → 先走拨号分流（点击瞬间实时判定）
+            if (openRef.current) {
+              setOpen(false);
+              return;
+            }
+            if (await tryDialInstead()) return;
+            setOpen(true);
+          })();
+        }}
         className={cn(
-          'fixed bottom-5 right-5 z-[60] flex h-14 w-14 items-center justify-center rounded-full text-white shadow-lg shadow-zinc-900/30 transition-all duration-300 ease-out',
-          'bg-zinc-900 hover:bg-zinc-800 hover:scale-105 hover:shadow-xl hover:shadow-zinc-900/40 active:scale-95',
+          'fixed bottom-5 right-5 z-[60] flex h-14 w-14 items-center justify-center rounded-full text-white shadow-lg shadow-primary/35 transition-all duration-300 ease-out',
+          'bg-primary hover:bg-primary-hover hover:scale-105 hover:shadow-xl hover:shadow-primary/45 active:scale-95',
           open ? 'scale-90 opacity-0 pointer-events-none' : 'scale-100 opacity-100',
         )}
       >
+        {serverUnread > 0 && (
+          <span
+            aria-hidden
+            className="absolute inset-0 -z-10 animate-ping rounded-full bg-primary/40 motion-reduce:animate-none"
+          />
+        )}
         <MessageCircle className="h-6 w-6" strokeWidth={2} fill="white" />
         {serverUnread > 0 && (
-          <span className="absolute top-0 right-0 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#e3000f] px-1.5 text-[11px] font-semibold leading-none text-white shadow-md ring-2 ring-white">
+          <span className="absolute top-0 right-0 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-white px-1.5 text-[11px] font-bold leading-none text-primary shadow-md ring-1 ring-black/10">
             {serverUnread > 99 ? '99+' : serverUnread}
           </span>
         )}

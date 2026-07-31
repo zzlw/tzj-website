@@ -54,6 +54,11 @@ const envSchema = z.object({
   LINGXI_LLM_API_KEY: z.string().optional(),
   LINGXI_LLM_MODEL: z.string().optional(),
 
+  // 百度 OCPC 转化回传 — 优先读后台集成凭证（slug=baidu-ocpc），env 兜底；未配置时不回传
+  BAIDU_OCPC_TOKEN: z.string().optional(),
+  BAIDU_OCPC_CONVERT_TYPE: z.string().optional(),
+  BAIDU_OCPC_SITE_URL: z.string().optional(),
+
   // 2FA（TOTP）
   /** 预鉴权令牌（pendingToken）有效期秒数 */
   TWOFA_PENDING_TTL_SECONDS: z.coerce.number().default(300),

@@ -4,9 +4,12 @@ import {
   IsBoolean,
   IsDateString,
   IsEnum,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
+  Matches,
+  Max,
   MaxLength,
   Min,
   MinLength,
@@ -62,7 +65,7 @@ export class CreateTradeShowDto {
   boothNumber?: string;
 
   @ApiPropertyOptional({
-    description: '类型: exhibition|seminar|roadshow',
+    description: '类型: exhibition|seminar|roadshow|promotion',
     default: 'exhibition',
   })
   @IsOptional()
@@ -120,6 +123,58 @@ export class CreateTradeShowDto {
   @IsOptional()
   @IsDateString()
   scheduledAt?: string | null;
+
+  // ═══ 营销弹窗（docs/activity-system-design.md §4.3）═══
+
+  @ApiPropertyOptional({ description: '启用营销弹窗（展示窗口复用 startDate/endDate）' })
+  @IsOptional()
+  @IsBoolean()
+  isMarketing?: boolean;
+
+  @ApiPropertyOptional({ enum: ['immediate', 'delay', 'scroll'], description: '触发方式' })
+  @IsOptional()
+  @IsIn(['immediate', 'delay', 'scroll'])
+  triggerMode?: string;
+
+  @ApiPropertyOptional({ description: '延时秒数（triggerMode=delay 时生效），1~60' })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(60)
+  delaySeconds?: number;
+
+  @ApiPropertyOptional({ enum: ['session', 'daily', 'once'], description: '频次控制' })
+  @IsOptional()
+  @IsIn(['session', 'daily', 'once'])
+  frequency?: string;
+
+  @ApiPropertyOptional({ type: [String], description: '不展示的路径（不含 locale 前缀）' })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @Matches(/^\//, { each: true, message: '排除路径必须以 / 开头' })
+  excludePages?: string[];
+
+  @ApiPropertyOptional({ enum: ['all', 'mobile', 'desktop'], description: '目标设备' })
+  @IsOptional()
+  @IsIn(['all', 'mobile', 'desktop'])
+  targetDevice?: string;
+
+  @ApiPropertyOptional({ description: 'CTA 按钮文字' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  ctaText?: string;
+
+  @ApiPropertyOptional({ description: '弹窗专用头图 URL；留空回退封面图' })
+  @IsOptional()
+  @IsString()
+  popupImage?: string;
+
+  @ApiPropertyOptional({ description: '弹窗专用文案（Markdown）；留空回退详情正文' })
+  @IsOptional()
+  @IsString()
+  popupContent?: string;
 }
 
 export class UpdateTradeShowDto extends PartialType(CreateTradeShowDto) {}

@@ -115,6 +115,20 @@ export interface TradeShowItem extends BaseEntity {
   scheduledAt?: string | null;
   viewCount: number;
   publishedAt?: string | null;
+  // 营销弹窗（docs/activity-system-design.md）
+  isMarketing: boolean;
+  triggerMode: string;
+  delaySeconds: number;
+  frequency: string;
+  excludePages: string[];
+  targetDevice: string;
+  ctaText: string;
+  /** 弹窗专用头图；留空前台回退 coverImage */
+  popupImage?: string | null;
+  /** 弹窗专用文案（Markdown）；留空前台回退 content */
+  popupContent?: string | null;
+  popupViewCount: number;
+  popupClickCount: number;
   systemPublishedAt?: string | null;
   createdBy?: string | null;
   createdByUser?: ContentOperatorUser | null;

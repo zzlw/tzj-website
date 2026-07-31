@@ -149,7 +149,7 @@ model TradeShow {
   startDate      DateTime?
   endDate        DateTime?
   boothNumber    String?
-  eventType      String    @default("exhibition") // exhibition | seminar | roadshow
+  eventType      String    @default("exhibition") // exhibition | seminar | roadshow | promotion
   coverImage     String?
   images         String[]  @default([])
   externalUrl    String?
@@ -162,6 +162,20 @@ model TradeShow {
   viewCount      Int       @default(0)
   publishedAt    DateTime?
   author         String?
+
+  // ═══ 营销弹窗（docs/activity-system-design.md；均带默认值，零破坏性）═══
+  isMarketing     Boolean  @default(false) // 总开关；展示窗口复用 startDate/endDate
+  triggerMode     String   @default("immediate") // immediate | delay | scroll
+  delaySeconds    Int      @default(3) // triggerMode=delay 时生效，1~60
+  frequency       String   @default("session") // session | daily | once
+  excludePages    String[] @default([]) // 不展示的路径（不含 locale 前缀），如 ["/products"]
+  targetDevice    String   @default("all") // all | mobile | desktop
+  ctaText         String   @default("立即参与") // CTA 按钮文字
+  popupImage      String? // 弹窗专用头图；留空回退 coverImage（封面图仅服务列表/详情页）
+  popupContent    String?  @db.Text // 弹窗专用文案（Markdown）；留空回退 content（详情正文不再与弹窗共用）
+  ctaUrl          String? // 已废弃（2026-07）：弹窗 CTA 改走 externalUrl；列保留避免破坏性迁移
+  popupViewCount  Int      @default(0) // 弹窗曝光量（与详情页 viewCount 分开）
+  popupClickCount Int      @default(0) // CTA 点击量
   systemPublishedAt DateTime?
   createdBy         String?
   createdById       String?
@@ -175,6 +189,7 @@ model TradeShow {
   @@index([eventType])
   @@index([status])
   @@index([startDate])
+  @@index([isMarketing])
   @@index([systemPublishedAt])
   @@index([createdById])
   @@index([lastOperatorId])

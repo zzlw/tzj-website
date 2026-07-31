@@ -16,7 +16,7 @@ const PATH_LABELS: Record<string, string> = {
   '/cases': '案例管理',
   '/news': '新闻管理',
   '/blog': '博客管理',
-  '/trade-shows': '展会管理',
+  '/trade-shows': '活动管理',
   '/legal-pages': '法务页面',
   '/documents': '知识库',
   '/documents/mine': '文档中心',

@@ -7,7 +7,7 @@ import { CtaBand, FeatureGrid, RelatedLinks } from '@/components/sections/blocks
 import { StatBandI18n } from '@/components/sections/blocks-i18n';
 import { Container, PageHero, SectionHeading } from '@/components/ui';
 import { getTradeShows } from '@/lib/api';
-import { formatContentDate, tradeShowTypeLabel } from '@/lib/content-labels';
+import { formatContentDateRange, tradeShowTypeLabel } from '@/lib/content-labels';
 import {
   buildListQuery,
   normalizePagination,
@@ -114,7 +114,7 @@ export default async function TradeShowsPage({ searchParams }: PageProps) {
                           ) : null}
                           <span className="inline-flex items-center gap-1">
                             <CalendarDays className="h-4 w-4 text-primary" aria-hidden />
-                            {e.eventDateLabel || formatContentDate(e.startDate)}
+                            {e.eventDateLabel || formatContentDateRange(e.startDate, e.endDate)}
                           </span>
                         </div>
                         {e.boothNumber ? (

@@ -39,6 +39,7 @@ export const CHAT_I18N = {
     aiGreeting: '您好 👋\n\n我是拓之迹客服小拓，请描述您的问题，我会尽快为您解答。',
     launcherInvite: '👋 您好！有什么可以帮您的吗？',
     launcherInviteOffline: '👋 您好！我们暂时不在线，留言后我们会尽快回复。',
+    launcherInviteCall: '👋 您好！客服暂时不在线，点击这里直接拨打电话，即刻为您服务。',
     justNow: '刚刚',
     minutesAgo: '{n} 分钟前',
     hoursAgo: '{n} 小时前',
@@ -86,6 +87,7 @@ export const CHAT_I18N = {
     aiGreeting: '您好 👋\n\n我是拓之跡客服小拓，請描述您的問題，我會盡快為您解答。',
     launcherInvite: '👋 您好！有什麼可以幫您的嗎？',
     launcherInviteOffline: '👋 您好！我們暫時不在線，留言後我們會盡快回覆。',
+    launcherInviteCall: '👋 您好！客服暫時不在線，點擊這裡直接撥打電話，即刻為您服務。',
     justNow: '剛剛',
     minutesAgo: '{n} 分鐘前',
     hoursAgo: '{n} 小時前',
@@ -137,6 +139,7 @@ export const CHAT_I18N = {
     launcherInvite: '👋 Hi there! How can we help you today?',
     launcherInviteOffline:
       "👋 Hi there! We're currently offline. Leave a message and we'll get back to you soon.",
+    launcherInviteCall: "👋 Hi there! We're currently offline — tap here to call us right away.",
     justNow: 'Just now',
     minutesAgo: '{n}m ago',
     hoursAgo: '{n}h ago',

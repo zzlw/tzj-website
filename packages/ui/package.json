@@ -28,6 +28,7 @@
     "react-photo-view": "^1.2.7",
     "react-use-audio-player": "^4.0.2",
     "rehype-sanitize": "^6.0.0",
+    "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
     "tailwind-merge": "^3.6.0",
     "vditor": "^3.11.2"

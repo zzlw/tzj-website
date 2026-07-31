@@ -13,6 +13,7 @@ import { LanguageSelectorProvider } from '@/components/i18n/LanguageSelector';
 import { JsonLd } from '@/components/JsonLd';
 import { Footer } from '@/components/layout/Footer';
 import { HeaderShell } from '@/components/layout/HeaderShell';
+import { MarketingPopup } from '@/components/marketing/MarketingPopup';
 import { DeferredVisitorTracker } from '@/components/performance/DeferredVisitorTracker';
 import { ProductLineNav } from '@/components/products/ProductLineNav';
 import { SearchProvider } from '@/components/search/SearchProvider';
@@ -134,7 +135,9 @@ export default async function LocaleLayout({ children, params }: Props) {
                 businessHours={siteSettings.businessHours}
                 agentProfile={siteSettings.agentProfile}
                 chatPrompts={siteSettings.chatPrompts}
+                phone={siteSettings.contact.phone}
               />
+              <MarketingPopup phone={siteSettings.contact.phone} />
               <HeaderShell />
               <ProductLineNav />
               <ViewTransitions>

@@ -84,4 +84,51 @@ export const INTEGRATION_TESTERS: Record<string, IntegrationTester> = {
       return { ok: false, message: '无法连接大模型平台，请检查网络与 Base URL' };
     }
   },
+
+  'baidu-ocpc': async (service) => {
+    const token = await service.resolveSecret('baidu-ocpc', 'token');
+    const convertType = await service.resolveConfig('baidu-ocpc', 'convertType');
+    const siteUrl = await service.resolveConfig('baidu-ocpc', 'siteUrl');
+    if (!token) {
+      return { ok: false, message: '未配置回传 Token' };
+    }
+    if (!convertType || Number.isNaN(Number(convertType))) {
+      return { ok: false, message: '请配置有效的转化类型编码（newType，整数）' };
+    }
+    if (!siteUrl) {
+      return { ok: false, message: '请配置落地页域名' };
+    }
+    // 哨兵探活：用假 bd_vid 回传一条，仅据 header.status 判定 Token 是否有效——
+    // status=3 为 Token 校验失败；其余（数据因假 bd_vid 被拒）说明 Token 有效，不产生真实转化。
+    try {
+      const res = await fetch('https://ocpc.baidu.com/ocpcapi/api/uploadConvertData', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+        body: JSON.stringify({
+          token,
+          conversionTypes: [
+            {
+              logidUrl: `${siteUrl.replace(/\/$/, '')}/?bd_vid=tzj-connection-test`,
+              newType: Number(convertType),
+            },
+          ],
+        }),
+        signal: AbortSignal.timeout(5000),
+      });
+      if (!res.ok) {
+        return { ok: false, message: `百度返回 HTTP ${res.status}，请稍后重试` };
+      }
+      const data = (await res.json()) as { header?: { status?: number; desc?: string } };
+      const status = data.header?.status;
+      if (status === 3) {
+        return { ok: false, message: 'Token 校验失败，请到百度营销后台核对回传 Token' };
+      }
+      return {
+        ok: true,
+        message: 'Token 有效（哨兵数据已被百度按预期拒绝，不产生真实转化）',
+      };
+    } catch {
+      return { ok: false, message: '无法连接百度 OCPC 回传接口，请检查网络' };
+    }
+  },
 };

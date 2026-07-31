@@ -1,7 +1,12 @@
 import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 import { API_BASE, COOKIE } from '@/lib/config';
-import { applyTokenCookies, refreshAccessToken } from '@/lib/tokenRefresh';
+import {
+  applyTokenCookies,
+  refreshAccessToken,
+  type TokenPair,
+  UPSTREAM_UNAVAILABLE_BODY,
+} from '@/lib/tokenRefresh';
 
 /**
  * Favicon 上传专用 BFF：接收 multipart/form-data，携带 httpOnly cookie 转发到 Nest API。
@@ -37,13 +42,16 @@ export async function POST(req: NextRequest) {
     });
 
   let apiRes = await forward(accessToken);
-  let rotated = null;
+  let rotated: TokenPair | null = null;
 
   if (apiRes.status === 401) {
-    rotated = await refreshAccessToken(refreshToken);
-    if (rotated) {
+    const refreshed = await refreshAccessToken(refreshToken);
+    if (refreshed.ok) {
+      rotated = refreshed.tokens;
       accessToken = rotated.accessToken;
       apiRes = await forward(accessToken);
+    } else if (refreshed.transient) {
+      return NextResponse.json(UPSTREAM_UNAVAILABLE_BODY, { status: 502 });
     }
   }
 
@@ -78,13 +86,16 @@ export async function DELETE() {
     });
 
   let apiRes = await forward(accessToken);
-  let rotated = null;
+  let rotated: TokenPair | null = null;
 
   if (apiRes.status === 401) {
-    rotated = await refreshAccessToken(refreshToken);
-    if (rotated) {
+    const refreshed = await refreshAccessToken(refreshToken);
+    if (refreshed.ok) {
+      rotated = refreshed.tokens;
       accessToken = rotated.accessToken;
       apiRes = await forward(accessToken);
+    } else if (refreshed.transient) {
+      return NextResponse.json(UPSTREAM_UNAVAILABLE_BODY, { status: 502 });
     }
   }
 

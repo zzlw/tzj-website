@@ -56,7 +56,8 @@ export function DashboardAnalyticsPanel() {
   }));
 
   const pageChartData = (data?.topPages ?? []).slice(0, 6).map((p) => ({
-    name: p.path.length > 24 ? `${p.path.slice(0, 22)}…` : p.path,
+    // name 保留完整路径：截断后不同页面会同名撞 key，显示截断由图表 Y 轴 tickFormatter 负责
+    name: p.path,
     value: p.pageViews,
   }));
 

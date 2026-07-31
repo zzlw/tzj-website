@@ -1,9 +1,13 @@
 # MinIO → RustFS 迁移方案
 
-> 状态：方案评审稿（未实施）
+> **状态：已废弃（2026-07-31）——本方案不再实施，任何人不得按本文执行迁移。**
+> 废弃原因：生产对象存储最终决策为迁移至阿里云 OSS（见 `docs/minio-to-aliyun-oss-migration-plan.md`），本地 dev 继续使用 MinIO 不做更换。RustFS 截至废弃时仍处于 beta（1.0.0-beta.12，GA 跳票），引入收益不足以覆盖风险。
+> 本文档保留仅作决策过程与调研结论的存档（RustFS 兼容性评估、compose 落地细节、影响面清单等可供未来复用）。
+>
+> ~~状态：方案评审稿（未实施）~~
 > 日期：2026-07-30
 > 范围：本地开发环境（docker-compose.dev.yml）+ 生产环境（阿里云 ECS 单机 compose）
-> 关联文档：`docs/deployment-plan.md`（§4 MinIO 生产化改造）、AGENTS.md「对象存储规范」
+> 关联文档：`docs/deployment-plan.md`（§4 MinIO 生产化改造）、`docs/minio-to-aliyun-oss-migration-plan.md`（**最终采纳方案**）、AGENTS.md「对象存储规范」
 
 ---
 
@@ -82,7 +86,7 @@
 | `infra/docker/nginx/templates/tzj.conf.template` | `set $upstream_minio minio:9000` → `set $upstream_rustfs rustfs:9000`（同文件近期有灵犀 SSE 的 `proxy_read_timeout` 改动落在 admin server block，与本方案改的 static block 不冲突，但实施 PR 前先合并/落地该改动，避免模板双头修改） |
 | `infra/docker/.env.prod.example`（及服务器上 `.env.prod`） | `MINIO_ROOT_*` → `RUSTFS_ACCESS_KEY/SECRET_KEY`；S3 段不变 |
 | `infra/docker/Makefile` | `up -d --no-deps postgres minio acme gateway` 中服务名 |
-| ECS crontab 备份任务（服务器现场，不在仓库内） | deployment-plan.md §7 的每周 `mc mirror` MinIO→OSS 归档桶（`tzj-prod-backup`）：alias 端点 `minio:9000`→`rustfs:9000`、凭证换 `RUSTFS_*`。**仓库 grep 扫不到，切流后不改则媒体异地备份静默中断** |
+| ECS crontab 备份任务（服务器现场，不在仓库内） | deployment-plan.md §7 的每周 `mc mirror` MinIO→OSS 归档桶（`tzj-prod-backup`）：alias 端点 `minio:9000`→`rustfs:9000`、凭证换 `RUSTFS_*`。**仓库 grep 扫不到，切流后不改则媒体异地备份静默中断**。注：deployment-plan §7 属规划性质，实施前先 `crontab -l` 确认该任务是否已实际部署——若尚未部署，则借切流时机直接按 rustfs 端点新建，不存在「更新」动作 |
 
 ### 3.2 无需改动（验证过）
 
@@ -95,7 +99,7 @@
 
 ### 3.3 后续文档同步（迁移完成后）
 
-- `docs/deployment-plan.md` §4 各处 MinIO 表述
+- `docs/deployment-plan.md` 全文各处 MinIO 表述（不止 §4 生产化改造：§7 备份表格「MinIO 数据」行、§10.4 备份基础设施、§11「MinIO 镜像恢复」等）
 - `AGENTS.md`「对象存储规范」章节（存储架构表、Bucket 政策描述）
 - 注释中的「MinIO」字样（`s3.service.ts` 头注释、`media.service.ts`、`env.validation.ts` 等）——不影响功能，随迁移 PR 一并清理
 - `apps/api/src/integrations/integration.registry.ts` 的**用户可见文案**「MinIO / 阿里云 OSS / AWS S3 的 Secret Access Key…」（集成中心后台 UI 展示，非代码注释，需改为 RustFS 表述）
@@ -324,7 +328,7 @@ docker volume rm tzj_miniodata
 | 2 | api 启动探针 | api 日志出现 `S3 Storage module loaded`；`GET /api/v1/health` 存储项 OK |
 | 3 | 公开读 | 抽查数据库存量媒体 URL，公网 GET 200 + content-length 正确；匿名访问不存在对象返回 404/403 而非 500 |
 | 4 | 后台上传 | admin 媒体库上传图片（<10MB），落库 URL 可访问 |
-| 5 | 浏览器直传 | admin 预签名 PUT 直传（跨域路径），浏览器 Network 无 CORS 报错——**重点验证 RustFS 仅 origin 维度 CORS 是否放行 PUT**；若被拦，fallback：在 nginx static server block 注入 `Access-Control-Allow-Origin/Methods/Headers` 响应头并代答 OPTIONS preflight（dev 无 nginx，则需升级 RustFS 或改走服务端中转上传） |
+| 5 | 浏览器直传 | 预签名 PUT 直传跨域路径共**两条**，逐一验证：admin 媒体库直传 + **web C 端聊天附件直传**（`ChatWidget` 的 `presignChatAttachment` → 浏览器 PUT，origin 为 web 域），浏览器 Network 均无 CORS 报错——**重点验证 RustFS 仅 origin 维度 CORS 是否放行 PUT**；若被拦，fallback：在 nginx static server block 注入 `Access-Control-Allow-Origin/Methods/Headers` 响应头并代答 OPTIONS preflight（dev 无 nginx，则需升级 RustFS 或改走服务端中转上传） |
 | 6 | 大文件 | >16MB 文件经 nginx 反代上传成功（aws-chunked 签名回归） |
 | 7 | 预签名 GET | 私有对象预签名 URL 有效期内可访问、过期后 403 |
 | 8 | 水印链路 | 上传触发水印的媒体，`getObjectBuffer`（Logo 拉取）+ 处理后回写正常；覆盖三条路径：`watermark=auto`（正常烧录）、`skip`（原样上传）、`force`（跳过目录/类型限制强制烧录），且落库 `MediaAsset.watermarked` 值与实际处理结果一致 |
@@ -381,4 +385,5 @@ docker volume rm tzj_miniodata
 - [ ] `infra/docker/Makefile` — 服务名
 - [ ] `.env.example` — dev root 凭证名更新
 - [ ] 服务器 `/opt/tzj/.env.prod` — 同 example（手工，不入库）
-- [ ] （迁移完成后）文档与代码表述同步 — 按 §3.3 完整清单逐项执行（deployment-plan.md、AGENTS.md、注释、集成中心 UI 文案、toMinioUrl 更名等）
+- [ ] 服务器备份 crontab — 每周 mirror 源端 minio→rustfs（手工，不入库；若尚未部署则按 rustfs 端点新建，见 §3.1 末行）
+- [ ] （迁移完成后）文档与代码表述同步 — 按 §3.3 完整清单逐项执行（deployment-plan.md、AGENTS.md、注释、集成中心 UI 文案等；toMinioUrl 已先行更名 toStorageUrl，不再在列）

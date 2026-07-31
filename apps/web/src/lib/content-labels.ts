@@ -21,7 +21,7 @@ export const BLOG_CATEGORY_VALUES = [
   'industry',
 ] as const;
 
-export const TRADE_SHOW_TYPE_VALUES = ['exhibition', 'seminar', 'roadshow'] as const;
+export const TRADE_SHOW_TYPE_VALUES = ['exhibition', 'seminar', 'roadshow', 'promotion'] as const;
 
 /** 后端 Prisma / API 使用的 slug 值（与 admin 一致） — 保留兼容导出 */
 export const CASE_TYPE_OPTIONS: ContentOption[] = CASE_TYPE_VALUES.map((value) => ({
@@ -102,6 +102,7 @@ const TRADE_SHOW_TYPE_ALIASES: Record<string, string> = {
   EXHIBITION: 'exhibition',
   SEMINAR: 'seminar',
   ROADSHOW: 'roadshow',
+  PROMOTION: 'promotion',
 };
 
 function normalizeValue(value: string | null | undefined, aliases: Record<string, string>) {
@@ -188,4 +189,17 @@ export function formatContentDate(v?: string | Date | null, locale = 'zh-CN'): s
     month: 'long',
     day: 'numeric',
   });
+}
+
+/** 日期区间：有结束日且与开始日不同天时显示“开始 – 结束”，否则只显示开始日。 */
+export function formatContentDateRange(
+  start?: string | Date | null,
+  end?: string | Date | null,
+  locale = 'zh-CN',
+): string {
+  const startLabel = formatContentDate(start, locale);
+  if (startLabel === '—') return startLabel;
+  const endLabel = formatContentDate(end, locale);
+  if (endLabel === '—' || endLabel === startLabel) return startLabel;
+  return `${startLabel} – ${endLabel}`;
 }

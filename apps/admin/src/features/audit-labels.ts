@@ -21,7 +21,7 @@ export const AUDIT_RESOURCE_OPTIONS = [
   { value: 'cases', label: '案例' },
   { value: 'news', label: '新闻' },
   { value: 'blogs', label: '博客' },
-  { value: 'trade-shows', label: '展会' },
+  { value: 'trade-shows', label: '活动' },
   { value: 'media', label: '媒体' },
   // 后端控制器路由为 @Controller('contact')（单数），拦截器写入 resource='contact'；
   // v4.7 前误写为 'contacts'（复数）导致筛选 0 结果。

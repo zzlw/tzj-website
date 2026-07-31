@@ -2,7 +2,12 @@ import { cookies } from 'next/headers';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { API_BASE, COOKIE } from '@/lib/config';
-import { applyTokenCookies, refreshAccessToken, type TokenPair } from '@/lib/tokenRefresh';
+import {
+  applyTokenCookies,
+  refreshAccessToken,
+  type TokenPair,
+  UPSTREAM_UNAVAILABLE_BODY,
+} from '@/lib/tokenRefresh';
 
 /**
  * 灵犀流式 BFF（docs/lingxi-ai-report-design.md §7.1）。
@@ -48,19 +53,17 @@ async function openStream(
   try {
     apiRes = await forward(accessToken);
     if (apiRes.status === 401) {
-      rotated = await refreshAccessToken(refreshToken);
-      if (rotated) {
+      const refreshed = await refreshAccessToken(refreshToken);
+      if (refreshed.ok) {
+        rotated = refreshed.tokens;
         apiRes = await forward(rotated.accessToken);
+      } else if (refreshed.transient) {
+        // 续期因上游临时故障失败：返回 502 而非透传 401，避免前端误判会话失效
+        return NextResponse.json(UPSTREAM_UNAVAILABLE_BODY, { status: 502 });
       }
     }
   } catch {
-    return NextResponse.json(
-      {
-        success: false,
-        error: { code: 'UPSTREAM_UNAVAILABLE', message: '服务暂时不可用，请稍后重试' },
-      },
-      { status: 502 },
-    );
+    return NextResponse.json(UPSTREAM_UNAVAILABLE_BODY, { status: 502 });
   }
 
   // 非 200（LLM 未配置 503 / 会话不存在 404 / 并发生成 409）：上游是 JSON 错误体，原样转发

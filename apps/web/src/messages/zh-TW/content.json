@@ -62,9 +62,10 @@
       },
       "tradeShows": {
         "types": {
-          "exhibition": "展览會",
-          "seminar": "研讨會",
-          "roadshow": "巡回活動"
+          "exhibition": "展覽會",
+          "seminar": "研討會",
+          "roadshow": "巡回活動",
+          "promotion": "促銷活動"
         }
       }
     },
@@ -118,8 +119,8 @@
       "backToTradeShows": "返回展會列表",
       "bookConsultArrow": "預約諮詢 →",
       "booth": "展位：",
-      "ctaTitleTradeShow": "想了解該展會的詳細信息？",
-      "ctaDescriptionTradeShow": "與我們的行業專家溝通，獲取參展建議與合作方案。",
+      "ctaTitleTradeShow": "想了解該活動的詳細信息？",
+      "ctaDescriptionTradeShow": "與我們的行業專家溝通，獲取活動建議與合作方案。",
       "breadcrumbs": {
         "cases": "工程案例",
         "blog": "博客",

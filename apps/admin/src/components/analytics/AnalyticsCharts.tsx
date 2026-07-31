@@ -255,6 +255,8 @@ export function HorizontalBarChart({
           tick={{ fill: CHART_MUTED, fontSize: 12 }}
           axisLine={false}
           tickLine={false}
+          // 长标签（页面路径等）仅在刻度层截断；data name 保持完整值，Tooltip 可看全
+          tickFormatter={(v: string) => (v.length > 24 ? `${v.slice(0, 22)}…` : v)}
         />
         <Tooltip content={<ChartTooltip />} cursor={{ fill: 'var(--muted)', opacity: 0.4 }} />
         <Bar dataKey={valueKey} name="访问量" radius={[0, 2, 2, 0]} maxBarSize={24}>

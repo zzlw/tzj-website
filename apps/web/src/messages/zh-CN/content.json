@@ -64,7 +64,8 @@
         "types": {
           "exhibition": "展览会",
           "seminar": "研讨会",
-          "roadshow": "巡回活动"
+          "roadshow": "巡回活动",
+          "promotion": "促销活动"
         }
       }
     },
@@ -118,8 +119,8 @@
       "backToTradeShows": "返回展会列表",
       "bookConsultArrow": "预约咨询 →",
       "booth": "展位：",
-      "ctaTitleTradeShow": "想了解该展会的详细信息？",
-      "ctaDescriptionTradeShow": "与我们的行业专家沟通，获取参展建议与合作方案。",
+      "ctaTitleTradeShow": "想了解该活动的详细信息？",
+      "ctaDescriptionTradeShow": "与我们的行业专家沟通，获取活动建议与合作方案。",
       "breadcrumbs": {
         "cases": "工程案例",
         "blog": "博客",

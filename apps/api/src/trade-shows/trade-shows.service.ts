@@ -46,6 +46,80 @@ interface FindAllParams {
 export class TradeShowsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /** 营销活动 30s 内存缓存（同 RolesService 权限缓存模式；多实例靠 TTL 最终一致） */
+  private marketingCache: { data: unknown[]; expireAt: number } | null = null;
+
+  /** 公开接口字段白名单：不泄露 location/boothNumber/计数/审计字段 */
+  private static readonly MARKETING_SELECT = {
+    id: true,
+    slug: true,
+    title: true,
+    content: true,
+    coverImage: true,
+    // 弹窗专用头图：前端优先用它，留空回退 coverImage（封面图与弹窗图区分运营）
+    popupImage: true,
+    // 弹窗专用文案：前端优先用它，留空回退 content（详情正文不再与弹窗共用）
+    popupContent: true,
+    eventType: true,
+    triggerMode: true,
+    delaySeconds: true,
+    frequency: true,
+    excludePages: true,
+    targetDevice: true,
+    ctaText: true,
+    // CTA 跳转目标：直接复用官网链接，留空时前端回退站内详情页
+    externalUrl: true,
+  } satisfies Prisma.TradeShowSelect;
+
+  /** 计数字段只允许经 increment 路径变更：全局 ValidationPipe 暂为 whitelist:false，DTO 未声明键不会被剥除，
+   *  写库前显式剔除防请求体篡改；whitelist 开启后本保护冗余但无害 */
+  private static stripCounterKeys(data: Record<string, unknown>) {
+    delete data.viewCount;
+    delete data.popupViewCount;
+    delete data.popupClickCount;
+  }
+
+  /** 当前生效的营销弹窗活动（最多 1 条，多个候选取 sortOrder 最高） */
+  async findActiveMarketing() {
+    if (this.marketingCache && this.marketingCache.expireAt > Date.now()) {
+      return this.marketingCache.data;
+    }
+    const now = new Date();
+    const data = await this.prisma.tradeShow.findMany({
+      where: {
+        isMarketing: true,
+        status: ContentStatus.PUBLISHED,
+        OR: [{ startDate: null }, { startDate: { lte: now } }],
+        AND: [{ OR: [{ endDate: null }, { endDate: { gte: now } }] }],
+      },
+      // Postgres DESC 默认 NULLS FIRST，显式 nulls last 防历史 null publishedAt 行排最前
+      orderBy: [{ sortOrder: 'desc' }, { publishedAt: { sort: 'desc', nulls: 'last' } }],
+      take: 1,
+      select: TradeShowsService.MARKETING_SELECT,
+    });
+    this.marketingCache = { data, expireAt: Date.now() + 30_000 };
+    return data;
+  }
+
+  /** 弹窗曝光/点击计数：updateMany 带窗口条件，单条 SQL 原子完成「校验 + 计数」，防对任意行/过期活动刷计数 */
+  async recordPopupEvent(id: string, type: 'view' | 'click') {
+    const now = new Date();
+    const result = await this.prisma.tradeShow.updateMany({
+      where: {
+        id,
+        isMarketing: true,
+        status: ContentStatus.PUBLISHED,
+        OR: [{ startDate: null }, { startDate: { lte: now } }],
+        AND: [{ OR: [{ endDate: null }, { endDate: { gte: now } }] }],
+      },
+      data:
+        type === 'view'
+          ? { popupViewCount: { increment: 1 } }
+          : { popupClickCount: { increment: 1 } },
+    });
+    if (result.count === 0) throw new NotFoundException('活动不存在、未发布或不在展示窗口内');
+  }
+
   async findAll(params: FindAllParams) {
     const {
       page,
@@ -119,14 +193,19 @@ export class TradeShowsService {
       });
     }
 
-    return item;
+    // 公开访问剥离内部字段（审计 + 营销配置/计数）；后台/预览不剥离，编辑表单回填不受影响
+    return stripInternalContentFields(item, includeUnpublished);
   }
 
   async create(dto: CreateTradeShowDto, editorId?: string) {
     const { summary, ...rest } = dto;
     const data: Prisma.TradeShowCreateInput = { ...rest };
+    TradeShowsService.stripCounterKeys(data as Record<string, unknown>);
     if (dto.content !== undefined) {
       data.content = sanitizeMarkdown(dto.content);
+    }
+    if (dto.popupContent !== undefined) {
+      data.popupContent = sanitizeMarkdown(dto.popupContent);
     }
     // 如果未提供摘要，则根据正文自动生成
     if (summary === undefined && dto.content !== undefined) {
@@ -141,7 +220,9 @@ export class TradeShowsService {
       data.author = await resolveContentAuthor(this.prisma, editorId);
     }
     Object.assign(data, await applyContentEditorMetadata(this.prisma, editorId, dto.status));
-    return this.prisma.tradeShow.create({ data });
+    const created = await this.prisma.tradeShow.create({ data });
+    this.marketingCache = null;
+    return created;
   }
 
   async update(id: string, dto: UpdateTradeShowDto, editorId?: string) {
@@ -150,8 +231,12 @@ export class TradeShowsService {
 
     const { summary, ...rest } = dto;
     const data: Prisma.TradeShowUpdateInput = { ...rest };
+    TradeShowsService.stripCounterKeys(data as Record<string, unknown>);
     if (dto.content !== undefined) {
       data.content = sanitizeMarkdown(dto.content);
+    }
+    if (dto.popupContent !== undefined) {
+      data.popupContent = sanitizeMarkdown(dto.popupContent);
     }
     // 如果提供了新摘要，使用它；否则如果正文被更新，重新生成摘要
     if (summary !== undefined) {
@@ -170,13 +255,16 @@ export class TradeShowsService {
       data,
       await applyContentEditorMetadata(this.prisma, editorId, dto.status ?? item.status, item),
     );
-    return this.prisma.tradeShow.update({ where: { id }, data });
+    const updated = await this.prisma.tradeShow.update({ where: { id }, data });
+    this.marketingCache = null;
+    return updated;
   }
 
   async remove(id: string) {
     const item = await this.prisma.tradeShow.findUnique({ where: { id } });
     if (!item) throw new NotFoundException(`展会 ID "${id}" 未找到`);
     await this.prisma.tradeShow.delete({ where: { id } });
+    this.marketingCache = null;
     return { deleted: true };
   }
 }

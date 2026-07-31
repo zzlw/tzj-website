@@ -48,6 +48,13 @@ export const INTEGRATION_ENV_FALLBACK: Record<
       model: 'LINGXI_LLM_MODEL',
     },
   },
+  'baidu-ocpc': {
+    secrets: { token: 'BAIDU_OCPC_TOKEN' },
+    config: {
+      convertType: 'BAIDU_OCPC_CONVERT_TYPE',
+      siteUrl: 'BAIDU_OCPC_SITE_URL',
+    },
+  },
 };
 
 /** 第三方集成注册表（slug 与字段定义的唯一来源） */
@@ -293,6 +300,67 @@ export const INTEGRATION_REGISTRY: IntegrationDef[] = [
         label: '模型名',
         description:
           '对话模型标识。DeepSeek 官方推荐 deepseek-v4-flash（默认），更强可选 deepseek-v4-pro；旧名 deepseek-chat / deepseek-reasoner 已废弃。留空时默认 deepseek-v4-flash。',
+      },
+    ],
+  },
+  {
+    slug: 'baidu-ocpc',
+    label: '百度 OCPC 转化回传',
+    description:
+      '将官网询盘表单提交作为转化事件，服务端回传给百度搜索推广 OCPC。启用后，询盘落库时按访客首触 bd_vid 反查并调用百度回传 API，使 OCPC 智能出价模型拿到真实转化数据（降本关键）。仅带 bd_vid 的百度付费点击询盘会回传，自然/其它渠道自动跳过。',
+    docUrl: 'https://ocpx.baidu.com/developer/ocpc-doc/api/api-doc/api-interface/',
+    setupGuide: [
+      {
+        title: '1. 新建「API 回传」转化追踪',
+        content:
+          '登录 [百度营销推广后台](https://www2.baidu.com/)，进入「转化跟踪 → 新建转化追踪」，数据收集方式选 **API 回传**，转化类型选与「表单提交/留言」对应的类型。保存后即可获取该账户唯一的回传 **Token**。',
+      },
+      {
+        title: '2. 记录转化类型编码（newType）',
+        content:
+          '在转化追踪列表中查看所选转化类型对应的 **类型编码（newType）**，如「表单提交」等（以后台披露的编码为准）。填入下方「转化类型编码」字段。',
+      },
+      {
+        title: '3. 填写 Token 与落地页域名',
+        content:
+          '将第 1 步的 Token 填入「回传 Token」；「落地页域名」填官网对外访问地址（如 https://www.tzjii.com），用于拼接回传所需的 logidUrl。',
+      },
+      {
+        title: '4. 启用并测试连接',
+        content:
+          '打开「启用」开关并保存，点击「测试连接」——系统会用一条哨兵数据探活，只校验 Token 是否有效（不会产生真实转化）。通过后，此后每条带 bd_vid 的付费询盘都会自动回传。',
+      },
+      {
+        title: '前置依赖',
+        content:
+          '需先完成旧站 301（老创意落地页带 bd_vid）与埋点 bd_vid 采集（已上线）。回传链路为「询盘提交 → visitorId → page_views 首触 bd_vid → 百度 OCPC 回传 API」，全程服务端进行，无需改前端。',
+      },
+    ],
+    secretFields: [
+      {
+        key: 'token',
+        label: '回传 Token',
+        description:
+          '百度营销后台「新建转化追踪 → API 回传」生成的账户唯一 Token，仅保存在服务端加密数据库中，用于调用 uploadConvertData 接口。搜索推广与信息流可共用同一 Token。',
+        helpUrl: 'https://ocpx.baidu.com/developer/ocpc-doc/api/api-fc/',
+        required: true,
+      },
+    ],
+    configFields: [
+      {
+        key: 'convertType',
+        label: '转化类型编码（newType）',
+        description:
+          '回传时标记的转化类型整数编码，以百度后台新建转化追踪披露的编码为准（询盘表单提交对应的类型）。',
+        helpUrl: 'https://ocpx.baidu.com/developer/ocpc-doc/api/api-doc/api-interface/',
+        required: true,
+      },
+      {
+        key: 'siteUrl',
+        label: '落地页域名',
+        description:
+          '官网对外访问地址（如 https://www.tzjii.com），用于拼接回传 logidUrl（形如 域名/首触路径?bd_vid=xxx）。百度按 bd_vid 匹配点击，域名需与实际投放落地页一致。',
+        required: true,
       },
     ],
   },

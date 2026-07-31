@@ -70,7 +70,7 @@ const CONTENT_LINKS = [
   { label: '工程案例', key: 'cases', href: '/cases' },
   { label: '新闻', key: 'news', href: '/news' },
   { label: '博客', key: 'blogs', href: '/blog' },
-  { label: '展会', key: 'trade-shows', href: '/trade-shows' },
+  { label: '活动', key: 'trade-shows', href: '/trade-shows' },
   { label: '媒体素材', key: 'media', href: '/media' },
 ] as const;
 

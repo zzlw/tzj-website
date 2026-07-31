@@ -7,6 +7,8 @@ import { aggregateLastIp, pickLatestIp } from '../analytics/utils/last-ip';
 import { resolveContentAuthor } from '../common/utils/content-author';
 import { LAST_OPERATOR_USER_SELECT } from '../common/utils/content-list';
 // biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
+import { BaiduOcpcService } from '../integrations/baidu-ocpc.service';
+// biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
 import { NotificationService } from '../notifications/notification.service';
 // biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
 import { PrismaService } from '../prisma/prisma.service';
@@ -178,6 +180,7 @@ export class ContactService {
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationService,
     private readonly ipLocation: IpLocationService,
+    private readonly baiduOcpc: BaiduOcpcService,
   ) {}
 
   async findAll(params: FindAllParams) {
@@ -563,6 +566,8 @@ export class ContactService {
       },
     });
     this.notifications.dispatchContactCreated(contact);
+    // 百度 OCPC 转化回传（fire-and-forget，失败不影响询盘提交；未启用/无 bd_vid 时静默跳过）
+    void this.baiduOcpc.reportInquiryConversion(contact);
     return contact;
   }
 
