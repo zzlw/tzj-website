@@ -64,6 +64,14 @@ export async function generateMetadata({ params }: Omit<Props, 'children'>): Pro
       template: `%s | ${brand}`,
     },
     description: t('siteDescription'),
+    // 百度搜索资源平台（站长平台）站点归属校验：该 meta 需常驻首页 <head>，
+    // 验证通过后不可删除。verification.other 会在全站每页输出
+    // <meta name="baidu-site-verification" content="..." />，供改版工具等能力使用。
+    verification: {
+      other: {
+        'baidu-site-verification': 'codeva-uyyRhMh9Qw',
+      },
+    },
   };
 }
 
