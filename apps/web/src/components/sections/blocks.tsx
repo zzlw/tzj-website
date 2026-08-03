@@ -243,7 +243,9 @@ export async function CtaBand({
         <h2 className="rb-h3 text-neutral-900">{title}</h2>
         {description ? <p className="max-w-xl text-secondary-text">{description}</p> : null}
         <div className="flex flex-wrap items-center justify-center gap-4">
-          <BookConsultButton message={primaryMessage ?? tCommon('bookConsultGeneral')}>{primaryLabel}</BookConsultButton>
+          <BookConsultButton message={primaryMessage ?? tCommon('bookConsultGeneral')}>
+            {primaryLabel}
+          </BookConsultButton>
           {secondaryLabel && secondaryHref ? (
             <RbLink href={secondaryHref}>{secondaryLabel}</RbLink>
           ) : null}

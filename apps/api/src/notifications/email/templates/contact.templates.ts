@@ -67,9 +67,7 @@ export function renderContactAutoReplyHtml(
   const channels: string[] = [];
   if (contactInfo.phone) {
     const phone = escapeHtml(contactInfo.phone);
-    channels.push(
-      `<li>服务热线：<a href="tel:${phone}" style="color:#2563eb">${phone}</a></li>`,
-    );
+    channels.push(`<li>服务热线：<a href="tel:${phone}" style="color:#2563eb">${phone}</a></li>`);
   }
   if (contactInfo.email) {
     const email = escapeHtml(contactInfo.email);
@@ -110,7 +108,12 @@ export function renderContactAutoReplyText(
   ];
   if (contactInfo.phone) lines.push('', `服务热线：${contactInfo.phone}`);
   if (contactInfo.email) lines.push(`联系邮箱：${contactInfo.email}`);
-  lines.push('', '本邮件由系统自动发送，请勿直接回复，如有需要请使用上方联系方式。', '', `${BRAND} 团队`);
+  lines.push(
+    '',
+    '本邮件由系统自动发送，请勿直接回复，如有需要请使用上方联系方式。',
+    '',
+    `${BRAND} 团队`,
+  );
   return lines.join('\n');
 }
 

@@ -143,7 +143,9 @@ export default async function WhyUsPage() {
       <Container className="pt-16 lg:pt-24">
         <div className="flex flex-col items-center gap-5 border border-neutral-300 bg-white p-10 text-center md:p-14">
           <h2 className="rb-h3 text-neutral-900">{t('cta.title')}</h2>
-          <BookConsultButton message={tCommon('bookConsultGeneral')}>{tCta('bookConsult')}</BookConsultButton>
+          <BookConsultButton message={tCommon('bookConsultGeneral')}>
+            {tCta('bookConsult')}
+          </BookConsultButton>
         </div>
       </Container>
     </div>

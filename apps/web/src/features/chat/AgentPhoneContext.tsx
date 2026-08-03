@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, type PropsWithChildren } from 'react';
+import { createContext, type PropsWithChildren, useContext } from 'react';
 
 /**
  * 站点客服电话 Context：供「预约咨询」按钮在无人在线时拨号使用。
@@ -9,13 +9,8 @@ import { createContext, useContext, type PropsWithChildren } from 'react';
  */
 const AgentPhoneContext = createContext<string | undefined>(undefined);
 
-export function AgentPhoneProvider({
-  children,
-  phone,
-}: PropsWithChildren<{ phone?: string }>) {
-  return (
-    <AgentPhoneContext.Provider value={phone}>{children}</AgentPhoneContext.Provider>
-  );
+export function AgentPhoneProvider({ children, phone }: PropsWithChildren<{ phone?: string }>) {
+  return <AgentPhoneContext.Provider value={phone}>{children}</AgentPhoneContext.Provider>;
 }
 
 export function useAgentPhone(): string | undefined {

@@ -128,7 +128,10 @@ export function SocialChannelBar({
                   <button
                     type="button"
                     onClick={() => handleCopy(channel.key, channel.href!)}
-                    className={cn(BTN_CLASS, isCopied && 'border-primary bg-primary/5 text-primary')}
+                    className={cn(
+                      BTN_CLASS,
+                      isCopied && 'border-primary bg-primary/5 text-primary',
+                    )}
                     aria-label={channel.label}
                     title={isCopied ? '已复制' : channel.label}
                   >

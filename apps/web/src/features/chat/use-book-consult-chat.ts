@@ -1,8 +1,8 @@
 'use client';
 
 import { useCallback } from 'react';
-import { fetchAgentAvailability } from '@/features/chat/api';
 import { useAgentPhone } from '@/features/chat/AgentPhoneContext';
+import { fetchAgentAvailability } from '@/features/chat/api';
 import { openChat } from '@/features/chat/open-chat';
 import { isDialableMobile } from '@/lib/device';
 

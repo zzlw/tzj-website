@@ -18,11 +18,7 @@ interface BookConsultButtonProps {
   message?: string;
 }
 
-export function BookConsultButton({
-  children,
-  message,
-  ...rest
-}: BookConsultButtonProps) {
+export function BookConsultButton({ children, message, ...rest }: BookConsultButtonProps) {
   const { handleClick } = useBookConsultChat({ message });
   return (
     <RbButton onClick={handleClick} {...rest}>

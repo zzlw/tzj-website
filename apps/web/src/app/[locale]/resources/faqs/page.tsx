@@ -53,7 +53,9 @@ export default async function FaqsPage() {
         <div className="flex flex-col items-center gap-5 border border-neutral-300 bg-white p-10 text-center md:p-14">
           <h2 className="rb-h3 text-neutral-900">{t('cta.title')}</h2>
           <p className="text-secondary-text">{t('cta.description')}</p>
-          <BookConsultButton message={tCommon('bookConsultContent')}>{tCta('bookConsult')}</BookConsultButton>
+          <BookConsultButton message={tCommon('bookConsultContent')}>
+            {tCta('bookConsult')}
+          </BookConsultButton>
         </div>
       </Container>
     </div>

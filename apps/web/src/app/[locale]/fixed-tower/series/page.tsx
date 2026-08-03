@@ -1,9 +1,9 @@
 import { Check, CloudRain, Link2, Recycle, Shield, X } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
+import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { FeatureGrid, RelatedLinks } from '@/components/sections/blocks';
 import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
-import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { Container, RbLink, SectionHeading, VideoHero } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 
@@ -179,7 +179,9 @@ export default async function FixedTowerSeriesPage() {
           <h2 className="rb-h3 text-neutral-900">{t('cta.title')}</h2>
           <p className="text-secondary-text">{t('cta.description')}</p>
           <div className="flex flex-wrap items-center justify-center gap-4">
-            <BookConsultButton message={tCommon('bookConsultProduct')}>{tCta('bookConsult')}</BookConsultButton>
+            <BookConsultButton message={tCommon('bookConsultProduct')}>
+              {tCta('bookConsult')}
+            </BookConsultButton>
             <RbLink href="/fixed-tower/custom">{t('cta.customLink')}</RbLink>
             <RbLink href="/docs/fixed-tower-specs.pdf">{tCta('downloadPdf')}</RbLink>
           </div>

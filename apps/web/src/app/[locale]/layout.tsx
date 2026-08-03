@@ -1,3 +1,4 @@
+import { Toaster } from '@tzj/ui';
 import type { Metadata } from 'next';
 import { Archivo, Geist } from 'next/font/google';
 import { notFound } from 'next/navigation';
@@ -9,7 +10,6 @@ import { Suspense } from 'react';
 import { BaiduAnalytics } from '@/components/analytics/BaiduAnalytics';
 import { ConsoleBranding } from '@/components/ConsoleBranding';
 import { ChatWidget } from '@/components/chat/ChatWidget';
-import { AgentPhoneProvider } from '@/features/chat/AgentPhoneContext';
 import { LanguageSelectorProvider } from '@/components/i18n/LanguageSelector';
 import { JsonLd } from '@/components/JsonLd';
 import { Footer } from '@/components/layout/Footer';
@@ -18,6 +18,7 @@ import { MarketingPopup } from '@/components/marketing/MarketingPopup';
 import { DeferredVisitorTracker } from '@/components/performance/DeferredVisitorTracker';
 import { ProductLineNav } from '@/components/products/ProductLineNav';
 import { SearchProvider } from '@/components/search/SearchProvider';
+import { AgentPhoneProvider } from '@/features/chat/AgentPhoneContext';
 import { type AppLocale, routing } from '@/i18n/routing';
 import { organizationJsonLd } from '@/lib/jsonld';
 import { LOCALE_HTML_LANG } from '@/lib/locale-config';
@@ -25,7 +26,6 @@ import { getMediaOrigin } from '@/lib/media-origin';
 import { metadataBase } from '@/lib/seo';
 import { getFaviconUrl, getSitePublicSettings, localizedAddress } from '@/lib/site-settings';
 import { cn } from '@/lib/utils';
-import { Toaster } from '@tzj/ui';
 import '../globals.css';
 
 const geist = Geist({
@@ -117,37 +117,37 @@ export default async function LocaleLayout({ children, params }: Props) {
           <AgentPhoneProvider phone={siteSettings.contact.phone}>
             <LanguageSelectorProvider>
               <SearchProvider>
-              <JsonLd
-                data={organizationJsonLd({
-                  legalName: tCommon('legalName'),
-                  brandName: tCommon('brandName'),
-                  description: tCommon('siteDescription'),
-                  phone: siteSettings.contact.phone,
-                  email: siteSettings.contact.email,
-                  streetAddress,
-                  addressLocality: tContact('addressLocality'),
-                  addressRegion: tContact('addressRegion'),
-                })}
-              />
-              <Suspense fallback={null}>
-                <DeferredVisitorTracker />
-              </Suspense>
-              <BaiduAnalytics hmId={siteSettings.analytics.baiduHmId} />
-              <ConsoleBranding />
-              <ChatWidget
-                businessHours={siteSettings.businessHours}
-                agentProfile={siteSettings.agentProfile}
-                chatPrompts={siteSettings.chatPrompts}
-                phone={siteSettings.contact.phone}
-              />
-              <MarketingPopup phone={siteSettings.contact.phone} />
-              <HeaderShell />
-              <ProductLineNav />
-              <ViewTransitions>
-                <main className="min-h-screen">{children}</main>
-              </ViewTransitions>
-              <Footer />
-              <Toaster />
+                <JsonLd
+                  data={organizationJsonLd({
+                    legalName: tCommon('legalName'),
+                    brandName: tCommon('brandName'),
+                    description: tCommon('siteDescription'),
+                    phone: siteSettings.contact.phone,
+                    email: siteSettings.contact.email,
+                    streetAddress,
+                    addressLocality: tContact('addressLocality'),
+                    addressRegion: tContact('addressRegion'),
+                  })}
+                />
+                <Suspense fallback={null}>
+                  <DeferredVisitorTracker />
+                </Suspense>
+                <BaiduAnalytics hmId={siteSettings.analytics.baiduHmId} />
+                <ConsoleBranding />
+                <ChatWidget
+                  businessHours={siteSettings.businessHours}
+                  agentProfile={siteSettings.agentProfile}
+                  chatPrompts={siteSettings.chatPrompts}
+                  phone={siteSettings.contact.phone}
+                />
+                <MarketingPopup phone={siteSettings.contact.phone} />
+                <HeaderShell />
+                <ProductLineNav />
+                <ViewTransitions>
+                  <main className="min-h-screen">{children}</main>
+                </ViewTransitions>
+                <Footer />
+                <Toaster />
               </SearchProvider>
             </LanguageSelectorProvider>
           </AgentPhoneProvider>

@@ -1,8 +1,8 @@
 import { Check, X } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
+import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { RelatedLinks } from '@/components/sections/blocks';
 import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
-import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { Container, RbLink, SectionHeading, VideoHero } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 
@@ -169,7 +169,9 @@ export default async function ModularTowerPage() {
           <h2 className="rb-h3 text-neutral-900">{t('cta.title')}</h2>
           <p className="text-secondary-text">{t('cta.description')}</p>
           <div className="flex flex-wrap items-center justify-center gap-4">
-            <BookConsultButton message={tCommon('bookConsultProduct')}>{tCta('bookConsult')}</BookConsultButton>
+            <BookConsultButton message={tCommon('bookConsultProduct')}>
+              {tCta('bookConsult')}
+            </BookConsultButton>
             <RbLink href="/burn-rooms">{t('cta.secondaryLink')}</RbLink>
           </div>
         </div>

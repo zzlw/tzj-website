@@ -1,8 +1,8 @@
 import { getTranslations } from 'next-intl/server';
+import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { RelatedLinks } from '@/components/sections/blocks';
 import { StatBandI18n } from '@/components/sections/blocks-i18n';
-import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { Container, PageHero, RbLink, SectionHeading } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 
@@ -108,7 +108,9 @@ export default async function ModularSeriesPage() {
         <div className="flex flex-col items-center gap-5 border border-neutral-300 bg-white p-10 text-center md:p-14">
           <h2 className="rb-h3 text-neutral-900">{t('cta.title')}</h2>
           <div className="flex flex-wrap items-center justify-center gap-4">
-            <BookConsultButton message={tCommon('bookConsultProduct')}>{tCta('bookConsult')}</BookConsultButton>
+            <BookConsultButton message={tCommon('bookConsultProduct')}>
+              {tCta('bookConsult')}
+            </BookConsultButton>
             <RbLink href="/modular-tower/vs-containers">{t('cta.compareLink')}</RbLink>
             <RbLink href="/docs/modular-tower-specs.pdf">{tCta('downloadPdf')}</RbLink>
           </div>

@@ -734,8 +734,12 @@ body[data-scroll-locked] {
 }
 
 @keyframes rb-shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 /* 减弱动画模式（无障碍） */
