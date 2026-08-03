@@ -14,9 +14,9 @@ const DELIVERY_SLUGS = [
 ] as const;
 
 const DELIVERY_IMAGES: Record<(typeof DELIVERY_SLUGS)[number], string> = {
-  'henan-fire-rescue': '/media/tower-wylie.jpg',
+  'henan-fire-rescue': '/media/fixed-tower-hero.jpg',
   'shandong-police': '/media/tower-hamilton.jpg',
-  'shanxi-mine-rescue': '/media/tower-eastside.jpg',
+  'shanxi-mine-rescue': '/media/tower-ocean-springs.jpg',
   'jiangsu-university': '/media/tower-macon.jpg',
   'zhejiang-outdoor': '/media/tower-denver.jpg',
   'guangdong-cfbt': '/media/tower-chino.jpg',

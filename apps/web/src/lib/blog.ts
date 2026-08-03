@@ -25,7 +25,7 @@ export const blogPosts: BlogPost[] = [
       '训练塔的规划远不止“盖一栋楼”。本文从训练目标拆解、场地评估、塔型选型到预算与分期建设，系统梳理从构想到落地的关键决策。',
     readTime: '8 分钟',
     date: '近期',
-    image: '/media/tower-wylie.jpg',
+    image: 'images/202101/29e0925cf89.jpg',
     featured: true,
     content: [
       {
@@ -154,7 +154,7 @@ export const blogPosts: BlogPost[] = [
     excerpt: '对比两类训练塔在耐用性、安全性与全生命周期成本上的差异。',
     readTime: '6 分钟',
     date: '近期',
-    image: '/media/galvanized-stair.webp',
+    image: 'images/202101/5a18f6f4749.jpg',
     content: [
       {
         paragraphs: [
@@ -182,7 +182,7 @@ export const blogPosts: BlogPost[] = [
     excerpt: '为什么定期检测对训练设施的安全与寿命至关重要，检查哪些关键部位。',
     readTime: '5 分钟',
     date: '近期',
-    image: '/media/tower-eastside.jpg',
+    image: 'images/202605/041a07c4595.jpg',
     content: [
       {
         paragraphs: [
@@ -243,7 +243,7 @@ export const blogPosts: BlogPost[] = [
     excerpt: '驾驶台、机舱、舱口与船门如何还原真实的水上与船舶火场。',
     readTime: '6 分钟',
     date: '近期',
-    image: '/media/maritime-astoria.jpg',
+    image: 'images/202605/041a07c4595.jpg',
     content: [
       {
         paragraphs: [

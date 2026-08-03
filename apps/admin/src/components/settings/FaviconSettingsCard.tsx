@@ -4,13 +4,16 @@ import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } fro
 import { Globe, Loader2, Trash2, Upload } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useDeleteFavicon, useFavicon, useUploadFavicon } from '@/features/favicon';
+import { useCacheTtl } from '@/features/site-settings';
 import { ApiError } from '@/lib/apiClient';
+import { formatCacheTtl } from '@/lib/cache-ttl';
 import { notifyError, notifySuccess } from '@/lib/notify';
 
 const ACCEPT = '.ico,.png,.jpg,.jpeg,.webp';
 
 export function FaviconSettingsCard() {
   const { data, isLoading } = useFavicon();
+  const { data: ttlData } = useCacheTtl();
   const upload = useUploadFavicon();
   const remove = useDeleteFavicon();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -23,7 +26,10 @@ export function FaviconSettingsCard() {
   async function handleFile(file: File) {
     try {
       await upload.mutateAsync(file);
-      notifySuccess('Favicon 已上传', '官网约 5 分钟内生效');
+      notifySuccess(
+        'Favicon 已上传',
+        `已保存，官网${formatCacheTtl(ttlData?.ttl)}；已打开过的浏览器受本地缓存影响最长 30 天`,
+      );
     } catch (e) {
       notifyError(e instanceof ApiError ? e.message : e, '上传失败');
     }

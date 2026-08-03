@@ -2,14 +2,15 @@ import { Check } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { RelatedLinks } from '@/components/sections/blocks';
 import { StatBandI18n } from '@/components/sections/blocks-i18n';
-import { Container, RbButton, RbLink, SectionHeading, VideoHero } from '@/components/ui';
+import { BookConsultButton } from '@/components/chat/BookConsultButton';
+import { Container, RbLink, SectionHeading, VideoHero } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 
 export async function generateMetadata() {
   return createPageMetadata({ namespace: 'pages.burnRooms', path: '/burn-rooms' });
 }
 
-const HERO_IMAGE = '/media/galvanized-stair.webp';
+const HERO_IMAGE = 'images/202605/041a07c4595.jpg';
 const HERO_VIDEO = '/media/burn-room.mp4';
 const RELATED_HREFS = ['/burn-rooms/liner', '/burn-rooms/comparison', '/resources/inspections'];
 
@@ -17,6 +18,7 @@ export default async function BurnRoomsPage() {
   const t = await getTranslations('pages.burnRooms');
   const tCta = await getTranslations('cta');
   const tBlocks = await getTranslations('blocks.relatedLinks');
+  const tCommon = await getTranslations('common');
 
   const specs = t.raw('specs') as Array<{ prop: string; value: string; why: string }>;
   const linerFeatures = t.raw('linerFeatures') as string[];
@@ -32,9 +34,9 @@ export default async function BurnRoomsPage() {
         video={HERO_VIDEO}
         poster={HERO_IMAGE}
       >
-        <RbButton href="/contact" variant="light">
+        <BookConsultButton variant="light" message={tCommon('bookConsultProduct')}>
           {tCta('bookConsult')}
-        </RbButton>
+        </BookConsultButton>
       </VideoHero>
 
       <section className="scroll-mt-24">
@@ -138,7 +140,7 @@ export default async function BurnRoomsPage() {
         <div className="flex flex-col items-center gap-5 border border-neutral-300 bg-white p-10 text-center md:p-14">
           <h2 className="rb-h3 text-neutral-900">{t('cta.title')}</h2>
           <p className="text-secondary-text">{t('cta.description')}</p>
-          <RbButton href="/contact">{tCta('bookConsult')}</RbButton>
+          <BookConsultButton message={tCommon('bookConsultProduct')}>{tCta('bookConsult')}</BookConsultButton>
         </div>
       </Container>
     </div>

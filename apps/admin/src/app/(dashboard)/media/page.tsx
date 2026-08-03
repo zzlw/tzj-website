@@ -28,9 +28,11 @@ import { MediaCard } from '@/components/media/MediaCard';
 import { MediaPreviewDialog } from '@/components/media/MediaPreviewDialog';
 import {
   formatMediaDeleteError,
+  useApplyMediaWatermark,
   useDeleteMedia,
   useMediaList,
   usePurgeMedia,
+  useRemoveMediaWatermark,
   useReplaceSiteMedia,
   useRestoreMedia,
   useUploadMedia,
@@ -88,6 +90,7 @@ export default function MediaPage() {
   const [purgeTarget, setPurgeTarget] = useState<MediaAsset | null>(null);
   const [replaceTarget, setReplaceTarget] = useState<MediaAsset | null>(null);
   const [replaceFile, setReplaceFile] = useState<File | null>(null);
+  const [removeWatermarkTarget, setRemoveWatermarkTarget] = useState<MediaAsset | null>(null);
   const [previewAsset, setPreviewAsset] = useState<MediaAsset | null>(null);
   const [skipWatermark, setSkipWatermark] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -118,6 +121,8 @@ export default function MediaPage() {
   const restore = useRestoreMedia();
   const purge = usePurgeMedia();
   const replaceSite = useReplaceSiteMedia();
+  const applyWatermark = useApplyMediaWatermark();
+  const removeWatermark = useRemoveMediaWatermark();
 
   const assets = data?.data ?? [];
   const pagination = data?.pagination;
@@ -198,6 +203,26 @@ export default function MediaPage() {
       notifySuccess('站点资源已替换', '若仍见旧图，请强制刷新或清除 CDN 缓存');
     } catch (e) {
       notifyError(e, '替换失败');
+    }
+  }
+
+  async function handleApplyWatermark(asset: MediaAsset) {
+    try {
+      await applyWatermark.mutateAsync(asset.id);
+      notifySuccess('已添加水印');
+    } catch (e) {
+      notifyError(e, '加水印失败');
+    }
+  }
+
+  async function handleRemoveWatermarkConfirm() {
+    if (!removeWatermarkTarget) return;
+    try {
+      await removeWatermark.mutateAsync(removeWatermarkTarget.id);
+      setRemoveWatermarkTarget(null);
+      notifySuccess('已去除水印，原图已恢复');
+    } catch (e) {
+      notifyError(e, '去水印失败');
     }
   }
 
@@ -387,6 +412,15 @@ export default function MediaPage() {
                 onReplaceSite={startReplace}
                 onRestore={handleRestore}
                 onPurge={setPurgeTarget}
+                onApplyWatermark={handleApplyWatermark}
+                onRemoveWatermark={setRemoveWatermarkTarget}
+                watermarkPendingId={
+                  applyWatermark.isPending
+                    ? applyWatermark.variables
+                    : removeWatermark.isPending
+                      ? removeWatermark.variables
+                      : null
+                }
               />
             ))}
           </div>
@@ -442,6 +476,20 @@ export default function MediaPage() {
         confirmLabel="永久删除"
         onConfirm={handlePurgeConfirm}
         loading={purge.isPending}
+      />
+
+      <ConfirmDialog
+        open={removeWatermarkTarget !== null}
+        onOpenChange={(open) => !open && setRemoveWatermarkTarget(null)}
+        title="去水印"
+        description={
+          removeWatermarkTarget
+            ? `确认去除「${removeWatermarkTarget.filename}」的水印？将从备份恢复原图；当前带水印版本会另存备份。`
+            : undefined
+        }
+        confirmLabel="去水印"
+        onConfirm={handleRemoveWatermarkConfirm}
+        loading={removeWatermark.isPending}
       />
 
       <input

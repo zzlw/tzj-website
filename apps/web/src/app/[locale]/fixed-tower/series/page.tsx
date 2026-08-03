@@ -3,7 +3,8 @@ import { getTranslations } from 'next-intl/server';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { FeatureGrid, RelatedLinks } from '@/components/sections/blocks';
 import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
-import { Container, RbButton, RbLink, SectionHeading, VideoHero } from '@/components/ui';
+import { BookConsultButton } from '@/components/chat/BookConsultButton';
+import { Container, RbLink, SectionHeading, VideoHero } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 
 export async function generateMetadata() {
@@ -19,6 +20,7 @@ export default async function FixedTowerSeriesPage() {
   const t = await getTranslations('pages.fixedTowerSeries');
   const tCta = await getTranslations('cta');
   const tBlocks = await getTranslations('blocks.relatedLinks');
+  const tCommon = await getTranslations('common');
 
   const durabilityRaw = t.raw('durability') as Array<{ title: string; desc: string }>;
   const durability = durabilityRaw.map((item, i) => ({ ...item, icon: DURABILITY_ICONS[i]! }));
@@ -177,7 +179,7 @@ export default async function FixedTowerSeriesPage() {
           <h2 className="rb-h3 text-neutral-900">{t('cta.title')}</h2>
           <p className="text-secondary-text">{t('cta.description')}</p>
           <div className="flex flex-wrap items-center justify-center gap-4">
-            <RbButton href="/contact">{tCta('bookConsult')}</RbButton>
+            <BookConsultButton message={tCommon('bookConsultProduct')}>{tCta('bookConsult')}</BookConsultButton>
             <RbLink href="/fixed-tower/custom">{t('cta.customLink')}</RbLink>
             <RbLink href="/docs/fixed-tower-specs.pdf">{tCta('downloadPdf')}</RbLink>
           </div>

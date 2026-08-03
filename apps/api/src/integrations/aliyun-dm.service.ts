@@ -10,7 +10,6 @@ export interface SendMailOptions {
   subject: string;
   html: string;
   text?: string;
-  replyTo?: string;
 }
 
 @Injectable()
@@ -52,7 +51,8 @@ export class AliyunDmService {
       htmlBody: options.html,
       textBody: options.text,
       fromAlias,
-      replyToAddress: options.replyTo,
+      // DM 的 ReplyToAddress 是布尔开关（是否启用控制台默认回复地址），非动态回复邮箱
+      replyToAddress: false,
     });
 
     try {

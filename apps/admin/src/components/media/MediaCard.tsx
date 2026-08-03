@@ -16,14 +16,18 @@ import {
   Download,
   Droplets,
   ExternalLink,
+  Loader2,
   RefreshCw,
   RotateCcw,
+  ShieldOff,
+  ShieldPlus,
   Trash2,
 } from 'lucide-react';
 import { Can } from '@/components/Can';
 import { isMediaDeletable } from '@/features/media';
 import type { MediaAsset } from '@/features/types';
 import { MediaThumbnail } from './MediaPreviewDialog';
+import { mediaPreviewUrl } from './media-preview-url';
 import {
   downloadMediaAsset,
   formatFileSize,
@@ -74,6 +78,9 @@ export function MediaCard({
   mode = 'active',
   onRestore,
   onPurge,
+  onApplyWatermark,
+  onRemoveWatermark,
+  watermarkPendingId,
 }: {
   asset: MediaAsset;
   copiedUrl: string | null;
@@ -84,6 +91,12 @@ export function MediaCard({
   mode?: 'active' | 'trash';
   onRestore?: (asset: MediaAsset) => void;
   onPurge?: (asset: MediaAsset) => void;
+  /** 加水印：原图备份后同 key 烧录覆盖（需 media.upload） */
+  onApplyWatermark?: (asset: MediaAsset) => void;
+  /** 去水印：从 _archive 最新备份恢复（需 media.upload，由页面层弹确认框） */
+  onRemoveWatermark?: (asset: MediaAsset) => void;
+  /** 正在执行水印操作的资产 ID（展示 loading） */
+  watermarkPendingId?: string | null;
 }) {
   const kind = getMediaKind(asset.mimeType, asset.filename);
   const isImage = kind === 'image';
@@ -102,7 +115,7 @@ export function MediaCard({
       {isImage ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={asset.url}
+          src={mediaPreviewUrl(asset.url, asset.updatedAt)}
           alt={asset.alt ?? asset.filename}
           className="h-full w-full object-cover transition-transform group-hover:scale-105"
           draggable={false}
@@ -138,7 +151,11 @@ export function MediaCard({
   return (
     <Card className="group gap-0 overflow-hidden border-border/80 py-0 transition-colors hover:border-primary/30">
       <div className="relative">
-        {isImage ? <ImagePreview src={asset.url}>{thumb}</ImagePreview> : thumb}
+        {isImage ? (
+          <ImagePreview src={mediaPreviewUrl(asset.url, asset.updatedAt)}>{thumb}</ImagePreview>
+        ) : (
+          thumb
+        )}
         <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex justify-end gap-1 p-2 opacity-0 transition-opacity group-hover:opacity-100 group-hover:pointer-events-auto">
           {/* biome-ignore lint/a11y/useKeyWithClickEvents: 仅阻断冒泡避免触发缩略图预览，非交互控件 */}
           {/* biome-ignore lint/a11y/noStaticElementInteractions: 同上，冒泡阻断容器 */}
@@ -204,6 +221,36 @@ export function MediaCard({
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>替换站点资源</TooltipContent>
+                    </Tooltip>
+                  </Can>
+                ) : null}
+                {kind === 'image' || kind === 'video' ? (
+                  <Can perm="media.upload">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="icon-xs"
+                          variant="secondary"
+                          disabled={watermarkPendingId === asset.id}
+                          className="cursor-pointer bg-background/80 backdrop-blur-sm"
+                          onClick={() =>
+                            asset.watermarked === true
+                              ? onRemoveWatermark?.(asset)
+                              : onApplyWatermark?.(asset)
+                          }
+                        >
+                          {watermarkPendingId === asset.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : asset.watermarked === true ? (
+                            <ShieldOff className="h-3.5 w-3.5" />
+                          ) : (
+                            <ShieldPlus className="h-3.5 w-3.5" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {asset.watermarked === true ? '去水印' : '加水印'}
+                      </TooltipContent>
                     </Tooltip>
                   </Can>
                 ) : null}

@@ -19,6 +19,26 @@ const execFileAsync = promisify(execFile);
 
 const SKIP_IMAGE_MIME = new Set(['image/svg+xml', 'image/gif']);
 
+/**
+ * video MIME → 容器扩展名（ffmpeg 输出格式由扩展名决定，不能直接拆分 MIME 子类型：
+ * `video/quicktime` 拆出 `quicktime` 无法被 ffmpeg 识别为输出格式，须映射为 `mov`）。
+ */
+const VIDEO_EXT_MAP: Record<string, string> = {
+  'video/quicktime': 'mov',
+  'video/mp4': 'mp4',
+  'video/webm': 'webm',
+  'video/x-msvideo': 'avi',
+  'video/x-matroska': 'mkv',
+};
+
+/** 由 video MIME 推导安全的容器扩展名，未知类型回退 mp4 */
+export function videoExtFromMime(mimeType: string): string {
+  return (
+    VIDEO_EXT_MAP[mimeType] ??
+    (mimeType.split('/')[1]?.split(';')[0]?.split('+')[0] || 'mp4')
+  );
+}
+
 /** 中文优先字体栈（librsvg / macOS / Windows 常见字体） */
 const FONT_STACK =
   '"PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC", sans-serif';
@@ -335,19 +355,16 @@ export class WatermarkService {
     }
 
     const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'tzj-wm-'));
-    const ext = mimeType.split('/')[1]?.split(';')[0]?.split('+')[0] || 'mp4';
+    const ext = videoExtFromMime(mimeType);
     const inputPath = path.join(tmpDir, `input.${ext}`);
     const outputPath = path.join(tmpDir, `output.${ext}`);
     const wmPath = path.join(tmpDir, 'watermark.png');
-    const probePath = path.join(tmpDir, 'probe.png');
 
     try {
       await fs.writeFile(inputPath, buffer);
-      await fs.writeFile(probePath, buffer);
 
-      const probe = await sharp(probePath, { failOn: 'none' }).metadata();
-      const vw = probe.width ?? 1280;
-      const vh = probe.height ?? 720;
+      // 视频尺寸须用 ffprobe 探测（sharp 仅支持图像，读取视频会抛错）
+      const { width: vw, height: vh } = await this.probeVideoDimensions(inputPath);
 
       const overlay = await this.buildFullOverlay(config, vw, vh);
       await fs.writeFile(wmPath, overlay);
@@ -396,6 +413,46 @@ export class WatermarkService {
       this.ffmpegAvailable = false;
     }
     return this.ffmpegAvailable;
+  }
+
+  /**
+   * 用 ffprobe 探测视频宽高（sharp 无法读取视频）。
+   * 探测失败时回退默认 1280x720，不阻塞烧录（overlay 按默认尺寸生成仍可用）。
+   */
+  private async probeVideoDimensions(
+    inputPath: string,
+  ): Promise<{ width: number; height: number }> {
+    try {
+      const { stdout } = await execFileAsync(
+        this.ffprobePath(),
+        [
+          '-v',
+          'error',
+          '-select_streams',
+          'v:0',
+          '-show_entries',
+          'stream=width,height',
+          '-of',
+          'csv=p=0',
+          inputPath,
+        ],
+        { timeout: 30_000 },
+      );
+      const [w, h] = stdout.trim().split(',').map(Number);
+      if (w !== undefined && h !== undefined && w > 0 && h > 0) return { width: w, height: h };
+    } catch (err) {
+      this.logger.warn(`ffprobe 探测视频尺寸失败，回退默认 1280x720: ${(err as Error).message}`);
+    }
+    return { width: 1280, height: 720 };
+  }
+
+  /** ffprobe 路径：优先 FFPROBE_PATH，其次与 FFMPEG_PATH 同目录（默认走 PATH） */
+  private ffprobePath(): string {
+    const configured = this.config.get<string>('FFPROBE_PATH');
+    if (configured) return configured;
+    const ffmpeg = this.config.get<string>('FFMPEG_PATH', 'ffmpeg');
+    const dir = path.dirname(ffmpeg);
+    return dir === '.' ? 'ffprobe' : path.join(dir, 'ffprobe');
   }
 }
 
@@ -466,7 +523,7 @@ function buildTilePatternSvg(
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${canvasW}" height="${canvasH}">
   <defs>
     <pattern id="wm" width="${cellW}" height="${cellH}" patternUnits="userSpaceOnUse" patternTransform="rotate(${angle})">
-      <text x="0" y="${Math.round(fontSize * 1.05)}" font-size="${fontSize}" font-family='${FONT_STACK}' font-weight="500" fill="#9ca3af" fill-opacity="${opacity}">${safe}</text>
+      <text x="0" y="${Math.round(fontSize * 1.05)}" font-size="${fontSize}" font-family='${FONT_STACK}' font-weight="500" fill="#374151" fill-opacity="${opacity}">${safe}</text>
     </pattern>
   </defs>
   <rect width="100%" height="100%" fill="url(#wm)"/>

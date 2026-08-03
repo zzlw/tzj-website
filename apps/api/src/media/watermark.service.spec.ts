@@ -3,10 +3,14 @@ import type { SiteMediaSettings } from '@tzj/types';
 import sharp from 'sharp';
 import type { SettingsService } from '../settings/settings.service';
 import type { S3Service } from '../storage/s3.service';
-import { normalizeWatermarkOverride, WatermarkService } from './watermark.service';
+import {
+  normalizeWatermarkOverride,
+  videoExtFromMime,
+  WatermarkService,
+} from './watermark.service';
 
 /**
- * 水印按次覆盖回归（docs/watermark-opt-out-design.md §6）：
+ * 水印按次覆盖回归（docs/media-watermark-design.md 第一部分 §6）：
  * - skip 绕过全局设置直接返回原文件（watermarked=false），且不读取设置；
  * - force 仅要求 enabled，跳过 applyToFolders/applyToImages/applyToVideos；
  * - force 下 SVG/GIF、最小尺寸等"技术不可行"检查仍生效；
@@ -62,6 +66,24 @@ describe('normalizeWatermarkOverride', () => {
     expect(normalizeWatermarkOverride('')).toBe('auto');
     expect(normalizeWatermarkOverride(undefined)).toBe('auto');
     expect(normalizeWatermarkOverride(1)).toBe('auto');
+  });
+});
+
+describe('videoExtFromMime', () => {
+  it('video/quicktime → mov（ffmpeg 无法识别 .quicktime 输出格式，须映射）', () => {
+    expect(videoExtFromMime('video/quicktime')).toBe('mov');
+  });
+
+  it('已知容器映射原样通过', () => {
+    expect(videoExtFromMime('video/mp4')).toBe('mp4');
+    expect(videoExtFromMime('video/webm')).toBe('webm');
+    expect(videoExtFromMime('video/x-msvideo')).toBe('avi');
+  });
+
+  it('未知/含参数 MIME 宽容回退（拆子类型，空则 mp4）', () => {
+    expect(videoExtFromMime('video/ogg')).toBe('ogg');
+    expect(videoExtFromMime('video/mp4; codecs=avc1')).toBe('mp4');
+    expect(videoExtFromMime('')).toBe('mp4');
   });
 });
 

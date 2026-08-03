@@ -1,8 +1,11 @@
+import { randomUUID } from 'node:crypto';
 import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import type { Prisma } from '@prisma/client/index';
 import type { WatermarkOverride } from '@tzj/types';
@@ -36,6 +39,8 @@ const TYPE_PREFIX: Record<string, string> = {
 
 @Injectable()
 export class MediaService {
+  private readonly logger = new Logger(MediaService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly s3: S3Service,
@@ -110,7 +115,9 @@ export class MediaService {
       this.prisma.mediaAsset.count({ where }),
     ]);
 
-    const data = trash ? rows : await this.guard.enrichMany(rows);
+    const data = (trash ? rows : await this.guard.enrichMany(rows)).map((row) =>
+      this.toEnvUrl(row),
+    );
 
     return {
       data,
@@ -134,7 +141,7 @@ export class MediaService {
       watermark,
     );
     const result = await this.s3.upload(processed.buffer, key, processed.mimeType);
-    return this.prisma.mediaAsset.create({
+    const record = await this.prisma.mediaAsset.create({
       data: {
         key: result.key,
         url: result.url,
@@ -149,6 +156,21 @@ export class MediaService {
         watermarked: processed.watermarked,
       },
     });
+
+    // 自动烧录（auto/force 且实际烧录成功）时同步备份原图，与手动 applyWatermark
+    // 共用 `_archive/watermark/{id}/` 前缀，保证后续「去水印」可从此恢复；
+    // 备份失败仅告警不阻塞上传（主文件已落库，图片本身可用，仅失去可逆性）。
+    if (processed.watermarked) {
+      const basename = key.split('/').pop() ?? record.id;
+      const backupKey = `_archive/watermark/${record.id}/${Date.now()}-${randomUUID().slice(0, 8)}-${basename}`;
+      try {
+        await this.s3.upload(file.buffer, backupKey, file.mimetype);
+      } catch (err) {
+        this.logger.warn(`自动烧录后原图备份失败（该素材将无法去水印）: ${(err as Error).message}`);
+      }
+    }
+
+    return record;
   }
 
   /** 直传完成后登记素材记录。 */
@@ -173,6 +195,16 @@ export class MediaService {
     const asset = await this.prisma.mediaAsset.findUnique({ where: { id } });
     if (!asset) throw new NotFoundException(`素材 ID "${id}" 未找到`);
     return asset;
+  }
+
+  /**
+   * 按当前环境公开域重写 url。
+   * 本地库由生产快照恢复而来，存量素材的 url 可能是其他环境地址
+   * （如 static.tzjii.com 生产 OSS），导致预览/复制链接落到错误环境；
+   * key 是唯一稳定标识，出口统一以 S3_PUBLIC_DOMAIN + key 重建 url。
+   */
+  private toEnvUrl<T extends { key: string; url: string }>(row: T): T {
+    return { ...row, url: this.s3.getUrl(row.key) };
   }
 
   private assertDeletable(report: Awaited<ReturnType<MediaGuardService['inspect']>>) {
@@ -235,7 +267,7 @@ export class MediaService {
       data: { deletedAt: null },
     });
     const enriched = await this.guard.enrichMany([restored]);
-    return enriched[0] ?? restored;
+    return this.toEnvUrl(enriched[0] ?? restored);
   }
 
   /** 物理清除：删除 MinIO 对象与数据库记录（需 media.purge）。 */
@@ -298,11 +330,115 @@ export class MediaService {
     });
 
     const enriched = await this.guard.enrichMany([updated]);
-    const row = enriched[0] ?? updated;
+    const row = this.toEnvUrl(enriched[0] ?? updated);
     return {
       ...row,
       backupKey,
       replaced: true,
     };
+  }
+
+  /**
+   * 对单张资产烧录水印（存量补水印）。
+   * 先备份原图到 `_archive/watermark/{id}/` 再同 key 覆盖，URL 不变；
+   * 格式适用性由 WatermarkService.shouldProcess 判定（force 跳过目录/类型范围，
+   * 但 SVG/GIF/最小尺寸仍硬性拦截），处理失败时返回 422。
+   */
+  async applyWatermark(id: string) {
+    const asset = await this.getActiveOrThrow(id);
+    if (asset.deletedAt) {
+      throw new ConflictException({
+        error: 'MEDIA_IN_TRASH',
+        message: '回收站中的素材请先恢复后再加水印',
+      });
+    }
+    if (asset.watermarked === true) {
+      throw new BadRequestException({
+        error: 'WATERMARK_ALREADY_APPLIED',
+        message: '该素材已烧录水印，如需更换请先去水印再重新添加',
+      });
+    }
+
+    const buffer = await this.s3.getObjectBuffer(asset.key);
+    const processed = await this.watermark.processUpload(
+      buffer,
+      asset.mimeType,
+      asset.folder,
+      'force',
+    );
+    if (!processed.watermarked) {
+      throw new UnprocessableEntityException({
+        error: 'WATERMARK_NOT_APPLICABLE',
+        message: '该素材无法加水印：尺寸不足、格式不支持（SVG/GIF）或处理异常',
+      });
+    }
+
+    // 备份 → 覆盖（随机后缀防并发碰撞）
+    const basename = asset.key.split('/').pop() ?? asset.id;
+    const backupKey = `_archive/watermark/${asset.id}/${Date.now()}-${randomUUID().slice(0, 8)}-${basename}`;
+    await this.s3.copy(asset.key, backupKey);
+    await this.s3.upload(processed.buffer, asset.key, processed.mimeType);
+
+    const updated = await this.prisma.mediaAsset.update({
+      where: { id },
+      data: {
+        watermarked: true,
+        size: processed.buffer.length,
+        mimeType: processed.mimeType,
+      },
+    });
+    const enriched = await this.guard.enrichMany([updated]);
+    return { ...this.toEnvUrl(enriched[0] ?? updated), backupKey };
+  }
+
+  /**
+   * 去水印：从 `_archive/watermark/{id}/` 取最新备份恢复原图。
+   * 恢复前先把当前带水印版本另存到 `_archive/watermark-before-remove/`（防误操作）；
+   * 水印处理可能改变过 mimeType/size，恢复后须以备份文件实际元信息回写 DB。
+   */
+  async removeWatermark(id: string) {
+    const asset = await this.getActiveOrThrow(id);
+    if (asset.deletedAt) {
+      throw new ConflictException({
+        error: 'MEDIA_IN_TRASH',
+        message: '回收站中的素材请先恢复后再去水印',
+      });
+    }
+    if (asset.watermarked !== true) {
+      throw new BadRequestException({
+        error: 'WATERMARK_NOT_APPLIED',
+        message: '该素材未烧录水印，无需去除',
+      });
+    }
+
+    const prefix = `_archive/watermark/${asset.id}/`;
+    // 取 S3 MaxKeys 上限 1000：若用更小值，备份超限时返回的是「最旧 N 条」，
+    // sort 取尾会误选旧备份。手工逐张场景远达不到 1000，此处仅作正确性兜底。
+    const backups = await this.s3.list(prefix, 1000);
+    if (backups.length === 0) {
+      throw new NotFoundException({
+        error: 'WATERMARK_BACKUP_NOT_FOUND',
+        message: '未找到该素材的备份文件，无法去水印。请从存储控制台手动恢复原图。',
+      });
+    }
+    // key 前缀为 13 位毫秒时间戳，字典序即时间序，取最新
+    const latest = backups.sort().at(-1)!;
+
+    const basename = asset.key.split('/').pop() ?? asset.id;
+    const safetyBackup = `_archive/watermark-before-remove/${asset.id}/${Date.now()}-${randomUUID().slice(0, 8)}-${basename}`;
+    await this.s3.copy(asset.key, safetyBackup);
+    await this.s3.copy(latest, asset.key);
+
+    const head = await this.s3.head(asset.key);
+    const updated = await this.prisma.mediaAsset.update({
+      where: { id },
+      data: {
+        watermarked: false,
+        mimeType: head.contentType,
+        size: head.contentLength,
+      },
+    });
+    const enriched = await this.guard.enrichMany([updated]);
+    return { ...this.toEnvUrl(enriched[0] ?? updated), restoredFrom: latest };
   }
 }

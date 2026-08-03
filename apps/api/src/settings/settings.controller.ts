@@ -27,6 +27,29 @@ export class SettingsController {
     return this.settingsService.getSitePublicSettings();
   }
 
+  @Public()
+  @Get('cache-ttl')
+  @ApiOperation({ summary: '获取官网设置缓存 TTL（秒，C 端 web 按此值缓存站点设置；0 = 不缓存）' })
+  async getCacheTtl() {
+    return { ttl: await this.settingsService.getCacheTtl() };
+  }
+
+  @RequirePermissions('settings.view', 'settings.manage')
+  @ApiBearerAuth()
+  @Get('cache-ttl/admin')
+  @ApiOperation({ summary: '获取官网设置缓存 TTL（管理端）' })
+  async getCacheTtlAdmin() {
+    return { ttl: await this.settingsService.getCacheTtl() };
+  }
+
+  @RequirePermissions('settings.manage')
+  @ApiBearerAuth()
+  @Put('cache-ttl')
+  @ApiOperation({ summary: '更新官网设置缓存 TTL（秒，0 = 不缓存，每次访问实时读取）' })
+  async updateCacheTtl(@Body() body: { ttl: number }) {
+    return { ttl: await this.settingsService.updateCacheTtl(body) };
+  }
+
   @RequirePermissions('settings.manage')
   @ApiBearerAuth()
   @Get('site/public/admin')

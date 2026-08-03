@@ -21,7 +21,7 @@ export const newsItems: NewsItem[] = [
     title: '全国训练基地项目累计突破 1000 个',
     date: '近期',
     desc: '项目覆盖全国 31 省，服务消防救援、公安、部队、矿山与院校等多类机构，持续以交钥匙方式交付高品质训练设施。',
-    image: '/media/tower-wylie.jpg',
+    image: 'images/202101/29e0925cf89.jpg',
     content: [
       {
         paragraphs: [
@@ -104,7 +104,7 @@ export const newsItems: NewsItem[] = [
     title: '拓之迹亮相国际消防设备技术交流展',
     date: '近期',
     desc: '现场展示固定与模块化训练塔、燃烧室及训练道具解决方案，与一线单位深入交流。',
-    image: '/media/tower-hamilton.jpg',
+    image: 'images/202011/fc2d5975875.jpg',
     content: [
       {
         paragraphs: [
@@ -161,7 +161,7 @@ export const newsItems: NewsItem[] = [
     title: '年检与售后服务网络进一步完善',
     date: '近期',
     desc: '面向已交付项目提供更完善的年度检测、维保与备件支持，守护设施长期安全可用。',
-    image: '/media/tower-eastside.jpg',
+    image: 'images/202603/59243364bd4.jpg',
     content: [
       {
         paragraphs: [

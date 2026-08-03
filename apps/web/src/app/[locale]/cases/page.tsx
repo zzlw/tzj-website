@@ -6,7 +6,8 @@ import { ContentPagination } from '@/components/content/ContentPagination';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { RelatedLinks } from '@/components/sections/blocks';
 import { StatBandI18n } from '@/components/sections/blocks-i18n';
-import { Container, PageHero, RbButton } from '@/components/ui';
+import { BookConsultButton } from '@/components/chat/BookConsultButton';
+import { Container, PageHero } from '@/components/ui';
 import { getCases } from '@/lib/api';
 import { caseTypeLabel, formatContentDate } from '@/lib/content-labels';
 import {
@@ -34,6 +35,7 @@ export default async function CasesPage({ searchParams }: PageProps) {
   const tContent = await getTranslations('content');
   const tCta = await getTranslations('cta');
   const tBlocks = await getTranslations('blocks.relatedLinks');
+  const tCommon = await getTranslations('common');
 
   const caseTypeFilter = await getCaseTypeFilter();
   const caseSortOptions = await getCaseSortOptions();
@@ -169,7 +171,7 @@ export default async function CasesPage({ searchParams }: PageProps) {
         <div className="flex flex-col items-center gap-5 border border-neutral-300 bg-white p-10 text-center md:p-14">
           <h2 className="rb-h3 text-neutral-900">{t('cta.title')}</h2>
           <p className="text-secondary-text">{t('cta.description')}</p>
-          <RbButton href="/contact">{tCta('bookConsult')}</RbButton>
+          <BookConsultButton message={tCommon('bookConsultCase')}>{tCta('bookConsult')}</BookConsultButton>
         </div>
       </Container>
     </div>

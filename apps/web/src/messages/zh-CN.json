@@ -7,7 +7,13 @@
     "loading": "加载中…",
     "close": "关闭",
     "marketingInterest": "我想了解「{title}」",
-    "siteDescription": "河南拓之迹实业有限公司 — 16年深耕应急救援训练装备，1000+训练基地案例，13大产品线，为消防、部队、公安、矿山、院校、景区提供专业训练设施解决方案。"
+    "siteDescription": "河南拓之迹实业有限公司 — 16年深耕应急救援训练装备，1000+训练基地案例，13大产品线，为消防、部队、公安、矿山、院校、景区提供专业训练设施解决方案。",
+    "bookConsultProduct": "您好，我对贵司的训练装备很感兴趣，想进一步了解产品方案和报价。",
+    "bookConsultContent": "您好，我阅读了贵司的内容，想进一步咨询交流。",
+    "bookConsultCase": "您好，我看了贵司的案例，想了解类似方案的详情。",
+    "bookConsultSolution": "您好，我对贵司的解决方案感兴趣，想详细咨询。",
+    "bookConsultGeneral": "您好，我想咨询一下，方便详细介绍吗？",
+    "bookConsultFooter": "您好，我想咨询应急救援训练装备相关信息。"
   },
   "header": {
     "searchPlaceholder": "您在寻找什么？",

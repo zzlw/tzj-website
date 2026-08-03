@@ -2,7 +2,8 @@ import { Check, X } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { RelatedLinks } from '@/components/sections/blocks';
 import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
-import { Container, RbButton, RbLink, SectionHeading, VideoHero } from '@/components/ui';
+import { BookConsultButton } from '@/components/chat/BookConsultButton';
+import { Container, RbLink, SectionHeading, VideoHero } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 
 const HERO_IMAGE = '/media/modular-hero.jpg';
@@ -17,6 +18,7 @@ export default async function ModularTowerPage() {
   const t = await getTranslations('pages.modularTower');
   const tCta = await getTranslations('cta');
   const tBlocks = await getTranslations('blocks.relatedLinks');
+  const tCommon = await getTranslations('common');
 
   const series = t.raw('series') as Array<{ name: string; desc: string; spec: string }>;
   const compareRows = t.raw('compareRows') as Array<{
@@ -35,9 +37,9 @@ export default async function ModularTowerPage() {
         video={HERO_VIDEO}
         poster={HERO_IMAGE}
       >
-        <RbButton href="/contact" variant="light">
+        <BookConsultButton variant="light" message={tCommon('bookConsultProduct')}>
           {tCta('bookConsult')}
-        </RbButton>
+        </BookConsultButton>
       </VideoHero>
 
       <section id="overview" className="scroll-mt-24">
@@ -167,7 +169,7 @@ export default async function ModularTowerPage() {
           <h2 className="rb-h3 text-neutral-900">{t('cta.title')}</h2>
           <p className="text-secondary-text">{t('cta.description')}</p>
           <div className="flex flex-wrap items-center justify-center gap-4">
-            <RbButton href="/contact">{tCta('bookConsult')}</RbButton>
+            <BookConsultButton message={tCommon('bookConsultProduct')}>{tCta('bookConsult')}</BookConsultButton>
             <RbLink href="/burn-rooms">{t('cta.secondaryLink')}</RbLink>
           </div>
         </div>

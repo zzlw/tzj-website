@@ -3,7 +3,8 @@ import { getLocale, getTranslations } from 'next-intl/server';
 import { SocialChannelBar } from '@/components/contact/SocialChannelBar';
 import { FooterLanguageTrigger } from '@/components/i18n/FooterLanguageTrigger';
 import { MediaImage as Image } from '@/components/MediaImage';
-import { Container, Eyebrow, RbButton, RbLink } from '@/components/ui';
+import { BookConsultButton } from '@/components/chat/BookConsultButton';
+import { Container, Eyebrow, RbLink } from '@/components/ui';
 import { Link } from '@/i18n/navigation';
 import { FOOTER_BLOCKS } from '@/lib/navigation';
 import { resolveSocialChannels } from '@/lib/resolve-social-channels';
@@ -42,9 +43,7 @@ export async function Footer() {
             <h2 className="rb-h2 mt-4 text-white">{tFooter('ctaTitle')}</h2>
             <p className="mt-4 text-base leading-relaxed text-white/85">{tFooter('ctaDesc')}</p>
             <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-4">
-              <RbButton href="/contact" variant="light">
-                {tFooter('ctaButton')}
-              </RbButton>
+              <BookConsultButton variant="light" message={tCommon('bookConsultFooter')}>{tFooter('ctaButton')}</BookConsultButton>
               <RbLink href="/cases" inverted>
                 {tFooter('ctaLink')}
               </RbLink>

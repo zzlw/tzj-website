@@ -180,6 +180,7 @@ export type {
   SitePublicSettings,
   SocialChannelPurpose,
   SocialChannelSetting,
+  SocialHrefAction,
   SocialPlatformId,
 } from './site-settings.js';
 export type { DependencyStatus, SystemStatusResponse } from './system-status.js';

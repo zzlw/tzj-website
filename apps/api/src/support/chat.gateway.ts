@@ -198,15 +198,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
 
     if (payload.type === 'agent') {
-      client.emit('my-presence', { status: await this.presence.getPresence(data.userKey) });
+      const myStatus = await this.presence.getPresence(data.userKey);
+      client.emit('my-presence', { status: myStatus });
       await this.sendRoomListToAgent(client, payload.email);
       // 坐席需加入所有活跃房间才能接收实时 new-message 事件；
       // socket 断开重连后房间成员资格丢失，必须每次连接都重新加入。
+      // 首次登录尚未上线的坐席同样需要，才能看到会话列表与历史消息。
       await this.joinAgentToActiveRooms(client);
       // 推送在线坐席花名册（含 email + 状态），供转接选择
       await this.broadcastAgentRoster();
-      // 坐席上线 → 检查等待队列是否有未分配会话，自动派单
-      void this.drainWaitingQueue();
+      // 坐席上线 → 检查等待队列是否有未分配会话，自动派单；
+      // 已登录但未手动上线（offline）的坐席不参与派单
+      if (myStatus === 'online') {
+        void this.drainWaitingQueue();
+      }
     }
   }
 
@@ -351,15 +356,25 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     const meta = await this.presence.getMeta(userKey);
-    // 手动离线的用户重连也不自动复活
+    // 手动离线的用户重连也不自动复活（优先级最高）
     if (meta?.manualOffline) {
       await this.presence.setStatus(userKey, 'offline');
       await this.broadcastPresenceFor(userKey);
       return;
     }
 
-    // 只要有 socket 连上（含刷新/重连场景），即视为在线——这与「访客已在线、坐席回到工作台」
-    // 的语义一致。旧的 prevCount===0 门槛会在刷新时因旧 socket 未移除而跳过恢复在线，
+    // 坐席首次登录（从未上线过）保持 offline，等待手动上线——对齐业内
+    // 「登录后手动上线」实践（Zendesk/LiveChat/Freshdesk 等）；刷新/重连
+    // （hasBeenOnline === true）仍自动恢复 online。访客不受影响，照旧连上即在线。
+    if (auth.type === 'agent' && !meta?.hasBeenOnline) {
+      await this.presence.setStatus(userKey, 'offline');
+      await this.broadcastPresenceFor(userKey);
+      return;
+    }
+
+    // 只要有 socket 连上（含刷新/重连场景），即视为在线——访客保持「连上即在线」语义；
+    // 坐席仅在「已上线过」的前提下适用（首次登录由上方分支拦截）。
+    // 旧的 prevCount===0 门槛会在刷新时因旧 socket 未移除而跳过恢复在线，
     // 使服务端 my-presence 返回离线；而客户端 ChatPresenceProvider 只认 my-presence、忽略
     // presence-changed，于是刷新后一直显示离线。统一为「连上即在线」，保证 my-presence 正确。
     const restored: PresenceStatus = 'online';

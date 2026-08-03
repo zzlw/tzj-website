@@ -10,6 +10,9 @@ export type SocialPlatformId = 'wechat' | 'douyin' | 'weibo' | 'xiaohongshu';
 /** 渠道用途：contact=联系/客服（扫码添加），follow=社媒关注（扫码关注） */
 export type SocialChannelPurpose = 'contact' | 'follow';
 
+/** 外链触发方式：open=新窗口跳转，copy=复制到剪切板并提示 */
+export type SocialHrefAction = 'open' | 'copy';
+
 export interface SocialChannelSetting {
   id: string;
   platform: SocialPlatformId;
@@ -21,6 +24,8 @@ export interface SocialChannelSetting {
   qr?: string;
   /** 外链（如微博主页），与 qr 二选一或并存（优先 href） */
   href?: string;
+  /** 外链触发方式，默认 open（新窗口跳转） */
+  hrefAction?: SocialHrefAction;
 }
 
 export interface LocalizedText {

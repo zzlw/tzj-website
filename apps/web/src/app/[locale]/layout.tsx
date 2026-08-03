@@ -9,6 +9,7 @@ import { Suspense } from 'react';
 import { BaiduAnalytics } from '@/components/analytics/BaiduAnalytics';
 import { ConsoleBranding } from '@/components/ConsoleBranding';
 import { ChatWidget } from '@/components/chat/ChatWidget';
+import { AgentPhoneProvider } from '@/features/chat/AgentPhoneContext';
 import { LanguageSelectorProvider } from '@/components/i18n/LanguageSelector';
 import { JsonLd } from '@/components/JsonLd';
 import { Footer } from '@/components/layout/Footer';
@@ -24,6 +25,7 @@ import { getMediaOrigin } from '@/lib/media-origin';
 import { metadataBase } from '@/lib/seo';
 import { getFaviconUrl, getSitePublicSettings, localizedAddress } from '@/lib/site-settings';
 import { cn } from '@/lib/utils';
+import { Toaster } from '@tzj/ui';
 import '../globals.css';
 
 const geist = Geist({
@@ -112,8 +114,9 @@ export default async function LocaleLayout({ children, params }: Props) {
       </head>
       <body className="bg-background text-text antialiased">
         <NextIntlClientProvider messages={messages}>
-          <LanguageSelectorProvider>
-            <SearchProvider>
+          <AgentPhoneProvider phone={siteSettings.contact.phone}>
+            <LanguageSelectorProvider>
+              <SearchProvider>
               <JsonLd
                 data={organizationJsonLd({
                   legalName: tCommon('legalName'),
@@ -144,8 +147,10 @@ export default async function LocaleLayout({ children, params }: Props) {
                 <main className="min-h-screen">{children}</main>
               </ViewTransitions>
               <Footer />
-            </SearchProvider>
-          </LanguageSelectorProvider>
+              <Toaster />
+              </SearchProvider>
+            </LanguageSelectorProvider>
+          </AgentPhoneProvider>
         </NextIntlClientProvider>
       </body>
     </html>

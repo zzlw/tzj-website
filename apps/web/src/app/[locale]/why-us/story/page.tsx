@@ -29,7 +29,7 @@ export default async function StoryPage() {
         title={t('hero.title')}
         description={t('hero.description')}
         video="/media/whp-hero.mp4"
-        poster="/media/galvanized-stair.webp"
+        poster="/media/about-cn.webp"
       />
 
       <section>

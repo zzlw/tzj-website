@@ -6,7 +6,8 @@ import { ContentListShell, ContentPaginationShell } from '@/components/content/C
 import { ContentPagination } from '@/components/content/ContentPagination';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { RelatedLinks } from '@/components/sections/blocks';
-import { Container, PageHero, RbButton, SectionHeading } from '@/components/ui';
+import { BookConsultButton } from '@/components/chat/BookConsultButton';
+import { Container, PageHero, SectionHeading } from '@/components/ui';
 import { getBlogs } from '@/lib/api';
 import { blogCategoryLabel, formatContentDate } from '@/lib/content-labels';
 import {
@@ -45,6 +46,7 @@ export default async function BlogPage({ searchParams }: PageProps) {
   const tContent = await getTranslations('content');
   const tCta = await getTranslations('cta');
   const tBlocks = await getTranslations('blocks.relatedLinks');
+  const tCommon = await getTranslations('common');
 
   const categoryFilter = await getBlogCategoryFilter();
   const sortOptions = await getBlogSortOptions();
@@ -101,7 +103,7 @@ export default async function BlogPage({ searchParams }: PageProps) {
             >
               <div className="relative min-h-[240px] overflow-hidden bg-neutral-900">
                 <Image
-                  src={pickCoverImage(featured.coverImage, '/media/tower-wylie.jpg')}
+                  src={pickCoverImage(featured.coverImage, '/media/fixed-tower-hero.jpg')}
                   alt={featured.title}
                   fill
                   sizes="(max-width: 1024px) 100vw, 50vw"
@@ -197,7 +199,7 @@ export default async function BlogPage({ searchParams }: PageProps) {
         <div className="flex flex-col items-center gap-5 border border-neutral-300 bg-white p-10 text-center md:p-14">
           <h2 className="rb-h3 text-neutral-900">{t('cta.title')}</h2>
           <p className="text-secondary-text">{t('cta.description')}</p>
-          <RbButton href="/contact">{tCta('bookConsult')}</RbButton>
+          <BookConsultButton message={tCommon('bookConsultContent')}>{tCta('bookConsult')}</BookConsultButton>
         </div>
       </Container>
     </div>

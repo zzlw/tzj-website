@@ -11,7 +11,8 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
-import { Container, PageHero, RbButton } from '@/components/ui';
+import { BookConsultButton } from '@/components/chat/BookConsultButton';
+import { Container, PageHero } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 
 const SECTION_ICONS = [
@@ -33,6 +34,7 @@ export default async function ResourcesPage() {
   const t = await getTranslations('pages.resources');
   const tCta = await getTranslations('cta');
   const tBlocks = await getTranslations('blocks.relatedLinks');
+  const tCommon = await getTranslations('common');
 
   const sections = t.raw('sections') as Array<{ label: string; href: string; desc: string }>;
 
@@ -77,7 +79,7 @@ export default async function ResourcesPage() {
         <div className="flex flex-col items-center gap-5 border border-neutral-300 bg-white p-10 text-center md:p-14">
           <h2 className="rb-h3 text-neutral-900">{t('cta.title')}</h2>
           <p className="text-secondary-text">{t('cta.description')}</p>
-          <RbButton href="/contact">{tCta('bookConsult')}</RbButton>
+          <BookConsultButton message={tCommon('bookConsultContent')}>{tCta('bookConsult')}</BookConsultButton>
         </div>
       </Container>
     </div>

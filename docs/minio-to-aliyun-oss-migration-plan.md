@@ -91,7 +91,7 @@ api 容器 ──S3 API──▶ https://oss-cn-beijing.aliyuncs.com （公网�
 
 - 各内容表的 `coverImage`（String）、`images`（String[]）：案例 / 新闻 / 文章 / 活动展会 / 页面
 - 富文本字段内嵌 URL：`summary` / `description` / `content` / `excerpt`（seed 的 `patchContentImageUrls` 佐证富文本确实内嵌图片 URL）
-- **营销弹窗（TradeShow 扩展字段，2026-07-31 新增）**：复用 `TradeShow.coverImage` / `content`，**无新增 URL 字段**（`ctaText`/`triggerMode` 等均为非 URL 配置；`ctaUrl` 已废弃仅保留列，仍随 TradeShow 一并订正）。注意弹窗挂全站 layout，进行中活动的头图若 404 将全站可见，订正后须重点验证（见 §8）
+- **营销弹窗（TradeShow 扩展字段，2026-07-31 新增）**：新增专用列 `popupImage`（弹窗头图 URL，留空回退 `coverImage`）与 `popupContent`（Markdown 文案，可内嵌图片 URL，留空回退 `content`），**两列均须纳入订正**；`ctaText`/`triggerMode` 等为非 URL 配置；`ctaUrl` 已废弃仅保留列，仍随 TradeShow 一并订正。注意弹窗挂全站 layout，进行中活动的头图若 404 将全站可见，订正后须重点验证（见 §8）
 - **`MediaAsset.url`**：媒体库表存完整公开 URL（`key` 字段不含域名，无需动），admin 媒体库列表直接消费它，**不可遗漏**
 - **内部文档**：`InternalDocument.content` + `InternalDocumentRevision.content`（vditor 富文本，内嵌上传图片）
 - **`Setting.value`（Json）**等 json/jsonb 列：可能存站点配置类媒体 URL，订正与兜底扫描均须覆盖 Json 列（见 §5.4）——含 `Integration.config`（现存百度 OCPC 等配置经核实仅含 `www.tzjii.com`，无 static 前缀 URL，但扫描仍须覆盖以防后续集成写入）
@@ -268,7 +268,7 @@ WHERE "coverImage" LIKE :old || '%'
 - [ ] Admin 媒体库列表缩略图全部正常（`MediaAsset.url` 订正生效的直接证据）；内部文档富文本内嵌图正常
 - [ ] Admin：水印处理正常（`downloadBuffer` 走 OSS 读取）
 - [ ] 聊天附件：浏览器预签名 PUT 直传成功（URL host 为 `*.oss-cn-beijing.aliyuncs.com`），发送后可预览
-- [ ] 营销弹窗（如有进行中活动）：C 端任意页面弹出正常，头图与正文内嵌图加载正常（客户端直连 API，订正即生效）
+- [ ] 营销弹窗（如有进行中活动）：C 端任意页面弹出正常，头图（`popupImage`，留空时回退 `coverImage`）与正文（`popupContent`）内嵌图加载正常（客户端直连 API，订正即生效）
 - [ ] 站点 favicon 正常（`statics/favicon.ico` 经 S3 上传，admin 站点设置重传一次验证写路径）
 - [ ] `GET /api/v1/health` 存储探针（HeadBucket）通过
 - [ ] `curl -I https://static.tzjii.com/{key}` 与 `.../tzj-uploads-prod/{key}`：均 200、`Server: AliyunOSS`、正确 Content-Type

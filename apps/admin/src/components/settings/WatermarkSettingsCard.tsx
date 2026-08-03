@@ -60,7 +60,7 @@ const WATERMARK_PRESETS: WatermarkPreset[] = [
     patch: {
       layout: 'tile',
       mode: 'text',
-      opacity: 0.14,
+      opacity: 0.4,
       scale: 0.22,
       tileSpacing: 1.5,
       tileAngle: -25,

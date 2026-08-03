@@ -6,7 +6,9 @@ import { getLocale, getTranslations } from 'next-intl/server';
 import { MarkdownBody } from '@/components/content/MarkdownBody';
 import { JsonLd } from '@/components/JsonLd';
 import { MediaImage as Image } from '@/components/MediaImage';
-import { Container, Eyebrow, RbButton, RbLink } from '@/components/ui';
+import { BookConsultButton } from '@/components/chat/BookConsultButton';
+import { BookConsultLink } from '@/components/chat/BookConsultLink';
+import { Container, Eyebrow, RbLink } from '@/components/ui';
 import { getBlog, getBlogs } from '@/lib/api';
 import { fetchBySlug, previewParams } from '@/lib/content-detail';
 import { blogCategoryLabelI18n, formatContentDate } from '@/lib/content-labels';
@@ -47,6 +49,7 @@ export default async function BlogDetailPage({ params, searchParams }: BlogPageP
   const tBread = await getTranslations('breadcrumbs');
   const tCta = await getTranslations('cta');
   const tBlog = await getTranslations('content.categories.blog');
+  const tCommon = await getTranslations('common');
   const locale = await getLocale();
 
   const post = await fetchBySlug((s) => getBlog(s, previewParams(previewToken)), slug);
@@ -124,7 +127,7 @@ export default async function BlogDetailPage({ params, searchParams }: BlogPageP
                 {t('ctaDescription')}
               </p>
               <div className="mt-6 flex justify-center">
-                <RbButton href="/contact">{tCta('bookConsult')}</RbButton>
+                <BookConsultButton message={tCommon('bookConsultContent')}>{tCta('bookConsult')}</BookConsultButton>
               </div>
             </div>
           </article>
@@ -164,12 +167,7 @@ export default async function BlogDetailPage({ params, searchParams }: BlogPageP
         <Container>
           <div className="flex items-center justify-between border-t border-neutral-300 pt-8">
             <RbLink href="/resources/blog">{t('backToBlog')}</RbLink>
-            <Link
-              href="/contact"
-              className="text-sm font-bold text-primary transition-colors hover:text-primary-hover"
-            >
-              {t('bookConsultArrow')}
-            </Link>
+            <BookConsultLink message={tCommon('bookConsultContent')}>{t('bookConsultArrow')}</BookConsultLink>
           </div>
         </Container>
       </div>

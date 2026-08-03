@@ -7,7 +7,13 @@
     "loading": "載入中…",
     "close": "關閉",
     "marketingInterest": "我想了解「{title}」",
-    "siteDescription": "河南拓之跡實業有限公司 — 16年深耕應急救援訓練裝備，1000+訓練基地案例，13大產品線，為消防、部隊、公安、礦山、院校、景區提供專業訓練設施解決方案。"
+    "siteDescription": "河南拓之跡實業有限公司 — 16年深耕應急救援訓練裝備，1000+訓練基地案例，13大產品線，為消防、部隊、公安、礦山、院校、景區提供專業訓練設施解決方案。",
+    "bookConsultProduct": "您好，我對貴司的訓練裝備很感興趣，想進一步了解產品方案和報價。",
+    "bookConsultContent": "您好，我閱讀了貴司的內容，想進一步諮詢交流。",
+    "bookConsultCase": "您好，我看了貴司的案例，想了解類似方案的詳情。",
+    "bookConsultSolution": "您好，我對貴司的解決方案感興趣，想詳細諮詢。",
+    "bookConsultGeneral": "您好，我想諮詢一下，方便詳細介紹嗎？",
+    "bookConsultFooter": "您好，我想諮詢應急救援訓練裝備相關資訊。"
   },
   "header": {
     "searchPlaceholder": "您在尋找什麼？",

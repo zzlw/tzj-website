@@ -21,6 +21,7 @@ import {
   FileVideo,
 } from 'lucide-react';
 import type { MediaAsset } from '@/features/types';
+import { mediaPreviewUrl } from './media-preview-url';
 import {
   downloadMediaAsset,
   formatFileSize,
@@ -30,12 +31,14 @@ import {
 } from './media-utils';
 
 function PreviewBody({ asset, kind }: { asset: MediaAsset; kind: MediaKind }) {
+  // 以更新时间做缓存破坏，确保水印变更/替换后预览立即刷新
+  const previewSrc = mediaPreviewUrl(asset.url, asset.updatedAt);
   if (kind === 'video') {
     return (
       // biome-ignore lint/a11y/useMediaCaption: 用户上传的媒体资源无字幕轨可供关联
       <video
-        key={asset.url}
-        src={asset.url}
+        key={previewSrc}
+        src={previewSrc}
         controls
         playsInline
         className="max-h-[min(70vh,720px)] w-full rounded-md bg-black"
@@ -51,7 +54,7 @@ function PreviewBody({ asset, kind }: { asset: MediaAsset; kind: MediaKind }) {
         <div className="flex h-24 w-24 items-center justify-center rounded-full bg-muted">
           <FileAudio className="h-10 w-10 text-muted-foreground" />
         </div>
-        <AudioPlayer src={asset.url} />
+        <AudioPlayer src={previewSrc} />
       </div>
     );
   }
@@ -138,7 +141,7 @@ export function MediaThumbnail({ asset, kind }: { asset: MediaAsset; kind: Media
     return (
       <>
         <video
-          src={asset.url}
+          src={mediaPreviewUrl(asset.url, asset.updatedAt)}
           muted
           playsInline
           preload="metadata"

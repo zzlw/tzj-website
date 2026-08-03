@@ -63,7 +63,7 @@ export const SOLUTION_META: SolutionMeta[] = [
   {
     slug: 'fire-rescue',
     icon: Flame,
-    image: '/media/tower-wylie.jpg',
+    image: 'images/202101/29e0925cf89.jpg',
     caseType: 'fire',
     focusIcons: [Flame, Building2, Beaker, ClipboardCheck],
     recommendedHrefs: ['/fixed-tower', '/burn-rooms', '/burn-rooms/cfbt', '/accessories/hazmat'],
@@ -71,7 +71,7 @@ export const SOLUTION_META: SolutionMeta[] = [
   {
     slug: 'police',
     icon: Shield,
-    image: '/media/tower-hamilton.jpg',
+    image: 'images/202011/fc2d5975875.jpg',
     caseType: 'police',
     focusIcons: [Building2, Target, Shield, Users],
     recommendedHrefs: [
@@ -84,7 +84,7 @@ export const SOLUTION_META: SolutionMeta[] = [
   {
     slug: 'military',
     icon: Target,
-    image: '/media/tower-titusville.jpg',
+    image: 'images/202011/9dc9a30843c.jpg',
     caseType: 'military',
     focusIcons: [Dumbbell, Brain, Mountain, Layers],
     recommendedHrefs: [
@@ -97,7 +97,7 @@ export const SOLUTION_META: SolutionMeta[] = [
   {
     slug: 'mine-rescue',
     icon: Mountain,
-    image: '/media/tower-eastside.jpg',
+    image: 'images/202603/59243364bd4.jpg',
     caseType: 'enterprise',
     focusIcons: [Layers, Flame, Mountain, ClipboardCheck],
     recommendedHrefs: [
@@ -110,7 +110,7 @@ export const SOLUTION_META: SolutionMeta[] = [
   {
     slug: 'education',
     icon: GraduationCap,
-    image: '/media/tower-macon.jpg',
+    image: 'images/202102/5cc5571e0fc.jpg',
     caseType: 'school',
     focusIcons: [GraduationCap, Building2, Users, ClipboardCheck],
     recommendedHrefs: [
@@ -123,7 +123,7 @@ export const SOLUTION_META: SolutionMeta[] = [
   {
     slug: 'enterprise',
     icon: Factory,
-    image: '/media/tower-chino.jpg',
+    image: 'images/202603/9802db90475.jpg',
     caseType: 'enterprise',
     focusIcons: [Beaker, Flame, Trophy, ClipboardCheck],
     recommendedHrefs: [

@@ -45,7 +45,7 @@ export default async function LinerPage() {
             </div>
             <div className="relative aspect-[4/3] overflow-hidden bg-neutral-900">
               <Image
-                src="/media/galvanized-stair.webp"
+                src="images/202605/041a07c4595.jpg"
                 alt={t('gallery.steelAlt')}
                 fill
                 quality={70}

@@ -1,10 +1,11 @@
 import { Award, Check, Lightbulb, ShieldCheck } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { Container, Eyebrow, RbButton, SectionHeading, VideoHero } from '@/components/ui';
+import { BookConsultButton } from '@/components/chat/BookConsultButton';
+import { Container, Eyebrow, SectionHeading, VideoHero } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 
-const HERO_IMAGE = '/media/galvanized-stair.webp';
+const HERO_IMAGE = 'images/202101/29e0925cf89.jpg';
 const HERO_VIDEO = '/media/why.mp4';
 const PILLAR_ICONS = [Award, Lightbulb, ShieldCheck] as const;
 
@@ -16,6 +17,7 @@ export default async function WhyUsPage() {
   const t = await getTranslations('pages.whyUs');
   const tCta = await getTranslations('cta');
   const tBlocks = await getTranslations('blocks.relatedLinks');
+  const tCommon = await getTranslations('common');
 
   const pillars = t.raw('pillars') as Array<{ title: string; desc: string; points: string[] }>;
   const values = t.raw('values') as string[];
@@ -141,7 +143,7 @@ export default async function WhyUsPage() {
       <Container className="pt-16 lg:pt-24">
         <div className="flex flex-col items-center gap-5 border border-neutral-300 bg-white p-10 text-center md:p-14">
           <h2 className="rb-h3 text-neutral-900">{t('cta.title')}</h2>
-          <RbButton href="/contact">{tCta('bookConsult')}</RbButton>
+          <BookConsultButton message={tCommon('bookConsultGeneral')}>{tCta('bookConsult')}</BookConsultButton>
         </div>
       </Container>
     </div>

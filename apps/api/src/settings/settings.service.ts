@@ -8,13 +8,15 @@ import type {
 } from '@tzj/types';
 import { PrismaService } from '../prisma/prisma.service';
 import {
+  CACHE_TTL_SETTING_KEY,
+  DEFAULT_CACHE_TTL_SECONDS,
   DEFAULT_SITE_PUBLIC_SETTINGS,
   mergeSitePublicSettings,
   normalizeSocialChannel,
   normalizeSocialQrPath,
   SITE_PUBLIC_SETTING_KEY,
 } from './settings.defaults';
-import { sitePublicSettingsSchema } from './settings.schema';
+import { cacheTtlSchema, sitePublicSettingsSchema } from './settings.schema';
 import {
   DEFAULT_SITE_MEDIA_SETTINGS,
   mergeSiteMediaSettings,
@@ -54,6 +56,41 @@ export class SettingsService {
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
   ) {}
+
+  /** 官网设置缓存 TTL（秒）：读独立配置 key，缺失/非法时回退默认 300 */
+  async getCacheTtl(): Promise<number> {
+    const row = await this.prisma.setting.findUnique({
+      where: { key: CACHE_TTL_SETTING_KEY },
+    });
+    const ttl = (row?.value as { ttl?: number } | null)?.ttl;
+    if (typeof ttl !== 'number' || !Number.isFinite(ttl) || ttl < 0) {
+      return DEFAULT_CACHE_TTL_SECONDS;
+    }
+    return Math.min(Math.floor(ttl), 86_400);
+  }
+
+  /** 更新官网设置缓存 TTL（admin 专属）：web 端元数据缓存最长 60s 后按新值生效 */
+  async updateCacheTtl(raw: unknown): Promise<number> {
+    const parsed = cacheTtlSchema.safeParse(raw);
+    if (!parsed.success) {
+      throw new BadRequestException(parsed.error.flatten());
+    }
+    const ttl = parsed.data.ttl;
+    await this.prisma.setting.upsert({
+      where: { key: CACHE_TTL_SETTING_KEY },
+      create: {
+        key: CACHE_TTL_SETTING_KEY,
+        group: 'site',
+        label: '官网缓存生效时长（秒）',
+        sortOrder: 3,
+        value: { ttl },
+      },
+      update: {
+        value: { ttl },
+      },
+    });
+    return ttl;
+  }
 
   async getSitePublicSettings(): Promise<SitePublicSettings> {
     const row = await this.prisma.setting.findUnique({

@@ -28,8 +28,13 @@ import { Clock, ImagePlus, Loader2, MessageSquareText, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { MarkdownEditor } from '@/components/crud/MarkdownEditor';
 import { MediaPicker } from '@/components/crud/MediaPicker';
-import { useSitePublicSettings, useUpdateSitePublicSettings } from '@/features/site-settings';
+import {
+  useCacheTtl,
+  useSitePublicSettings,
+  useUpdateSitePublicSettings,
+} from '@/features/site-settings';
 import { ApiError } from '@/lib/apiClient';
+import { formatCacheTtl } from '@/lib/cache-ttl';
 import { normalizeSocialQrForSave, resolveMediaUrl } from '@/lib/media-url';
 import { notifyError, notifySuccess } from '@/lib/notify';
 
@@ -194,6 +199,7 @@ function ModuleSaveButton({ pending, onClick }: { pending: boolean; onClick: () 
 export default function ChatSettingsPage() {
   const { data, isLoading, isError, error } = useSitePublicSettings();
   const updateSettings = useUpdateSitePublicSettings();
+  const { data: ttlData } = useCacheTtl();
   const [form, setForm] = useState<SitePublicSettings | null>(null);
 
   useEffect(() => {
@@ -209,7 +215,7 @@ export default function ChatSettingsPage() {
     if (!form) return;
     try {
       await updateSettings.mutateAsync(form);
-      notifySuccess(successMessage, '官网约 5 分钟内生效');
+      notifySuccess(successMessage, `官网${formatCacheTtl(ttlData?.ttl)}`);
     } catch (e) {
       notifyError(e, '保存失败');
     }
@@ -235,7 +241,7 @@ export default function ChatSettingsPage() {
     <div className="space-y-6">
       <PageHeader
         title="客服设置"
-        description="集中管理在线客服的资料与在线时间。修改后 C 端聊天窗口自动更新（约 5 分钟缓存）。"
+        description={`集中管理在线客服的资料与在线时间。修改后官网${formatCacheTtl(ttlData?.ttl)}。`}
       />
 
       <ImagePreviewProvider>

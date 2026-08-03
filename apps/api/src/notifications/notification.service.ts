@@ -22,7 +22,6 @@ interface SendEmailJob {
   text: string;
   idempotencyKey: string;
   payload?: Record<string, unknown>;
-  replyTo?: string;
 }
 
 @Injectable()
@@ -73,19 +72,23 @@ export class NotificationService {
         text: renderContactStaffNotifyText(contact, adminUrl),
         idempotencyKey: `contact.staff-notify:${contact.id}:${trimmed.toLowerCase()}`,
         payload: { contactId: contact.id },
-        replyTo: contact.email ?? undefined,
       });
     }
 
     if (notificationSettings.contact.autoReplyEnabled && contact.email?.trim()) {
       const visitorEmail = contact.email.trim();
+      const sitePublic = await this.settings.getSitePublicSettings();
+      const contactInfo = {
+        phone: sitePublic.contact.phone,
+        email: sitePublic.contact.email,
+      };
       jobs.push({
         template: 'contact.auto-reply',
         recipient: visitorEmail,
         subject:
           notificationSettings.contact.autoReplySubject?.trim() || DEFAULT_AUTO_REPLY_SUBJECT,
-        html: renderContactAutoReplyHtml(contact),
-        text: renderContactAutoReplyText(contact),
+        html: renderContactAutoReplyHtml(contact, contactInfo),
+        text: renderContactAutoReplyText(contact, contactInfo),
         idempotencyKey: `contact.auto-reply:${contact.id}:${visitorEmail.toLowerCase()}`,
         payload: { contactId: contact.id },
       });
@@ -130,7 +133,6 @@ export class NotificationService {
         subject: job.subject,
         html: job.html,
         text: job.text,
-        replyTo: job.replyTo,
       });
       await this.prisma.notificationLog.update({
         where: { id: log.id },

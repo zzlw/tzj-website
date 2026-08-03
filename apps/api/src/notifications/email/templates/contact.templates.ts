@@ -53,7 +53,34 @@ export function renderContactStaffNotifyText(contact: Contact, adminUrl: string)
   ].join('\n');
 }
 
-export function renderContactAutoReplyHtml(contact: Contact): string {
+export interface AutoReplyContactInfo {
+  /** 官网服务热线（来自站点设置，如 0371-58691119） */
+  phone?: string;
+  /** 官网联系邮箱（来自站点设置） */
+  email?: string;
+}
+
+export function renderContactAutoReplyHtml(
+  contact: Contact,
+  contactInfo: AutoReplyContactInfo,
+): string {
+  const channels: string[] = [];
+  if (contactInfo.phone) {
+    const phone = escapeHtml(contactInfo.phone);
+    channels.push(
+      `<li>服务热线：<a href="tel:${phone}" style="color:#2563eb">${phone}</a></li>`,
+    );
+  }
+  if (contactInfo.email) {
+    const email = escapeHtml(contactInfo.email);
+    channels.push(
+      `<li>联系邮箱：<a href="mailto:${email}" style="color:#2563eb">${email}</a></li>`,
+    );
+  }
+  const channelBlock = channels.length
+    ? `<p style="margin-top:16px">如有紧急事项，欢迎直接与我们联系：</p><ul style="color:#374151">${channels.join('')}</ul>`
+    : '';
+
   return `<!DOCTYPE html><html><body style="font-family:sans-serif;color:#111827;line-height:1.6">
 <p>尊敬的 ${escapeHtml(contact.name)}，您好！</p>
 <p>感谢联系${BRAND}，我们已收到您的留言，工作人员会尽快与您取得联系。</p>
@@ -62,22 +89,29 @@ export function renderContactAutoReplyHtml(contact: Contact): string {
 <li>主题：${escapeHtml(contact.subject ?? '咨询')}</li>
 <li>留言：${escapeHtml(contact.message.slice(0, 200))}${contact.message.length > 200 ? '…' : ''}</li>
 </ul>
-<p>如有紧急事项，欢迎直接拨打官网服务热线。</p>
+${channelBlock}
 <p style="margin-top:24px">${BRAND} 团队</p>
+<p style="font-size:12px;color:#9ca3af">本邮件由系统自动发送，请勿直接回复，如有需要请使用上方联系方式。</p>
 </body></html>`;
 }
 
-export function renderContactAutoReplyText(contact: Contact): string {
-  return [
+export function renderContactAutoReplyText(
+  contact: Contact,
+  contactInfo: AutoReplyContactInfo,
+): string {
+  const lines = [
     `尊敬的 ${contact.name}，您好！`,
     '',
     `感谢联系${BRAND}，我们已收到您的留言，工作人员会尽快与您取得联系。`,
     '',
+    `您提交的信息摘要：`,
     `主题：${contact.subject ?? '咨询'}`,
     `留言：${contact.message.slice(0, 200)}${contact.message.length > 200 ? '…' : ''}`,
-    '',
-    `${BRAND} 团队`,
-  ].join('\n');
+  ];
+  if (contactInfo.phone) lines.push('', `服务热线：${contactInfo.phone}`);
+  if (contactInfo.email) lines.push(`联系邮箱：${contactInfo.email}`);
+  lines.push('', '本邮件由系统自动发送，请勿直接回复，如有需要请使用上方联系方式。', '', `${BRAND} 团队`);
+  return lines.join('\n');
 }
 
 export const DEFAULT_AUTO_REPLY_SUBJECT = `我们已收到您的留言 — ${BRAND}`;

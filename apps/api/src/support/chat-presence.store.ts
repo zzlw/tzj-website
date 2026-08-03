@@ -32,6 +32,8 @@ export class ChatPresenceStore {
       sockets: Set<string>;
       manualOffline: boolean;
       chatPanelOpen: boolean;
+      /** 坐席是否曾经上线过（一次性标记，不设回 false）。首次登录的坐席保持 offline 等待手动上线；刷新/重连则恢复 online。 */
+      hasBeenOnline: boolean;
     }
   >();
 
@@ -51,6 +53,7 @@ export class ChatPresenceStore {
         sockets: new Set(),
         manualOffline: false,
         chatPanelOpen: false,
+        hasBeenOnline: false,
       };
       this.mem.set(userKey, entry);
     } else {
@@ -82,6 +85,8 @@ export class ChatPresenceStore {
     if (entry) {
       entry.status = status;
       entry.lastSeen = lastSeen;
+      // 一次性标记：曾经 online 即视为「已上线过」，后续重连/刷新可自动恢复 online
+      if (status === 'online') entry.hasBeenOnline = true;
     }
   }
 
@@ -92,6 +97,7 @@ export class ChatPresenceStore {
     lastSeen: number;
     manualOffline: boolean;
     chatPanelOpen: boolean;
+    hasBeenOnline: boolean;
   } | null> {
     const entry = this.mem.get(userKey);
     if (!entry) return null;
@@ -102,6 +108,7 @@ export class ChatPresenceStore {
       lastSeen: entry.lastSeen,
       manualOffline: entry.manualOffline ?? false,
       chatPanelOpen: entry.chatPanelOpen ?? false,
+      hasBeenOnline: entry.hasBeenOnline ?? false,
     };
   }
 

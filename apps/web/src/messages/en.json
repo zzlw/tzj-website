@@ -7,7 +7,13 @@
     "loading": "Loading…",
     "close": "Close",
     "marketingInterest": "I'd like to learn more about \"{title}\"",
-    "siteDescription": "Henan TZJ Industrial Co., Ltd. — 16 years in emergency rescue training equipment, 1,000+ training base projects, and 13 product lines serving fire, military, police, mining, education, and tourism sectors."
+    "siteDescription": "Henan TZJ Industrial Co., Ltd. — 16 years in emergency rescue training equipment, 1,000+ training base projects, and 13 product lines serving fire, military, police, mining, education, and tourism sectors.",
+    "bookConsultProduct": "Hi, I'm interested in your training equipment and would like to learn more about products and pricing.",
+    "bookConsultContent": "Hi, I've read your content and would like to discuss further.",
+    "bookConsultCase": "Hi, I've seen your case studies and would like to learn about similar solutions.",
+    "bookConsultSolution": "Hi, I'm interested in your solutions and would like a detailed consultation.",
+    "bookConsultGeneral": "Hi, I'd like to make an inquiry. Could you provide more details?",
+    "bookConsultFooter": "Hi, I'd like to inquire about emergency rescue training equipment."
   },
   "header": {
     "searchPlaceholder": "What are you looking for?",

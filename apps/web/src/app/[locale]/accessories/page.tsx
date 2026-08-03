@@ -14,14 +14,15 @@ import { getTranslations } from 'next-intl/server';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { RelatedLinks } from '@/components/sections/blocks';
 import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
-import { Container, Eyebrow, RbButton, RbLink, SectionHeading } from '@/components/ui';
+import { BookConsultButton } from '@/components/chat/BookConsultButton';
+import { Container, Eyebrow, RbLink, SectionHeading } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 
 export async function generateMetadata() {
   return createPageMetadata({ namespace: 'pages.accessories', path: '/accessories' });
 }
 
-const HERO_IMAGE = '/media/tower-eastside.jpg';
+const HERO_IMAGE = 'images/202105/9c5be9ab1a5.jpg';
 const FEATURE_ICONS = [
   Biohazard,
   Flame,
@@ -40,6 +41,7 @@ export default async function AccessoriesPage() {
   const t = await getTranslations('pages.accessories');
   const tCta = await getTranslations('cta');
   const tBlocks = await getTranslations('blocks.relatedLinks');
+  const tCommon = await getTranslations('common');
 
   const featuresRaw = t.raw('features') as Array<{ title: string; desc: string }>;
   const features = featuresRaw.map((item, i) => ({ ...item, icon: FEATURE_ICONS[i]! }));
@@ -69,9 +71,9 @@ export default async function AccessoriesPage() {
             {t('hero.description')}
           </p>
           <div className="mt-8">
-            <RbButton href="/contact" variant="light">
+            <BookConsultButton variant="light" message={tCommon('bookConsultProduct')}>
               {tCta('bookConsult')}
-            </RbButton>
+            </BookConsultButton>
           </div>
         </Container>
       </section>
@@ -192,7 +194,7 @@ export default async function AccessoriesPage() {
         <div className="flex flex-col items-center gap-5 border border-neutral-300 bg-white p-10 text-center md:p-14">
           <h2 className="rb-h3 text-neutral-900">{t('cta.title')}</h2>
           <p className="text-secondary-text">{t('cta.description')}</p>
-          <RbButton href="/contact">{tCta('bookConsult')}</RbButton>
+          <BookConsultButton message={tCommon('bookConsultProduct')}>{tCta('bookConsult')}</BookConsultButton>
         </div>
       </Container>
     </div>

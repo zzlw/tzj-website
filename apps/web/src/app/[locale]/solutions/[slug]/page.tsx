@@ -7,7 +7,8 @@ import { JsonLd } from '@/components/JsonLd';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { FeatureGrid } from '@/components/sections/blocks';
 import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
-import { Container, Eyebrow, RbButton, RbLink, SectionHeading } from '@/components/ui';
+import { BookConsultButton } from '@/components/chat/BookConsultButton';
+import { Container, Eyebrow, RbLink, SectionHeading } from '@/components/ui';
 import { getLocalizedSolution, getLocalizedSolutions } from '@/lib/i18n/solutions';
 import { breadcrumbJsonLd } from '@/lib/jsonld';
 import { generateSeo } from '@/lib/seo';
@@ -47,6 +48,7 @@ export default async function SolutionDetailPage({ params }: SolutionPageProps) 
   const t = await getTranslations('pages.solutionDetail');
   const tCta = await getTranslations('cta');
   const tBread = await getTranslations('breadcrumbs');
+  const tCommon = await getTranslations('common');
   const others = (await getLocalizedSolutions()).filter((s) => s.slug !== solution.slug);
 
   return (
@@ -208,7 +210,7 @@ export default async function SolutionDetailPage({ params }: SolutionPageProps) 
             </h2>
             <p className="max-w-xl text-secondary-text">{t('cta.description')}</p>
             <div className="flex flex-wrap items-center justify-center gap-4">
-              <RbButton href="/contact">{tCta('bookConsult')}</RbButton>
+              <BookConsultButton message={tCommon('bookConsultSolution')}>{tCta('bookConsult')}</BookConsultButton>
               <RbLink href="/solutions">{t('cta.backLink')}</RbLink>
             </div>
           </div>

@@ -7,6 +7,12 @@ import type {
 
 export const SITE_PUBLIC_SETTING_KEY = 'site.public';
 
+/** 官网设置缓存 TTL（秒）配置 key：C 端 web 按此值缓存站点设置；0 = 不缓存，每次访问实时读取 */
+export const CACHE_TTL_SETTING_KEY = 'site.cacheTtl';
+
+/** 默认缓存时长：300s（5 分钟），与 v2 前写死值一致，保证无配置时行为不变 */
+export const DEFAULT_CACHE_TTL_SECONDS = 300;
+
 /**
  * 将历史遗留的单一字符串或任意对象规范为 LocalizedText。
  * 老数据中 chatPrompts 存的是纯字符串，此处迁移为 { 'zh-CN': str }，

@@ -243,6 +243,20 @@ export class S3Service implements OnModuleInit {
     }
   }
 
+  /** 获取对象元信息（大小 + MIME），不下载内容 */
+  async head(key: string): Promise<{ contentLength: number; contentType: string }> {
+    const result = await this.client.send(
+      new HeadObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+      }),
+    );
+    return {
+      contentLength: result.ContentLength ?? 0,
+      contentType: result.ContentType ?? 'application/octet-stream',
+    };
+  }
+
   /**
    * 下载对象内容为 Buffer（用于水印 Logo 等）
    */

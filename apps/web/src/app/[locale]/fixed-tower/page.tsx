@@ -3,7 +3,8 @@ import { getTranslations } from 'next-intl/server';
 import { JsonLd } from '@/components/JsonLd';
 import { RelatedLinks } from '@/components/sections/blocks';
 import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
-import { Container, RbButton, RbLink, SectionHeading, VideoHero } from '@/components/ui';
+import { BookConsultButton } from '@/components/chat/BookConsultButton';
+import { Container, RbLink, SectionHeading, VideoHero } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 import { breadcrumbJsonLd, productJsonLd } from '@/lib/jsonld';
 
@@ -19,6 +20,7 @@ export default async function FixedTowerPage() {
   const tCta = await getTranslations('cta');
   const tBread = await getTranslations('breadcrumbs');
   const tBlocks = await getTranslations('blocks.relatedLinks');
+  const tCommon = await getTranslations('common');
 
   const standardFeatures = t.raw('standardFeatures') as string[];
   const customFeatures = t.raw('customFeatures') as string[];
@@ -53,9 +55,9 @@ export default async function FixedTowerPage() {
           video={HERO_VIDEO}
           poster={HERO_IMAGE}
         >
-          <RbButton href="/contact" variant="light">
+          <BookConsultButton variant="light" message={tCommon('bookConsultProduct')}>
             {tCta('bookConsult')}
-          </RbButton>
+          </BookConsultButton>
         </VideoHero>
 
         <section id="overview" className="scroll-mt-24">
@@ -158,7 +160,7 @@ export default async function FixedTowerPage() {
             <h2 className="rb-h3 text-neutral-900">{t('cta.title')}</h2>
             <p className="text-secondary-text">{t('cta.description')}</p>
             <div className="flex flex-wrap items-center justify-center gap-4">
-              <RbButton href="/contact">{tCta('bookConsult')}</RbButton>
+              <BookConsultButton message={tCommon('bookConsultProduct')}>{tCta('bookConsult')}</BookConsultButton>
               <RbLink href="/modular-tower">{t('cta.secondaryLink')}</RbLink>
               <RbLink href="/docs/fixed-tower-specs.pdf">{tCta('downloadPdf')}</RbLink>
             </div>

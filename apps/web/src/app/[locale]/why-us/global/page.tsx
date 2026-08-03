@@ -5,7 +5,7 @@ import { StatBandI18n } from '@/components/sections/blocks-i18n';
 import { Container, Eyebrow, SectionHeading } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 
-const HERO_IMAGE = '/media/tower-wylie.jpg';
+const HERO_IMAGE = 'images/202101/29e0925cf89.jpg';
 const RELATED_HREFS = ['/cases', '/why-us/story', '/why-us/team'];
 
 export async function generateMetadata() {

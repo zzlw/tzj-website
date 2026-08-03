@@ -6,6 +6,7 @@ import type {
   SitePublicSettings,
   SocialChannelPurpose,
   SocialChannelSetting,
+  SocialHrefAction,
   SocialPlatformId,
 } from '@tzj/types';
 import {
@@ -29,7 +30,17 @@ import {
   SelectValue,
   Switch,
 } from '@tzj/ui';
-import { ChevronDown, ChevronUp, ImagePlus, Loader2, Mail, Plus, Trash2, X } from 'lucide-react';
+import {
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  ImagePlus,
+  Loader2,
+  Mail,
+  Plus,
+  Trash2,
+  X,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { MediaPicker } from '@/components/crud/MediaPicker';
 import { RichHint } from '@/components/RichHint';
@@ -40,9 +51,15 @@ import {
   useSiteNotificationSettings,
   useUpdateSiteNotificationSettings,
 } from '@/features/site-notifications';
-import { useSitePublicSettings, useUpdateSitePublicSettings } from '@/features/site-settings';
+import {
+  useCacheTtl,
+  useSitePublicSettings,
+  useUpdateCacheTtl,
+  useUpdateSitePublicSettings,
+} from '@/features/site-settings';
 import { GPS_GEO_MODE_HINT } from '@/lib/analytics-geo-hints';
 import { ApiError } from '@/lib/apiClient';
+import { formatCacheTtl } from '@/lib/cache-ttl';
 import { normalizeSocialQrForSave, resolveMediaUrl } from '@/lib/media-url';
 import { notifyError, notifySuccess } from '@/lib/notify';
 
@@ -56,6 +73,11 @@ const PLATFORMS: { id: SocialPlatformId; label: string }[] = [
 const PURPOSES: { id: SocialChannelPurpose; label: string; hint: string }[] = [
   { id: 'contact', label: '联系/客服', hint: 'C 端展示于「即时沟通」，文案「扫码添加」' },
   { id: 'follow', label: '社媒关注', hint: 'C 端展示于「关注我们」，文案「扫码关注」' },
+];
+
+const HREF_ACTIONS: { id: SocialHrefAction; label: string; hint: string }[] = [
+  { id: 'open', label: '链接跳转', hint: '点击后新窗口打开外链' },
+  { id: 'copy', label: '复制链接', hint: '点击后复制到剪切板并提示用户' },
 ];
 
 function defaultPurpose(platform: SocialPlatformId): SocialChannelPurpose {
@@ -175,6 +197,13 @@ export default function SiteSettingsPage() {
   const updateNotifications = useUpdateSiteNotificationSettings();
   const [form, setForm] = useState<SitePublicSettings | null>(null);
   const [notifyForm, setNotifyForm] = useState<SiteNotificationSettings | null>(null);
+  const { data: ttlData } = useCacheTtl();
+  const updateTtl = useUpdateCacheTtl();
+  const [ttlInput, setTtlInput] = useState('');
+
+  useEffect(() => {
+    if (ttlData) setTtlInput(String(ttlData.ttl));
+  }, [ttlData]);
 
   useEffect(() => {
     if (data) setForm(data);
@@ -192,7 +221,21 @@ export default function SiteSettingsPage() {
     if (!form) return;
     try {
       await updateSettings.mutateAsync(form);
-      notifySuccess(successMessage, '官网约 5 分钟内生效');
+      notifySuccess(successMessage, `官网${formatCacheTtl(ttlData?.ttl)}`);
+    } catch (e) {
+      notifyError(e, '保存失败');
+    }
+  }
+
+  async function saveCacheTtl() {
+    const ttl = Number(ttlInput);
+    if (!Number.isInteger(ttl) || ttl < 0 || ttl > 86_400) {
+      notifyError('请输入 0-86400 之间的整数（秒）');
+      return;
+    }
+    try {
+      await updateTtl.mutateAsync(ttl);
+      notifySuccess('缓存时长已保存', `官网${formatCacheTtl(ttl)}`);
     } catch (e) {
       notifyError(e, '保存失败');
     }
@@ -238,7 +281,7 @@ export default function SiteSettingsPage() {
     <div className="space-y-6">
       <PageHeader
         title="站点设置"
-        description="管理官网联系方式、ICP 备案与社交媒体。修改后 C 端自动更新（约 5 分钟缓存）。"
+        description={`管理官网联系方式、ICP 备案与社交媒体。修改后官网${formatCacheTtl(ttlData?.ttl)}。`}
       />
 
       <div className="space-y-6">
@@ -497,6 +540,43 @@ export default function SiteSettingsPage() {
 
         <FaviconSettingsCard />
 
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              官网生效速度
+            </CardTitle>
+            <CardDescription className="mt-1.5 max-w-2xl">
+              官网（C 端）读取站点设置时的缓存时长。保存联系方式、客服资料、Favicon
+              等内容后，官网最长在此时长后生效；设为 0 则每次访问实时读取（不缓存）。
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-[200px_1fr]">
+            <div>
+              <Label htmlFor="cache-ttl">缓存时长（秒）</Label>
+              <Input
+                id="cache-ttl"
+                type="number"
+                min={0}
+                max={86_400}
+                step={30}
+                value={ttlInput}
+                onChange={(e) => setTtlInput(e.target.value)}
+                placeholder="300"
+                className="mt-1.5"
+              />
+            </div>
+            <div className="sm:pt-7">
+              <p className="text-xs text-muted-foreground">
+                默认 300 秒（5 分钟）。改动后最长 1 分钟内按新时长生效，内容按新时长缓存。
+              </p>
+            </div>
+          </CardContent>
+          <CardFooter className="items-center justify-end border-t bg-muted/20 px-6 pt-4! pb-4">
+            <ModuleSaveButton pending={updateTtl.isPending} onClick={saveCacheTtl} />
+          </CardFooter>
+        </Card>
+
         <Card className="pb-0">
           <CardHeader>
             <CardTitle>备案信息</CardTitle>
@@ -721,7 +801,7 @@ export default function SiteSettingsPage() {
                       </Button>
                     </div>
                   </div>
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
                     <div>
                       <Label>平台</Label>
                       <Select
@@ -808,7 +888,7 @@ export default function SiteSettingsPage() {
                       </div>
                     </div>
                     <div>
-                      <Label>外链（可选）</Label>
+                      <Label className="whitespace-nowrap">外链（可选）</Label>
                       <Input
                         value={channel.href ?? ''}
                         onChange={(e) =>
@@ -827,6 +907,38 @@ export default function SiteSettingsPage() {
                         className="mt-1.5"
                       />
                     </div>
+                    {channel.href ? (
+                      <div>
+                        <Label className="whitespace-nowrap">外链触发方式</Label>
+                        <Select
+                          value={channel.hrefAction ?? 'open'}
+                          onValueChange={(hrefAction: SocialHrefAction) =>
+                            patch((p) => ({
+                              ...p,
+                              social: {
+                                channels: p.social.channels.map((c) =>
+                                  c.id === channel.id ? { ...c, hrefAction } : c,
+                                ),
+                              },
+                            }))
+                          }
+                        >
+                          <SelectTrigger className="mt-1.5">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {HREF_ACTIONS.map((a) => (
+                              <SelectItem key={a.id} value={a.id}>
+                                {a.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {HREF_ACTIONS.find((a) => a.id === (channel.hrefAction ?? 'open'))?.hint}
+                        </p>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               ))}

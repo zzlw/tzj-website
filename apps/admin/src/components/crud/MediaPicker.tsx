@@ -17,6 +17,7 @@ import { Check, Eye, ImageOff, Loader2, Search, Trash2, Upload, X } from 'lucide
 import { useEffect, useRef, useState } from 'react';
 import { Can } from '@/components/Can';
 import { MediaPreviewDialog } from '@/components/media/MediaPreviewDialog';
+import { mediaPreviewUrl } from '@/components/media/media-preview-url';
 import { getMediaKind } from '@/components/media/media-utils';
 import {
   formatMediaDeleteError,
@@ -81,7 +82,7 @@ function MediaPickerTile({
           {isImage ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={asset.url}
+              src={mediaPreviewUrl(asset.url, asset.updatedAt)}
               alt={asset.alt ?? asset.filename}
               className="h-full w-full object-cover"
               draggable={false}
@@ -116,7 +117,7 @@ function MediaPickerTile({
         </button>
         <div className="absolute right-1 top-1 z-10 flex gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
           {isImage ? (
-            <ImagePreview src={asset.url}>
+            <ImagePreview src={mediaPreviewUrl(asset.url, asset.updatedAt)}>
               <button
                 type="button"
                 aria-label="预览"

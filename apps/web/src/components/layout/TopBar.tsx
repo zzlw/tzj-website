@@ -1,9 +1,9 @@
 'use client';
 
-import { Popover, PopoverContent, PopoverTrigger } from '@tzj/ui';
+import { Popover, PopoverContent, PopoverTrigger, toast } from '@tzj/ui';
 import { Globe, Mail, Phone } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { SocialChannelItem } from '@/components/contact/SocialChannelBar';
 import { SocialIcon } from '@/components/contact/SocialIcon';
 import { useLanguageSelector } from '@/components/i18n/LanguageSelector';
@@ -34,6 +34,18 @@ export function TopBar({ phone, email, socialChannels, scanHint }: TopBarProps) 
   const tContact = useTranslations('contact');
   const { open: openLanguageSelector } = useLanguageSelector();
   const [openQrKey, setOpenQrKey] = useState<string | null>(null);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  const handleCopy = useCallback(async (key: string, href: string) => {
+    try {
+      await navigator.clipboard.writeText(href);
+      setCopiedKey(key);
+      toast.success('链接已复制');
+      setTimeout(() => setCopiedKey(null), 2000);
+    } catch {
+      window.open(href, '_blank', 'noopener,noreferrer');
+    }
+  }, []);
 
   const localeShort = LOCALE_SHORT[locale as keyof typeof LOCALE_SHORT];
 
@@ -47,6 +59,79 @@ export function TopBar({ phone, email, socialChannels, scanHint }: TopBarProps) 
               <ul className="flex items-center gap-1" aria-label={tContact('followUs')}>
                 {socialChannels.map((channel) => {
                   if (channel.href) {
+                    if (channel.hrefAction === 'copy') {
+                      const isCopied = copiedKey === channel.key;
+                      const isOpen = openQrKey === channel.key;
+
+                      // 复制模式 + 有二维码：点击后复制链接并弹出扫码卡片
+                      if (channel.qr) {
+                        return (
+                          <li key={channel.key}>
+                            <Popover
+                              open={isOpen}
+                              onOpenChange={(open) => {
+                                setOpenQrKey(open ? channel.key : null);
+                                if (open) handleCopy(channel.key, channel.href!);
+                              }}
+                              modal={false}
+                            >
+                              <PopoverTrigger asChild>
+                                <button
+                                  type="button"
+                                  className={cn(
+                                    ICON_CLASS,
+                                    'px-2',
+                                    (isOpen || isCopied) && 'text-primary',
+                                  )}
+                                  aria-label={channel.label}
+                                  aria-expanded={isOpen}
+                                >
+                                  <SocialIcon id={channel.platform} />
+                                </button>
+                              </PopoverTrigger>
+                              <PopoverContent
+                                side="bottom"
+                                align="center"
+                                sideOffset={8}
+                                className="w-auto border-neutral-200 p-4 shadow-lg"
+                              >
+                                <figure className="flex flex-col items-center">
+                                  <div className="relative h-36 w-36 border border-neutral-200 bg-white p-1.5">
+                                    <img
+                                      src={resolveSocialQrUrl(channel.qr!)}
+                                      alt={channel.label}
+                                      width={144}
+                                      height={144}
+                                      loading="lazy"
+                                      className="h-full w-full object-contain"
+                                    />
+                                  </div>
+                                  <figcaption className="mt-3 text-sm font-bold text-neutral-900">
+                                    {channel.label}
+                                  </figcaption>
+                                  <p className="mt-1 text-xs text-neutral-500">{scanHint}</p>
+                                </figure>
+                              </PopoverContent>
+                            </Popover>
+                          </li>
+                        );
+                      }
+
+                      // 复制模式 + 无二维码：仅复制链接
+                      return (
+                        <li key={channel.key}>
+                          <button
+                            type="button"
+                            onClick={() => handleCopy(channel.key, channel.href!)}
+                            className={cn(ICON_CLASS, 'px-10', isCopied && 'text-primary')}
+                            aria-label={channel.label}
+                            title={isCopied ? '已复制' : channel.label}
+                          >
+                            <SocialIcon id={channel.platform} />
+                          </button>
+                        </li>
+                      );
+                    }
                     return (
                       <li key={channel.key}>
                         <a

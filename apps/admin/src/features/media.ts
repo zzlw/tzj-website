@@ -113,6 +113,26 @@ export function useReplaceSiteMedia() {
   });
 }
 
+/** 对单张素材加水印（原图备份至 _archive 后同 key 烧录覆盖，需 media.upload）。 */
+export function useApplyMediaWatermark() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      api.post<MediaAsset & { backupKey: string }>(`media/${id}/watermark`, {}),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['media'] }),
+  });
+}
+
+/** 对单张素材去水印（从 _archive 最新备份恢复原图，需 media.upload）。 */
+export function useRemoveMediaWatermark() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      api.del<MediaAsset & { restoredFrom: string }>(`media/${id}/watermark`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['media'] }),
+  });
+}
+
 interface MediaDeleteErrorDetails {
   usageCount?: number;
   references?: { type: string; title: string; field: string }[];

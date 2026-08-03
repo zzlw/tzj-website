@@ -44,6 +44,7 @@ export type {
   SitePublicSettings,
   SocialChannelPurpose,
   SocialChannelSetting,
+  SocialHrefAction,
   SocialPlatformId,
   SystemStatusResponse,
   TwoFactorEnableResult,

@@ -29,7 +29,7 @@ export default async function HowToBuyPage() {
         title={t('hero.title')}
         description={t('hero.description')}
         video="/media/louisville-case.mp4"
-        poster="/media/tower-wylie.jpg"
+        poster="/media/fixed-tower-hero.jpg"
       />
 
       <section>

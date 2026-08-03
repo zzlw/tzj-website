@@ -19,6 +19,8 @@ const optionalUrl = z
 
 const socialChannelPurposeSchema = z.enum(['contact', 'follow']);
 
+const socialHrefActionSchema = z.enum(['open', 'copy']);
+
 const socialChannelSchema = z.object({
   id: z.string().min(1).max(64),
   platform: socialPlatformSchema,
@@ -27,6 +29,7 @@ const socialChannelSchema = z.object({
   sortOrder: z.number().int().min(0).max(999),
   qr: z.string().max(2000).optional(),
   href: optionalUrl,
+  hrefAction: socialHrefActionSchema.optional(),
 });
 
 const businessHoursSchema = z.object({
@@ -103,3 +106,8 @@ export const sitePublicSettingsSchema = z.object({
 });
 
 export type SitePublicSettingsInput = z.infer<typeof sitePublicSettingsSchema>;
+
+/** 官网设置缓存 TTL（秒）：0-86400，0 = 不缓存（每次访问实时读取） */
+export const cacheTtlSchema = z.object({
+  ttl: z.number().int().min(0).max(86_400),
+});

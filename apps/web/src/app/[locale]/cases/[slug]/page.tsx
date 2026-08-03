@@ -1,12 +1,13 @@
 import { Check, MapPin } from 'lucide-react';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { MarkdownBody } from '@/components/content/MarkdownBody';
 import { JsonLd } from '@/components/JsonLd';
 import { MediaImage as Image } from '@/components/MediaImage';
-import { Container, Eyebrow, RbButton, RbLink } from '@/components/ui';
+import { BookConsultButton } from '@/components/chat/BookConsultButton';
+import { BookConsultLink } from '@/components/chat/BookConsultLink';
+import { Container, Eyebrow, RbLink } from '@/components/ui';
 import { getCase } from '@/lib/api';
 import { fetchBySlug, parseCaseSpecs, previewParams } from '@/lib/content-detail';
 import { caseTypeLabelI18n, formatContentDate } from '@/lib/content-labels';
@@ -50,6 +51,7 @@ export default async function CaseDetailPage({ params, searchParams }: CasePageP
   const tBread = await getTranslations('breadcrumbs');
   const tCta = await getTranslations('cta');
   const tCases = await getTranslations('content.categories.cases');
+  const tCommon = await getTranslations('common');
   const locale = await getLocale();
 
   const caseStudy = await fetchBySlug((s) => getCase(s, previewParams(previewToken)), slug);
@@ -166,9 +168,9 @@ export default async function CaseDetailPage({ params, searchParams }: CasePageP
                 ) : null}
               </dl>
               <div className="mt-8">
-                <RbButton href="/contact" className="w-full">
+                <BookConsultButton className="w-full" message={tCommon('bookConsultCase')}>
                   {t('consultSimilar')}
-                </RbButton>
+                </BookConsultButton>
               </div>
             </aside>
           </div>
@@ -177,12 +179,7 @@ export default async function CaseDetailPage({ params, searchParams }: CasePageP
         <Container>
           <div className="flex items-center justify-between border-t border-neutral-300 pt-8">
             <RbLink href="/cases">{t('viewAllCases')}</RbLink>
-            <Link
-              href="/contact"
-              className="text-sm font-bold text-primary transition-colors hover:text-primary-hover"
-            >
-              {t('bookConsultArrow')}
-            </Link>
+            <BookConsultLink message={tCommon('bookConsultCase')}>{t('bookConsultArrow')}</BookConsultLink>
           </div>
         </Container>
       </div>

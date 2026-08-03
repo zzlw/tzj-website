@@ -135,7 +135,10 @@ export function useChatSocket(params: { token: string | null }): UseChatSocketRe
   const tokenRef = useRef<string | null>(token ?? null);
   const authedTokenRef = useRef<string | null>(null);
   const manualOfflineRef = useRef(false);
-  const hasEverBeenOnlineRef = useRef(false);
+  // 服务端权威状态是否已同步（my-presence 是否已到达）：未同步前
+  // 禁止 visibilitychange 自动报 online，避免首次登录未手动上线的坐席
+  // 在竞态窗口内被自动上线。
+  const presenceSyncedRef = useRef(false);
   const [connected, setConnected] = useState(false);
 
   /** 注册事件监听器（支持多个回调同时订阅同一事件） */
@@ -217,12 +220,11 @@ export function useChatSocket(params: { token: string | null }): UseChatSocketRe
       sock.on('connect', () => {
         setConnected(true);
         sock.emit('register-agent');
-        // 坐席在线态以服务端为唯一权威：网关 handleConnectPresence 已实现
-        // 「连上即在线（manualOffline 除外）」，刷新/重连后无需客户端再报
-        // set-presence: online——旧实现的无条件上报会走 handleSetPresence 清掉
-        // 服务端 manualOffline 标记，导致「手动离线 → 刷新 → 又变在线」。
-        // 真实状态由 register-agent 回的 my-presence 同步（见下方监听）。
-        hasEverBeenOnlineRef.current = true;
+        // 坐席在线态以服务端为唯一权威：首次登录的坐席保持 offline 等待手动
+        // 上线，刷新/重连自动恢复 online（manualOffline 优先级最高）——因此
+        // 客户端不得无条件上报 set-presence: online，否则会冲掉服务端的
+        // offline 语义。真实状态由 my-presence 同步（见下方监听）。
+        presenceSyncedRef.current = false;
         // 连接即拉取未读聚合计数（P2 M1）
         sock.emit('get-notification-counts');
 
@@ -235,11 +237,12 @@ export function useChatSocket(params: { token: string | null }): UseChatSocketRe
       });
       sock.on('disconnect', () => setConnected(false));
       sock.on('connect_error', () => setConnected(false));
-      // 同步服务端权威的手动离线标记：网关「连上即在线」后，register-agent 时
-      // 仍为 offline 必然是 manualOffline。ref 随页面重载归零，靠此处从服务端恢复，
-      // 保证刷新/换设备后 visibilitychange 的自动报 online 不会冲掉手动离线。
+      // 同步服务端权威状态：offline 可能是 manualOffline，也可能是首次登录
+      // 尚未手动上线——两者刷新后都不得被 visibilitychange 自动报 online 覆盖。
+      // ref 随页面重载归零，靠此处从服务端恢复。
       sock.on('my-presence', (payload: { status?: PresenceStatus }) => {
         manualOfflineRef.current = payload?.status === 'offline';
+        presenceSyncedRef.current = true;
       });
       sock.on('auth-error', () => {
         setConnected(false);
@@ -271,7 +274,7 @@ export function useChatSocket(params: { token: string | null }): UseChatSocketRe
             clearTimeout(idleDelayTimer);
             idleDelayTimer = null;
           }
-          if (sock.connected && hasEverBeenOnlineRef.current && !manualOfflineRef.current) {
+          if (sock.connected && presenceSyncedRef.current && !manualOfflineRef.current) {
             sock.emit('set-presence', { status: 'online' });
           }
         }
@@ -363,7 +366,6 @@ export function useChatSocket(params: { token: string | null }): UseChatSocketRe
 
   const setPresence = useCallback((status: 'online' | 'away' | 'offline') => {
     manualOfflineRef.current = status === 'offline';
-    if (status !== 'offline') hasEverBeenOnlineRef.current = true;
     socketRef.current?.emit('set-presence', { status });
   }, []);
 

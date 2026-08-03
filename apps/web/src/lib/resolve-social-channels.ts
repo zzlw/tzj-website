@@ -34,6 +34,7 @@ function toBarItem(channel: SocialChannelSetting, t: (key: string) => string): S
     label: channelLabel(channel, t),
     qr: channel.qr,
     href: channel.href,
+    hrefAction: channel.hrefAction,
   };
 }
 
@@ -66,7 +67,7 @@ export function resolveSocialQrChannels(
     }));
 }
 
-/** 联系页全部二维码（合并即时沟通 + 关注） */
+/** 联系页全部二维码（合并即时沟通 + 关注，最多 2 个） */
 export function resolveAllSocialQrChannels(
   settings: SitePublicSettings,
   t: (key: string) => string,
@@ -74,11 +75,14 @@ export function resolveAllSocialQrChannels(
   return settings.social.channels
     .filter((c) => c.enabled && c.qr)
     .sort((a, b) => a.sortOrder - b.sortOrder)
+    .slice(0, 2)
     .map((c) => ({
       id: c.id,
       label: channelLabel(c, t),
       qr: c.qr!,
       platform: c.platform,
       scanHint: channelPurpose(c) === 'contact' ? t('scanToAdd') : t('scanToFollow'),
+      href: c.href,
+      hrefAction: c.hrefAction,
     }));
 }

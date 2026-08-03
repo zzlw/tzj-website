@@ -9,8 +9,10 @@ import {
   Truck,
 } from 'lucide-react';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
-import { Container, RbButton, RbLink, SectionHeading } from '@/components/ui';
+import { BookConsultButton } from '@/components/chat/BookConsultButton';
+import { Container, RbLink, SectionHeading } from '@/components/ui';
 import { PRODUCT_LINE_COUNT } from '@/lib/product-catalog';
 import { cn } from '@/lib/utils';
 
@@ -214,12 +216,13 @@ export function RelatedLinks({
 
 /* ──────────────────────────────────────────────────────────
  * CtaBand — 统一转化 CTA 区块
+ * 主按钮走「预约咨询」智能聊天链路（在线→聊天 / 手机→拨号 / 兜底→表单）
  * ────────────────────────────────────────────────────────── */
-export function CtaBand({
+export async function CtaBand({
   title,
   description,
   primaryLabel = '预约咨询',
-  primaryHref = '/contact',
+  primaryMessage,
   secondaryLabel,
   secondaryHref,
   className,
@@ -227,18 +230,20 @@ export function CtaBand({
   title: string;
   description?: ReactNode;
   primaryLabel?: string;
-  primaryHref?: string;
+  /** 聊天面板自动发送的场景化开场消息（不传则使用通用咨询消息） */
+  primaryMessage?: string;
   secondaryLabel?: string;
   secondaryHref?: string;
   className?: string;
 }) {
+  const tCommon = await getTranslations('common');
   return (
     <Container className={cn('pt-16 lg:pt-24', className)}>
       <div className="flex flex-col items-center gap-5 border border-neutral-300 bg-white p-10 text-center md:p-14">
         <h2 className="rb-h3 text-neutral-900">{title}</h2>
         {description ? <p className="max-w-xl text-secondary-text">{description}</p> : null}
         <div className="flex flex-wrap items-center justify-center gap-4">
-          <RbButton href={primaryHref}>{primaryLabel}</RbButton>
+          <BookConsultButton message={primaryMessage ?? tCommon('bookConsultGeneral')}>{primaryLabel}</BookConsultButton>
           {secondaryLabel && secondaryHref ? (
             <RbLink href={secondaryHref}>{secondaryLabel}</RbLink>
           ) : null}

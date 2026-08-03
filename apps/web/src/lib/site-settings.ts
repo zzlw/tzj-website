@@ -6,6 +6,31 @@ import { DEFAULT_SITE_PUBLIC_SETTINGS } from './site-defaults';
 
 const API_BASE = env.apiUrl;
 
+/** TTL 元数据缓存（固定 60s）：后台改 TTL 后最长 60s 内新值生效 */
+const CACHE_TTL_META_REVALIDATE = 60;
+
+/** 与 api 端 DEFAULT_CACHE_TTL_SECONDS 对齐的兜底值（无配置/请求失败时） */
+const DEFAULT_CACHE_TTL_SECONDS = 300;
+
+/**
+ * 读取后台配置的官网设置缓存 TTL（秒）。
+ * 两级缓存：TTL 元数据固定 60s 缓存（后台改 TTL 最长 1 分钟生效），
+ * 站点设置内容按返回的 TTL 缓存（docs/site-settings-cache-ttl-design.md §3.2）。
+ */
+async function getCacheTtl(): Promise<number> {
+  try {
+    const res = await fetch(`${API_BASE}/settings/cache-ttl`, {
+      next: { revalidate: CACHE_TTL_META_REVALIDATE },
+    });
+    if (!res.ok) throw new Error(`cache-ttl ${res.status}`);
+    const json = (await res.json()) as { data?: { ttl?: number } };
+    const ttl = json.data?.ttl;
+    return typeof ttl === 'number' && ttl >= 0 ? Math.floor(ttl) : DEFAULT_CACHE_TTL_SECONDS;
+  } catch {
+    return DEFAULT_CACHE_TTL_SECONDS;
+  }
+}
+
 /** 合并 CMS 设置与环境变量 / 静态默认值（env 优先于 CMS 用于部署级覆盖） */
 export function mergeSiteSettings(cms: SitePublicSettings): SitePublicSettings {
   return {
@@ -45,17 +70,15 @@ export function mergeSiteSettings(cms: SitePublicSettings): SitePublicSettings {
   };
 }
 
-/** 从 API 拉取官网站点设置（ISR 缓存策略）
- * - 生产环境：300 秒（5 分钟），平衡性能与时效性
- * - 开发环境：0 秒，即时生效便于调试
+/** 从 API 拉取官网站点设置（Data Cache 策略：TTL 由后台「官网生效速度」配置）
+ * - 默认 300s（5 分钟）；后台可配 0-86400s，0 = 不缓存每次实时读取
+ * - dev 下 Next 整体禁用 Data Cache，TTL 与 0 等价，无需分支（docs/site-settings-cache-ttl-design.md §3.2）
  */
 export async function getSitePublicSettings(): Promise<SitePublicSettings> {
-  const isDev = process.env.NODE_ENV === 'development';
-  const revalidateTime = isDev ? 0 : 300; // 开发环境不缓存，生产环境 5 分钟
-
   try {
+    const ttl = await getCacheTtl();
     const res = await fetch(`${API_BASE}/settings/site/public`, {
-      next: { revalidate: revalidateTime, tags: ['site-settings'] },
+      next: { revalidate: ttl, tags: ['site-settings'] },
     });
     if (!res.ok) throw new Error(`settings ${res.status}`);
     const json = (await res.json()) as { data?: SitePublicSettings };
@@ -88,18 +111,14 @@ export function localizedAddress(
 }
 
 /**
- * 获取网站 favicon URL（ISR 缓存策略）。
- * - 生产环境：300 秒（5 分钟）
- * - 开发环境：0 秒，即时生效
+ * 获取网站 favicon URL（Data Cache 策略同上：TTL 由后台「官网生效速度」配置）。
  * 优先从 API 查询，回退到 S3 静态路径。
  */
 export async function getFaviconUrl(): Promise<string | null> {
-  const isDev = process.env.NODE_ENV === 'development';
-  const revalidateTime = isDev ? 0 : 300;
-
   try {
+    const ttl = await getCacheTtl();
     const res = await fetch(`${API_BASE}/site-settings/favicon`, {
-      next: { revalidate: revalidateTime, tags: ['site-settings'] },
+      next: { revalidate: ttl, tags: ['site-settings'] },
     });
     if (!res.ok) throw new Error(`favicon ${res.status}`);
     const json = (await res.json()) as { data?: { url: string | null } };

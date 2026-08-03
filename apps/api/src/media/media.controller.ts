@@ -135,6 +135,20 @@ export class MediaController {
     return this.media.replaceSiteAsset(id, file, user?.id);
   }
 
+  @RequirePermissions('media.upload')
+  @Post(':id/watermark')
+  @ApiOperation({ summary: '对单张素材加水印（原图备份至 _archive 后同 key 烧录覆盖）' })
+  applyWatermark(@Param('id') id: string) {
+    return this.media.applyWatermark(id);
+  }
+
+  @RequirePermissions('media.upload')
+  @Delete(':id/watermark')
+  @ApiOperation({ summary: '对单张素材去水印（从 _archive 最新备份恢复原图）' })
+  removeWatermark(@Param('id') id: string) {
+    return this.media.removeWatermark(id);
+  }
+
   @RequirePermissions('media.delete')
   @Post(':id/restore')
   @ApiOperation({ summary: '从回收站恢复素材' })
