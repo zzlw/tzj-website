@@ -116,15 +116,16 @@ export function MarketingPopup({ phone }: { phone?: string }) {
   if (!activity) return null;
 
   // CTA 三级智能路由（在线判定在点击瞬间实时请求，不预取，保证实时性）：
-  //  1. 有客服在线 → 打开客服面板并自动发送「我想了解『活动标题』」；
-  //  2. 无坐席连接（online + away 都为 0，away 坐席仍可接消息不算无人，
-  //     与 ChatWidget.tryDialInstead 同口径）且为可拨号移动设备（且配了电话）
+  //  1. 有客服可接待（online + away 都算，away 坐席仍可接消息不算无人，
+  //     与 ChatWidget.tryDialInstead / useAgentPresence 同口径）
+  //     → 打开客服面板并自动发送「我想了解『活动标题』」；
+  //  2. 无坐席连接（online + away 都为 0）且为可拨号移动设备（且配了电话）
   //     → 直接唤起拨号；
-  //  3. 兜底（含 away-only）→ 原逻辑：官网外链新标签页 / 站内活动详情页。
+  //  3. 兜底（真正无人）→ 官网外链新标签页 / 站内活动详情页。
   const onCta = async () => {
     sendPopupEvent(activity.id, 'click');
     const avail = await fetchAgentAvailability().catch(() => null);
-    if (avail && avail.online > 0) {
+    if (avail && avail.online + avail.away > 0) {
       setOpen(false);
       openChat({ message: tCommon('marketingInterest', { title: activity.title }) });
       return;
