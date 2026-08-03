@@ -24,13 +24,20 @@ async function bootstrap() {
   // 全局前缀
   app.setGlobalPrefix('api/v1');
 
-  // CORS 白名单（逗号分隔）
+  // CORS 白名单（逗号分隔）+ 生产域名模式匹配
   const origins = (process.env.CORS_ORIGINS || 'http://localhost:3001,http://localhost:3002')
     .split(',')
     .map((o) => o.trim())
     .filter(Boolean);
+  const prodPattern = /^https:\/\/(?:[\w-]+\.)?tzjii\.com$/;
   app.enableCors({
-    origin: origins,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (origins.includes(origin) || prodPattern.test(origin)) {
+        return callback(null, true);
+      }
+      callback(null, false);
+    },
     credentials: true,
   });
 

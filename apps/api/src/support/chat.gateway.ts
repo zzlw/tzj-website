@@ -83,6 +83,8 @@ interface RateBucket {
         /^http:\/\/localhost:\d+$/,
         /^http:\/\/127\.0\.0\.1:\d+$/,
         /^file:\/\//,
+        // 生产域名：允许所有 *.tzjii.com 子域（www / admin / api 等）
+        /^https:\/\/(?:[\w-]+\.)?tzjii\.com$/,
       ];
 
       if (!origin || origin === 'null') {
@@ -94,7 +96,7 @@ interface RateBucket {
       if (allowedPatterns.some((pattern) => pattern.test(origin))) {
         return callback(null, true);
       }
-      callback(new Error('Not allowed by CORS'));
+      callback(null, false);
     },
     credentials: true,
     pingInterval: 5_000,
