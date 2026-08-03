@@ -28,7 +28,8 @@ COPY . .
 
 RUN find . -name '*.tsbuildinfo' -delete
 RUN pnpm --filter @tzj/api exec prisma generate
-RUN npx turbo run build --filter=@tzj/api...
+# pnpm exec 使用 lockfile 固定版本（npx 会浮动拉取最新，且触发 pnpm run 自动 install）
+RUN pnpm exec turbo run build --filter=@tzj/api...
 # 打包 api 及生产依赖（pnpm 扁平 node_modules，避免根 node_modules 软链在运行时失效）
 RUN pnpm --filter @tzj/api deploy --prod --legacy /prod/api
 # deploy --prod 会留下未初始化的 @prisma/client stub；复制 builder 内已 generate 的完整 .prisma（含 query engine）

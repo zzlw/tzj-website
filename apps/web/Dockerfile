@@ -46,7 +46,8 @@ ENV NEXT_PUBLIC_WEB_URL=$NEXT_PUBLIC_WEB_URL
 
 RUN corepack enable && corepack prepare pnpm@11.9.0 --activate
 RUN node apps/web/scripts/copy-vditor-assets.mjs
-RUN npx turbo run build --filter=@tzj/web
+# pnpm exec 使用 lockfile 固定版本（npx 会浮动拉取最新，且触发 pnpm run 自动 install）
+RUN pnpm exec turbo run build --filter=@tzj/web
 
 # ── Stage 4: Runner (Standalone 模式提取) ────────────────────
 FROM base AS runner
