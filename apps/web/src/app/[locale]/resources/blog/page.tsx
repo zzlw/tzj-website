@@ -2,11 +2,11 @@ import type { Blog } from '@tzj/types';
 import { ArrowRight, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { ContentListShell, ContentPaginationShell } from '@/components/content/ContentListShell';
 import { ContentPagination } from '@/components/content/ContentPagination';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { RelatedLinks } from '@/components/sections/blocks';
-import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { Container, PageHero, SectionHeading } from '@/components/ui';
 import { getBlogs } from '@/lib/api';
 import { blogCategoryLabel, formatContentDate } from '@/lib/content-labels';
@@ -21,7 +21,7 @@ import { getBlogCategoryFilter } from '@/lib/i18n/content-filters';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 import { getBlogSortOptions } from '@/lib/i18n/sort-options';
 
-const RELATED_HREFS = ['/resources/faqs', '/cases', '/resources/design-center'];
+const RELATED_HREFS = ['/resources/faqs', '/cases', '/resources/design-center'] as const;
 
 export async function generateMetadata() {
   return createPageMetadata({ namespace: 'pages.resourcesBlog', path: '/resources/blog' });
@@ -74,7 +74,8 @@ export default async function BlogPage({ searchParams }: PageProps) {
     pagination = normalizePagination(listRes.pagination, state.page, state.limit);
     featured = featuredBlog;
     if (featured) {
-      items = items.filter((p) => p.slug !== featured!.slug);
+      const featuredSlug = featured.slug; // 局部常量：闭包内 TS 不保留 let 收窄
+      items = items.filter((p) => p.slug !== featuredSlug);
     }
   } catch {
     /* empty */
@@ -101,7 +102,7 @@ export default async function BlogPage({ searchParams }: PageProps) {
               href={`/resources/blog/${featured.slug}`}
               className="group mt-10 grid grid-cols-1 overflow-hidden border border-neutral-300 bg-white transition-colors hover:border-neutral-900 lg:grid-cols-2"
             >
-              <div className="relative min-h-[240px] overflow-hidden bg-neutral-900">
+              <div className="rb-img-shimmer relative min-h-[240px] overflow-hidden bg-neutral-200">
                 <Image
                   src={pickCoverImage(featured.coverImage, '/media/fixed-tower-hero.jpg')}
                   alt={featured.title}
@@ -140,6 +141,7 @@ export default async function BlogPage({ searchParams }: PageProps) {
               toolbar={{
                 filters: [categoryFilter],
                 sortOptions,
+                // biome-ignore lint/style/noNonNullAssertion: getBlogSortOptions() 恒返回含默认排序的列表，defaultSort 必传
                 defaultSort: sortOptions[0]!,
               }}
             >
@@ -192,14 +194,16 @@ export default async function BlogPage({ searchParams }: PageProps) {
         title={tBlocks('titleDefault')}
         learnMore={tBlocks('learnMore')}
         eyebrow={tBlocks('eyebrow')}
-        links={relatedLinks.map((l, i) => ({ ...l, href: RELATED_HREFS[i]! }))}
+        links={relatedLinks.map((l, i) => ({ ...l, href: RELATED_HREFS[i] ?? RELATED_HREFS[0] }))}
       />
 
       <Container className="pt-4 lg:pt-8">
         <div className="flex flex-col items-center gap-5 border border-neutral-300 bg-white p-10 text-center md:p-14">
           <h2 className="rb-h3 text-neutral-900">{t('cta.title')}</h2>
           <p className="text-secondary-text">{t('cta.description')}</p>
-          <BookConsultButton message={tCommon('bookConsultContent')}>{tCta('bookConsult')}</BookConsultButton>
+          <BookConsultButton message={tCommon('bookConsultContent')}>
+            {tCta('bookConsult')}
+          </BookConsultButton>
         </div>
       </Container>
     </div>

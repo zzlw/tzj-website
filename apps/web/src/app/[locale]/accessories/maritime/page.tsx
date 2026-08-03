@@ -17,9 +17,9 @@ const GALLERY_SRCS = [
   '/media/maritime-astoria.jpg',
   '/media/maritime-miami.jpg',
   '/media/maritime-jacksonville.jpg',
-];
+] as const;
 const PROP_ICONS = [Anchor, ArrowUpDown, DoorOpen, Flame, LayoutGrid, Ship] as const;
-const RELATED_HREFS = ['/fixed-tower', '/modular-tower', '/accessories'];
+const RELATED_HREFS = ['/fixed-tower', '/modular-tower', '/accessories'] as const;
 
 export default async function MaritimePage() {
   const t = await getTranslations('pages.accessoriesMaritime');
@@ -28,7 +28,7 @@ export default async function MaritimePage() {
 
   const gallery = t.raw('gallery') as Array<{ alt: string }>;
   const propsRaw = t.raw('props') as Array<{ title: string; desc: string }>;
-  const props = propsRaw.map((item, i) => ({ ...item, icon: PROP_ICONS[i]! }));
+  const props = propsRaw.map((item, i) => ({ ...item, icon: PROP_ICONS[i] ?? PROP_ICONS[0] }));
   const extraFeatures = t.raw('extraFeatures') as string[];
   const config = t.raw('config') as Array<{ label: string; value: string }>;
   const users = t.raw('users') as string[];
@@ -48,10 +48,10 @@ export default async function MaritimePage() {
             {gallery.map((g, i) => (
               <div
                 key={GALLERY_SRCS[i]}
-                className="relative aspect-[4/3] overflow-hidden bg-neutral-900"
+                className="rb-img-shimmer relative aspect-[4/3] overflow-hidden bg-neutral-200"
               >
                 <Image
-                  src={GALLERY_SRCS[i]!}
+                  src={GALLERY_SRCS[i] ?? GALLERY_SRCS[0]}
                   alt={g.alt}
                   fill
                   quality={70}
@@ -169,7 +169,7 @@ export default async function MaritimePage() {
         title={tBlocks('titleDefault')}
         learnMore={tBlocks('learnMore')}
         eyebrow={tBlocks('eyebrow')}
-        links={relatedLinks.map((l, i) => ({ ...l, href: RELATED_HREFS[i]! }))}
+        links={relatedLinks.map((l, i) => ({ ...l, href: RELATED_HREFS[i] ?? RELATED_HREFS[0] }))}
       />
 
       <CtaBand

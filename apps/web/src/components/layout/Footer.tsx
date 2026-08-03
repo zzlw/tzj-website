@@ -1,9 +1,9 @@
 import { Mail, MapPin, Phone } from 'lucide-react';
 import { getLocale, getTranslations } from 'next-intl/server';
+import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { SocialChannelBar } from '@/components/contact/SocialChannelBar';
 import { FooterLanguageTrigger } from '@/components/i18n/FooterLanguageTrigger';
 import { MediaImage as Image } from '@/components/MediaImage';
-import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { Container, Eyebrow, RbLink } from '@/components/ui';
 import { Link } from '@/i18n/navigation';
 import { FOOTER_BLOCKS } from '@/lib/navigation';
@@ -28,7 +28,7 @@ export async function Footer() {
   return (
     <footer className="bg-white">
       <div className="grid lg:grid-cols-2">
-        <div className="relative flex min-h-[360px] flex-col justify-center overflow-hidden bg-neutral-900 px-5 py-14 sm:px-8 lg:px-12 lg:py-20 xl:px-16">
+        <div className="rb-img-shimmer-dark relative flex min-h-[360px] flex-col justify-center overflow-hidden bg-neutral-900 px-5 py-14 sm:px-8 lg:px-12 lg:py-20 xl:px-16">
           <Image
             src="/media/fixed-tower-hero.jpg"
             alt=""
@@ -43,7 +43,9 @@ export async function Footer() {
             <h2 className="rb-h2 mt-4 text-white">{tFooter('ctaTitle')}</h2>
             <p className="mt-4 text-base leading-relaxed text-white/85">{tFooter('ctaDesc')}</p>
             <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-4">
-              <BookConsultButton variant="light" message={tCommon('bookConsultFooter')}>{tFooter('ctaButton')}</BookConsultButton>
+              <BookConsultButton variant="light" message={tCommon('bookConsultFooter')}>
+                {tFooter('ctaButton')}
+              </BookConsultButton>
               <RbLink href="/cases" inverted>
                 {tFooter('ctaLink')}
               </RbLink>

@@ -3,11 +3,11 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
+import { BookConsultButton } from '@/components/chat/BookConsultButton';
+import { BookConsultLink } from '@/components/chat/BookConsultLink';
 import { MarkdownBody } from '@/components/content/MarkdownBody';
 import { JsonLd } from '@/components/JsonLd';
 import { MediaImage as Image } from '@/components/MediaImage';
-import { BookConsultButton } from '@/components/chat/BookConsultButton';
-import { BookConsultLink } from '@/components/chat/BookConsultLink';
 import { Container, Eyebrow, RbLink } from '@/components/ui';
 import { getNewsItem, getNewsList } from '@/lib/api';
 import { fetchBySlug, previewParams } from '@/lib/content-detail';
@@ -87,13 +87,14 @@ export default async function NewsDetailPage({ params, searchParams }: NewsPageP
       />
 
       <div className="pb-20">
-        <section className="relative h-[360px] overflow-hidden bg-neutral-900 lg:h-[460px]">
+        <section className="relative h-[360px] overflow-hidden bg-neutral-800 lg:h-[460px]">
           <Image
             src={coverImage}
             alt={item.title}
             fill
             preload
             loading="eager"
+            fetchPriority="high"
             quality={90}
             sizes="100vw"
             className="object-cover"
@@ -122,7 +123,9 @@ export default async function NewsDetailPage({ params, searchParams }: NewsPageP
                 {t('ctaDescriptionNews')}
               </p>
               <div className="mt-6 flex justify-center">
-                <BookConsultButton message={tCommon('bookConsultContent')}>{tCta('bookConsult')}</BookConsultButton>
+                <BookConsultButton message={tCommon('bookConsultContent')}>
+                  {tCta('bookConsult')}
+                </BookConsultButton>
               </div>
             </div>
           </article>
@@ -162,7 +165,9 @@ export default async function NewsDetailPage({ params, searchParams }: NewsPageP
         <Container>
           <div className="flex items-center justify-between border-t border-neutral-300 pt-8">
             <RbLink href="/resources/news">{t('backToNews')}</RbLink>
-            <BookConsultLink message={tCommon('bookConsultContent')}>{t('bookConsultArrow')}</BookConsultLink>
+            <BookConsultLink message={tCommon('bookConsultContent')}>
+              {t('bookConsultArrow')}
+            </BookConsultLink>
           </div>
         </Container>
       </div>

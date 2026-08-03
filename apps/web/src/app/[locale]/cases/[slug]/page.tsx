@@ -2,11 +2,11 @@ import { Check, MapPin } from 'lucide-react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
+import { BookConsultButton } from '@/components/chat/BookConsultButton';
+import { BookConsultLink } from '@/components/chat/BookConsultLink';
 import { MarkdownBody } from '@/components/content/MarkdownBody';
 import { JsonLd } from '@/components/JsonLd';
 import { MediaImage as Image } from '@/components/MediaImage';
-import { BookConsultButton } from '@/components/chat/BookConsultButton';
-import { BookConsultLink } from '@/components/chat/BookConsultLink';
 import { Container, Eyebrow, RbLink } from '@/components/ui';
 import { getCase } from '@/lib/api';
 import { fetchBySlug, parseCaseSpecs, previewParams } from '@/lib/content-detail';
@@ -49,7 +49,6 @@ export default async function CaseDetailPage({ params, searchParams }: CasePageP
   const { previewToken } = await searchParams;
   const t = await getTranslations('content.detail');
   const tBread = await getTranslations('breadcrumbs');
-  const tCta = await getTranslations('cta');
   const tCases = await getTranslations('content.categories.cases');
   const tCommon = await getTranslations('common');
   const locale = await getLocale();
@@ -96,13 +95,15 @@ export default async function CaseDetailPage({ params, searchParams }: CasePageP
       />
 
       <div className="pb-20">
-        <section className="relative h-[420px] overflow-hidden bg-neutral-900 lg:h-[520px]">
+        <section className="relative h-[420px] overflow-hidden bg-neutral-800 lg:h-[520px]">
           <Image
             src={coverImage}
             alt={caseStudy.title}
             fill
             preload
             loading="eager"
+            fetchPriority="high"
+            quality={90}
             sizes="100vw"
             className="object-cover"
           />
@@ -145,7 +146,7 @@ export default async function CaseDetailPage({ params, searchParams }: CasePageP
               <MarkdownBody content={description} />
             </div>
 
-            <aside className="border border-neutral-300 bg-neutral-100 p-6 lg:p-8">
+            <aside className="content-sidebar self-start sticky border border-neutral-300 bg-neutral-100 p-6 lg:p-8">
               <h3 className="font-display text-sm font-bold uppercase tracking-wide text-neutral-900">
                 {t('projectInfo')}
               </h3>
@@ -179,7 +180,9 @@ export default async function CaseDetailPage({ params, searchParams }: CasePageP
         <Container>
           <div className="flex items-center justify-between border-t border-neutral-300 pt-8">
             <RbLink href="/cases">{t('viewAllCases')}</RbLink>
-            <BookConsultLink message={tCommon('bookConsultCase')}>{t('bookConsultArrow')}</BookConsultLink>
+            <BookConsultLink message={tCommon('bookConsultCase')}>
+              {t('bookConsultArrow')}
+            </BookConsultLink>
           </div>
         </Container>
       </div>

@@ -22,7 +22,7 @@ export function ProductLineCard({ line, variant = 'default' }: ProductLineCardPr
         href={line.href}
         className="group flex flex-col overflow-hidden border border-neutral-300 bg-white transition-colors duration-300 hover:border-neutral-900"
       >
-        <div className="relative aspect-[4/3] overflow-hidden bg-neutral-900">
+        <div className="rb-img-shimmer-dark relative aspect-[4/3] overflow-hidden bg-neutral-900">
           <Image
             src={line.image}
             alt={line.title}
@@ -54,7 +54,7 @@ export function ProductLineCard({ line, variant = 'default' }: ProductLineCardPr
       href={line.href}
       className="group flex h-full flex-col overflow-hidden border border-neutral-300 bg-white transition-colors duration-300 hover:border-neutral-900"
     >
-      <div className="relative aspect-[16/10] overflow-hidden bg-neutral-900">
+      <div className="rb-img-shimmer-dark relative aspect-[16/10] overflow-hidden bg-neutral-900">
         <Image
           src={line.image}
           alt={line.title}

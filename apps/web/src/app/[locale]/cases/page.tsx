@@ -1,12 +1,12 @@
 import { ArrowRight, MapPin } from 'lucide-react';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { ContentListShell, ContentPaginationShell } from '@/components/content/ContentListShell';
 import { ContentPagination } from '@/components/content/ContentPagination';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { RelatedLinks } from '@/components/sections/blocks';
 import { StatBandI18n } from '@/components/sections/blocks-i18n';
-import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { Container, PageHero } from '@/components/ui';
 import { getCases } from '@/lib/api';
 import { caseTypeLabel, formatContentDate } from '@/lib/content-labels';
@@ -20,6 +20,8 @@ import {
 import { getCaseTypeFilter } from '@/lib/i18n/content-filters';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 import { getCaseSortOptions } from '@/lib/i18n/sort-options';
+
+const RELATED_HREFS = ['/fixed-tower', '/modular-tower', '/specialized-training'] as const;
 
 export async function generateMetadata() {
   return createPageMetadata({ namespace: 'pages.cases', path: '/cases' });
@@ -75,6 +77,7 @@ export default async function CasesPage({ searchParams }: PageProps) {
             toolbar={{
               filters: [caseTypeFilter],
               sortOptions: caseSortOptions,
+              // biome-ignore lint/style/noNonNullAssertion: getCaseSortOptions() 恒返回含默认排序的列表，defaultSort 必传
               defaultSort: caseSortOptions[0]!,
             }}
           >
@@ -96,7 +99,7 @@ export default async function CasesPage({ searchParams }: PageProps) {
                       href={`/cases/${item.slug}`}
                       className="group flex flex-col overflow-hidden border border-neutral-300 bg-white transition-colors duration-300 hover:border-neutral-900"
                     >
-                      <div className="relative aspect-[4/3] overflow-hidden bg-neutral-900">
+                      <div className="rb-img-shimmer relative aspect-[4/3] overflow-hidden bg-neutral-200">
                         <Image
                           src={pickCoverImage(item.coverImage)}
                           alt={item.title}
@@ -163,7 +166,7 @@ export default async function CasesPage({ searchParams }: PageProps) {
         eyebrow={tBlocks('eyebrow')}
         links={(t.raw('relatedLinks') as Array<{ label: string; desc: string }>).map((l, i) => ({
           ...l,
-          href: ['/fixed-tower', '/modular-tower', '/specialized-training'][i]!,
+          href: RELATED_HREFS[i] ?? RELATED_HREFS[0],
         }))}
       />
 
@@ -171,7 +174,9 @@ export default async function CasesPage({ searchParams }: PageProps) {
         <div className="flex flex-col items-center gap-5 border border-neutral-300 bg-white p-10 text-center md:p-14">
           <h2 className="rb-h3 text-neutral-900">{t('cta.title')}</h2>
           <p className="text-secondary-text">{t('cta.description')}</p>
-          <BookConsultButton message={tCommon('bookConsultCase')}>{tCta('bookConsult')}</BookConsultButton>
+          <BookConsultButton message={tCommon('bookConsultCase')}>
+            {tCta('bookConsult')}
+          </BookConsultButton>
         </div>
       </Container>
     </div>

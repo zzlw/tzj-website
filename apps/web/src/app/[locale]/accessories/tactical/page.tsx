@@ -14,7 +14,7 @@ export async function generateMetadata() {
 }
 
 const CUSTOM_ICONS = [Wrench, Move, Layers, Maximize] as const;
-const RELATED_HREFS = ['/fixed-tower', '/modular-tower', '/accessories'];
+const RELATED_HREFS = ['/fixed-tower', '/modular-tower', '/accessories'] as const;
 
 export default async function TacticalPage() {
   const t = await getTranslations('pages.accessoriesTactical');
@@ -24,7 +24,10 @@ export default async function TacticalPage() {
   const scenarios = t.raw('scenarios') as Array<{ title: string; desc: string }>;
   const skillTags = t.raw('skillTags') as string[];
   const customPointsRaw = t.raw('customPoints') as Array<{ title: string; desc: string }>;
-  const customPoints = customPointsRaw.map((item, i) => ({ ...item, icon: CUSTOM_ICONS[i]! }));
+  const customPoints = customPointsRaw.map((item, i) => ({
+    ...item,
+    icon: CUSTOM_ICONS[i] ?? CUSTOM_ICONS[0],
+  }));
   const relatedLinks = t.raw('relatedLinks') as Array<{ label: string; desc: string }>;
 
   return (
@@ -37,7 +40,7 @@ export default async function TacticalPage() {
 
       <section>
         <Container className="pt-16 lg:pt-24">
-          <div className="relative aspect-[21/9] overflow-hidden bg-neutral-900">
+          <div className="rb-img-shimmer relative aspect-[21/9] overflow-hidden bg-neutral-200">
             <Image
               src="/media/tactical.jpg"
               alt={t('heroImageAlt')}
@@ -134,7 +137,7 @@ export default async function TacticalPage() {
         title={tBlocks('titleDefault')}
         learnMore={tBlocks('learnMore')}
         eyebrow={tBlocks('eyebrow')}
-        links={relatedLinks.map((l, i) => ({ ...l, href: RELATED_HREFS[i]! }))}
+        links={relatedLinks.map((l, i) => ({ ...l, href: RELATED_HREFS[i] ?? RELATED_HREFS[0] }))}
       />
 
       <CtaBand

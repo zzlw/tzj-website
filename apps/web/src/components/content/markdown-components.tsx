@@ -10,7 +10,7 @@ export const markdownImageComponents: MarkdownComponents = {
   img: ({ src, alt }) => {
     if (!src || typeof src !== 'string') return null;
     return (
-      <span className="relative my-8 block aspect-[16/9] overflow-hidden bg-neutral-100">
+      <span className="rb-img-shimmer relative my-8 block aspect-[16/9] overflow-hidden bg-neutral-200">
         <Image
           src={src}
           alt={alt ?? '正文配图'}

@@ -10,7 +10,7 @@ const RELATED_HREFS = [
   '/modular-tower/series',
   '/modular-tower/vs-containers',
   '/resources/design-center',
-];
+] as const;
 
 export async function generateMetadata() {
   return createPageMetadata({
@@ -37,7 +37,7 @@ export default async function ModularCustomPage() {
 
       <section>
         <Container className="pt-16 lg:pt-24">
-          <div className="relative aspect-[21/9] overflow-hidden bg-neutral-900">
+          <div className="rb-img-shimmer relative aspect-[21/9] overflow-hidden bg-neutral-200">
             <Image
               src="/media/modular-construction.jpg"
               alt={t('gallery.imageAlt')}
@@ -86,7 +86,7 @@ export default async function ModularCustomPage() {
         title={tBlocks('titleDefault')}
         learnMore={tBlocks('learnMore')}
         eyebrow={tBlocks('eyebrow')}
-        links={relatedLinks.map((l, i) => ({ ...l, href: RELATED_HREFS[i]! }))}
+        links={relatedLinks.map((l, i) => ({ ...l, href: RELATED_HREFS[i] ?? RELATED_HREFS[0] }))}
       />
 
       <CtaBand

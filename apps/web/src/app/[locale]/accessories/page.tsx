@@ -11,10 +11,10 @@ import {
   Wind,
 } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
+import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { RelatedLinks } from '@/components/sections/blocks';
 import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
-import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { Container, Eyebrow, RbLink, SectionHeading } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 
@@ -22,7 +22,7 @@ export async function generateMetadata() {
   return createPageMetadata({ namespace: 'pages.accessories', path: '/accessories' });
 }
 
-const HERO_IMAGE = 'images/202105/9c5be9ab1a5.jpg';
+const HERO_IMAGE = '/media/tower-eastside.jpg';
 const FEATURE_ICONS = [
   Biohazard,
   Flame,
@@ -35,7 +35,11 @@ const FEATURE_ICONS = [
   LayoutGrid,
   Droplets,
 ] as const;
-const RELATED_HREFS = ['/accessories/maritime', '/accessories/tactical', '/accessories/hazmat'];
+const RELATED_HREFS = [
+  '/accessories/maritime',
+  '/accessories/tactical',
+  '/accessories/hazmat',
+] as const;
 
 export default async function AccessoriesPage() {
   const t = await getTranslations('pages.accessories');
@@ -44,7 +48,10 @@ export default async function AccessoriesPage() {
   const tCommon = await getTranslations('common');
 
   const featuresRaw = t.raw('features') as Array<{ title: string; desc: string }>;
-  const features = featuresRaw.map((item, i) => ({ ...item, icon: FEATURE_ICONS[i]! }));
+  const features = featuresRaw.map((item, i) => ({
+    ...item,
+    icon: FEATURE_ICONS[i] ?? FEATURE_ICONS[0],
+  }));
   const maritimeFeatures = t.raw('maritime.features') as string[];
   const tacticalScenarios = t.raw('tactical.scenarios') as string[];
   const hazmatProducts = t.raw('hazmat.products') as Array<{ name: string; desc: string }>;
@@ -52,7 +59,7 @@ export default async function AccessoriesPage() {
 
   return (
     <div className="pb-20">
-      <section className="relative flex min-h-[460px] items-end overflow-hidden bg-neutral-900 pt-16">
+      <section className="relative flex min-h-[460px] items-end overflow-hidden bg-neutral-800 pt-16">
         <Image
           src={HERO_IMAGE}
           alt={t('hero.imageAlt')}
@@ -62,6 +69,7 @@ export default async function AccessoriesPage() {
           className="object-cover object-center"
           preload
           loading="eager"
+          fetchPriority="high"
         />
         <div className="absolute inset-0 rb-media-shade-strong" />
         <Container className="rb-on-media relative z-10 py-14 lg:py-20">
@@ -187,14 +195,16 @@ export default async function AccessoriesPage() {
         title={tBlocks('titleDefault')}
         learnMore={tBlocks('learnMore')}
         eyebrow={tBlocks('eyebrow')}
-        links={relatedLinks.map((l, i) => ({ ...l, href: RELATED_HREFS[i]! }))}
+        links={relatedLinks.map((l, i) => ({ ...l, href: RELATED_HREFS[i] ?? RELATED_HREFS[0] }))}
       />
 
       <Container className="pt-16 lg:pt-24">
         <div className="flex flex-col items-center gap-5 border border-neutral-300 bg-white p-10 text-center md:p-14">
           <h2 className="rb-h3 text-neutral-900">{t('cta.title')}</h2>
           <p className="text-secondary-text">{t('cta.description')}</p>
-          <BookConsultButton message={tCommon('bookConsultProduct')}>{tCta('bookConsult')}</BookConsultButton>
+          <BookConsultButton message={tCommon('bookConsultProduct')}>
+            {tCta('bookConsult')}
+          </BookConsultButton>
         </div>
       </Container>
     </div>

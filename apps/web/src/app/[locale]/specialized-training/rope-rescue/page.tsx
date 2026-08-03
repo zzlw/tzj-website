@@ -14,7 +14,7 @@ const RELATED_HREFS = [
   '/specialized-training/psychological',
   '/solutions/mine-rescue',
   '/fixed-tower',
-];
+] as const;
 
 export async function generateMetadata() {
   return createPageMetadata({
@@ -30,7 +30,10 @@ export default async function RopeRescuePage() {
   const tBlocks = await getTranslations('blocks.relatedLinks');
 
   const featuresRaw = t.raw('features') as Array<{ title: string; desc: string }>;
-  const features = featuresRaw.map((item, i) => ({ ...item, icon: FEATURE_ICONS[i]! }));
+  const features = featuresRaw.map((item, i) => ({
+    ...item,
+    icon: FEATURE_ICONS[i] ?? FEATURE_ICONS[0],
+  }));
   const programs = t.raw('programs') as string[];
   const relatedLinks = t.raw('relatedLinks') as Array<{ label: string; desc: string }>;
 
@@ -52,13 +55,14 @@ export default async function RopeRescuePage() {
         ]}
       />
       <div className="pb-20">
-        <section className="relative h-[420px] overflow-hidden bg-neutral-900 lg:h-[500px]">
+        <section className="relative h-[420px] overflow-hidden bg-neutral-800 lg:h-[500px]">
           <Image
             src={IMAGE}
             alt={t('hero.imageAlt')}
             fill
             preload
             loading="eager"
+            fetchPriority="high"
             quality={90}
             sizes="100vw"
             className="object-cover"
@@ -123,7 +127,7 @@ export default async function RopeRescuePage() {
           title={tBlocks('titleDefault')}
           learnMore={tBlocks('learnMore')}
           eyebrow={tBlocks('eyebrow')}
-          links={relatedLinks.map((l, i) => ({ ...l, href: RELATED_HREFS[i]! }))}
+          links={relatedLinks.map((l, i) => ({ ...l, href: RELATED_HREFS[i] ?? RELATED_HREFS[0] }))}
         />
         <CtaBand
           title={t('cta.title')}

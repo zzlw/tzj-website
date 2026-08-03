@@ -151,10 +151,23 @@ html[data-header-hidden] .product-line-nav {
   top: 0;
 }
 
+/* 内容详情页侧边栏（项目信息等）吸顶：
+   Header 可见时置于其下方 4rem，保持明显间距；
+   Header 收起时（向下滚动）间距收窄至 3rem，避免空档过大 */
+.content-sidebar {
+  top: calc(var(--site-header-offset) + 4rem);
+  transition: top var(--header-hide-duration) var(--header-hide-ease);
+}
+
+html[data-header-hidden] .content-sidebar {
+  top: 3rem;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .site-header,
   .product-hub-nav,
-  .product-line-nav {
+  .product-line-nav,
+  .content-sidebar {
     transition: none;
   }
 }
@@ -662,4 +675,82 @@ body[data-scroll-locked] {
 #aff-im-root {
   position: relative !important;
   z-index: 60 !important;
+}
+
+/* ============================================================
+   图片加载体验：shimmer 骨架 + fade-in 过渡
+   方案文档：docs/web-image-loading-optimization.md
+   注意：本段为非 layer 裸 CSS，优先级高于 Tailwind 工具类
+   （@layer utilities），保证 shimmer 渐变覆盖容器背景色。
+   ============================================================ */
+
+/* 图片淡入动画（lazy 图 onLoad 后由 MediaImage 添加该类） */
+.rb-img-fadein {
+  animation: rb-img-fadein 400ms ease-out forwards;
+}
+
+@keyframes rb-img-fadein {
+  from {
+    opacity: 0;
+    filter: blur(8px) saturate(0.8);
+  }
+  to {
+    opacity: 1;
+    filter: none; /* 动画结束移除 filter，避免合成层常驻 */
+  }
+}
+
+/* 浅色 shimmer —— 用于无遮罩的纯图片容器（配 bg-neutral-200）
+ * 层级说明：本类（非 layer）的 background 简写会覆盖 Tailwind 的
+ * bg-neutral-200；但渐变 200% 宽 + repeat 满铺容器，视觉完全由
+ * 渐变决定，背景色仅作兜底。 */
+.rb-img-shimmer {
+  background: linear-gradient(
+    90deg,
+    #e5e5e5 0%,
+    #f0f0f0 40%,
+    #f5f5f5 50%,
+    #f0f0f0 60%,
+    #e5e5e5 100%
+  );
+  background-size: 200% 100%;
+  animation: rb-shimmer 1.8s ease-in-out infinite;
+}
+
+/* 深色 shimmer —— 用于带 rb-media-shade 叠加的容器（配 bg-neutral-900）
+ * 这些容器上方有白色文字，加载期间需保持深色背景以维持文字可读性。
+ * rb-media-shade 渐变（rgba(10,10,10,0.88) → transparent）会叠在此背景上。 */
+.rb-img-shimmer-dark {
+  background: linear-gradient(
+    90deg,
+    #262626 0%,
+    #303030 40%,
+    #383838 50%,
+    #303030 60%,
+    #262626 100%
+  );
+  background-size: 200% 100%;
+  animation: rb-shimmer 1.8s ease-in-out infinite;
+}
+
+@keyframes rb-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* 减弱动画模式（无障碍） */
+@media (prefers-reduced-motion: reduce) {
+  .rb-img-fadein {
+    animation: none;
+    opacity: 1;
+    filter: none;
+  }
+  .rb-img-shimmer {
+    animation: none;
+    background: #e5e5e5; /* 静态浅灰占位，不闪烁 */
+  }
+  .rb-img-shimmer-dark {
+    animation: none;
+    background: #262626; /* 静态深灰占位，不闪烁 */
+  }
 }

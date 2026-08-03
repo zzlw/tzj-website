@@ -49,7 +49,7 @@ export default async function SolutionsPage() {
                     href={`/solutions/${s.slug}`}
                     className="group flex flex-col overflow-hidden border border-neutral-300 bg-white transition-colors duration-300 hover:border-neutral-900"
                   >
-                    <div className="relative aspect-[16/10] overflow-hidden bg-neutral-900">
+                    <div className="rb-img-shimmer-dark relative aspect-[16/10] overflow-hidden bg-neutral-900">
                       <Image
                         src={s.image}
                         alt={s.name}

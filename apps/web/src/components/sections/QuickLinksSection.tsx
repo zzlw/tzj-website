@@ -35,11 +35,11 @@ export function QuickLinksSection() {
     <section id="products" className="scroll-mt-24 bg-white py-12 lg:py-16">
       <Container>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {CARDS.map((card, i) => (
+          {CARDS.map((card) => (
             <Link
               key={card.title}
               href={card.href}
-              className="group relative aspect-[16/10] overflow-hidden bg-neutral-900 sm:aspect-[16/11]"
+              className="rb-img-shimmer-dark group relative aspect-[16/10] overflow-hidden bg-neutral-900 sm:aspect-[16/11]"
             >
               <Image
                 src={card.image}

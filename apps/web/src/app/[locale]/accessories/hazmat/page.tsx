@@ -21,7 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 const PROP_ICONS = [AlertTriangle, Droplets, ContainerIcon, Activity, Biohazard, Cpu] as const;
-const RELATED_HREFS = ['/accessories', '/fixed-tower', '/cases'];
+const RELATED_HREFS = ['/accessories', '/fixed-tower', '/cases'] as const;
 
 export default async function HazmatPage() {
   const t = await getTranslations('pages.accessoriesHazmat');
@@ -29,7 +29,7 @@ export default async function HazmatPage() {
   const tBlocks = await getTranslations('blocks.relatedLinks');
 
   const propsRaw = t.raw('props') as Array<{ title: string; desc: string }>;
-  const props = propsRaw.map((item, i) => ({ ...item, icon: PROP_ICONS[i]! }));
+  const props = propsRaw.map((item, i) => ({ ...item, icon: PROP_ICONS[i] ?? PROP_ICONS[0] }));
   const trailerFeatures = t.raw('trailer.features') as string[];
   const relatedLinks = t.raw('relatedLinks') as Array<{ label: string; desc: string }>;
 
@@ -70,7 +70,7 @@ export default async function HazmatPage() {
       <section className="bg-neutral-100">
         <Container className="py-16 lg:py-24">
           <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-16">
-            <div className="relative aspect-[4/3] overflow-hidden bg-neutral-900">
+            <div className="rb-img-shimmer relative aspect-[4/3] overflow-hidden bg-neutral-200">
               <Image
                 src="/media/hazmat-trailer.webp"
                 alt={t('trailer.imageAlt')}
@@ -136,7 +136,7 @@ export default async function HazmatPage() {
         title={tBlocks('titleDefault')}
         learnMore={tBlocks('learnMore')}
         eyebrow={tBlocks('eyebrow')}
-        links={relatedLinks.map((l, i) => ({ ...l, href: RELATED_HREFS[i]! }))}
+        links={relatedLinks.map((l, i) => ({ ...l, href: RELATED_HREFS[i] ?? RELATED_HREFS[0] }))}
       />
 
       <CtaBand

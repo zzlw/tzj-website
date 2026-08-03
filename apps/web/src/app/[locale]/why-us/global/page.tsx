@@ -5,8 +5,8 @@ import { StatBandI18n } from '@/components/sections/blocks-i18n';
 import { Container, Eyebrow, SectionHeading } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 
-const HERO_IMAGE = 'images/202101/29e0925cf89.jpg';
-const RELATED_HREFS = ['/cases', '/why-us/story', '/why-us/team'];
+const HERO_IMAGE = '/media/tower-wylie.jpg';
+const RELATED_HREFS = ['/cases', '/why-us/story', '/why-us/team'] as const;
 
 export async function generateMetadata() {
   return createPageMetadata({ namespace: 'pages.whyUsGlobal', path: '/why-us/global' });
@@ -24,7 +24,7 @@ export default async function GlobalPage() {
 
   return (
     <div className="pb-20">
-      <section className="relative flex min-h-[620px] items-center justify-center overflow-hidden bg-neutral-900 pt-16 lg:min-h-[720px]">
+      <section className="relative flex min-h-[620px] items-center justify-center overflow-hidden bg-neutral-800 pt-16 lg:min-h-[720px]">
         <Image
           src={HERO_IMAGE}
           alt={t('hero.imageAlt')}
@@ -33,6 +33,8 @@ export default async function GlobalPage() {
           className="object-cover object-center"
           preload
           loading="eager"
+          fetchPriority="high"
+          quality={90}
         />
         <div className="absolute inset-0 rb-media-shade-strong" />
         <Container className="rb-on-media relative z-10 flex flex-col items-center py-16 text-center lg:py-24">
@@ -114,7 +116,7 @@ export default async function GlobalPage() {
         title={tBlocks('titleDefault')}
         learnMore={tBlocks('learnMore')}
         eyebrow={tBlocks('eyebrow')}
-        links={relatedLinks.map((l, i) => ({ ...l, href: RELATED_HREFS[i]! }))}
+        links={relatedLinks.map((l, i) => ({ ...l, href: RELATED_HREFS[i] ?? RELATED_HREFS[0] }))}
       />
       <CtaBand title={t('cta.title')} primaryLabel={tCta('bookConsult')} />
     </div>

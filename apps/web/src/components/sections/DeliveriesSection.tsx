@@ -47,7 +47,7 @@ export async function DeliveriesSection() {
               href={`/cases/${slug}`}
               className="group flex flex-col overflow-hidden border border-neutral-300 bg-white transition-colors duration-300 hover:border-neutral-900"
             >
-              <div className="relative aspect-[4/3] overflow-hidden">
+              <div className="rb-img-shimmer relative aspect-[4/3] overflow-hidden bg-neutral-200">
                 <Image
                   src={DELIVERY_IMAGES[slug]}
                   alt={t(`items.${slug}.title`)}

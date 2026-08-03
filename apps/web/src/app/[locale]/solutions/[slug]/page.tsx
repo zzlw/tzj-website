@@ -3,11 +3,11 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
+import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { JsonLd } from '@/components/JsonLd';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { FeatureGrid } from '@/components/sections/blocks';
 import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
-import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { Container, Eyebrow, RbLink, SectionHeading } from '@/components/ui';
 import { getLocalizedSolution, getLocalizedSolutions } from '@/lib/i18n/solutions';
 import { breadcrumbJsonLd } from '@/lib/jsonld';
@@ -64,13 +64,15 @@ export default async function SolutionDetailPage({ params }: SolutionPageProps) 
       />
 
       <div className="pb-20">
-        <section className="relative h-[420px] overflow-hidden bg-neutral-900 lg:h-[500px]">
+        <section className="relative h-[420px] overflow-hidden bg-neutral-800 lg:h-[500px]">
           <Image
             src={solution.image}
             alt={solution.name}
             fill
             preload
             loading="eager"
+            fetchPriority="high"
+            quality={90}
             sizes="100vw"
             className="object-cover"
           />
@@ -210,7 +212,9 @@ export default async function SolutionDetailPage({ params }: SolutionPageProps) 
             </h2>
             <p className="max-w-xl text-secondary-text">{t('cta.description')}</p>
             <div className="flex flex-wrap items-center justify-center gap-4">
-              <BookConsultButton message={tCommon('bookConsultSolution')}>{tCta('bookConsult')}</BookConsultButton>
+              <BookConsultButton message={tCommon('bookConsultSolution')}>
+                {tCta('bookConsult')}
+              </BookConsultButton>
               <RbLink href="/solutions">{t('cta.backLink')}</RbLink>
             </div>
           </div>

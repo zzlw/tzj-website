@@ -6,7 +6,7 @@ import { StatBandI18n } from '@/components/sections/blocks-i18n';
 import { Container, PageHero, SectionHeading } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 
-const RELATED_HREFS = ['/burn-rooms/comparison', '/burn-rooms', '/resources/inspections'];
+const RELATED_HREFS = ['/burn-rooms/comparison', '/burn-rooms', '/resources/inspections'] as const;
 
 export async function generateMetadata() {
   return createPageMetadata({ namespace: 'pages.burnRoomsLiner', path: '/burn-rooms/liner' });
@@ -33,7 +33,7 @@ export default async function LinerPage() {
       <section>
         <Container className="pt-16 lg:pt-24">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="relative aspect-[4/3] overflow-hidden bg-neutral-900">
+            <div className="rb-img-shimmer relative aspect-[4/3] overflow-hidden bg-neutral-200">
               <Image
                 src="/media/burn-room.webp"
                 alt={t('gallery.linerAlt')}
@@ -43,9 +43,9 @@ export default async function LinerPage() {
                 className="object-cover"
               />
             </div>
-            <div className="relative aspect-[4/3] overflow-hidden bg-neutral-900">
+            <div className="rb-img-shimmer relative aspect-[4/3] overflow-hidden bg-neutral-200">
               <Image
-                src="images/202605/041a07c4595.jpg"
+                src="/media/galvanized-stair.webp"
                 alt={t('gallery.steelAlt')}
                 fill
                 quality={70}
@@ -123,7 +123,7 @@ export default async function LinerPage() {
         title={tBlocks('titleDefault')}
         learnMore={tBlocks('learnMore')}
         eyebrow={tBlocks('eyebrow')}
-        links={relatedLinks.map((l, i) => ({ ...l, href: RELATED_HREFS[i]! }))}
+        links={relatedLinks.map((l, i) => ({ ...l, href: RELATED_HREFS[i] ?? RELATED_HREFS[0] }))}
       />
 
       <CtaBand
