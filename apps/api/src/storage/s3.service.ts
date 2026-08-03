@@ -277,16 +277,24 @@ export class S3Service implements OnModuleInit {
   }
 
   /**
-   * 列出指定前缀下的文件
+   * 列出指定前缀下的文件（自动翻页直到列完）。
+   * @param maxKeys 每页上限（S3 单次最大 1000），翻页由 ContinuationToken 驱动
    */
   async list(prefix: string, maxKeys = 100): Promise<string[]> {
-    const result = await this.client.send(
-      new ListObjectsV2Command({
-        Bucket: this.bucket,
-        Prefix: prefix,
-        MaxKeys: maxKeys,
-      }),
-    );
-    return (result.Contents ?? []).map((obj) => obj.Key!).filter(Boolean);
+    const keys: string[] = [];
+    let token: string | undefined;
+    do {
+      const result = await this.client.send(
+        new ListObjectsV2Command({
+          Bucket: this.bucket,
+          Prefix: prefix,
+          MaxKeys: maxKeys,
+          ContinuationToken: token,
+        }),
+      );
+      keys.push(...(result.Contents ?? []).map((obj) => obj.Key!).filter(Boolean));
+      token = result.IsTruncated ? result.NextContinuationToken : undefined;
+    } while (token);
+    return keys;
   }
 }

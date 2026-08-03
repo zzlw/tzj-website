@@ -133,6 +133,52 @@ export function useRemoveMediaWatermark() {
   });
 }
 
+/** 批量重烧候选：指纹为 NULL（参数快照上线前）或与当前配置不一致的已烧录素材。 */
+export interface WatermarkReburnCandidate {
+  id: string;
+  filename: string;
+  folder: string;
+  key: string;
+  size: number;
+  mimeType: string;
+  updatedAt: string;
+  watermarkFingerprint: string | null;
+  watermarkParams: { config?: Record<string, unknown>; appliedAt?: string } | null;
+}
+
+export interface WatermarkReburnResult {
+  total: number;
+  reburned: number;
+  failures: { id: string; filename: string; reason: string }[];
+}
+
+/** 查询需重烧水印的素材清单（用于入口按钮计数与确认弹窗）。 */
+export function useWatermarkReburnCandidates(enabled: boolean) {
+  return useQuery({
+    queryKey: ['media', 'watermark', 'reburn', 'candidates'],
+    queryFn: () =>
+      api.query<{
+        count: number;
+        currentFingerprint: string;
+        assets: WatermarkReburnCandidate[];
+      }>('media/watermark/reburn/candidates'),
+    enabled,
+  });
+}
+
+/** 批量重烧水印（旧参数素材按当前设置重烧，需 media.upload；ids 缺省 = 全部候选）。 */
+export function useReburnWatermarks() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ids?: string[]) =>
+      api.post<WatermarkReburnResult>(
+        'media/watermark/reburn',
+        ids && ids.length > 0 ? { ids } : {},
+      ),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['media'] }),
+  });
+}
+
 interface MediaDeleteErrorDetails {
   usageCount?: number;
   references?: { type: string; title: string; field: string }[];

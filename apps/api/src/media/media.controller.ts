@@ -19,9 +19,10 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
 import type { AuthUser } from '../auth/roles';
 import { S3Service } from '../storage/s3.service';
-import { PresignDto, RegisterMediaDto } from './dto/media.dto';
+import { PresignDto, ReburnWatermarksDto, RegisterMediaDto } from './dto/media.dto';
 import { MediaService } from './media.service';
 import { normalizeWatermarkOverride } from './watermark.service';
+import { WatermarkReburnService } from './watermark-reburn.service';
 
 @ApiTags('media')
 @ApiBearerAuth()
@@ -30,6 +31,7 @@ export class MediaController {
   constructor(
     private readonly media: MediaService,
     private readonly s3: S3Service,
+    private readonly reburn: WatermarkReburnService,
   ) {}
 
   // 媒体库浏览/读取对所有已登录角色开放（无需专门权限）：素材为团队共享资源，
@@ -133,6 +135,20 @@ export class MediaController {
   ) {
     if (!file) throw new BadRequestException('未接收到文件');
     return this.media.replaceSiteAsset(id, file, user?.id);
+  }
+
+  @RequirePermissions('media.upload')
+  @Get('watermark/reburn/candidates')
+  @ApiOperation({ summary: '查询需重烧水印的素材（旧参数指纹或快照前历史素材）' })
+  reburnCandidates() {
+    return this.reburn.candidates();
+  }
+
+  @RequirePermissions('media.upload')
+  @Post('watermark/reburn')
+  @ApiOperation({ summary: '批量重烧水印（候选素材按当前设置重新烧录；先备份当前版本）' })
+  reburnWatermarks(@Body() dto: ReburnWatermarksDto) {
+    return this.reburn.reburn(dto?.ids);
   }
 
   @RequirePermissions('media.upload')

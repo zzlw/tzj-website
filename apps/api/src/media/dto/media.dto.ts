@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsArray, IsOptional, IsString, MaxLength } from 'class-validator';
 
 /** 生成预签名直传 URL 的入参。 */
 export class PresignDto {
@@ -44,4 +44,16 @@ export class RegisterMediaDto {
   @IsString()
   @MaxLength(200)
   alt?: string;
+}
+
+/** 批量重烧水印的入参。 */
+export class ReburnWatermarksDto {
+  @ApiPropertyOptional({
+    description: '指定素材 id 列表；缺省 = 全部候选素材（旧参数水印）',
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  ids?: string[];
 }

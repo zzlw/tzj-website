@@ -20,7 +20,7 @@ import {
   TabsTrigger,
   TooltipProvider,
 } from '@tzj/ui';
-import { ImageOff, Loader2, Search, Upload, X } from 'lucide-react';
+import { ImageOff, Loader2, RefreshCcw, Search, Upload, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Can } from '@/components/Can';
 import { WatermarkOptOutToggle } from '@/components/crud/WatermarkOptOutToggle';
@@ -32,10 +32,12 @@ import {
   useDeleteMedia,
   useMediaList,
   usePurgeMedia,
+  useReburnWatermarks,
   useRemoveMediaWatermark,
   useReplaceSiteMedia,
   useRestoreMedia,
   useUploadMedia,
+  useWatermarkReburnCandidates,
 } from '@/features/media';
 import type { MediaAsset } from '@/features/types';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
@@ -91,6 +93,7 @@ export default function MediaPage() {
   const [replaceTarget, setReplaceTarget] = useState<MediaAsset | null>(null);
   const [replaceFile, setReplaceFile] = useState<File | null>(null);
   const [removeWatermarkTarget, setRemoveWatermarkTarget] = useState<MediaAsset | null>(null);
+  const [reburnOpen, setReburnOpen] = useState(false);
   const [previewAsset, setPreviewAsset] = useState<MediaAsset | null>(null);
   const [skipWatermark, setSkipWatermark] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -123,6 +126,8 @@ export default function MediaPage() {
   const replaceSite = useReplaceSiteMedia();
   const applyWatermark = useApplyMediaWatermark();
   const removeWatermark = useRemoveMediaWatermark();
+  const reburnCandidates = useWatermarkReburnCandidates(!isTrash);
+  const reburn = useReburnWatermarks();
 
   const assets = data?.data ?? [];
   const pagination = data?.pagination;
@@ -226,6 +231,26 @@ export default function MediaPage() {
     }
   }
 
+  async function handleReburnConfirm() {
+    try {
+      const res = await reburn.mutateAsync(undefined);
+      setReburnOpen(false);
+      if (res.failures.length === 0) {
+        notifySuccess(
+          res.reburned > 0 ? `已用当前设置重烧 ${res.reburned} 张素材的水印` : '没有需要重烧的素材',
+        );
+      } else {
+        const reasons = [...new Set(res.failures.map((f) => f.reason))];
+        notifyError(
+          `成功 ${res.reburned} 张，未处理 ${res.failures.length} 张：${reasons.join('；')}`,
+          '批量重烧未全部完成',
+        );
+      }
+    } catch (e) {
+      notifyError(e, '批量重烧失败');
+    }
+  }
+
   function copyUrl(url: string) {
     navigator.clipboard.writeText(url);
     setCopiedUrl(url);
@@ -258,6 +283,21 @@ export default function MediaPage() {
                   onCheckedChange={setSkipWatermark}
                   disabled={upload.isPending}
                 />
+                <Button
+                  variant="outline"
+                  onClick={() => setReburnOpen(true)}
+                  disabled={
+                    reburnCandidates.isLoading ||
+                    (reburnCandidates.data?.count ?? 0) === 0 ||
+                    reburn.isPending
+                  }
+                >
+                  <RefreshCcw className="mr-2 h-4 w-4" />
+                  重烧旧水印
+                  {reburnCandidates.data && reburnCandidates.data.count > 0
+                    ? ` (${reburnCandidates.data.count})`
+                    : ''}
+                </Button>
                 <Button onClick={() => fileRef.current?.click()} disabled={upload.isPending}>
                   {upload.isPending ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -490,6 +530,20 @@ export default function MediaPage() {
         confirmLabel="去水印"
         onConfirm={handleRemoveWatermarkConfirm}
         loading={removeWatermark.isPending}
+      />
+
+      <ConfirmDialog
+        open={reburnOpen}
+        onOpenChange={(open) => !open && setReburnOpen(false)}
+        title="批量重烧水印"
+        description={
+          reburnCandidates.data
+            ? `将用当前站点设置重新烧录 ${reburnCandidates.data.count} 张素材的水印（参数快照上线前烧录或参数已变更的素材）。处理期间请勿操作媒体库。`
+            : undefined
+        }
+        confirmLabel="开始重烧"
+        onConfirm={handleReburnConfirm}
+        loading={reburn.isPending}
       />
 
       <input

@@ -4,6 +4,8 @@ import sharp from 'sharp';
 import type { SettingsService } from '../settings/settings.service';
 import type { S3Service } from '../storage/s3.service';
 import {
+  buildWatermarkSnapshot,
+  fingerprintWatermarkConfig,
   normalizeWatermarkOverride,
   videoExtFromMime,
   WatermarkService,
@@ -175,5 +177,56 @@ describe('WatermarkService.processUpload', () => {
     const result = await service.processUpload(fakeVideo, 'video/mp4', 'uploads', 'force');
     expect(result.watermarked).toBe(false);
     expect(result.buffer).toBe(fakeVideo);
+  });
+});
+
+describe('fingerprintWatermarkConfig（参数快照指纹）', () => {
+  it('相同配置（不同对象字面量）指纹一致', () => {
+    expect(fingerprintWatermarkConfig(buildConfig())).toBe(
+      fingerprintWatermarkConfig(buildConfig()),
+    );
+  });
+
+  it('字段书写顺序不影响指纹（规范化提取）', () => {
+    const reversed = Object.fromEntries(Object.entries(buildConfig()).reverse()) as ReturnType<
+      typeof buildConfig
+    >;
+    expect(fingerprintWatermarkConfig(reversed)).toBe(fingerprintWatermarkConfig(buildConfig()));
+  });
+
+  it('渲染参数变化（opacity）指纹变化', () => {
+    expect(fingerprintWatermarkConfig(buildConfig({ opacity: 0.4 }))).not.toBe(
+      fingerprintWatermarkConfig(buildConfig({ opacity: 0.8 })),
+    );
+  });
+
+  it('渲染参数变化（text）指纹变化', () => {
+    expect(fingerprintWatermarkConfig(buildConfig({ text: 'A' }))).not.toBe(
+      fingerprintWatermarkConfig(buildConfig({ text: 'B' })),
+    );
+  });
+
+  it('适用范围字段变化（applyToFolders/applyToVideos）不影响指纹', () => {
+    expect(fingerprintWatermarkConfig(buildConfig({ applyToFolders: ['cms'] }))).toBe(
+      fingerprintWatermarkConfig(buildConfig()),
+    );
+    expect(fingerprintWatermarkConfig(buildConfig({ applyToVideos: true }))).toBe(
+      fingerprintWatermarkConfig(buildConfig()),
+    );
+  });
+
+  it('指纹为 12 位小写十六进制', () => {
+    expect(fingerprintWatermarkConfig(buildConfig())).toMatch(/^[0-9a-f]{12}$/);
+  });
+
+  it('快照包含规范化配置与烧录时刻', () => {
+    const snapshot = buildWatermarkSnapshot(buildConfig({ text: 'TZJ' }));
+    expect(snapshot).toEqual({
+      config: expect.objectContaining({ text: 'TZJ', opacity: 0.5, layout: 'corner' }),
+      appliedAt: expect.any(String),
+    });
+    // 规范化快照不含适用范围字段
+    expect(snapshot.config).not.toHaveProperty('applyToFolders');
+    expect(snapshot.config).not.toHaveProperty('enabled');
   });
 });

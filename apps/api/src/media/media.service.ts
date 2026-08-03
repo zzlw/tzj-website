@@ -7,7 +7,7 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import type { Prisma } from '@prisma/client/index';
+import { Prisma } from '@prisma/client/index';
 import type { WatermarkOverride } from '@tzj/types';
 import { PrismaService } from '../prisma/prisma.service';
 import { S3Service } from '../storage/s3.service';
@@ -17,7 +17,11 @@ import {
   PROTECTED_MEDIA_FOLDERS,
   SITE_ARCHIVE_PREFIX,
 } from './media-guard.service';
-import { WatermarkService } from './watermark.service';
+import {
+  buildWatermarkSnapshot,
+  fingerprintWatermarkConfig,
+  WatermarkService,
+} from './watermark.service';
 
 interface FindAllParams {
   page: number;
@@ -141,21 +145,25 @@ export class MediaService {
       watermark,
     );
     const result = await this.s3.upload(processed.buffer, key, processed.mimeType);
-    const record = await this.prisma.mediaAsset.create({
-      data: {
-        key: result.key,
-        url: result.url,
-        filename: file.originalname,
-        mimeType: processed.mimeType,
-        size: processed.buffer.length,
-        width: processed.width,
-        height: processed.height,
-        folder: dir,
-        uploadedById: userId,
-        // 按实际处理结果记录：true=已烧录；false=服务端经手但未烧录（skip/跳过/回退）
-        watermarked: processed.watermarked,
-      },
-    });
+    const data: Prisma.MediaAssetUncheckedCreateInput = {
+      key: result.key,
+      url: result.url,
+      filename: file.originalname,
+      mimeType: processed.mimeType,
+      size: processed.buffer.length,
+      width: processed.width,
+      height: processed.height,
+      folder: dir,
+      uploadedById: userId,
+      // 按实际处理结果记录：true=已烧录；false=服务端经手但未烧录（skip/跳过/回退）
+      watermarked: processed.watermarked,
+    };
+    // 烧录成功时落参数快照 + 配置指纹（供识别旧参数素材）；历史数据/未烧录为 null
+    if (processed.watermarked && processed.config) {
+      data.watermarkParams = buildWatermarkSnapshot(processed.config);
+      data.watermarkFingerprint = fingerprintWatermarkConfig(processed.config);
+    }
+    const record = await this.prisma.mediaAsset.create({ data });
 
     // 自动烧录（auto/force 且实际烧录成功）时同步备份原图，与手动 applyWatermark
     // 共用 `_archive/watermark/{id}/` 前缀，保证后续「去水印」可从此恢复；
@@ -379,14 +387,17 @@ export class MediaService {
     await this.s3.copy(asset.key, backupKey);
     await this.s3.upload(processed.buffer, asset.key, processed.mimeType);
 
-    const updated = await this.prisma.mediaAsset.update({
-      where: { id },
-      data: {
-        watermarked: true,
-        size: processed.buffer.length,
-        mimeType: processed.mimeType,
-      },
-    });
+    const updateData: Prisma.MediaAssetUncheckedUpdateInput = {
+      watermarked: true,
+      size: processed.buffer.length,
+      mimeType: processed.mimeType,
+    };
+    // 落参数快照 + 配置指纹：水印外观变化（改设置）后可据此识别旧参数素材
+    if (processed.config) {
+      updateData.watermarkParams = buildWatermarkSnapshot(processed.config);
+      updateData.watermarkFingerprint = fingerprintWatermarkConfig(processed.config);
+    }
+    const updated = await this.prisma.mediaAsset.update({ where: { id }, data: updateData });
     const enriched = await this.guard.enrichMany([updated]);
     return { ...this.toEnvUrl(enriched[0] ?? updated), backupKey };
   }
@@ -430,14 +441,16 @@ export class MediaService {
     await this.s3.copy(latest, asset.key);
 
     const head = await this.s3.head(asset.key);
-    const updated = await this.prisma.mediaAsset.update({
-      where: { id },
-      data: {
-        watermarked: false,
-        mimeType: head.contentType,
-        size: head.contentLength,
-      },
-    });
+    const updateData: Prisma.MediaAssetUncheckedUpdateInput = {
+      watermarked: false,
+      mimeType: head.contentType,
+      size: head.contentLength,
+      // 已恢复原图，参数快照/指纹随烧录状态一并清空，避免残留误导
+      // （Json 字段须用 DbNull 表达 DB 层 NULL；字面量 null 在 Prisma 语义为“不清除”）
+      watermarkParams: Prisma.DbNull,
+      watermarkFingerprint: null,
+    };
+    const updated = await this.prisma.mediaAsset.update({ where: { id }, data: updateData });
     const enriched = await this.guard.enrichMany([updated]);
     return { ...this.toEnvUrl(enriched[0] ?? updated), restoredFrom: latest };
   }

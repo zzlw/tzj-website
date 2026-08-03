@@ -146,7 +146,7 @@ export function normalizePagination(
 
 import { resolveMediaUrl } from './media-url';
 
-export function pickCoverImage(src?: string | null, fallback = 'images/202101/29e0925cf89.jpg') {
+export function pickCoverImage(src?: string | null, fallback = '/media/tower-wylie.jpg') {
   return resolveMediaUrl(src?.trim() ? src : fallback);
 }
 

@@ -10,7 +10,7 @@ export async function generateMetadata() {
   return createPageMetadata({ namespace: 'pages.burnRooms', path: '/burn-rooms' });
 }
 
-const HERO_IMAGE = 'images/202605/041a07c4595.jpg';
+const HERO_IMAGE = '/media/galvanized-stair.webp';
 const HERO_VIDEO = '/media/burn-room.mp4';
 const RELATED_HREFS = ['/burn-rooms/liner', '/burn-rooms/comparison', '/resources/inspections'];
 

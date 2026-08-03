@@ -357,6 +357,9 @@ model MediaAsset {
   alt          String?
   // 水印烧录状态：true=服务端已烧录；false=服务端经手但确认未烧录；null=未知（历史数据/直传登记/替换链路）
   watermarked  Boolean?
+  // 水印参数快照（烧录时的渲染配置 + 时刻）与配置指纹：配合指纹识别旧参数素材，为批量重烧打基础
+  watermarkParams     Json?
+  watermarkFingerprint String?
   uploadedById String?
   uploadedBy   User?     @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
   deletedAt    DateTime?

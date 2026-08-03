@@ -5,11 +5,16 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client/index';
 import type { PrismaService } from '../prisma/prisma.service';
 import type { S3Service } from '../storage/s3.service';
 import { MediaService } from './media.service';
 import type { MediaGuardService } from './media-guard.service';
-import type { WatermarkService } from './watermark.service';
+import {
+  canonicalWatermarkConfig,
+  fingerprintWatermarkConfig,
+  type WatermarkService,
+} from './watermark.service';
 
 /**
  * 逐张水印操作回归（docs/media-watermark-design.md 第二部分 §7.1）：
@@ -32,12 +37,33 @@ function asset(overrides: Record<string, unknown> = {}) {
     alt: null,
     deletedAt: null,
     watermarked: false,
+    watermarkParams: null,
+    watermarkFingerprint: null,
     uploadedById: null,
     createdAt: new Date('2026-08-01T00:00:00Z'),
     updatedAt: new Date('2026-08-01T00:00:00Z'),
     ...overrides,
   };
 }
+
+/** 测试用水印配置：与 settings 默认值一致，供快照/指纹断言 */
+const WMCONFIG = {
+  enabled: true,
+  layout: 'tile',
+  mode: 'text',
+  text: '河南拓之迹',
+  imageKey: undefined,
+  opacity: 0.4,
+  position: 'bottom-right',
+  scale: 0.22,
+  tileSpacing: 1.5,
+  tileAngle: -25,
+  minWidth: 480,
+  minHeight: 320,
+  applyToImages: true,
+  applyToVideos: false,
+  applyToFolders: ['uploads', 'cms'],
+} as const;
 
 function buildService(opts: { isSiteResource?: boolean } = {}) {
   const findUnique = jest.fn();
@@ -98,6 +124,7 @@ describe('MediaService.applyWatermark', () => {
       buffer: Buffer.from('watermarked!'),
       mimeType: 'image/webp',
       watermarked: true,
+      config: { ...WMCONFIG },
     });
     update.mockResolvedValue(asset({ watermarked: true, mimeType: 'image/webp', size: 12 }));
 
@@ -113,9 +140,19 @@ describe('MediaService.applyWatermark', () => {
       upload.mock.invocationCallOrder[0] ?? Number.MAX_SAFE_INTEGER,
     );
     expect(upload).toHaveBeenCalledWith(Buffer.from('watermarked!'), 'cms/abc.jpg', 'image/webp');
+    // 烧录时落参数快照 + 配置指纹（供识别旧参数素材）
     expect(update).toHaveBeenCalledWith({
       where: { id: 'cuid1' },
-      data: { watermarked: true, size: 12, mimeType: 'image/webp' },
+      data: {
+        watermarked: true,
+        size: 12,
+        mimeType: 'image/webp',
+        watermarkParams: {
+          config: canonicalWatermarkConfig({ ...WMCONFIG }),
+          appliedAt: expect.any(String),
+        },
+        watermarkFingerprint: fingerprintWatermarkConfig({ ...WMCONFIG }),
+      },
     });
     expect(result.watermarked).toBe(true);
     expect(typeof result.backupKey).toBe('string');
@@ -228,7 +265,14 @@ describe('MediaService.removeWatermark', () => {
     ]);
     expect(update).toHaveBeenCalledWith({
       where: { id: 'cuid1' },
-      data: { watermarked: false, mimeType: 'image/jpeg', size: 900 },
+      data: {
+        watermarked: false,
+        mimeType: 'image/jpeg',
+        size: 900,
+        // Json 字段清空用 DbNull（字面量 null 在 Prisma 语义为“不清除”）
+        watermarkParams: Prisma.DbNull,
+        watermarkFingerprint: null,
+      },
     });
     expect(result.restoredFrom).toBe('_archive/watermark/cuid1/200-bbbbbbbb-abc.jpg');
     // 出口统一按当前环境重建 url
@@ -280,6 +324,7 @@ describe('MediaService.uploadAndRegister', () => {
       buffer: Buffer.from('watermarked!'),
       mimeType: 'image/webp',
       watermarked: true,
+      config: { ...WMCONFIG },
     });
     // 主文件上传 mock 返回登记 key（与 buildKey 格式一致）
     upload.mockResolvedValueOnce({
@@ -301,7 +346,16 @@ describe('MediaService.uploadAndRegister', () => {
       'image/jpeg',
     ]);
     expect(create).toHaveBeenCalledWith({
-      data: expect.objectContaining({ watermarked: true, key: 'uploads/123-photo.jpg' }),
+      data: expect.objectContaining({
+        watermarked: true,
+        key: 'uploads/123-photo.jpg',
+        // 自动烧录同样落参数快照 + 配置指纹
+        watermarkParams: {
+          config: canonicalWatermarkConfig({ ...WMCONFIG }),
+          appliedAt: expect.any(String),
+        },
+        watermarkFingerprint: fingerprintWatermarkConfig({ ...WMCONFIG }),
+      }),
     });
     expect(result).toEqual(asset({ id: 'cuidNew', key: 'uploads/123-photo.jpg' }));
   });

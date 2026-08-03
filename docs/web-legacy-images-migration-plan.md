@@ -30,7 +30,7 @@
    - 案例 / 新闻 / 博客 / 展会等内容封面来自数据库 `coverImage` / `images` 字段，
      指向 MinIO `images/{YYYYMM}/`、`cases/` 等前缀。
 3. **查数据库（本地 tzj_dev，为生产快照恢复）**，发现封面图高度集中：
-   - `cases` 52 条中 **45 条**封面同为 `images/202204/abe3f86ad8a.jpg`；
+   - `cases` 52 条中 **45 条**封面同为 `images/202204/abe3f86ad8a.jpg`（已从全站清除）；
    - `news` 26 条中 **20 条**封面同为 `images/202204/67522c66631.jpg`；
    - 内容 slug（`caseshow-52-32`、`newsshow-64-26` 等）与旧站页面一一对应，
      说明此前迁移脚本只搬了正文与图集（`images[]` 数组 5 张均正确），

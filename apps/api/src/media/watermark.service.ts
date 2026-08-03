@@ -1,4 +1,5 @@
 import { execFile } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import * as fs from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
@@ -33,10 +34,7 @@ const VIDEO_EXT_MAP: Record<string, string> = {
 
 /** 由 video MIME 推导安全的容器扩展名，未知类型回退 mp4 */
 export function videoExtFromMime(mimeType: string): string {
-  return (
-    VIDEO_EXT_MAP[mimeType] ??
-    (mimeType.split('/')[1]?.split(';')[0]?.split('+')[0] || 'mp4')
-  );
+  return VIDEO_EXT_MAP[mimeType] ?? (mimeType.split('/')[1]?.split(';')[0]?.split('+')[0] || 'mp4');
 }
 
 /** 中文优先字体栈（librsvg / macOS / Windows 常见字体） */
@@ -44,6 +42,54 @@ const FONT_STACK =
   '"PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC", sans-serif';
 
 type WatermarkConfig = SiteMediaSettings['watermark'];
+
+/** 渲染参数版本：硬编码渲染参数（如文字颜色、字体栈）变更时手动 +1，避免指纹漏判旧素材 */
+const WATERMARK_RENDER_VERSION = 1;
+
+/** 影响已烧录文件视觉的配置字段（固定顺序；enabled 与适用范围字段不影响外观，不计入） */
+const RENDER_FIELDS = [
+  'layout',
+  'mode',
+  'text',
+  'imageKey',
+  'opacity',
+  'position',
+  'scale',
+  'tileSpacing',
+  'tileAngle',
+  'minWidth',
+  'minHeight',
+] as const;
+
+/** 规范化水印渲染参数：按固定字段序提取，结果与对象字段书写顺序无关；
+ * 值类型限定为 JSON 可序列化，可直接存入 Prisma Json 字段 */
+export function canonicalWatermarkConfig(
+  config: WatermarkConfig,
+): Record<string, string | number | boolean> {
+  const canonical: Record<string, string | number | boolean> = {};
+  for (const field of RENDER_FIELDS) {
+    const value = (config as Record<string, unknown>)[field];
+    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+      canonical[field] = value;
+    }
+  }
+  return canonical;
+}
+
+/** 水印配置指纹：md5(版本|规范化配置) 前 12 位；配置或渲染版本变化时指纹变化 */
+export function fingerprintWatermarkConfig(config: WatermarkConfig): string {
+  const canonical = canonicalWatermarkConfig(config);
+  const input = `v${WATERMARK_RENDER_VERSION}|${JSON.stringify(canonical)}`;
+  return createHash('md5').update(input).digest('hex').slice(0, 12);
+}
+
+/** 烧录参数快照：渲染配置（规范化）+ 烧录时刻，随素材落库供追溯 */
+export function buildWatermarkSnapshot(config: WatermarkConfig): {
+  config: Record<string, string | number | boolean>;
+  appliedAt: string;
+} {
+  return { config: canonicalWatermarkConfig(config), appliedAt: new Date().toISOString() };
+}
 
 /** 宽容解析单次上传的水印覆盖参数：非法/缺省值一律回退 auto，不报 400 */
 export function normalizeWatermarkOverride(value: unknown): WatermarkOverride {
@@ -57,6 +103,8 @@ export interface ProcessedMedia {
   height?: number;
   /** 本次是否真的烧录了水印（按实际处理结果，非请求意图） */
   watermarked: boolean;
+  /** 烧录成功时携带实际使用的配置（供调用方落参数快照）；未烧录时为 undefined */
+  config?: WatermarkConfig;
 }
 
 @Injectable()
@@ -87,10 +135,12 @@ export class WatermarkService {
 
     try {
       if (mimeType.startsWith('image/')) {
-        return await this.processImage(buffer, mimeType, config);
+        const processed = await this.processImage(buffer, mimeType, config);
+        return processed.watermarked ? { ...processed, config } : processed;
       }
       if (mimeType.startsWith('video/')) {
-        return await this.processVideo(buffer, mimeType, config);
+        const processed = await this.processVideo(buffer, mimeType, config);
+        return processed.watermarked ? { ...processed, config } : processed;
       }
     } catch (err) {
       this.logger.warn(`水印处理失败，已回退为原文件 (${mimeType}): ${(err as Error).message}`);

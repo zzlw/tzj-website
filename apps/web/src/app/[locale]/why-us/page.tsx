@@ -5,7 +5,7 @@ import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { Container, Eyebrow, SectionHeading, VideoHero } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 
-const HERO_IMAGE = 'images/202101/29e0925cf89.jpg';
+const HERO_IMAGE = '/media/galvanized-stair.webp';
 const HERO_VIDEO = '/media/why.mp4';
 const PILLAR_ICONS = [Award, Lightbulb, ShieldCheck] as const;
 
