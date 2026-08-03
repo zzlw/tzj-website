@@ -23,7 +23,7 @@ function buildPreviewBackground(line1: string, line2: string, opacity: number): 
   const svg =
     `<svg xmlns='http://www.w3.org/2000/svg' width='200' height='120'>` +
     `<g transform='rotate(-22 100 60)' fill='#0f172a' fill-opacity='${opacity}' ` +
-    `font-family='sans-serif' font-size='12'>` +
+    `font-family='"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif' font-size='12'>` +
     `<text x='12' y='56'>${esc(line1)}</text>` +
     `<text x='12' y='74'>${esc(line2)}</text>` +
     `</g></svg>`;

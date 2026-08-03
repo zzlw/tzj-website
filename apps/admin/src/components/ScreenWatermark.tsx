@@ -31,7 +31,7 @@ function buildBackground(line1: string, line2: string, opacity: number): string 
   const svg =
     `<svg xmlns='http://www.w3.org/2000/svg' width='260' height='150'>` +
     `<g transform='rotate(-22 130 75)' fill='#0f172a' fill-opacity='${opacity}' ` +
-    `font-family='-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif' font-size='13'>` +
+    `font-family='"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif' font-size='13'>` +
     `<text x='20' y='72'>${esc(line1)}</text>` +
     `<text x='20' y='92'>${esc(line2)}</text>` +
     `</g></svg>`;
