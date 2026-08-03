@@ -4,6 +4,8 @@
 # Build context: monorepo root
 # Build command: docker build -f apps/api/Dockerfile -t tzj/api .
 # ============================================================
+# 注意：生产阶段必须安装 font-noto-cjk（Noto Sans CJK）——水印 SVG 渲染中文文字
+# 依赖系统字体（Alpine 镜像默认 0 字体，缺字体时水印文字渲染为空白，线上水印不可见）。
 
 # 云效北京构建集群无法访问 docker.io，使用 DaoCloud 镜像加速
 ARG NODE_IMAGE=docker.m.daocloud.io/library/node:22-alpine
@@ -55,7 +57,7 @@ ENV NODE_ENV=production
 ENV API_PORT=4000
 
 RUN sed -i 's|https://dl-cdn.alpinelinux.org|https://mirrors.aliyun.com|g' /etc/apk/repositories \
-  && apk add --no-cache wget openssl vips vips-dev libc6-compat
+  && apk add --no-cache wget openssl vips vips-dev libc6-compat font-noto-cjk
 
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nestjs
