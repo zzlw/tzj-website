@@ -136,13 +136,16 @@ export async function Footer() {
       <div className="border-t border-neutral-300 bg-neutral-100">
         <Container>
           <div className="flex flex-col items-center justify-between gap-3 py-6 text-xs text-neutral-500 md:flex-row">
-            <div className="flex items-center gap-3">
-              <span className="flex h-8 w-8 items-center justify-center bg-primary font-display text-sm font-extrabold text-white">
-                TZ
-              </span>
-              <span>
-                &copy; {new Date().getFullYear()} {tCommon('legalName')} {tFooter('copyright')}
-              </span>
+            <div className="flex flex-col items-center gap-2 md:items-start">
+              <div className="flex items-center gap-3">
+                <span className="flex h-8 w-8 items-center justify-center bg-primary font-display text-sm font-extrabold text-white">
+                  TZ
+                </span>
+                <span>
+                  &copy; {new Date().getFullYear()} {tCommon('legalName')} {tFooter('copyright')}
+                </span>
+              </div>
+              <span>{tFooter('creditCode')}</span>
             </div>
             <a
               href={settings.legal.beianUrl}
