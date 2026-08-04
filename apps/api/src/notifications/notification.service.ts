@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import type { Contact } from '@prisma/client/index';
 import type { NotificationTemplate } from '@tzj/types';
-import { AliyunDmService } from '../integrations/aliyun-dm.service';
+import { ExmailSmtpService } from '../integrations/exmail-smtp.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { SettingsService } from '../settings/settings.service';
 import {
@@ -30,7 +30,7 @@ export class NotificationService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly aliyunDm: AliyunDmService,
+    private readonly aliyunDm: ExmailSmtpService,
     private readonly settings: SettingsService,
     private readonly config: ConfigService,
   ) {}

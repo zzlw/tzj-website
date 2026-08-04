@@ -1,6 +1,6 @@
 # 邮件系统迁移方案：阿里云邮件推送 → 企业邮箱（阿里邮箱免费版）
 
-> 版本：v1.21　|　日期：2026-08-04　|　含十八轮评审 + 决策点变更 + 阶段 1 已执行
+> 版本：v1.23　|　日期：2026-08-04　|　含阶段 1/2/4/5(本地) 已执行 + DKIM 配置完成
 
 ## 1. 背景与目标
 
@@ -568,6 +568,33 @@ CI 会在代码合并后自动部署新 API 代码。若部署时生产环境未
 | dig 校验 | 权威（dns1.hichina.com）/ 公共（223.5.5.5）/ 本地 三层全部返回合并值 |
 | 实证修正 | v1.18 称「aliyun/default._domainkey 均无记录」——实际 DM 的 DKIM 主机名为 **`aliyun-cn-hangzhou._domainkey`**（dig 名称错误导致漏检；已确认存在，创建于 2026-08-03 19:57）；`default._domainkey` 仍无记录，与 DM 零冲突结论不变 |
 | 后续 | 阶段 1 完成，对 DM 发信零影响（spf1.dm.aliyun.com include 保留）；下一步阶段 2：申请企业邮箱免费版 |
+
+### v1.22 → v1.23（阶段 5 本地部分执行：MX 清理 + SPF 修复验证 + DKIM 配置完成）
+
+| 项目 | 结果 |
+|------|------|
+| 执行 | **DM 旧 MX 清理**：云解析删除 `5 mx01.dm.aliyun.com`（与 `5 mx1.qiye.aliyun.com` 优先级冲突），记录 13→12；dig 确认 MX 仅剩 mx1/mx2/mx3.qiye.aliyun.com (5/10/15) | 完成 |
+| 执行 | **QQ 退信排查**：收件箱收到 QQ 退信 `550 SPF check failed`（17:50 发往 REDACTED-EMAIL）——展开 SPF 链确认发信 IP 115.124.28.225 ∈ b.hichina.mail.aliyun.com 的 115.124.28.0/24，SPF 链完整，判定为 QQ DNS 缓存旧值（SPF 15:56 修改、退信 17:50） | 完成 |
+| 执行 | **SPF 修复验证**：重发 `[SPF 修复验证]` 邮件（18:14，服务端无退信返回）→ 用户确认 QQ/Gmail 均收到 → SPF 修复验证通过 | 完成 |
+| 执行 | **本地停用 aliyun-directmail**（integrations.enabled: true→false）；本地 API health email=up（代码已切 exmail） | 完成 |
+| 执行 | **DKIM 配置完成**：postmaster@ 登录域管后台（qiye.aliyun.com/admin，入口即企业邮箱登录页）→ 企业定制→域名管理→域名设置→查看详情 → 获取 2048 位公钥 `v=DKIM1; k=rsa; p=...IDAQAB;` → 云解析**手动添加** `default._domainkey` TXT（未动 SPF）→ dig 权威/公共 DNS 均生效 → 域管后台 DKIM 验证状态「通过」→ 切换功能页触发服务端加签 → **mail-tester 10/10「发件人身份已验证」**（DKIM+SPF 端到端通过） | 完成 |
+| 执行 | **生产服务器 465 预检**：openssl s_client 连 smtp.qiye.aliyun.com:465 成功，TLS 证书 CN=mail.aliyun.com 有效（至 2026-08-31） | 完成 |
+| 发现 | 生产环境核查：integrations 表**无 aliyun-directmail 记录**（仅 baidu-ocpc/lingxi-llm）；`.env.prod` 无 ALIYUN_EXMAIL_*/ALIYUN_DM_*；容器 dist 仍为 DM 代码（aliyun-dm.service.js 在、env.validation.js 无 EXMAIL 键）→ 生产邮件集成实际处于空转状态（isActive=false，通知静默跳过） | 待阶段 5 步骤 19 |
+| 发现 | 阶段 3 代码改造（env.validation/health/registry/notification 等 17 文件）**仍在本地工作区未提交**——生产部署前置条件 | 待用户确认提交推送 |
+| 后续 | 阶段 5 剩余：提交推送代码→CI 部署→生产 .env.prod 补 ALIYUN_EXMAIL_* 三键→重启 api→health 验证→生产测试询盘→停用 DM（无记录则跳过）；阶段 6：直接回复/contact@ 收信验收、DM 控制台与 AK 清理、SPF 去 DM include、运维基线 | 待办 |
+
+### v1.21 → v1.22（阶段 2/4 部分执行 + env 校验缺口修复）
+
+| 级别 | 发现/结果 | 处理 |
+|------|----------|------|
+| 执行 | **阶段 2 已由用户完成**：企业邮箱免费版已申请，MX 已切换为 `mx1/mx2/mx3.qiye.aliyun.com`（dig 实证）；service@ 账号、三方客户端安全密码均可用（SMTP 冒烟测试通过，Message ID 正常返回） | 无 |
+| P0 | **env.validation.ts zod 白名单缺口**：ConfigModule `validate` 返回值是 ConfigService 唯一数据源，`envSchema` 缺少 `ALIYUN_EXMAIL_SMTP_PASSWORD / ACCOUNT_NAME / FROM_ALIAS` 三键 → .env 已配置但运行时读不到 → `isActive(aliyun-exmail)=false` → 邮件探活 skipped、询盘通知静默跳过（health 显示 skipped 为症状）——方案 4.2.2 只写了 registry env 兜底，遗漏校验层同步 | 已修复：env.validation.ts 补 3 个 optional 键，重建 dist 并重启 API，health email 由 skipped → **up** |
+| 执行 | 站点联系邮箱 `site.public.contact.email`：`REDACTED-EMAIL` → `contact@tzjii.com`（SQL jsonb_set） | 完成 |
+| 执行 | 测试询盘（阶段 4 步骤 18）提交成功：staff-notify ×2（admin@example.com / REDACTED-EMAIL）+ auto-reply ×1（visitor-test@example.com）**全部 sent**，链路：询盘 → NotificationService → ExmailSmtpService → 企业邮箱 SMTP | 完成 |
+| 实证 | `default._domainkey.tzjii.com` 无记录（10 种常见选择器全部无记录）——企业邮箱 DKIM 疑似未添加或选择器不同，待云解析控制台确认 | 待办 |
+| 实证 | MX 记录存在**优先级冲突**：`5 mx01.dm.aliyun.com`（DM 旧值）与 `5 mx1.qiye.aliyun.com` 同为优先级 5 | 阶段 5 清理 DM 旧 MX |
+| 后续 | 阶段 4 本地完成；下一步：阶段 5（云解析删 DM 旧 MX → 本地/生产停用 aliyun-directmail → dig 校验）、阶段 6（收件箱验收/直接回复/退信追踪；auto-reply 发给不存在的 visitor-test@example.com 预期产生退信进入 service@ 收件箱，正好验证退信落地） | 待办 |
+
 
 ### v1.19 → v1.20（决策点确认）
 

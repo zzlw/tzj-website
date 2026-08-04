@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 // biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
 import { ConfigService } from '@nestjs/config';
 // biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
-import { AliyunDmService } from '../integrations/aliyun-dm.service';
+import { ExmailSmtpService } from '../integrations/exmail-smtp.service';
 // biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
 import { SettingsService } from '../settings/settings.service';
 
@@ -15,7 +15,7 @@ import { SettingsService } from '../settings/settings.service';
  *
  * 设计要点：
  *  - 去抖：同一房间 10 分钟内只发一次离线提醒，避免访客刷屏式留言触发邮件风暴。
- *  - 邮件不可用时（未配置阿里云 DM / 站点关闭通知）静默跳过，不影响主流程。
+ *  - 邮件不可用时（未配置阿里企业邮箱 SMTP / 站点关闭通知）静默跳过，不影响主流程。
  *  - 失败仅记日志，不阻断消息落库。
  */
 @Injectable()
@@ -26,7 +26,7 @@ export class ChatNotificationService {
   private readonly DEBOUNCE_MS = 10 * 60 * 1000;
 
   constructor(
-    private readonly aliyunDm: AliyunDmService,
+    private readonly aliyunDm: ExmailSmtpService,
     private readonly settings: SettingsService,
     private readonly config: ConfigService,
   ) {}

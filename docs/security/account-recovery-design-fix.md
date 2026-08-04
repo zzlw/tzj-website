@@ -35,6 +35,7 @@
 - 用户列表已有「解锁」行操作（`PATCH /users/:id` 传 `lockedUntil: null`）；触发锁定时后端已将 `failedLoginAttempts` 归零，解锁语义自洽。
 - Admin BFF（`/api/bff/[...path]`）为无白名单透明代理（含 401 自动刷新与 IP/UA 透传），`reset-password` / `force-disable` 前端直接可达，**无需新增 BFF 路由**。
 - 邮件基建：`AliyunDmService`（notification 模块）可发邮件——但见 §3 非目标。
+  > ⚠️ 文档一致性加注（2026-08-04）：邮件基建已切换为 `ExmailSmtpService`（阿里企业邮箱 SMTP，集成 slug `aliyun-exmail`），`AliyunDmService` 已删除（DM 彻底退役）。本描述过时，仅作历史记录。
 
 **缺口**
 

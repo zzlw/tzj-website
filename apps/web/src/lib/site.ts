@@ -12,7 +12,7 @@ export const siteConfig = {
   keywords: ['应急救援', '训练装备', '消防训练', '训练塔', '绳索救援', 'CFBT', '拓展训练'],
   contact: {
     phone: process.env.NEXT_PUBLIC_CONTACT_PHONE || '0371-58691119',
-    email: process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'REDACTED-EMAIL',
+    email: process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'contact@tzjii.com',
     address: process.env.NEXT_PUBLIC_CONTACT_ADDRESS || '河南省郑州市高新技术开发区科学大道',
   },
   beian: process.env.NEXT_PUBLIC_BEIAN || '豫ICP备20013982号',

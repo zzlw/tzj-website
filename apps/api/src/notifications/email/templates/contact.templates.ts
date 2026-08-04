@@ -78,6 +78,9 @@ export function renderContactAutoReplyHtml(
   const channelBlock = channels.length
     ? `<p style="margin-top:16px">如有紧急事项，欢迎直接与我们联系：</p><ul style="color:#374151">${channels.join('')}</ul>`
     : '';
+  const replyGuide = contactInfo.phone
+    ? `如需进一步沟通，可直接回复本邮件，或拨打服务热线 <a href="tel:${escapeHtml(contactInfo.phone)}" style="color:#2563eb">${escapeHtml(contactInfo.phone)}</a>。`
+    : '如需进一步沟通，可直接回复本邮件。';
 
   return `<!DOCTYPE html><html><body style="font-family:sans-serif;color:#111827;line-height:1.6">
 <p>尊敬的 ${escapeHtml(contact.name)}，您好！</p>
@@ -89,7 +92,7 @@ export function renderContactAutoReplyHtml(
 </ul>
 ${channelBlock}
 <p style="margin-top:24px">${BRAND} 团队</p>
-<p style="font-size:12px;color:#9ca3af">本邮件由系统自动发送，请勿直接回复，如有需要请使用上方联系方式。</p>
+<p style="font-size:12px;color:#9ca3af">${replyGuide}</p>
 </body></html>`;
 }
 
@@ -110,7 +113,9 @@ export function renderContactAutoReplyText(
   if (contactInfo.email) lines.push(`联系邮箱：${contactInfo.email}`);
   lines.push(
     '',
-    '本邮件由系统自动发送，请勿直接回复，如有需要请使用上方联系方式。',
+    contactInfo.phone
+      ? `如需进一步沟通，可直接回复本邮件，或拨打服务热线 ${contactInfo.phone}。`
+      : '如需进一步沟通，可直接回复本邮件。',
     '',
     `${BRAND} 团队`,
   );

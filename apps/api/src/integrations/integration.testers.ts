@@ -44,20 +44,20 @@ export const INTEGRATION_TESTERS: Record<string, IntegrationTester> = {
     };
   },
 
-  'aliyun-directmail': async (service) => {
-    const accessKeyId = await service.resolveSecret('aliyun-directmail', 'accessKeyId');
-    const accessKeySecret = await service.resolveSecret('aliyun-directmail', 'accessKeySecret');
-    const accountName = await service.resolveConfig('aliyun-directmail', 'accountName');
-    if (!accessKeyId || !accessKeySecret) {
-      return { ok: false, message: '请配置 AccessKey ID 与 Secret' };
-    }
+  'aliyun-exmail': async (service) => {
+    const accountName = await service.resolveConfig('aliyun-exmail', 'accountName');
+    const smtpPassword = await service.resolveSecret('aliyun-exmail', 'smtpPassword');
     if (!accountName) {
-      return { ok: false, message: '请配置发信地址 AccountName' };
+      return { ok: false, message: '请配置发件账号' };
     }
-    return {
-      ok: true,
-      message: `凭证已配置，发信地址 ${accountName}（保存后可在站点设置配置通知收件人）`,
-    };
+    if (!smtpPassword) {
+      return { ok: false, message: '请配置三方客户端安全密码' };
+    }
+    // 真实 SMTP 握手 + 认证探活（smtp.qiye.aliyun.com:465），失败返回可读原因
+    // 动态 import 避免与 integrations.service 形成循环依赖（integrations → testers → exmail → integrations）
+    const { ExmailSmtpService } = await import('./exmail-smtp.service');
+    const smtp = new ExmailSmtpService(service);
+    return smtp.verify();
   },
 
   'lingxi-llm': async (service) => {

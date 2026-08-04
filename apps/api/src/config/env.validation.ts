@@ -59,6 +59,11 @@ const envSchema = z.object({
   BAIDU_OCPC_CONVERT_TYPE: z.string().optional(),
   BAIDU_OCPC_SITE_URL: z.string().optional(),
 
+  // 阿里企业邮箱 SMTP — 优先读后台集成凭证（slug=aliyun-exmail），env 兜底；未配置时邮件通知跳过
+  ALIYUN_EXMAIL_SMTP_PASSWORD: z.string().optional(),
+  ALIYUN_EXMAIL_ACCOUNT_NAME: z.string().optional(),
+  ALIYUN_EXMAIL_FROM_ALIAS: z.string().optional(),
+
   // 2FA（TOTP）
   /** 预鉴权令牌（pendingToken）有效期秒数 */
   TWOFA_PENDING_TTL_SECONDS: z.coerce.number().default(300),

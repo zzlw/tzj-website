@@ -4,7 +4,7 @@ import type { SitePublicSettings } from '@tzj/types';
 export const DEFAULT_SITE_PUBLIC_SETTINGS: SitePublicSettings = {
   contact: {
     phone: '0371-58691119',
-    email: 'REDACTED-EMAIL',
+    email: 'contact@tzjii.com',
     address: {
       'zh-CN': '河南省郑州市高新技术开发区科学大道',
       'zh-TW': '河南省鄭州市高新技術開發區科學大道',

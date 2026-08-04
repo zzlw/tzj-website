@@ -30,15 +30,13 @@ export const INTEGRATION_ENV_FALLBACK: Record<
       region: 'ALIYUN_CAPTCHA_REGION',
     },
   },
-  'aliyun-directmail': {
+  'aliyun-exmail': {
     secrets: {
-      accessKeyId: 'ALIYUN_DM_ACCESS_KEY_ID',
-      accessKeySecret: 'ALIYUN_DM_ACCESS_KEY_SECRET',
+      smtpPassword: 'ALIYUN_EXMAIL_SMTP_PASSWORD',
     },
     config: {
-      accountName: 'ALIYUN_DM_ACCOUNT_NAME',
-      fromAlias: 'ALIYUN_DM_FROM_ALIAS',
-      region: 'ALIYUN_DM_REGION',
+      accountName: 'ALIYUN_EXMAIL_ACCOUNT_NAME',
+      fromAlias: 'ALIYUN_EXMAIL_FROM_ALIAS',
     },
   },
   'lingxi-llm': {
@@ -190,63 +188,58 @@ export const INTEGRATION_REGISTRY: IntegrationDef[] = [
     ],
   },
   {
-    slug: 'aliyun-directmail',
-    label: '阿里云邮件推送',
+    slug: 'aliyun-exmail',
+    label: '阿里企业邮箱 SMTP',
     description:
-      '事务性邮件服务：新询盘自动通知相关负责人、向访客发送确认邮件。需在阿里云邮件推送控制台完成发信域名验证并创建发信地址。',
-    docUrl: 'https://help.aliyun.com/product/29412.html',
+      '事务性邮件服务：新询盘自动通知相关负责人、向访客发送确认邮件。使用阿里企业邮箱（免费版）SMTP 发信，访客可直接回复发件邮箱。',
+    docUrl: 'https://qiye.aliyun.com/',
     setupGuide: [
       {
-        title: '1. 开通邮件推送并验证发信域名',
+        title: '1. 开通阿里企业邮箱（免费版）并绑定域名',
         content:
-          '登录 [阿里云邮件推送控制台](https://dm.console.aliyun.com/)，添加并验证发信域名（配置 SPF、DKIM 等 DNS 记录），等待审核通过。',
+          '访问 [阿里企业邮箱免费版](https://exmail.aliyun.com/free)，绑定 tzjii.com，完成域名验证 TXT 与 DKIM 解析（SPF 需先合并企业邮箱 include，勿一键覆盖）。',
       },
       {
-        title: '2. 创建发信地址',
+        title: '2. 创建发件账号并设置密码',
         content:
-          '在「发信地址」中新建地址（如 notify@mail.yourdomain.com），记录 **AccountName**（完整发信邮箱），填入下方「发信地址」。',
+          '登录域管后台创建 service@tzjii.com 等账号，每个账号需设置登录密码（9-64 位，含大小写/数字/特殊字符中任三种）。',
       },
       {
-        title: '3. 配置 AccessKey',
+        title: '3. 允许三方客户端访问',
         content:
-          '使用 RAM 子账号 AccessKey（建议仅授予 AliyunDirectMailFullAccess 或最小 SendMail 权限），填入 AccessKey ID 与 Secret。',
+          '域管后台「安全策略 → 三方客户端登录管理」中关闭默认的「禁止使用三方客户端」黑名单策略，否则 SMTP 认证会返回 526。',
       },
       {
-        title: '4. 启用并测试',
+        title: '4. 生成三方客户端安全密码',
         content:
-          '保存后点击「测试连接」。然后在 **站点设置 → 邮件通知** 中配置询盘通知收件人并提交一条测试询盘验证。',
+          '用发件账号登录个人邮箱 webmail，进入「设置 → 账户与安全 → 账户安全 → 三方客户端安全管理」，新增安全密码（如用途填 TZJ SMTP），将生成的密码填入下方「三方客户端安全密码」。',
+      },
+      {
+        title: '5. 启用并测试',
+        content:
+          '保存后点击「测试连接」——系统会用真实 SMTP 握手 + 认证探活（smtp.qiye.aliyun.com:465）。通过后可在 **站点设置 → 邮件通知** 中配置询盘通知收件人并提交一条测试询盘验证。',
       },
     ],
     secretFields: [
       {
-        key: 'accessKeyId',
-        label: 'AccessKey ID',
-        required: true,
-        helpUrl: 'https://ram.console.aliyun.com/manage/ak',
-      },
-      {
-        key: 'accessKeySecret',
-        label: 'AccessKey Secret',
+        key: 'smtpPassword',
+        label: '三方客户端安全密码',
+        description:
+          '发件账号在个人邮箱「三方客户端安全管理」中生成的安全密码，独立于登录密码、可单独吊销。仅保存在服务端加密数据库中。',
         required: true,
       },
     ],
     configFields: [
       {
         key: 'accountName',
-        label: '发信地址（AccountName）',
-        description: '控制台「发信地址」中的完整邮箱，须已通过域名验证。',
+        label: '发件账号',
+        description: 'SMTP 发件邮箱（如 service@tzjii.com），须已完成企业邮箱开通。',
         required: true,
-        helpUrl: 'https://help.aliyun.com/zh/direct-mail/user-guide/create-a-sender-address',
       },
       {
         key: 'fromAlias',
         label: '发件人昵称',
         description: '收件人看到的发件人名称，如「拓之迹官网通知」。',
-      },
-      {
-        key: 'region',
-        label: '地域',
-        description: '默认 cn-hangzhou。中国内地实例一般填 cn-hangzhou 即可。',
       },
     ],
   },
