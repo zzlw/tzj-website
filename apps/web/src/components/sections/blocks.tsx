@@ -12,6 +12,7 @@ import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { BookConsultButton } from '@/components/chat/BookConsultButton';
+import { MediaImage as Image } from '@/components/MediaImage';
 import { Container, RbLink, SectionHeading } from '@/components/ui';
 import { PRODUCT_LINE_COUNT } from '@/lib/product-catalog';
 import { cn } from '@/lib/utils';
@@ -170,6 +171,8 @@ export interface RelatedLink {
   label: string;
   href: string;
   desc?: string;
+  /** 可选封面；有图时卡片上方展示 16:9 缩略图 */
+  image?: string;
 }
 
 export function RelatedLinks({
@@ -192,20 +195,33 @@ export function RelatedLinks({
             <Link
               key={l.href}
               href={l.href}
-              className="group flex flex-col justify-between border border-neutral-300 bg-white p-6 transition-colors hover:border-neutral-900"
+              className="group flex flex-col border border-neutral-300 bg-white transition-colors hover:border-neutral-900"
             >
-              <div>
-                <h3 className="rb-h5 text-neutral-900 transition-colors group-hover:text-primary">
-                  {l.label}
-                </h3>
-                {l.desc ? (
-                  <p className="mt-2 text-sm leading-relaxed text-secondary-text">{l.desc}</p>
-                ) : null}
+              {l.image ? (
+                <div className="rb-img-shimmer relative aspect-[16/9] overflow-hidden bg-neutral-200">
+                  <Image
+                    src={l.image}
+                    alt={l.label}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 33vw"
+                    className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                  />
+                </div>
+              ) : null}
+              <div className="flex flex-1 flex-col justify-between p-6">
+                <div>
+                  <h3 className="rb-h5 text-neutral-900 transition-colors group-hover:text-primary">
+                    {l.label}
+                  </h3>
+                  {l.desc ? (
+                    <p className="mt-2 text-sm leading-relaxed text-secondary-text">{l.desc}</p>
+                  ) : null}
+                </div>
+                <span className="mt-6 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-primary">
+                  {learnMore}
+                  <ArrowRight className="h-4 w-4 transition-transform duration-300 ease-[cubic-bezier(.75,0,.35,1)] group-hover:translate-x-1.5" />
+                </span>
               </div>
-              <span className="mt-6 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-primary">
-                {learnMore}
-                <ArrowRight className="h-4 w-4 transition-transform duration-300 ease-[cubic-bezier(.75,0,.35,1)] group-hover:translate-x-1.5" />
-              </span>
             </Link>
           ))}
         </div>

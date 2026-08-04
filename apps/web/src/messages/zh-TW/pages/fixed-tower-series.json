@@ -43,25 +43,25 @@
       "name": "高層系列",
       "variants": "五層 / 六層",
       "desc": "高層塔配電梯井與樓梯塔，模擬高層建築滅火；另含两層居住单元與单層附属體。",
-      "image": "/media/alarm-highrise.jpg"
+      "image": "/media/series-highrise.png"
     },
     {
       "name": "五级報警系列",
       "variants": "四層 / 五層",
       "desc": "主塔含內部樓梯井，两層单元帶阁樓與坡屋面，双破拆口與双燃燒室。",
-      "image": "/media/alarm-5th.png"
+      "image": "/media/series-5th-alarm.png"
     },
     {
       "name": "三级報警系列",
       "variants": "三層 / 四層",
       "desc": "主塔、居住與附属結構，配双實戰燃燒室，支持多場景訓練。",
-      "image": "/media/alarm-3rd.png"
+      "image": "/media/series-3rd-alarm.png"
     },
     {
       "name": "一级報警系列",
       "variants": "二層 / 三層 / 四層",
       "desc": "含內部樓梯、爬梯與實戰燃燒室，滿足基礎實戰訓練要求。",
-      "image": "/media/alarm-1st.png"
+      "image": "/media/series-1st-alarm.png"
     }
   ],
   "moreSeries": [
@@ -141,6 +141,10 @@
         "custom": "按方案而定"
       }
     ]
+  },
+  "midCta": {
+    "title": "不確定選哪一套標準塔型？",
+    "description": "把場地尺寸、訓練科目與預算告訴我們，工程師幫您快速對標可用系列。"
   },
   "relatedLinks": [
     {

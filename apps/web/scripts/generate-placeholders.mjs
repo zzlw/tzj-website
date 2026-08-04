@@ -50,7 +50,7 @@ const IMAGE_SOURCES = {
   'modular-o.png': src('O-Series-MODx-2024-Elevation_web.png'),
   'modular-d.png': src('D-Series-MODx-2024-Elevation_web.png'),
   'modular-x.png': src('X-Series-MODx-2024-Elevation_web.png'),
-  'alarm-highrise.jpg': src('high-rise-5-story-blueprint.jpg'),
+  'alarm-highrise.png': src('high-rise-5-story-blueprint.jpg'),
   'alarm-5th.png': src('5th-Alarm-Five-Story-2024_web.png'),
   'alarm-3rd.png': src('3rd-Alarm-Four-Story-2024_web.png'),
   'alarm-1st.png': src('1st-Alarm-Two-Story-2024_web.png'),

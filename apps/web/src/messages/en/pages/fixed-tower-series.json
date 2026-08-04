@@ -43,25 +43,25 @@
       "name": "High-Rise Series",
       "variants": "5 / 6 stories",
       "desc": "High-rise tower with elevator shaft and stair tower simulating high-rise firefighting; includes two-story residential unit and single-story annex.",
-      "image": "/media/alarm-highrise.jpg"
+      "image": "/media/series-highrise.png"
     },
     {
       "name": "5th Alarm Series",
       "variants": "4 / 5 stories",
       "desc": "Main tower with interior stairwell; two-story unit with loft and pitched roof; dual breach points and dual burn rooms.",
-      "image": "/media/alarm-5th.png"
+      "image": "/media/series-5th-alarm.png"
     },
     {
       "name": "3rd Alarm Series",
       "variants": "3 / 4 stories",
       "desc": "Main tower with residential and annex structures; dual live-fire burn rooms for multi-scenario training.",
-      "image": "/media/alarm-3rd.png"
+      "image": "/media/series-3rd-alarm.png"
     },
     {
       "name": "1st Alarm Series",
       "variants": "2 / 3 / 4 stories",
       "desc": "Interior stairs, climbing ladder, and live-fire burn room meeting baseline live-fire training requirements.",
-      "image": "/media/alarm-1st.png"
+      "image": "/media/series-1st-alarm.png"
     }
   ],
   "moreSeries": [
@@ -141,6 +141,10 @@
         "custom": "Per project plan"
       }
     ]
+  },
+  "midCta": {
+    "title": "Not sure which standard series fits?",
+    "description": "Share site size, training programs, and budget—our engineers will map the right series quickly."
   },
   "relatedLinks": [
     {

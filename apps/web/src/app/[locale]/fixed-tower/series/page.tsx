@@ -11,8 +11,16 @@ export async function generateMetadata() {
   return createPageMetadata({ namespace: 'pages.fixedTowerSeries', path: '/fixed-tower/series' });
 }
 
+/** 与 Hub「延伸了解」标准塔型卡同源，保证列表→详情封面一致 */
+const HERO_POSTER = '/media/ft-path-standard.png';
+const HERO_VIDEO = '/media/fixed-series.mp4';
 const DURABILITY_ICONS = [Shield, Link2, CloudRain, Recycle] as const;
-const RELATED_HREFS = ['/fixed-tower/custom', '/burn-rooms', '/resources/design-center'];
+const RELATED_HREFS = ['/fixed-tower/custom', '/burn-rooms', '/resources/design-center'] as const;
+const RELATED_IMAGES = [
+  '/media/ft-path-custom.png',
+  '/media/burn-room.webp',
+  '/media/ft-overview-detail.png',
+] as const;
 
 type CmpRow = { feature: string; standard: boolean | string; custom: boolean | string };
 
@@ -45,9 +53,13 @@ export default async function FixedTowerSeriesPage() {
         eyebrow={t('hero.eyebrow')}
         title={t('hero.title')}
         description={t('hero.description')}
-        video="/media/fixed-series.mp4"
-        poster="/media/fixed-tower-hero.jpg"
-      />
+        video={HERO_VIDEO}
+        poster={HERO_POSTER}
+      >
+        <BookConsultButton variant="light" message={tCommon('bookConsultProduct')}>
+          {tCta('bookConsult')}
+        </BookConsultButton>
+      </VideoHero>
 
       <section>
         <Container className="py-16 lg:py-24">
@@ -111,6 +123,16 @@ export default async function FixedTowerSeriesPage() {
               </div>
             ))}
           </div>
+
+          <div className="mt-12 flex flex-col items-start gap-4 border border-neutral-300 bg-white p-8 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="rb-h4 text-neutral-900">{t('midCta.title')}</h3>
+              <p className="mt-2 text-sm text-secondary-text">{t('midCta.description')}</p>
+            </div>
+            <BookConsultButton message={tCommon('bookConsultProduct')}>
+              {tCta('bookConsult')}
+            </BookConsultButton>
+          </div>
         </Container>
       </section>
 
@@ -141,7 +163,7 @@ export default async function FixedTowerSeriesPage() {
                   <tr key={r.feature} className="border-b border-neutral-300 align-middle">
                     <td className="p-4 text-sm font-bold text-neutral-900">{r.feature}</td>
                     {[r.standard, r.custom].map((v, i) => (
-                      <td key={i} className="p-4 text-sm text-secondary-text">
+                      <td key={`${r.feature}-${i}`} className="p-4 text-sm text-secondary-text">
                         {v === true ? (
                           <Check
                             className="h-5 w-5 text-primary"
@@ -171,7 +193,11 @@ export default async function FixedTowerSeriesPage() {
         title={tBlocks('titleDefault')}
         learnMore={tBlocks('learnMore')}
         eyebrow={tBlocks('eyebrow')}
-        links={relatedLinks.map((l, i) => ({ ...l, href: RELATED_HREFS[i]! }))}
+        links={relatedLinks.map((l, i) => ({
+          ...l,
+          href: RELATED_HREFS[i]!,
+          image: RELATED_IMAGES[i],
+        }))}
       />
 
       <Container className="pt-16 lg:pt-24">
@@ -183,7 +209,6 @@ export default async function FixedTowerSeriesPage() {
               {tCta('bookConsult')}
             </BookConsultButton>
             <RbLink href="/fixed-tower/custom">{t('cta.customLink')}</RbLink>
-            <RbLink href="/docs/fixed-tower-specs.pdf">{tCta('downloadPdf')}</RbLink>
           </div>
         </div>
       </Container>

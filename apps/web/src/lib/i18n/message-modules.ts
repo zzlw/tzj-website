@@ -62,6 +62,9 @@ export function resolveMessageLoadPlan(pathname: string): MessageLoadPlan {
     pageIds.add(staticId);
   }
 
+  // Hub 页复用子页系列卡片文案（系列网格）
+  if (path === '/fixed-tower') pageIds.add('fixed-tower-series');
+
   if (/^\/resources\/news\/[^/]+$/.test(path)) pageIds.add('resources-news');
   if (/^\/resources\/blog\/[^/]+$/.test(path)) pageIds.add('resources-blog');
   if (/^\/solutions\/[^/]+$/.test(path)) pageIds.add('solution-detail');

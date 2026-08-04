@@ -128,7 +128,7 @@ export const PRODUCT_LINES: ProductLine[] = [
     shortTitle: 'CFBT',
     title: 'CFBT 烟火特性训练',
     href: '/burn-rooms/cfbt',
-    image: '/media/alarm-highrise.jpg',
+    image: '/media/series-highrise.png',
     description: '烟火特性认知与控火训练设施，帮助学员理解火场发展规律与战术决策。',
     family: 'burn',
   },

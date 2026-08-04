@@ -50,6 +50,15 @@ describe('resolveMessageLoadPlan', () => {
     expect(other.pageIds).toHaveLength(0);
   });
 
+  it('固定塔 Hub 额外加载 series 模块（系列网格复用）', () => {
+    const hub = resolveMessageLoadPlan('/zh-CN/fixed-tower');
+    expect(hub.pageIds).toContain('fixed-tower');
+    expect(hub.pageIds).toContain('fixed-tower-series');
+    const seriesOnly = resolveMessageLoadPlan('/zh-CN/fixed-tower/series');
+    expect(seriesOnly.pageIds).toContain('fixed-tower-series');
+    expect(seriesOnly.pageIds).not.toContain('fixed-tower');
+  });
+
   it('资讯/博客/方案详情页复用列表页 id（动态 slug 归并）', () => {
     expect(resolveMessageLoadPlan('/zh-CN/resources/news/some-slug').pageIds).toContain(
       'resources-news',

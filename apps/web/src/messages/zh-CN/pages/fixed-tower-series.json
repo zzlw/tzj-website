@@ -43,25 +43,25 @@
       "name": "高层系列",
       "variants": "五层 / 六层",
       "desc": "高层塔配电梯井与楼梯塔，模拟高层建筑灭火；另含两层居住单元与单层附属体。",
-      "image": "/media/alarm-highrise.jpg"
+      "image": "/media/series-highrise.png"
     },
     {
       "name": "五级报警系列",
       "variants": "四层 / 五层",
       "desc": "主塔含内部楼梯井，两层单元带阁楼与坡屋面，双破拆口与双燃烧室。",
-      "image": "/media/alarm-5th.png"
+      "image": "/media/series-5th-alarm.png"
     },
     {
       "name": "三级报警系列",
       "variants": "三层 / 四层",
       "desc": "主塔、居住与附属结构，配双实战燃烧室，支持多场景训练。",
-      "image": "/media/alarm-3rd.png"
+      "image": "/media/series-3rd-alarm.png"
     },
     {
       "name": "一级报警系列",
       "variants": "二层 / 三层 / 四层",
       "desc": "含内部楼梯、爬梯与实战燃烧室，满足基础实战训练要求。",
-      "image": "/media/alarm-1st.png"
+      "image": "/media/series-1st-alarm.png"
     }
   ],
   "moreSeries": [
@@ -101,6 +101,10 @@
       { "feature": "布局自由定制", "standard": false, "custom": true },
       { "feature": "交付速度", "standard": "更快", "custom": "按方案而定" }
     ]
+  },
+  "midCta": {
+    "title": "不确定选哪一套标准塔型？",
+    "description": "把场地尺寸、训练科目与预算告诉我们，工程师帮您快速对标可用系列。"
   },
   "relatedLinks": [
     { "label": "定制训练塔", "desc": "从构思到竣工，按精确要求打造专属火场。" },
