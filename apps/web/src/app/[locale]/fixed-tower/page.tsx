@@ -117,7 +117,10 @@ export default async function FixedTowerPage() {
               {specStrip.map((item, i) => (
                 <span key={item}>
                   {i > 0 ? (
-                    <span className="mx-2.5 text-neutral-300 select-none sm:mx-3" aria-hidden="true">
+                    <span
+                      className="mx-2.5 text-neutral-300 select-none sm:mx-3"
+                      aria-hidden="true"
+                    >
                       ·
                     </span>
                   ) : null}
@@ -163,7 +166,10 @@ export default async function FixedTowerPage() {
                   { col: pathCustom, image: PATH_CUSTOM_IMAGE, href: '/fixed-tower/custom' },
                 ] as const
               ).map(({ col, image, href }) => (
-                <article key={col.title} className="flex flex-col border border-neutral-300 bg-white">
+                <article
+                  key={col.title}
+                  className="flex flex-col border border-neutral-300 bg-white"
+                >
                   <div className="rb-img-shimmer relative aspect-[16/10] overflow-hidden bg-neutral-200">
                     <Image
                       src={image}

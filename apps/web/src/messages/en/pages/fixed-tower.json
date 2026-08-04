@@ -77,7 +77,10 @@
     "steps": [
       { "title": "Site survey", "desc": "Clarify site, drills, staffing, and budget goals." },
       { "title": "Design", "desc": "Engineers and fire experts finalize layout and structure." },
-      { "title": "Build & deliver", "desc": "Factory build, on-site install, acceptance, and training." },
+      {
+        "title": "Build & deliver",
+        "desc": "Factory build, on-site install, acceptance, and training."
+      },
       { "title": "After-sales", "desc": "Parts supply and compliance checks for long-term use." }
     ]
   },
