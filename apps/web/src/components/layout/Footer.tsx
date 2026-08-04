@@ -6,6 +6,7 @@ import { FooterLanguageTrigger } from '@/components/i18n/FooterLanguageTrigger';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { Container, Eyebrow, RbLink } from '@/components/ui';
 import { Link } from '@/i18n/navigation';
+import { resolveMediaUrl } from '@/lib/media-url';
 import { FOOTER_BLOCKS } from '@/lib/navigation';
 import { resolveSocialChannels } from '@/lib/resolve-social-channels';
 import { getSitePublicSettings, localizedAddress } from '@/lib/site-settings';
@@ -166,7 +167,7 @@ export async function Footer() {
                   className="inline-flex items-center gap-1 transition-colors hover:text-primary"
                 >
                   <img
-                    src="/media/gongan.png"
+                    src={resolveMediaUrl('/media/gongan.png')}
                     alt=""
                     width={15}
                     height={17}
