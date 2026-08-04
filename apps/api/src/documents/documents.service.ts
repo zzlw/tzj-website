@@ -239,8 +239,11 @@ export class DocumentsService {
     const orderBy = buildListOrderBy(sort, DEFAULT_ORDER);
     const richInclude = includeDrafts || (mine && Boolean(userId));
 
-    // 构建 include 对象，添加 permissions
-    const baseInclude = richInclude ? CONTENT_ADMIN_USER_INCLUDE : { folder: true };
+    // 构建 include 对象，添加 permissions；richInclude 分支（我的文档/含草稿）也必须带 folder，
+    // 否则前端列表的文件夹归属显示「未分类」（详情接口 findOne 已带 folder）
+    const baseInclude = richInclude
+      ? { ...CONTENT_ADMIN_USER_INCLUDE, folder: true }
+      : { folder: true };
     const includeWithPermissions = {
       ...baseInclude,
       permissions: {
