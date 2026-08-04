@@ -74,6 +74,8 @@ export const sitePublicSettingsSchema = z.object({
   legal: z.object({
     beian: z.string().min(1).max(64),
     beianUrl: z.string().url().max(500),
+    gonganBeian: z.string().max(64).optional(),
+    gonganBeianUrl: z.string().url().max(500).or(z.literal('')).optional(),
   }),
   social: z.object({
     channels: z.array(socialChannelSchema).max(20),

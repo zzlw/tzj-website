@@ -580,7 +580,7 @@ export default function SiteSettingsPage() {
         <Card className="pb-0">
           <CardHeader>
             <CardTitle>备案信息</CardTitle>
-            <CardDescription>展示于页脚，链接至工信部备案查询</CardDescription>
+            <CardDescription>展示于页脚，链接至工信部 / 公安备案查询</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
             <div>
@@ -603,6 +603,36 @@ export default function SiteSettingsPage() {
                 onChange={(e) =>
                   patch((p) => ({ ...p, legal: { ...p.legal, beianUrl: e.target.value } }))
                 }
+                className="mt-1.5"
+              />
+            </div>
+            <div>
+              <Label htmlFor="gonganBeian">公安备案号</Label>
+              <Input
+                id="gonganBeian"
+                value={form.legal.gonganBeian ?? ''}
+                onChange={(e) =>
+                  patch((p) => ({
+                    ...p,
+                    legal: { ...p.legal, gonganBeian: e.target.value },
+                  }))
+                }
+                placeholder="豫公网安备41010702004123号"
+                className="mt-1.5"
+              />
+            </div>
+            <div>
+              <Label htmlFor="gonganBeianUrl">公安备案查询链接</Label>
+              <Input
+                id="gonganBeianUrl"
+                value={form.legal.gonganBeianUrl ?? ''}
+                onChange={(e) =>
+                  patch((p) => ({
+                    ...p,
+                    legal: { ...p.legal, gonganBeianUrl: e.target.value },
+                  }))
+                }
+                placeholder="https://beian.mps.gov.cn/#/query/webSearch"
                 className="mt-1.5"
               />
             </div>

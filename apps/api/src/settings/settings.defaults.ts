@@ -96,8 +96,10 @@ export const DEFAULT_SITE_PUBLIC_SETTINGS: SitePublicSettings = {
     },
   },
   legal: {
-    beian: '豫ICP备XXXXXXXX号',
+    beian: '豫ICP备20013982号',
     beianUrl: 'https://beian.miit.gov.cn',
+    gonganBeian: '豫公网安备41010702004123号',
+    gonganBeianUrl: 'https://beian.mps.gov.cn/#/query/webSearch',
   },
   social: {
     channels: [

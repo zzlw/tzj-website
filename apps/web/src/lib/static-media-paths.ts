@@ -14,6 +14,7 @@ const EXTRA_SITE_MEDIA_PATHS = [
   '/media/fixed-series.mp4',
   '/media/fixed-tower-hero.jpg',
   '/media/fixed-tower.mp4',
+  '/media/gongan.png',
   '/media/hero.mp4',
   '/media/louisville-case.mp4',
   '/media/maritime-jacksonville.jpg',

@@ -147,14 +147,35 @@ export async function Footer() {
               </div>
               <span>{tFooter('creditCode')}</span>
             </div>
-            <a
-              href={settings.legal.beianUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="transition-colors hover:text-primary"
-            >
-              {settings.legal.beian}
-            </a>
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+              <a
+                href={settings.legal.beianUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="transition-colors hover:text-primary"
+              >
+                {settings.legal.beian}
+              </a>
+              {settings.legal.gonganBeian ? (
+                <a
+                  href={
+                    settings.legal.gonganBeianUrl || 'https://beian.mps.gov.cn/#/query/webSearch'
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 transition-colors hover:text-primary"
+                >
+                  <img
+                    src="/media/gongan.png"
+                    alt=""
+                    width={15}
+                    height={17}
+                    className="h-4 w-auto"
+                  />
+                  {settings.legal.gonganBeian}
+                </a>
+              ) : null}
+            </div>
           </div>
         </Container>
       </div>

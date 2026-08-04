@@ -15,7 +15,7 @@ export const siteConfig = {
     email: process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'REDACTED-EMAIL',
     address: process.env.NEXT_PUBLIC_CONTACT_ADDRESS || '河南省郑州市高新技术开发区科学大道',
   },
-  beian: process.env.NEXT_PUBLIC_BEIAN || '豫ICP备XXXXXXXX号',
+  beian: process.env.NEXT_PUBLIC_BEIAN || '豫ICP备20013982号',
   social: {
     logo: '/og-default.jpg',
   },

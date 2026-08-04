@@ -47,6 +47,8 @@ export function mergeSiteSettings(cms: SitePublicSettings): SitePublicSettings {
     legal: {
       beian: process.env.NEXT_PUBLIC_BEIAN || cms.legal.beian,
       beianUrl: cms.legal.beianUrl,
+      gonganBeian: cms.legal.gonganBeian,
+      gonganBeianUrl: cms.legal.gonganBeianUrl,
     },
     social: cms.social,
     analytics: {

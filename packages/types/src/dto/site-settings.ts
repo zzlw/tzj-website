@@ -99,6 +99,10 @@ export interface SitePublicSettings {
   legal: {
     beian: string;
     beianUrl: string;
+    /** 公安备案号（如「豫公网安备41010702004123号」），留空则不展示 */
+    gonganBeian?: string;
+    /** 公安备案查询链接（全国互联网安全管理服务平台） */
+    gonganBeianUrl?: string;
   };
   social: {
     channels: SocialChannelSetting[];
