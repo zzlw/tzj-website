@@ -1,6 +1,6 @@
 # 邮件系统迁移方案：阿里云邮件推送 → 企业邮箱（阿里邮箱免费版）
 
-> 版本：v1.20　|　日期：2026-08-03　|　含十八轮评审 + 决策点变更
+> 版本：v1.21　|　日期：2026-08-04　|　含十八轮评审 + 决策点变更 + 阶段 1 已执行
 
 ## 1. 背景与目标
 
@@ -67,7 +67,7 @@
 | MX | `5 mx01.dm.aliyun.com` | DM 回信/退信路由 |
 | TXT | `v=spf1 include:spf1.dm.aliyun.com -all` | DM 发信 SPF |
 | TXT | DM 域名验证串 | DM 域名验证 |
-| TXT | `aliyun._domainkey` DKIM | DM 发信签名 |
+| TXT | `aliyun-cn-hangzhou._domainkey` DKIM | DM 发信签名（v1.21 实证修正：实际记录名含地域后缀，非 aliyun._domainkey） |
 
 ### 2.5 阿里云账号现状
 
@@ -120,7 +120,7 @@
 |------|------|--------|
 | TXT SPF | **先合并，验收后清理**（不可直接替换） | 过渡期：`v=spf1 include:spf1.dm.aliyun.com include:spf.qiye.aliyun.com -all`；SMTP 验收后：删 DM include，仅留企业邮箱 include（官方值已查证） |
 | TXT 验证串 | 新增 | 企业邮箱域名验证记录（控制台提供） |
-| DKIM | 新增 | 企业邮箱 DKIM：主机记录 `default._domainkey`（官方选择器，非 aliyun._domainkey）——已实测 `default._domainkey.tzjii.com` 无记录，与 DM 零冲突 |
+| DKIM | 新增 | 企业邮箱 DKIM：主机记录 `default._domainkey`（官方选择器，非 aliyun-cn-hangzhou._domainkey）——已实测 `default._domainkey.tzjii.com` 无记录，与 DM 零冲突 |
 | TXT DMARC | 保持不动 | 现有 `v=DMARC1;p=none;rua=mailto:dmarc_report@service.aliyun.com`（DM 配置时自动生成）——`p=none` 监控模式不拒收，**切换期禁止改 p=quarantine**；可选后续将 rua 改到 contact@ 接收报告 |
 | MX | 最后切换 | 官方值：`mx1.qiye.aliyun.com`(5)、`mx2.qiye.aliyun.com`(10)、`mx3.qiye.aliyun.com`(15) 三条（旧版 `mxn.mxhichina.com` 已废弃，勿用） |
 | DM 全部记录（验证 TXT / DKIM / SPF include） | 验收后**确定清理** | 删除（DM 退役，不再保留）；DM DKIM 选择器为随机串，不占用 default._domainkey |
@@ -558,6 +558,16 @@ CI 会在代码合并后自动部署新 API 代码。若部署时生产环境未
 | 实证 | **DNS 五项现状与方案 2.4 完全一致**（2026-08-03 再 dig）：MX=5 mx01.dm.aliyun.com、SPF=单 include:spf1.dm.aliyun.com（未合并）、DMARC=p=none（_dmarc 子域）、aliyun/default._domainkey 均无记录——阶段 1 基线正确，未发生外部变更 | 无需修订 |
 | P3 | 解析服务商未写明（决定阶段 1 操作入口） | 4.1.2 补：NS=dns1/dns2.hichina.com（阿里云万网），入口为阿里云云解析控制台 |
 | 状态 | 浏览器当前无阿里云登录页（仅 admin 文档页）——主账号登录未完成 | 待用户重新打开登录页并登录后推进阶段 2；阶段 1（SPF 合并）不依赖登录，可先行 |
+
+### v1.20 → v1.21（阶段 1 已执行：SPF 合并完成）
+
+| 项目 | 结果 |
+|------|------|
+| 执行时间 | 2026-08-04 15:56（主账号登录后，云解析控制台手动修改） |
+| 修改内容 | `@` TXT SPF 单 include → 合并值 `v=spf1 include:spf1.dm.aliyun.com include:spf.qiye.aliyun.com -all`（TTL 保持 10 分钟） |
+| dig 校验 | 权威（dns1.hichina.com）/ 公共（223.5.5.5）/ 本地 三层全部返回合并值 |
+| 实证修正 | v1.18 称「aliyun/default._domainkey 均无记录」——实际 DM 的 DKIM 主机名为 **`aliyun-cn-hangzhou._domainkey`**（dig 名称错误导致漏检；已确认存在，创建于 2026-08-03 19:57）；`default._domainkey` 仍无记录，与 DM 零冲突结论不变 |
+| 后续 | 阶段 1 完成，对 DM 发信零影响（spf1.dm.aliyun.com include 保留）；下一步阶段 2：申请企业邮箱免费版 |
 
 ### v1.19 → v1.20（决策点确认）
 

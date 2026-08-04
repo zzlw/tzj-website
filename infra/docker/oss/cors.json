@@ -1,10 +1,16 @@
 {
   "CORSRule": [
     {
-      "AllowedOrigin": ["https://www.tzjii.com", "https://admin.tzjii.com"],
+      "AllowedOrigin": [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:3002",
+        "https://www.tzjii.com",
+        "https://admin.tzjii.com"
+      ],
       "AllowedMethod": ["GET", "PUT", "POST", "HEAD"],
       "AllowedHeader": ["*"],
-      "ExposeHeader": ["ETag", "x-oss-request-id"],
+      "ExposeHeader": ["ETag", "x-amz-request-id", "x-oss-request-id"],
       "MaxAgeSeconds": 3000
     }
   ]
