@@ -8,7 +8,8 @@ const VISITOR_ID_TTL_MS = 2 * 365 * 24 * 60 * 60 * 1000;
 const SESSION_ID_KEY = '_tzj_sid';
 const IDENTITY_KEY = '_tzj_identity';
 // 会话首触营销归因（sessionStorage，首次带参访问时锁定）
-const SESSION_ATTRIBUTION_KEY = '_tzj_attr';
+// v2：修正百度广告 GBK 百分号编码的中文参数被误按 UTF-8 解码为乱码；旧 key 缓存不复用
+const SESSION_ATTRIBUTION_KEY = '_tzj_attr_v2';
 const GEO_MODE_CACHE_KEY = '_tzj_geo_mode';
 const GEO_MODE_CACHE_TTL_MS = 5 * 60 * 1000;
 const GEO_COORDS_CACHE_KEY = '_tzj_geo_coords';
@@ -128,18 +129,74 @@ interface SessionAttribution {
   bdVid?: string;
 }
 
+/**
+ * 从原始 query string 提取参数值（保留百分号编码原样，不做解码）。
+ * 不用 URLSearchParams：其按 UTF-8 解码百分号字节，百度广告 GBK 编码的中文参数
+ * （如 %CD%C6%B9%E3=推广）会被替换为 U+FFFD 乱码，原始字节信息随之丢失。
+ */
+export function getRawQueryParam(key: string): string | null {
+  if (typeof window === 'undefined') return null;
+  const search = window.location.search;
+  if (!search?.startsWith('?')) return null;
+  const prefix = `${key}=`;
+  for (const pair of search.slice(1).split('&')) {
+    if (pair.startsWith(prefix)) return pair.slice(prefix.length);
+  }
+  return null;
+}
+
+/**
+ * 解码查询参数原始值：优先按 UTF-8 严格解码（Google 广告等标准编码）；
+ * 解码失败（百度广告 GBK 百分号编码的中文参数）时回退 GBK 还原。
+ */
+export function decodeQueryValue(raw: string): string {
+  if (!raw.includes('%') && !raw.includes('+')) return raw;
+  const bytes: number[] = [];
+  let literal = '';
+  const flush = () => {
+    if (literal) {
+      bytes.push(...new TextEncoder().encode(literal));
+      literal = '';
+    }
+  };
+  for (let i = 0; i < raw.length; i++) {
+    const ch = raw[i];
+    if (ch === '+') {
+      flush();
+      bytes.push(0x20); // URL 规范：+ 解码为空格
+    } else if (ch === '%' && /^[0-9a-f]{2}$/i.test(raw.slice(i + 1, i + 3))) {
+      flush();
+      bytes.push(parseInt(raw.slice(i + 1, i + 3), 16));
+      i += 2;
+    } else {
+      literal += ch; // 未编码字符（裸中文等），按 UTF-8 编码入字节流
+    }
+  }
+  flush();
+  const u8 = new Uint8Array(bytes);
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(u8);
+  } catch {
+    return new TextDecoder('gbk').decode(u8);
+  }
+}
+
 function parseAttributionFromUrl(): SessionAttribution {
-  const params = new URLSearchParams(window.location.search);
-  const pick = (k: string) => params.get(k)?.slice(0, 200) || undefined;
+  const pick = (k: string, max = 200) => {
+    const raw = getRawQueryParam(k);
+    if (raw == null) return undefined;
+    const decoded = decodeQueryValue(raw);
+    return decoded.slice(0, max) || undefined;
+  };
   const attr: SessionAttribution = {
     utmSource: pick('utm_source'),
     utmMedium: pick('utm_medium'),
     utmCampaign: pick('utm_campaign'),
     utmContent: pick('utm_content'),
     utmTerm: pick('utm_term'),
-    gclid: params.get('gclid')?.slice(0, 512) || undefined,
+    gclid: pick('gclid', 512),
     // 百度 OCPC 点击 ID（开启 OCPC 后百度自动追加，转化回传必须携带）
-    bdVid: params.get('bd_vid')?.slice(0, 512) || undefined,
+    bdVid: pick('bd_vid', 512),
   };
   // 剔除全空键，便于判断“本次 URL 是否携带归因”
   for (const key of Object.keys(attr) as Array<keyof SessionAttribution>) {

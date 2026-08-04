@@ -1,4 +1,4 @@
-import { getVisitorId } from '@/lib/analytics';
+import { decodeQueryValue, getRawQueryParam, getVisitorId } from '@/lib/analytics';
 import { env } from '@/lib/env';
 import type { ChatRoom, RecentRoomData } from './types';
 
@@ -68,8 +68,9 @@ export function collectVisitorContext(): {
   if (typeof window === 'undefined') {
     return { userAgent: '', referrer: '', landingPath: '/' };
   }
-  const params = new URLSearchParams(window.location.search);
-  const utm = params.get('utm_source')?.trim();
+  // 原始 query string 解析（兼容百度广告 GBK 百分号编码的中文参数，避免 UTM 乱码）
+  const rawSource = getRawQueryParam('utm_source');
+  const utm = rawSource ? decodeQueryValue(rawSource).trim() : undefined;
   return {
     userAgent: navigator.userAgent,
     referrer: document.referrer || '',
