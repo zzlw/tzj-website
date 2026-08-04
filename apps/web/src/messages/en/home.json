@@ -2,13 +2,13 @@
   "home": {
     "meta": {
       "title": "TZJ | Emergency Rescue Training Equipment Manufacturer",
-      "description": "Henan TZJ Industrial Co., Ltd. — 16 years in emergency rescue training equipment with 1,000+ training base projects. Training towers, live-fire burn facilities, specialized scenarios, and training props, delivered turnkey for fire, military, police, mining, education, and tourism sectors."
+      "description": "Henan TZJ Industrial Co., Ltd., founded in 2018. Focused on emergency rescue training equipment — training towers, live-fire burn facilities, specialized scenarios, and training props, delivered turnkey for fire, military, police, mining, education, and tourism sectors."
     },
     "hero": {
       "eyebrow": "Integrated Emergency Rescue Training Equipment Supplier",
       "titleLine1": "Built for Real-World Operations",
       "titleLine2": "Complete Training Base Solutions",
-      "description": "Sixteen years dedicated to emergency rescue training equipment — from training towers and structures to live-fire burn facilities, specialized scenarios, and training props. {count} product lines across 6 service domains, delivered turnkey for fire, police, military, and other agencies.",
+      "description": "Founded in 2018, we continue to focus on emergency rescue training equipment — from training towers and structures to live-fire burn facilities, specialized scenarios, and training props. {count} product lines across 6 service domains, delivered turnkey for fire, police, military, and other agencies.",
       "browseProducts": "Browse Products",
       "viewSolutions": "View Solutions"
     },
@@ -35,16 +35,16 @@
       "titleLine1": "Our Training Towers",
       "titleLine2": "Designed by Firefighters & Engineers",
       "titleHighlight": "Built for Fire Training",
-      "statYears": "Years in Industry",
-      "statProjects": "Training Base Projects",
+      "statFounded": "Founded",
       "statLines": "Product Lines",
       "statDomains": "Service Domains",
+      "statFamilies": "Product Families",
       "learnMore": "See What Makes Us Different"
     },
     "deliveries": {
       "eyebrow": "Project Portfolio",
       "title": "Training Bases Across China",
-      "description": "Over 1,000 training base projects serving fire, police, military, universities, and more nationwide.",
+      "description": "Projects nationwide serving fire, police, military, universities, and more. Below are representative examples.",
       "viewAll": "View All Projects",
       "items": {
         "henan-fire-rescue": {
@@ -81,11 +81,11 @@
     },
     "certification": {
       "eyebrow": "Credentials & Trust",
-      "title": "Rigorous Standards You Can Rely On",
+      "title": "Certified Systems, Controlled Quality",
       "description": "Industry certifications and client endorsements reflect our commitment to quality and integrity.",
       "items": {
         "iso9001": { "title": "ISO 9001", "subtitle": "Quality Management System" },
-        "hitech": { "title": "High-Tech Enterprise", "subtitle": "National Certification" },
+        "hitech": { "title": "High-Tech Enterprise", "subtitle": "Certificate on File" },
         "patents": { "title": "Multiple Patents", "subtitle": "Utility & Design" },
         "safety": { "title": "Work Safety Standardization", "subtitle": "Level 3 Compliance" }
       },

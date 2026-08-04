@@ -53,6 +53,15 @@ const nextConfig: NextConfig = {
     /** 按需 tree-shake lucide 等 barrel 包，减小客户端 bundle。 */
     optimizePackageImports: ['lucide-react'],
   },
+  async redirects() {
+    return [
+      {
+        source: '/:locale/resources/news/1000-projects-milestone',
+        destination: '/:locale/resources/news/turnkey-delivery-network',
+        permanent: true,
+      },
+    ];
+  },
   images: {
     formats: ['image/avif', 'image/webp'],
     qualities: [70, 75, 80, 90],

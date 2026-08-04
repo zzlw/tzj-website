@@ -6,7 +6,7 @@ import { Container } from '@/components/ui';
 const CARDS = [
   {
     title: '固定训练塔',
-    desc: '标准塔型与深度定制，最坚固耐用的固定式训练塔',
+    desc: '标准塔型与深度定制，工业级钢结构固定式训练塔',
     href: '/fixed-tower',
     image: '/media/fixed-tower-hero.jpg',
   },

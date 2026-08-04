@@ -2,13 +2,13 @@
   "home": {
     "meta": {
       "title": "拓之迹 | 应急救援训练装备专业制造商",
-      "description": "河南拓之迹实业有限公司 — 16年深耕应急救援训练装备，1000+训练基地案例，覆盖训练塔、实火燃烧、专项场景与训练器械，为消防、部队、公安、矿山、院校、景区提供交钥匙式训练基地整体方案。"
+      "description": "河南拓之迹实业有限公司，成立于 2018 年。专注应急救援训练装备，覆盖训练塔、实火燃烧、专项场景与训练器械，为消防、部队、公安、矿山、院校、景区提供交钥匙式训练基地整体方案。"
     },
     "hero": {
       "eyebrow": "应急救援训练装备一体化供应商",
       "titleLine1": "为实战而生的",
       "titleLine2": "训练基地整体方案",
-      "description": "十六年深耕应急救援训练装备 —— 从训练塔与建筑、实火燃烧、专项场景到训练器械，{count} 大产品线、6 大服务领域，以交钥匙方式为消防、公安、部队等队伍打造完整训练基地。",
+      "description": "成立于 2018 年，持续深耕应急救援训练装备 —— 从训练塔与建筑、实火燃烧、专项场景到训练器械，{count} 大产品线、6 大服务领域，以交钥匙方式为消防、公安、部队等队伍打造完整训练基地。",
       "browseProducts": "浏览产品",
       "viewSolutions": "查看解决方案"
     },
@@ -35,16 +35,16 @@
       "titleLine1": "我们的训练塔",
       "titleLine2": "由消防员与工程师",
       "titleHighlight": "专为消防训练打造",
-      "statYears": "年行业深耕",
-      "statProjects": "训练基地项目",
+      "statFounded": "年成立",
       "statLines": "大产品线",
       "statDomains": "大服务领域",
+      "statFamilies": "大产品板块",
       "learnMore": "了解我们的不同之处"
     },
     "deliveries": {
       "eyebrow": "工程案例",
       "title": "训练基地案例遍布全国",
-      "description": "超过 1000 个训练基地项目，覆盖全国各省市的消防、公安、部队、院校等行业",
+      "description": "服务网络遍及全国，覆盖消防、公安、部队、院校等行业。以下为部分代表性项目。",
       "viewAll": "查看全部案例",
       "items": {
         "henan-fire-rescue": {
@@ -81,11 +81,11 @@
     },
     "certification": {
       "eyebrow": "资质与信任",
-      "title": "严苛标准，值得信赖",
+      "title": "体系认证，质量过程可控",
       "description": "多项行业资质认证与客户背书，是我们对品质与诚信的坚守。",
       "items": {
         "iso9001": { "title": "ISO 9001", "subtitle": "质量管理体系" },
-        "hitech": { "title": "高新技术企业", "subtitle": "国家认定" },
+        "hitech": { "title": "高新技术企业", "subtitle": "认定证书" },
         "patents": { "title": "多项专利", "subtitle": "实用新型 & 外观" },
         "safety": { "title": "安全生产标准化", "subtitle": "三级达标" }
       },

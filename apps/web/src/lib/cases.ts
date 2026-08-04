@@ -132,7 +132,7 @@ export const caseStudies: CaseStudy[] = [
     image: 'images/202604/db43cc3abac.jpg',
     client: '某市消防救援支队',
     completionDate: '2024-01',
-    summary: '建设华南地区标杆 CFBT（实火训练）中心，配备互锁隔热衬里燃烧室与完整热烟训练系统。',
+    summary: '建设华南地区重点 CFBT（实火训练）中心，配备互锁隔热衬里燃烧室与完整热烟训练系统。',
     highlights: [
       '互锁隔热衬里，可承受 1100°C 高温',
       '无明火布置限制，支持多种燃烧模式',

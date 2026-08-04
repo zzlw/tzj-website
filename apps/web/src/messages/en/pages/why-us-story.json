@@ -1,12 +1,12 @@
 {
   "meta": {
     "title": "Our Story",
-    "description": "The TZJ story — 16 years dedicated to emergency response training equipment, a history of continuous innovation and sustained industry growth."
+    "description": "The TZJ story — founded in 2018, dedicated to emergency response training equipment, a history of continuous innovation and sustained growth."
   },
   "hero": {
     "eyebrow": "Why TZJ · Story",
     "title": "Our Story",
-    "description": "16 years dedicated to emergency response training equipment — a history of continuous innovation and sustained growth at TZJ."
+    "description": "Founded in 2018 and dedicated to emergency response training equipment — a history of continuous innovation and sustained growth at TZJ."
   },
   "storySection": {
     "eyebrow": "Our Story",
@@ -16,7 +16,7 @@
   "valuesSection": {
     "eyebrow": "Our Beliefs",
     "title": "Values that carry us forward every year",
-    "description": "For 16 years, these commitments have led us to treat every project as a legacy worth building."
+    "description": "Since our founding in 2018, these commitments have led us to treat every project as a legacy worth building."
   },
   "values": [
     {
@@ -25,7 +25,7 @@
     },
     {
       "title": "Continuous Innovation",
-      "desc": "Ongoing R&D in thermal liner, modular systems, and more — leading industry evolution."
+      "desc": "Ongoing R&D in thermal liner, modular systems, and more."
     },
     {
       "title": "Safety Above All",
@@ -78,7 +78,7 @@
     {
       "year": "Today",
       "title": "Nationwide and global",
-      "desc": "1000+ training complex projects across 31 provinces and international markets."
+      "desc": "Training projects across multiple provinces and international markets."
     }
   ],
   "relatedLinks": [
@@ -92,7 +92,7 @@
     },
     {
       "label": "Global Reach",
-      "desc": "1000+ projects across China and international markets."
+      "desc": "Projects across China and international markets."
     }
   ],
   "cta": {

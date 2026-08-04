@@ -17,7 +17,7 @@ import { PRODUCT_LINE_COUNT } from '@/lib/product-catalog';
 import { cn } from '@/lib/utils';
 
 /* ──────────────────────────────────────────────────────────
- * StatBand — 数据背书带（默认使用拓之迹真实数据）
+ * StatBand — 数据背书带（可核验结构数据；默认与 Mission / StatBandI18n 同口径）
  * ────────────────────────────────────────────────────────── */
 export interface Stat {
   value: string;
@@ -25,10 +25,10 @@ export interface Stat {
 }
 
 const DEFAULT_STATS: Stat[] = [
-  { value: '16', label: '年深耕应急救援训练装备' },
-  { value: '1000+', label: '训练基地案例' },
+  { value: '2018', label: '年成立' },
   { value: String(PRODUCT_LINE_COUNT), label: '大产品线' },
   { value: '6', label: '大服务领域' },
+  { value: '4', label: '大产品板块' },
 ];
 
 export function StatBand({
@@ -129,7 +129,7 @@ const DEFAULT_STEPS: ProcessStep[] = [
 export function ProcessBand({
   eyebrow = '交钥匙服务',
   title = '从构想到落成，全程为您护航',
-  description = '作为一体化供应商，我们把设计、制造、安装与售后集于一体——单一对接，责任到底。',
+  description = '作为一体化供应商，我们把设计、制造、安装与售后集于一体——一站式对接，全程跟进。',
   steps = DEFAULT_STEPS,
 }: {
   eyebrow?: string;

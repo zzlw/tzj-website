@@ -1,15 +1,15 @@
 {
   "blocks": {
     "statBand": {
-      "years": "年深耕应急救援训练装备",
-      "projects": "训练基地案例",
+      "founded": "年成立",
       "productLines": "大产品线",
-      "domains": "大服务领域"
+      "domains": "大服务领域",
+      "families": "大产品板块"
     },
     "processBand": {
       "eyebrow": "交钥匙服务",
       "title": "从构想到落成，全程为您护航",
-      "description": "作为一体化供应商，我们把设计、制造、安装与售后集于一体——单一对接，责任到底。",
+      "description": "作为一体化供应商，我们把设计、制造、安装与售后集于一体——一站式对接，全程跟进。",
       "steps": {
         "survey": {
           "title": "需求勘察",

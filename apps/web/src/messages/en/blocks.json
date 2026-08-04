@@ -1,15 +1,15 @@
 {
   "blocks": {
     "statBand": {
-      "years": "Years in Emergency Rescue Training Equipment",
-      "projects": "Training Base Projects",
+      "founded": "Founded",
       "productLines": "Product Lines",
-      "domains": "Service Domains"
+      "domains": "Service Domains",
+      "families": "Product Families"
     },
     "processBand": {
       "eyebrow": "Turnkey Service",
       "title": "From Concept to Completion, We Are With You",
-      "description": "As an integrated supplier, we bring design, manufacturing, installation, and after-sales together — one point of contact, full accountability.",
+      "description": "As an integrated supplier, we bring design, manufacturing, installation, and after-sales together — one-stop coordination with clear follow-through.",
       "steps": {
         "survey": {
           "title": "Needs Assessment",

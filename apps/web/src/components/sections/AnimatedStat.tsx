@@ -22,6 +22,11 @@ export function AnimatedStat({ value, label, duration = 1500 }: AnimatedStatProp
   useEffect(() => {
     const el = ref.current;
     if (!el || num === 0) return;
+    // duration<=0：静态展示（如成立年份，避免从 0 滚到 2018）
+    if (duration <= 0) {
+      setDisplay(value);
+      return;
+    }
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -43,7 +48,7 @@ export function AnimatedStat({ value, label, duration = 1500 }: AnimatedStatProp
 
     observer.observe(el);
     return () => observer.disconnect();
-  }, [num, prefix, suffix, duration]);
+  }, [num, prefix, suffix, duration, value]);
 
   return (
     <div ref={ref}>

@@ -11,10 +11,10 @@ export async function MissionSection() {
   const t = await getTranslations('home.mission');
 
   const stats = [
-    { value: '16+', label: t('statYears') },
-    { value: '1000+', label: t('statProjects') },
+    { value: '2018', label: t('statFounded'), duration: 0 },
     { value: String(PRODUCT_LINE_COUNT), label: t('statLines') },
     { value: '6', label: t('statDomains') },
+    { value: '4', label: t('statFamilies') },
   ];
 
   return (
@@ -50,7 +50,12 @@ export async function MissionSection() {
 
         <div className="mt-12 grid w-full max-w-3xl grid-cols-2 gap-6 border-t border-white/20 pt-10 md:grid-cols-4">
           {stats.map((stat) => (
-            <AnimatedStat key={stat.label} value={stat.value} label={stat.label} />
+            <AnimatedStat
+              key={stat.label}
+              value={stat.value}
+              label={stat.label}
+              duration={'duration' in stat ? stat.duration : undefined}
+            />
           ))}
         </div>
 

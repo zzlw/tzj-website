@@ -68,7 +68,7 @@ export const PRODUCT_LINES: ProductLine[] = [
     title: '固定训练塔（钢结构）',
     href: '/fixed-tower',
     image: '/media/fixed-tower-hero.jpg',
-    description: '工业级全镀锌钢结构，标准与定制，最坚固耐用的多层实战火场训练主体。',
+    description: '工业级全镀锌钢结构，标准与定制，面向多层实战火场训练主体。',
     family: 'towers',
   },
   {

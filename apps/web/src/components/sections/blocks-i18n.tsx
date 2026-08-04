@@ -24,10 +24,10 @@ const PROCESS_KEYS = ['survey', 'design', 'manufacture', 'install', 'training', 
 export async function StatBandI18n({ className }: { className?: string }) {
   const t = await getTranslations('blocks.statBand');
   const stats: Stat[] = [
-    { value: '16', label: t('years') },
-    { value: '1000+', label: t('projects') },
+    { value: '2018', label: t('founded') },
     { value: String(PRODUCT_LINE_COUNT), label: t('productLines') },
     { value: '6', label: t('domains') },
+    { value: '4', label: t('families') },
   ];
   return <StatBand stats={stats} className={className} />;
 }

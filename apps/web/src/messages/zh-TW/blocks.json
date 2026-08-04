@@ -1,15 +1,15 @@
 {
   "blocks": {
     "statBand": {
-      "years": "年深耕應急救援訓練装備",
-      "projects": "訓練基地案例",
+      "founded": "年成立",
       "productLines": "大產品線",
-      "domains": "大服務領域"
+      "domains": "大服務領域",
+      "families": "大產品板塊"
     },
     "processBand": {
       "eyebrow": "交钥匙服務",
       "title": "從构想到落成，全程為您護航",
-      "description": "作為一體化供應商，我們把設計、制造、安装與售後集于一體——单一對接，责任到底。",
+      "description": "作為一體化供應商，我們把設計、制造、安装與售後集于一體——一站式對接，全程跟進。",
       "steps": {
         "survey": {
           "title": "需求勘察",
