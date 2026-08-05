@@ -76,18 +76,16 @@ function IntegrationSetupGuide({ item }: { item: IntegrationAdminItem }) {
 
   return (
     <Collapsible className="rounded-lg border bg-muted/30">
-      <CollapsibleTrigger className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-medium hover:bg-muted/50 [&[data-panel-open]>svg.chevron]:rotate-180">
-        <span className="flex min-w-0 flex-1 items-center gap-2">
-          <BookOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
-          配置教程
-        </span>
+      <div className="flex w-full items-center">
+        <CollapsibleTrigger className="flex min-w-0 flex-1 items-center gap-2 px-4 py-3 text-left text-sm font-medium hover:bg-muted/50 [&[data-panel-open]>svg.chevron]:rotate-180">
+          <span className="flex min-w-0 flex-1 items-center gap-2">
+            <BookOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
+            配置教程
+          </span>
+          <ChevronDown className="chevron h-4 w-4 shrink-0 text-muted-foreground transition-transform" />
+        </CollapsibleTrigger>
         {(item.updatedAt || item.updatedBy) && (
-          // biome-ignore lint/a11y/noStaticElementInteractions: 仅阻断冒泡避免误触折叠切换，非交互控件
-          <span
-            className="hidden shrink-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs font-normal text-muted-foreground sm:inline-flex"
-            onClick={(e) => e.stopPropagation()}
-            onKeyDown={(e) => e.stopPropagation()}
-          >
+          <span className="hidden shrink-0 flex-wrap items-center gap-x-2 gap-y-0.5 px-4 text-xs font-normal text-muted-foreground sm:inline-flex">
             {item.updatedAt && (
               <time dateTime={item.updatedAt}>{formatDateTime(item.updatedAt)}</time>
             )}
@@ -99,8 +97,7 @@ function IntegrationSetupGuide({ item }: { item: IntegrationAdminItem }) {
             )}
           </span>
         )}
-        <ChevronDown className="chevron h-4 w-4 shrink-0 text-muted-foreground transition-transform" />
-      </CollapsibleTrigger>
+      </div>
       <CollapsibleContent className="space-y-4 border-t px-4 py-4">
         {item.docUrl && (
           <p className="text-xs">
