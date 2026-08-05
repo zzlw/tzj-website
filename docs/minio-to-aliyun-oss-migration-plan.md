@@ -3,7 +3,8 @@
 > 状态：方案评审稿（未实施）
 > 日期：2026-07-31
 > 复评：2026-07-31 —— 针对新增功能（营销弹窗、百度 OCPC 回传/百度统计/站长校验、灵犀、广告花费台账）重新评估：**总体结论与步骤不变**，增量影响已并入 §3.3 / §5.5 / §7 / §8 对应条目。
-> 复评：2026-08-04 —— 目标桶改在**正式账号 account-b**（1336****）下新建 `tzj-prod-media`；原预置桶名 `tzj-media-static-assets`（default 主账号 1646**** 名下）已被**已彻底下线的老站 tzj.jiawen.live 存档占用**（2026-07-05 创建），旧桶弃用不动（§2.1 / §4.1）；SDK 已锁 `^3.1075.0`，§5.1 P0 改动必要性确认且尚未实施；建议待旧站图片迁移（web-legacy-images-migration-plan，2026-08-03，P0–P2 本地完成）生产部署验收后再启动本迁移。
+> 复评：2026-08-04 —— 目标桶改在**正式账号 account-b**（1336****）下新建 `tzj-prod-media`；原预置桶名 `tzj-media-static-assets`（default 主账号 1646**** 名下）已被**已彻底下线的老站 tzj.jiawen.live 存档占用**（2026-07-05 创建），旧桶弃用不动（§2.1 / §4.1）；SDK 已锁 `^3.1075.0`，§5.1 P0 改动必要性确认（2026-08-05 已实现待发布）；建议待旧站图片迁移（web-legacy-images-migration-plan，2026-08-03，P0–P2 本地完成）生产部署验收后再启动本迁移。
+> 复评：2026-08-05 —— 依据仓库代码与 AWS SDK v3.1075.0 / OSS S3 兼容性核验补充：mc alias 显式 S3v4（§5.2）、ECS 同地域与内网端点连通性检查（§5.2）、反向订正防双前缀（§5.4）、归档需异地副本（§5.6）、API 公网 GET 成本行（§9）、预签名 URL 的 remotePatterns 备忘（§3.1 / §8）；**§5.1 P0 代码与 §5.4 订正脚本已实现，本地 lint/typecheck/演练通过（302 行，正向/反向归零）**。
 > 范围：**仅生产环境**（阿里云 ECS 单机 compose）。本地开发环境继续使用 MinIO，不在本方案范围内。
 > 关联文档：`docs/deployment-plan.md`（§4 MinIO 生产化改造）、`docs/minio-to-rustfs-migration-plan.md`（另一候选方案，**已废弃**，本方案为最终采纳方案）、AGENTS.md「对象存储规范」
 
@@ -71,6 +72,8 @@ api 容器 ──S3 API──▶ https://oss-cn-beijing.aliyuncs.com （公网�
 
 额外说明（已逐分支推演验证）：web/admin 的 `media-url.ts` 对新 URL（无 bucket 段）行为安全，且 `KNOWN_BUCKET_NAMES` 含 `'tzj-uploads-prod'`，会把漏订正/缓存中的旧前缀 URL 自动折叠规范成新 URL，是 DB 订正之外的自愈保险（富文本内嵌 URL 不经过它，订正仍必需）。**迁移后不得从 `KNOWN_BUCKET_NAMES` 删除 `'tzj-uploads-prod'`**。
 
+remotePatterns 备忘：切换后 `next.config.ts` 的 `images.remotePatterns` 由 `**.tzjii.com` 覆盖公开媒体域名，无需改；聊天附件预签名 URL（host 为 `*.oss-cn-beijing.aliyuncs.com`）当前由原生 `<img>`（react-photo-view）加载，不经过 `next/image`，同样无需改——若未来改用 `next/image` 直载预签名 URL，需补该域（见 §8 验收备忘）。
+
 ### 3.2 配置改动
 
 | 位置 | 项 | 旧值 → 新值 |
@@ -107,7 +110,7 @@ api 容器 ──S3 API──▶ https://oss-cn-beijing.aliyuncs.com （公网�
 ## 4. 前置准备（不影响线上，可提前任意时间做）
 
 1. **开通 OSS 并建 bucket**（§4.1）（在**正式账号 account-b**（RAM 用户 `z****e`，账号 1336****）下，aliyun CLI 或控制台）：
-   - **新建** `tzj-prod-media`：华北2（北京）、标准存储、**公开读**、关闭版本控制（可选开启，防误删）
+   - **新建** `tzj-prod-media`：华北2（北京）、标准存储、**公开读**、**建议开启版本控制**（防误删/误覆盖，成本极低；若关闭则仅靠 §5.6 归档兜底）
    - 服务端加密：可不开（媒体本为公开资源）
    - ⚠️ default 主账号（1646****）下的旧桶 `tzj-media-static-assets` / `media-static-assets` 为已下线老站遗留，**弃用不动**
 2. **RAM 用户**（§4.2）：account-b 已是 RAM 用户（`z****e`），但其凭证为 OAuth 登录态，不能用于服务器端脚本——为 `z****e` 创建 AccessKey，或新建专用 RAM 用户 `tzj-oss-app`（仅编程访问），挂自定义策略（仅 `tzj-prod-media` 桶的 `oss:GetObject/PutObject/DeleteObject/ListObjects/HeadObject/CopyObject/GetBucketInfo`），保存 AK/SK
@@ -139,6 +142,8 @@ this.client = new S3Client({
 
 MinIO（dev）与 OSS（prod）均兼容此设置，可先行发布，与切换解耦。
 
+✅ 2026-08-05 已实现（`requestChecksumCalculation` / `responseChecksumValidation` 均已加入 S3Client 初始化，文件头注释同步更新；`pnpm --filter @tzj/api lint` 无新增告警、`typecheck` 通过），待随部署发布；生产 `.env` 切换仍按 §5.5 执行。
+
 ### 5.2 存量数据全量同步（MinIO → OSS，线上继续正常服务）
 
 > 吸取 2026-07 迁移教训：**严禁**从本机经 `https://static.tzjii.com` 公网反代批量搬运（nginx 反代 + SigV4 会把吞吐压到 <1MB/s）。本次全程在 **ECS 上走 OSS 内网端点**，免流量费且不占 3Mbps 公网带宽。
@@ -149,7 +154,13 @@ MinIO（dev）与 OSS（prod）均兼容此设置，可先行发布，与切换�
 # 先加载生产 env（MINIO_ROOT_* 定义于此），OSS_AK/OSS_SK 为 RAM 用户凭证，另行 export
 set -a; source /opt/tzj/.env.prod; set +a
 
-# 0) 摸底数据量（决定用哪条路线；系统盘仅 40G，路线 B 需确认剩余空间）
+# 0) 前置连通性检查（一次性）：确认 ECS 与 OSS 同地域（华北2），内网端点解析为私网地址。
+#    解析结果应为 100.x/10.x 等内网段；若解析到公网 IP，说明 ECS 不在华北2 VPC，internal 端点不可用，须先解决再迁移
+getent hosts oss-cn-beijing-internal.aliyuncs.com || nslookup oss-cn-beijing-internal.aliyuncs.com
+# curl 返回 403/404 即网络可达（未带 bucket 的正常响应）；000 或超时说明不可达
+curl -sI -o /dev/null -w 'internal endpoint http_code=%{http_code}\n' https://oss-cn-beijing-internal.aliyuncs.com/
+
+# 1) 摸底数据量（决定用哪条路线；系统盘仅 40G，路线 B 需确认剩余空间）
 #    注：minio/mc 未锁 tag（latest），建议先拉固定版本再跑（与生产镜像「禁 latest」实践一致）
 docker run --rm --network tzj_default --entrypoint /bin/sh minio/mc -c \
   "mc alias set local http://minio:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD && mc du local/tzj-uploads-prod"
@@ -160,9 +171,12 @@ docker run --rm --network tzj_default --entrypoint /bin/sh minio/mc -c \
 # （https://static.tzjii.com/tzj-uploads-prod/{key}）仍能在 OSS 上命中，消除 404 空窗
 docker run --rm --network tzj_default --entrypoint /bin/sh minio/mc -c "
   mc alias set local http://minio:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD &&
-  mc alias set oss https://oss-cn-beijing-internal.aliyuncs.com $OSS_AK $OSS_SK &&
+  mc alias set --api S3v4 oss https://oss-cn-beijing-internal.aliyuncs.com $OSS_AK $OSS_SK &&
   mc mirror --overwrite local/tzj-uploads-prod oss/tzj-prod-media &&
   mc mirror --overwrite local/tzj-uploads-prod oss/tzj-prod-media/tzj-uploads-prod"
+
+# 若 mc 对 OSS 报 SignatureDoesNotMatch / region 相关错误：先确认 alias 的签名版本（--api S3v4），
+# 再改用路线 B（ossutil 原生 S3 兼容 API，签名由 -e/-i/-k 显式指定）
 
 # 路线 B（兜底，若 mc 对 OSS 数据面也报签名/兼容错误）：先导出到磁盘，再 ossutil 内网上传（同样双写）
 #   前置：ECS 安装 ossutil v2（curl -L https://gosspublic.alicdn.com/ossutil/v2/install.sh | bash；
@@ -185,27 +199,24 @@ docker exec tzj-postgres-1 pg_dump -U tzj -d tzj_prod -Fc \
   > /opt/tzj/backups/tzj_prod-pre-oss-$(date +%Y%m%d%H%M).dump
 ```
 
-### 5.4 URL 数据订正脚本（先写好、评审、在本地库演练）
+### 5.4 URL 数据订正脚本（已实现，本地演练通过）
 
-新增 `apps/api/prisma/scripts/rewrite-media-domain.ts`（或纯 SQL），逻辑：
+已新增 `apps/api/prisma/scripts/rewrite-media-domain.ts`，package script：
+`pnpm --filter @tzj/api prisma:rewrite-media-domain`。覆盖 §3.3 全部表/字段。
 
-```sql
--- 以案例表为例，其余表同构；实际以 schema.prisma 全量核对生成
-UPDATE "Case" SET
-  "coverImage"  = replace("coverImage",  :old, :new),
-  "images"      = ARRAY(SELECT replace(x, :old, :new) FROM unnest("images") AS x),
-  "summary"     = replace("summary", :old, :new),
-  "description" = replace("description", :old, :new)
-WHERE "coverImage" LIKE :old || '%'
-   OR :old || '/' = ANY(SELECT left(x, length(:old)+1) FROM unnest("images") x)
-   OR "summary" LIKE '%' || :old || '%'
-   OR "description" LIKE '%' || :old || '%';
+```bash
+pnpm --filter @tzj/api prisma:rewrite-media-domain                      # dry-run 正向（事务内执行后回滚）
+pnpm --filter @tzj/api prisma:rewrite-media-domain -- --apply            # 实际写库（正向）
+pnpm --filter @tzj/api prisma:rewrite-media-domain -- --reverse          # dry-run 反向
+pnpm --filter @tzj/api prisma:rewrite-media-domain -- --reverse --apply  # 实际写库（反向/回滚）
 ```
 
-- `:old = 'https://static.tzjii.com/tzj-uploads-prod'`，`:new = 'https://static.tzjii.com'`（参数化，脚本必须支持**反向执行**用于回滚）
-- 覆盖 §3.3 全部表/字段（含 `MediaAsset.url`、`ChatMessage.content`、内部文档及其修订版、`Setting.value` 等 Json 列）；执行前跑兜底扫描 SQL 确认无遗漏——⚠️ 扫描必须同时覆盖两类列：information_schema 枚举的 text/varchar 列（直接 LIKE）**和 json/jsonb 列（`col::text LIKE`）**，只扫文本列会漏掉 `Setting.value`；2026-08-04 已在本地 tzj_dev 全库扫描实测命中列：cases/news/blogs/trade_shows/pages 的 coverImage·images·description·content、media_assets.url、chat_messages.content（生产执行前仍须重扫一次）
-- json/jsonb 列订正实现：`replace("value"::text, :old, :new)::json` 逐行更新（URL 为纯 ASCII，转义风险低，演练库先确认值形态）；**反向执行同样限定** `https://static.tzjii.com` 前缀，避免误改迁移后新写入的无桶段 URL
-- 先在本地 tzj_dev 副本演练：执行 → 抽查富文本渲染 → 反向执行 → diff 归零
+- 默认 `old=https://static.tzjii.com/tzj-uploads-prod`、`new=https://static.tzjii.com`；可用 `REWRITE_OLD_PREFIX` / `REWRITE_NEW_PREFIX` 覆盖（本地演练用同构的 localhost 前缀，SQL 语义与生产一致）
+- 覆盖 cases/news/blogs/trade_shows（含 `popupImage`/`popupContent`/`externalUrl`/`ctaUrl`）/pages 的 coverImage·images[]·正文富文本、`users.avatar`、`media_assets.url`、`chat_messages.content`、`internal_documents`（summary/content）、`internal_document_revisions.content`、`settings.value`、`integrations.config`
+- 全库兜底扫描：枚举 information_schema 的 text/varchar/json/jsonb 列，白名单外命中仅报告不订正（2026-08-04 实测命中列见 §3.3；生产执行前仍须重扫一次）
+- 反向（回滚）用哨兵替换实现：先保护旧前缀、再把新前缀改回旧前缀，天然防双前缀（不依赖 LIKE 守卫），混合新旧前缀的富文本/JSON 也安全
+- 默认 dry-run 在事务内真实执行 UPDATE 后回滚，输出逐表行数；`--apply` 写库
+- ✅ 2026-08-05 本地 tzj_dev 演练通过：正向 302 行 → 抽查无旧前缀残留 → 反向 302 行 → 校验归零；jsonb 混合 URL 表达式单独验证通过
 
 ### 5.5 切换窗口（预计 30 分钟内，媒体读取短暂回源旧站不中断）
 
@@ -231,7 +242,7 @@ WHERE "coverImage" LIKE :old || '%'
 收尾（确认稳定后）：
 
 1. compose 删 `minio` 服务、api 的 `depends_on: minio`、`miniodata` 卷声明、gateway 与 **acme environment 的 `STATIC_DOMAIN`**（compose 中两处引用，漏删则 `docker compose` 报未定义变量）；nginx 模板删 `STATIC_DOMAIN` 的 443 server 块（模板中仅此一处引用）；`.env.prod` 删 `MINIO_ROOT_*` 与 `STATIC_DOMAIN`；`infra/docker/Makefile` 的 `up -d --no-deps postgres minio acme gateway` 目标去掉 `minio`（否则目标直接报错）
-2. `miniodata` 卷先 `docker run --rm -v tzj_miniodata:/data alpine tar czf` 归档一份到 OSS `_backup/` 前缀，再删除卷（**删除动作需用户当次确认**）
+2. `miniodata` 卷先 `docker run --rm -v tzj_miniodata:/data alpine tar czf` 归档一份到 OSS `_backup/` 前缀，**并额外下载一份到本机 / 异地（或复制到另一账号 / 地域 bucket）后再删除卷**——归档与生产桶同账号同地域时，误删 bucket 会连同归档一起丢失（**删除动作需用户当次确认**）
 3. 删除 `tzj-prod-media` 内的过渡副本 `tzj-uploads-prod/` 前缀（先确认 nginx `STATIC_DOMAIN` 流量归零、且 OSS 访问日志中该前缀无近 7 天请求；**删除动作需用户当次确认**）
 4. 同步文档与示例：`docs/deployment-plan.md` §4 与 S3 环境变量段、AGENTS.md「对象存储规范」生产行、`.env.example` 注释、`infra/docker/.env.prod.example`（删 `STATIC_DOMAIN` / `MINIO_ROOT_*`，S3 段换 OSS 示例值）
 5. acme 无需处理：现有证书为泛域名 `tzjii.com + *.tzjii.com`（`infra/docker/acme/issue.sh`），继续服务 web/admin/api，没有独立的 static 条目可移除；`static.tzjii.com` 的 HTTPS 改由 OSS 侧证书承担（§4.4）
@@ -270,6 +281,7 @@ WHERE "coverImage" LIKE :old || '%'
 ## 8. 验收清单（切换窗口第 9 步执行）
 
 - [ ] C 端（www.tzjii.com）：首页/案例/新闻详情图片全部正常，`next/image` 无 400/403（remotePatterns 命中 `**.tzjii.com`）
+- [ ] 备忘：聊天附件预签名 URL（`*.oss-cn-beijing.aliyuncs.com`）由原生 `<img>` 加载，当前无需改 remotePatterns；若未来改用 `next/image` 直载，需在 `next.config.ts` 增加该域名
 - [ ] web 数据缓存已刷新（镜像重建部署 / 重启 web 容器），页面源码中媒体 URL 已无 `/tzj-uploads-prod` 前缀
 - [ ] C 端富文本内嵌图正常（订正生效的直接证据）
 - [ ] Admin：媒体上传（≤10MB）成功且返回 URL 为 `https://static.tzjii.com/...`；删除成功
@@ -294,10 +306,13 @@ WHERE "coverImage" LIKE :old || '%'
 |----|-----------|------|
 | 存储（<20GB） | 0.12 元/GB/月 | <3 元 |
 | 公网流出（图片 GET，<30GB/月） | 0.50 元/GB | <15 元 |
+| API 公网 GET（水印重烧、媒体恢复等少量请求） | 0.50 元/GB | 忽略（若未来批量重烧，可增加内部 endpoint 专用 client，免流量费） |
 | 请求费 | 0.01 元/万次 | 忽略 |
 | **合计** | | **≈20 元/月** |
 
 对价换回：ECS 释放 512m 内存 + 数十 GB 磁盘空间 + 3Mbps 带宽不再被媒体挤占（C 端首屏图片加载不再受限），以及 MinIO 版本/备份运维归零。
+
+说明：API 经公网 endpoint 上传（外网流入）免费；仅 `getObjectBuffer` 等 GET（水印重烧、媒体恢复）计外网流出，当前量级可并入上表忽略不计。
 
 ---
 
