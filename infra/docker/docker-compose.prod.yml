@@ -4,7 +4,7 @@ services:
   postgres:
     image: postgres:15-alpine
     restart: unless-stopped
-    mem_limit: 384m
+    mem_limit: 256m
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-tzj}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?required}
@@ -39,7 +39,7 @@ services:
   web:
     image: ${IMAGE_REGISTRY}/tzj-web:${WEB_TAG:-${IMAGE_TAG:-latest}}
     restart: unless-stopped
-    mem_limit: 320m
+    mem_limit: 256m
     environment:
       NODE_OPTIONS: "--max-old-space-size=256"
     depends_on:
@@ -51,7 +51,7 @@ services:
   admin:
     image: ${IMAGE_REGISTRY}/tzj-admin:${ADMIN_TAG:-${IMAGE_TAG:-latest}}
     restart: unless-stopped
-    mem_limit: 320m
+    mem_limit: 256m
     environment:
       NODE_OPTIONS: "--max-old-space-size=256"
       # BFF 服务端直连 compose 内网 api，避免回落到构建期烘入的公网域名
