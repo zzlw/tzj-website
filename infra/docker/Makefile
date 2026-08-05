@@ -52,7 +52,7 @@ acme-build:
 # --no-deps：首次引导时应用镜像尚未构建，gateway 的 depends_on(api/web/admin) 会触发
 # 拉取不存在的镜像而失败；nginx 用 resolver 延迟解析上游，脱离应用容器可正常启动
 infra-up:
-	$(PROD) up -d --no-deps postgres minio acme gateway
+	$(PROD) up -d --no-deps postgres acme gateway
 
 # acme DNS-01 签发真证书（tzjii.com + *.tzjii.com）
 cert-issue:

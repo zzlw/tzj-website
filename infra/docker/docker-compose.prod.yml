@@ -17,28 +17,6 @@ services:
       timeout: 5s
       retries: 5
 
-  minio:
-    image: minio/minio:RELEASE.2025-04-22T22-12-26Z # 锁定版本，生产禁 latest
-    restart: unless-stopped
-    mem_limit: 512m # IAM/admin 操作会瞬时冲高，256m 会被 cgroup 杀导致 exit0 重启循环
-    command: server /data
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?required}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?required}
-      # 浏览器预签名直传所需 CORS（与 dev 对齐，域名换生产值）
-      MINIO_API_CORS_ALLOW_ORIGIN: "https://${WEB_DOMAIN},https://${ADMIN_DOMAIN}"
-      MINIO_API_CORS_ALLOW_METHODS: "GET,PUT,POST,HEAD"
-      MINIO_API_CORS_ALLOW_HEADERS: "*"
-    volumes:
-      - miniodata:/data
-    expose:
-      - "9000" # 仅 compose 内网，不映射宿主机端口；生产不开 9001 Console
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
   api:
     image: ${IMAGE_REGISTRY}/tzj-api:${API_TAG:-${IMAGE_TAG:-latest}}
     restart: unless-stopped
@@ -48,8 +26,6 @@ services:
       NODE_OPTIONS: "--max-old-space-size=384"
     depends_on:
       postgres:
-        condition: service_healthy
-      minio:
         condition: service_healthy
     expose:
       - "4000"
@@ -97,7 +73,6 @@ services:
       WEB_DOMAIN: ${WEB_DOMAIN}
       ADMIN_DOMAIN: ${ADMIN_DOMAIN}
       API_DOMAIN: ${API_DOMAIN}
-      STATIC_DOMAIN: ${STATIC_DOMAIN}
       BASE_DOMAIN: ${BASE_DOMAIN}
       NGINX_ENVSUBST_FILTER: "DOMAIN"
     volumes:
@@ -118,7 +93,6 @@ services:
     environment:
       ACME_EMAIL: ${ACME_EMAIL}
       BASE_DOMAIN: ${BASE_DOMAIN}
-      STATIC_DOMAIN: ${STATIC_DOMAIN}
       Ali_Key: ${ALI_KEY}
       Ali_Secret: ${ALI_SECRET}
       CF_API_TOKEN: ${CF_API_TOKEN:-}
@@ -131,4 +105,3 @@ services:
 volumes:
   pgdata:
   acme-data:
-  miniodata:

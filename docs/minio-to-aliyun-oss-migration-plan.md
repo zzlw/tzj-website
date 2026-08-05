@@ -7,6 +7,7 @@
 > 复评：2026-08-05 —— 依据仓库代码与 AWS SDK v3.1075.0 / OSS S3 兼容性核验补充：mc alias 显式 S3v4（§5.2）、ECS 同地域与内网端点连通性检查（§5.2）、反向订正防双前缀（§5.4）、归档需异地副本（§5.6）、API 公网 GET 成本行（§9）、预签名 URL 的 remotePatterns 备忘（§3.1 / §8）；**§5.1 P0 代码与 §5.4 订正脚本已实现，本地 lint/typecheck/演练通过（302 行，正向/反向归零）**。
 > 执行进度：2026-08-05 —— 前置准备完成（§4.1/4.2/4.3/4.4/4.5 SDK+CORS 预检；`tzj-prod-media-staging` 测试桶已完成使命，2026-08-05 确认空桶后删除）；**§5.2 存量全量同步完成**（路线 B：mc 导出 1225 对象/617.48 MiB → ossutil 双写根路径与 `tzj-uploads-prod/` 过渡前缀，均 1225 对象，`ossutil du` 2540 对象 = 2×1270）；**§5.3 DB 备份完成**（`/opt/tzj/backups/tzj_prod-pre-oss-202608051154.dump`）；**§5.4 生产 dry-run 完成：302 行，白名单外无命中**（与本地演练一致）。剩余：§4.5 真实浏览器预签名 PUT 用例、§5.5 切换窗口（需确认后执行）。**尚未进入切换窗口。**
 > 切换执行：2026-08-05 —— **§5.5 切换窗口已完成**：增量补同步（无新增对象）→ DNS `static.tzjii.com` A→CNAME（TTL 600；免费版 DNS 不允许 60，报 `QuotaExceeded.TTL`）→ DB 订正 `--apply`（302 行）→ `.env.prod` S3_* 全部切换（备份 `.env.prod.bak-20260805-preoss`）→ `deploy.sh api 47fca6e…`（健康，storage up）→ 窗口末补同步 → GitHub Var `NEXT_PUBLIC_S3_PUBLIC_DOMAIN=https://static.tzjii.com` → workflow dispatch 重建部署 web/admin/api（run 30974016086 success）。验证：DNS 解析到 OSS；新旧路径 HTTPS 均 200 `Server: AliyunOSS`；favicon / `x-oss-process` URL 200；www 首页/案例/新闻页旧前缀 0；admin login 200；`/api/v1/health` storage up；CORS 预检（www/admin origins）200；DB 正向 dry-run 0 行。**进入 7 天观察期（§5.6），MinIO 与 `STATIC_DOMAIN` 暂不清理**；待人工验收项见 §8（admin 上传/删除/水印、聊天附件真实浏览器直传、营销弹窗）。
+> 收尾执行：2026-08-05 —— **观察期提前结束（用户确认稳定，明确指示不做备份）**：生产 MinIO 已彻底移除——容器 `tzj-minio-1`、卷 `tzj_miniodata`、镜像 `minio/minio` / `minio/mc`、导出目录 `/opt/tzj/oss-export`、`.env.prod` 的 `MINIO_ROOT_*`/`STATIC_DOMAIN`、compose 的 minio 服务与 gateway/acme `STATIC_DOMAIN`、api `depends_on: minio`、Makefile `infra-up`、nginx `STATIC_DOMAIN` 443 反代块全部删除；OSS 过渡前缀 `tzj-uploads-prod/` 已删除（1270 对象），生产桶仅剩根副本 1270 对象 / 617.5 MiB。清理改动已提交仓库（含 `infra/docker/minio/cors.xml` 删除与 `apply-cors.sh` 去 mc 分支），确保后续部署不再带回 MinIO 配置。
 > 范围：**仅生产环境**（阿里云 ECS 单机 compose）。本地开发环境继续使用 MinIO，不在本方案范围内。
 > 关联文档：`docs/deployment-plan.md`（§4 MinIO 生产化改造）、`docs/minio-to-rustfs-migration-plan.md`（另一候选方案，**已废弃**，本方案为最终采纳方案）、AGENTS.md「对象存储规范」
 
@@ -278,10 +279,10 @@ curl -sI -o /dev/null -w 'old=%{http_code}\n' https://static.tzjii.com/tzj-uploa
 
 收尾（确认稳定后）：
 
-1. compose 删 `minio` 服务、api 的 `depends_on: minio`、`miniodata` 卷声明、gateway 与 **acme environment 的 `STATIC_DOMAIN`**（compose 中两处引用，漏删则 `docker compose` 报未定义变量）；nginx 模板删 `STATIC_DOMAIN` 的 443 server 块（模板中仅此一处引用）；`.env.prod` 删 `MINIO_ROOT_*` 与 `STATIC_DOMAIN`；`infra/docker/Makefile` 的 `up -d --no-deps postgres minio acme gateway` 目标去掉 `minio`（否则目标直接报错）
-2. `miniodata` 卷先 `docker run --rm -v tzj_miniodata:/data alpine tar czf` 归档一份到 OSS `_backup/` 前缀，**并额外下载一份到本机 / 异地（或复制到另一账号 / 地域 bucket）后再删除卷**——归档与生产桶同账号同地域时，误删 bucket 会连同归档一起丢失（**删除动作需用户当次确认**）
-3. 删除 `tzj-prod-media` 内的过渡副本 `tzj-uploads-prod/` 前缀（先确认 nginx `STATIC_DOMAIN` 流量归零、且 OSS 访问日志中该前缀无近 7 天请求；**删除动作需用户当次确认**）
-4. 同步文档与示例：`docs/deployment-plan.md` §4 与 S3 环境变量段、AGENTS.md「对象存储规范」生产行、`.env.example` 注释、`infra/docker/.env.prod.example`（删 `STATIC_DOMAIN` / `MINIO_ROOT_*`，S3 段换 OSS 示例值）
+1. compose 删 `minio` 服务、api 的 `depends_on: minio`、`miniodata` 卷声明、gateway 与 **acme environment 的 `STATIC_DOMAIN`**；nginx 模板删 `STATIC_DOMAIN` 的 443 server 块；`.env.prod` 删 `MINIO_ROOT_*` 与 `STATIC_DOMAIN`；Makefile `infra-up` 去掉 `minio` —— ✅ 2026-08-05 已执行并同步仓库
+2. `miniodata` 卷归档 —— ⏭️ **按用户指示跳过（明确无需备份）**，卷已直接删除
+3. 删除 `tzj-prod-media` 内过渡副本 `tzj-uploads-prod/` 前缀 —— ✅ 2026-08-05 已执行（1270 对象），生产桶现仅根副本 1270 对象
+4. 同步文档与示例 —— ✅ `infra/docker/.env.prod.example`（删 `STATIC_DOMAIN` / `MINIO_ROOT_*`，S3 段换 OSS 示例值）、`apply-cors.sh` 去 mc 分支、删除 `infra/docker/minio/cors.xml`；`docs/deployment-plan.md` 已不在仓库（此前清理）
 5. acme 无需处理：现有证书为泛域名 `tzjii.com + *.tzjii.com`（`infra/docker/acme/issue.sh`），继续服务 web/admin/api，没有独立的 static 条目可移除；`static.tzjii.com` 的 HTTPS 改由 OSS 侧证书承担（§4.4）
 
 ---

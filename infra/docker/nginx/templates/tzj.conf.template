@@ -102,35 +102,6 @@ server {
     }
 }
 
-# 静态资源：反代 compose 内网 MinIO（path-style：/bucket/key）
-# 预签名直传依赖 Host 不被改写（SigV4 把 Host 算进签名），proxy_set_header Host 不可省
-server {
-    listen 443 ssl http2;
-    server_name ${STATIC_DOMAIN};
-    include /etc/nginx/snippets/ssl.conf;
-
-    client_max_body_size 100m;          # 预签名 PUT 直传上限
-
-    location / {
-        include /etc/nginx/snippets/proxy-docker.conf;
-        set $upstream_minio minio:9000;
-        proxy_pass http://$upstream_minio;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;    # 关键：保留 Host，SigV4 签名才能校验通过
-        proxy_set_header X-Real-IP $remote_addr;
-        # 大文件上传（后台媒体上传 / 迁移同步）：不能关 proxy_request_buffering！MinIO SigV4
-        # 用 aws-chunked 流式签名，body 帧与 Content-Length 必须原样透传；关缓冲会让 nginx 改
-        # 用 chunked 重编码转发，破坏签名导致 minio 返 400。保留默认缓冲（原样保留 body），
-        # 仅放宽读写/请求体超时到 300s，覆盖低带宽下 ~100MB 单次 PUT 的缓冲耗时。
-        proxy_read_timeout 300s;
-        proxy_send_timeout 300s;
-        client_body_timeout 300s;
-        # 公开读的静态资源缓存（MinIO 返回的私有请求不受影响）
-        expires 30d;
-        add_header Cache-Control "public, max-age=2592000";
-    }
-}
-
 # 裸域 301 → www（泛域证书覆盖 tzjii.com + *.tzjii.com）
 server {
     listen 443 ssl http2;
