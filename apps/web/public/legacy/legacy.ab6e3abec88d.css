@@ -1565,6 +1565,7 @@ button:disabled {
 }
 
 .h-\[min\(640px\2c calc\(100dvh-2\.5rem\)\)\] {
+  height: min(640px, calc(100vh - 2.5rem));
   height: min(640px, calc(100dvh - 2.5rem));
 }
 
@@ -1581,6 +1582,7 @@ button:disabled {
 }
 
 .h-svh {
+  height: 100vh;
   height: 100svh;
 }
 
@@ -1681,6 +1683,7 @@ button:disabled {
 }
 
 .min-h-svh {
+  min-height: 100vh;
   min-height: 100svh;
 }
 
@@ -5796,6 +5799,7 @@ body[data-scroll-locked] {
   }
 
   .max-sm\:h-\[100dvh\] {
+    height: 100vh;
     height: 100dvh;
   }
 
@@ -5835,6 +5839,7 @@ body[data-scroll-locked] {
   }
 
   .sm\:h-\[min\(760px\2c calc\(100dvh-3rem\)\)\] {
+    height: min(760px, calc(100vh - 3rem));
     height: min(760px, calc(100dvh - 3rem));
   }
 

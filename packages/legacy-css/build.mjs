@@ -110,6 +110,24 @@ function stripLegacyLayersPlugin() {
   };
 }
 
+/**
+ * 旧内核回退：dvh/svh/lvh（Chrome 108+）在 Chromium 91 会被整条丢弃，
+ * 每个含这些单位的声明前补一条 vh 回退；现代浏览器（若误加载 legacy）仍以原声明为准。
+ */
+function legacyViewportUnitsFallback() {
+  return {
+    postcssPlugin: 'legacy-viewport-units-fallback',
+    Declaration(decl) {
+      if (/\d(?:dvh|svh|lvh)/.test(decl.value)) {
+        const fallback = decl.clone({
+          value: decl.value.replace(/(\d)(?:dvh|svh|lvh)/g, '$1vh'),
+        });
+        decl.before(fallback);
+      }
+    },
+  };
+}
+
 function detectJs(href) {
   const rawPercent = Number(process.env.LEGACY_CSS_PERCENT ?? '100');
   const percent = Number.isFinite(rawPercent)
@@ -195,6 +213,7 @@ async function main() {
   const intermediate = fs.readFileSync(intermediatePath, 'utf8');
   const result = await postcss([
     stripLegacyLayersPlugin(),
+    legacyViewportUnitsFallback(),
     oklabFunction(),
     postcssPresetEnv({
       browsers: ['chrome >= 88', 'android >= 88', 'safari >= 14'],
