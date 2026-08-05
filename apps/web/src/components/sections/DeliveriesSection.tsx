@@ -14,12 +14,12 @@ const DELIVERY_SLUGS = [
 ] as const;
 
 const DELIVERY_IMAGES: Record<(typeof DELIVERY_SLUGS)[number], string> = {
-  'henan-fire-rescue': '/media/fixed-tower-hero.jpg',
-  'shandong-police': '/media/tower-hamilton.jpg',
-  'shanxi-mine-rescue': '/media/tower-ocean-springs.jpg',
-  'jiangsu-university': '/media/tower-macon.jpg',
-  'zhejiang-outdoor': '/media/tower-denver.jpg',
-  'guangdong-cfbt': '/media/tower-chino.jpg',
+  'henan-fire-rescue': '/media/case-henan-fire-rescue-hero.webp',
+  'shandong-police': '/media/case-shandong-police-hero.webp',
+  'shanxi-mine-rescue': '/media/case-shanxi-hero.png',
+  'jiangsu-university': '/media/case-jiangsu-university-hero.webp',
+  'zhejiang-outdoor': '/media/case-zhejiang-outdoor-hero.webp',
+  'guangdong-cfbt': '/media/case-guangdong-cfbt-hero.webp',
 };
 
 export async function DeliveriesSection() {
