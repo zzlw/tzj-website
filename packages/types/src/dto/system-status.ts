@@ -19,6 +19,19 @@ export interface SystemStatusResponse {
       loadAvg15m: number;
     };
   };
+  serverMemory: {
+    host: {
+      totalMb: number;
+      freeMb: number;
+      usedMb: number;
+      usedPercent: number;
+    };
+    container: {
+      limitMb: number | null;
+      usageMb: number | null;
+      usedPercent: number | null;
+    };
+  };
   disk: {
     path: string;
     totalGb: number;

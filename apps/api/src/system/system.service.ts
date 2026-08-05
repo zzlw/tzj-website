@@ -1,5 +1,4 @@
-import { readFileSync } from 'node:fs';
-import { statfs } from 'node:fs/promises';
+import { readFile, statfs } from 'node:fs/promises';
 import os from 'node:os';
 import { join } from 'node:path';
 import { Injectable } from '@nestjs/common';
@@ -19,6 +18,7 @@ export class SystemService {
     const mem = process.memoryUsage();
     const load = os.loadavg();
     const disk = await this.readDiskUsage(process.cwd());
+    const serverMemory = await this.readServerMemory();
 
     const depValues = Object.values(ready.checks);
     const status = depValues.every((v) => v === 'up' || v === 'skipped')
@@ -29,7 +29,7 @@ export class SystemService {
 
     return {
       status,
-      version: this.readVersion(),
+      version: await this.readVersion(),
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
       process: {
@@ -46,6 +46,7 @@ export class SystemService {
           loadAvg15m: round(load[2] ?? 0),
         },
       },
+      serverMemory,
       disk,
       dependencies: {
         database: ready.checks.database as SystemStatusResponse['dependencies']['database'],
@@ -55,17 +56,67 @@ export class SystemService {
     };
   }
 
-  private readVersion(): string {
+  private async readVersion(): Promise<string> {
     const fromEnv = this.config.get<string>('APP_VERSION')?.trim();
     if (fromEnv) return fromEnv;
     try {
-      const pkg = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf8')) as {
+      const pkg = JSON.parse(await readFile(join(process.cwd(), 'package.json'), 'utf8')) as {
         version?: string;
       };
       return pkg.version ?? '0.0.0';
     } catch {
       return '0.0.0';
     }
+  }
+
+  private async readServerMemory(): Promise<SystemStatusResponse['serverMemory']> {
+    const totalMb = os.totalmem() / 1024 ** 2;
+    const freeMb = os.freemem() / 1024 ** 2;
+    const usedMb = Math.max(0, totalMb - freeMb);
+    const hostUsedPercent = totalMb > 0 ? clampPercent(Math.round((usedMb / totalMb) * 100)) : 0;
+
+    let containerLimitMb: number | null = null;
+    let containerUsageMb: number | null = null;
+
+    // Docker/容器环境优先读 cgroup v2；老内核或 v1 挂载再回退。
+    try {
+      const limit = Number((await readFile('/sys/fs/cgroup/memory.max', 'utf8')).trim());
+      const usage = Number((await readFile('/sys/fs/cgroup/memory.current', 'utf8')).trim());
+      if (Number.isFinite(limit) && limit > 0) containerLimitMb = round(limit / 1024 ** 2, 1);
+      if (Number.isFinite(usage) && usage > 0) containerUsageMb = round(usage / 1024 ** 2, 1);
+    } catch {
+      try {
+        const limit = Number(
+          (await readFile('/sys/fs/cgroup/memory/memory.limit_in_bytes', 'utf8')).trim(),
+        );
+        const usage = Number(
+          (await readFile('/sys/fs/cgroup/memory/memory.usage_in_bytes', 'utf8')).trim(),
+        );
+        if (Number.isFinite(limit) && limit > 0) containerLimitMb = round(limit / 1024 ** 2, 1);
+        if (Number.isFinite(usage) && usage > 0) containerUsageMb = round(usage / 1024 ** 2, 1);
+      } catch {
+        // 非容器环境：保留 null，由前端显示“无容器限制”
+      }
+    }
+
+    const containerUsedPercent =
+      containerLimitMb !== null && containerUsageMb !== null
+        ? clampPercent(Math.round((containerUsageMb / containerLimitMb) * 100))
+        : null;
+
+    return {
+      host: {
+        totalMb: round(totalMb),
+        freeMb: round(freeMb),
+        usedMb: round(usedMb),
+        usedPercent: hostUsedPercent,
+      },
+      container: {
+        limitMb: containerLimitMb,
+        usageMb: containerUsageMb,
+        usedPercent: containerUsedPercent,
+      },
+    };
   }
 
   private async readDiskUsage(path: string): Promise<SystemStatusResponse['disk']> {
@@ -90,4 +141,8 @@ export class SystemService {
 function round(n: number, digits = 2): number {
   const f = 10 ** digits;
   return Math.round(n * f) / f;
+}
+
+function clampPercent(n: number): number {
+  return Math.min(100, Math.max(0, n));
 }

@@ -73,9 +73,7 @@ export default function SystemStatusPage() {
     );
   }
 
-  const memUsedPercent = data.process.memory.heapTotalMb
-    ? Math.round((data.process.memory.heapUsedMb / data.process.memory.heapTotalMb) * 100)
-    : 0;
+  const containerUsedPercent = data.serverMemory.container.usedPercent;
 
   return (
     <div className="space-y-6">
@@ -115,20 +113,26 @@ export default function SystemStatusPage() {
 
         <Card>
           <CardHeader>
-            <CardDescription>进程内存</CardDescription>
-            <CardTitle className="text-lg">堆内存</CardTitle>
+            <CardDescription>容器 cgroup + 宿主机</CardDescription>
+            <CardTitle className="text-lg">服务器内存</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <p className="text-2xl font-semibold tabular-nums">
-              {data.process.memory.heapUsedMb}
-              <span className="text-sm font-normal text-muted-foreground">
-                {' '}
-                / {data.process.memory.heapTotalMb} MB
-              </span>
+              {containerUsedPercent !== null ? `${containerUsedPercent}%` : '—'}
             </p>
-            <MeterBar value={memUsedPercent} />
+            <MeterBar value={containerUsedPercent ?? 0} />
             <p className="text-xs text-muted-foreground">
-              RSS {data.process.memory.rssMb} MB · PID {data.process.pid}
+              {data.serverMemory.container.usageMb !== null
+                ? `容器 ${data.serverMemory.container.usageMb} / ${data.serverMemory.container.limitMb} MB`
+                : '容器无内存上限（未配置 cgroup 限制）'}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              宿主机 {data.serverMemory.host.usedMb} / {data.serverMemory.host.totalMb} MB（
+              {data.serverMemory.host.usedPercent}%）
+            </p>
+            <p className="text-xs text-muted-foreground">
+              进程 RSS {data.process.memory.rssMb} MB · 堆 {data.process.memory.heapUsedMb}/
+              {data.process.memory.heapTotalMb} MB · PID {data.process.pid}
             </p>
           </CardContent>
         </Card>
