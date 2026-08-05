@@ -102,6 +102,7 @@ export default async function LocaleLayout({ children, params }: Props) {
     >
       <head>
         {faviconUrl && <link rel="icon" href={faviconUrl} />}
+        <link rel="apple-touch-icon" href={`${mediaOrigin}/statics/apple-touch-icon.png`} />
         <link rel="preconnect" href={mediaOrigin} crossOrigin="anonymous" />
         <link rel="dns-prefetch" href={mediaOrigin} />
         <link rel="dns-prefetch" href="https://flagcdn.com" />

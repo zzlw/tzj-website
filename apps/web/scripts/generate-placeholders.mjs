@@ -185,12 +185,8 @@ async function syncMisc() {
     await copyFile(ogSrc, join(publicDir, 'og-default.jpg')).catch(() => {});
   }
 
-  // favicon：从 og 图生成简易 ico（复制 jpg 作 png 占位）
-  const faviconSrc = join(mediaDir, 'tower-wylie.jpg');
-  if ((await fileSize(faviconSrc)) > 512) {
-    await copyFile(faviconSrc, join(publicDir, 'favicon.ico')).catch(() => {});
-    await copyFile(faviconSrc, join(publicDir, 'apple-touch-icon.png')).catch(() => {});
-  }
+  // favicon / apple-touch-icon 已由后台站点设置托管到 OSS statics/，
+  // 不再生成本地兜底（见 docs/minio-to-aliyun-oss-migration-plan.md §11.6）
 }
 
 async function clearImageCache() {

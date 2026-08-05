@@ -452,7 +452,8 @@ ossutil cp -r oss://tzj-prod-media/ oss://tzj-prod-media/tzj-uploads-prod/ \
 | 构建 | web/admin `next.config.ts` 增加 `assetPrefix`（`NEXT_PUBLIC_ASSET_PREFIX` 注入，dev 为空）；web/admin Dockerfile 增加对应 ARG/ENV |
 | CI | `deploy.yml` 按 app 注入 `NEXT_PUBLIC_ASSET_PREFIX_WEB=https://static.tzjii.com/next/web`、`NEXT_PUBLIC_ASSET_PREFIX_ADMIN=https://static.tzjii.com/next/admin`（GitHub Vars） |
 | 部署 | `deploy.sh` 新增 `sync_cdn_static`：滚动更新前从新镜像提取 `.next/static` + public 辅助文件 → ossutil 内网端点同步 OSS → 校验对象数 ≥ 本地文件数才放行更新 |
-| 引用 | web layout 的 vditor lute prefetch / browser-support.js、admin layout 的 lute prefetch、MarkdownEditor `cdn`、聊天提示音、manifest apple-touch-icon 全部改指 `static.tzjii.com/statics/...` |
+| 引用 | web layout 的 vditor lute prefetch / browser-support.js / apple-touch-icon、admin layout 的 lute prefetch、MarkdownEditor `cdn`、聊天提示音、manifest apple-touch-icon 全部改指 `static.tzjii.com/statics/...` |
+| 兜底清理 | `generate-placeholders.mjs` 不再生成本地 favicon/apple-touch；`apps/web/public/favicon.ico`、`apple-touch-icon.png` 从镜像移除，根路径 `/favicon.ico` 返回 404（预期） |
 
 **OSS 目录布局**
 
@@ -466,7 +467,8 @@ ossutil cp -r oss://tzj-prod-media/ oss://tzj-prod-media/tzj-uploads-prod/ \
 **验证与回滚**
 - 部署后检查页面 HTML 中 `/_next/static/` 引用已变为 `https://static.tzjii.com/next/{web|admin}/_next/static/...`，且资源 200
 - 回滚 = 部署旧 sha：旧镜像未烘焙 assetPrefix，自动回落本地静态资源，无需额外操作
-- ⚠️ `robots.txt`/`sitemap.xml` 为 Next 路由动态生成，保留在 ECS；浏览器自动请求的根路径 `/favicon.ico` 兜底仍由 nginx 提供（HTML 主 favicon 引用早已指向 OSS `statics/favicon.ico`）
+- ✅ 根路径兜底已删除：`/favicon.ico`、`/apple-touch-icon.png` 不再生成/托管，ECS 不再提供；HTML favicon 指向 OSS `statics/favicon.ico`，apple-touch 由新增 `<link rel="apple-touch-icon">` 指向 OSS `statics/apple-touch-icon.png`；浏览器自动请求 `/favicon.ico` 返回 404 属预期
+- ⚠️ `robots.txt`/`sitemap.xml` 为 Next 路由动态生成，保留在 ECS
 
 ### 11.6 补传缺失的 content 静态素材（2026-08-05）
 

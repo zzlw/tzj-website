@@ -140,11 +140,15 @@ wait_api_healthy() {
 
 smoke_test() {
   compose exec -T api wget -qO- http://127.0.0.1:4000/api/v1/health
-  # public 资源断言：曾因 standalone public 目录错位导致整站 public 404
-  # （favicon 可最快甄别「整体错位」，vditor/browser-support 验证复制链路）
+  # 静态资源断言：favicon 已托管 OSS statics/（本地不再提供兜底），
+  # 从容器内直接验证 OSS URL；browser-support/vditor 验证镜像 public 复制链路
+  set -a
+  # shellcheck disable=SC1091
+  source "$ENV_FILE"
+  set +a
   compose exec -T web sh -c '
     wget -qO /dev/null http://127.0.0.1:3000/ &&
-    wget -qO /dev/null http://127.0.0.1:3000/favicon.ico &&
+    wget -qO /dev/null '"${S3_PUBLIC_DOMAIN}"'/statics/favicon.ico &&
     wget -qO /dev/null http://127.0.0.1:3000/browser-support.js &&
     wget -qO /dev/null http://127.0.0.1:3000/vditor-assets/dist/js/lute/lute.min.js
   '
