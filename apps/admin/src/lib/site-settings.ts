@@ -1,3 +1,4 @@
+import { getStaticsUrl } from '@tzj/env';
 import { API_BASE } from './config';
 import { getS3PublicDomain } from './media-url';
 
@@ -15,6 +16,6 @@ export async function getFaviconUrl(): Promise<string | null> {
     return json.data?.url ?? null;
   } catch {
     // 回退：直接构造 S3 静态路径（文件不存在时浏览器静默 404）
-    return `${getS3PublicDomain().replace(/\/$/, '')}/statics/favicon.ico`;
+    return getStaticsUrl(getS3PublicDomain(), 'favicon.ico');
   }
 }

@@ -1,3 +1,4 @@
+import { isProduction } from '@tzj/env';
 import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 import { API_BASE, COOKIE } from '@/lib/config';
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
   }
 
   const store = await cookies();
-  const secure = process.env.NODE_ENV === 'production';
+  const secure = isProduction;
   store.set(COOKIE.access, accessToken, {
     httpOnly: true,
     secure,

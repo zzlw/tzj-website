@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Vditor from 'vditor';
 import 'vditor/dist/index.css';
+import { getStaticsUrl } from '@tzj/env';
 import { uploadMedia } from '@/features/media';
 import type { MediaAsset } from '@/features/types';
 import { getS3PublicDomain } from '@/lib/media-url';
@@ -64,9 +65,9 @@ function safeDestroy(vditor: VditorInternal | null | undefined): void {
 }
 
 function vditorCdn(): string {
-  // 统一使用 OSS 静态资源（statics/vditor-assets，构建后由 deploy 同步；
-  // Vditor 内部会自动追加 /dist/js/lute/lute.min.js）
-  return `${getS3PublicDomain().replace(/\/$/, '')}/statics/vditor-assets`;
+  // 统一走 getStaticsUrl 规则收口：生产 OSS statics/，开发/测试应用自身 public/；
+  // Vditor 内部会自动追加 /dist/js/lute/lute.min.js
+  return getStaticsUrl(getS3PublicDomain(), 'vditor-assets');
 }
 
 /** 源码模式按钮图标（Material “code”，fill 风格与 vditor 图标一致） */

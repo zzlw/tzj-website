@@ -1,5 +1,6 @@
 'use client';
 
+import { getStaticsUrl } from '@tzj/env';
 import { toast } from '@tzj/ui';
 import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useRef } from 'react';
@@ -30,11 +31,11 @@ let audioInstance: HTMLAudioElement | null = null;
 
 function getAudio(): HTMLAudioElement {
   if (!audioInstance) {
-    const base = getS3PublicDomain().replace(/\/$/, '');
+    const base = getS3PublicDomain();
     const probe = document.createElement('audio');
     const src = probe.canPlayType('audio/webm; codecs="opus"')
-      ? `${base}/statics/sounds/notify.webm`
-      : `${base}/statics/sounds/notify.mp3`;
+      ? getStaticsUrl(base, 'sounds/notify.webm')
+      : getStaticsUrl(base, 'sounds/notify.mp3');
     audioInstance = new Audio(src);
     audioInstance.volume = 0.5;
   }

@@ -15,6 +15,7 @@
     "@tanstack/react-query": "catalog:",
     "@tanstack/react-table": "^8.21.3",
     "@tzj/dnd": "workspace:*",
+    "@tzj/env": "workspace:*",
     "@tzj/types": "workspace:*",
     "@tzj/ui": "workspace:*",
     "lucide-react": "catalog:",

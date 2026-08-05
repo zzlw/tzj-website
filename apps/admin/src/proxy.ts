@@ -1,3 +1,4 @@
+import { isProduction } from '@tzj/env';
 import { type NextRequest, NextResponse } from 'next/server';
 import { COOKIE } from '@/lib/config';
 
@@ -163,7 +164,7 @@ async function refreshOnce(refreshToken: string): Promise<RefreshOutcome> {
 
 /** 将令牌对写入响应 Set-Cookie（供浏览器持久化）。 */
 function setTokenCookies(response: NextResponse, accessToken: string, refreshToken: string): void {
-  const secure = process.env.NODE_ENV === 'production';
+  const secure = isProduction;
   const opts = { httpOnly: true, secure, sameSite: 'lax' as const, path: '/' };
   response.cookies.set(COOKIE.access, accessToken, { ...opts, maxAge: 60 * 60 });
   response.cookies.set(COOKIE.refresh, refreshToken, { ...opts, maxAge: 60 * 60 * 24 * 7 });

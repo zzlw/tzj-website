@@ -96,8 +96,8 @@ export default async function LocaleLayout({ children, params }: Props) {
   const mediaBase = getS3PublicDomain();
   // statics 资源（vditor / browser-support）统一走 getStaticsUrl 的规则收口：
   // 生产 OSS，开发/测试走应用自身 public/
-  const vditorLuteUrl = getStaticsUrl('vditor-assets/dist/js/lute/lute.min.js');
-  const browserSupportUrl = getStaticsUrl('browser-support.js');
+  const vditorLuteUrl = getStaticsUrl(mediaBase, 'vditor-assets/dist/js/lute/lute.min.js');
+  const browserSupportUrl = getStaticsUrl(mediaBase, 'browser-support.js');
   const siteSettings = await getSitePublicSettings();
   const streetAddress = localizedAddress(siteSettings, locale, tContact('address'));
   const faviconUrl = await getFaviconUrl();

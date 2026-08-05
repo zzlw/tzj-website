@@ -1,4 +1,7 @@
+import { isDev, isProduction } from '@tzj/env';
 import { z } from 'zod';
+
+export { isDev, isProduction };
 
 /**
  * C 端环境变量统一入口（AGENTS.md：使用 zod 在启动时验证所有环境变量；禁止散落硬编码 URL）。
@@ -11,11 +14,6 @@ import { z } from 'zod';
  * 3. 聊天服务默认与主 API 同源：NEXT_PUBLIC_CHAT_API_URL / NEXT_PUBLIC_CHAT_SOCKET_URL
  *    仅作为独立部署时的可选覆盖，未配置时从 NEXT_PUBLIC_API_URL 派生。
  */
-
-/** 构建模式：生产构建（next build/start）为 true；development/test 为非生产。 */
-export const isProduction = process.env.NODE_ENV === 'production';
-/** 非生产构建（development/test），用于日志、调试与本地资源兜底。 */
-export const isDev = !isProduction;
 
 const DEV_DEFAULTS = {
   NEXT_PUBLIC_API_URL: 'http://localhost:4000/api/v1',

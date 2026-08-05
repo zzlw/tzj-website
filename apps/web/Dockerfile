@@ -24,6 +24,7 @@ COPY apps/web/package.json apps/web/
 COPY packages/types/package.json packages/types/
 COPY packages/ui/package.json packages/ui/
 COPY packages/device/package.json packages/device/
+COPY packages/env/package.json packages/env/
 
 RUN corepack enable && corepack prepare pnpm@11.9.0 --activate
 # deps 阶段仅有 package.json，跳过 postinstall（copy-vditor-assets 在 builder 阶段显式执行）

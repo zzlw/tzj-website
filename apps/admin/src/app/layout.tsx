@@ -1,3 +1,4 @@
+import { getStaticsUrl } from '@tzj/env';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { cookies } from 'next/headers';
@@ -42,7 +43,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <link
           rel="prefetch"
           as="script"
-          href={`${getS3PublicDomain().replace(/\/$/, '')}/statics/vditor-assets/dist/js/lute/lute.min.js`}
+          href={getStaticsUrl(getS3PublicDomain(), 'vditor-assets/dist/js/lute/lute.min.js')}
         />
       </head>
       <body

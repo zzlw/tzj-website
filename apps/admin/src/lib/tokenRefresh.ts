@@ -1,3 +1,4 @@
+import { isProduction } from '@tzj/env';
 import type { NextResponse } from 'next/server';
 import { API_BASE, COOKIE } from './config';
 
@@ -64,7 +65,7 @@ export async function refreshAccessToken(
 }
 
 export function applyTokenCookies(res: NextResponse, tokens: TokenPair): void {
-  const secure = process.env.NODE_ENV === 'production';
+  const secure = isProduction;
   res.cookies.set(COOKIE.access, tokens.accessToken, {
     httpOnly: true,
     secure,
