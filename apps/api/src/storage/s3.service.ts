@@ -1,9 +1,9 @@
 // ============================================================
 // TZJ API — S3-compatible Unified Storage Service
 // ============================================================
-// 一套 SDK 打通本地 MinIO 和线上自托管 MinIO
+// 一套 SDK 打通本地 MinIO 和线上阿里云 OSS
 // - 本地: MinIO (http://localhost:9000)
-// - 线上: MinIO 经 nginx 反代 (https://static.tzjii.com)
+// - 线上: 阿里云 OSS (https://oss-cn-beijing.aliyuncs.com, virtual-hosted style)
 // 关键: 通过环境变量切换 Endpoint, 代码逻辑零差异
 // ============================================================
 
@@ -61,6 +61,11 @@ export class S3Service implements OnModuleInit {
         this.config.get<string>('S3_FORCE_PATH_STYLE') === 'true' ||
         this.config.get<string>('S3_ENDPOINT', '').includes('localhost') ||
         this.config.get<string>('S3_ENDPOINT', '').includes('minio'),
+      // AWS SDK JS v3 ≥3.729 默认对 PutObject 等请求附加 x-amz-checksum-crc32 头，
+      // 阿里云 OSS 不识别该头会报 InvalidArgument/签名错；OSS 仅要求必需校验时计算。
+      // MinIO 与 OSS 均兼容 WHEN_REQUIRED，可先行发布、与迁移解耦。
+      requestChecksumCalculation: 'WHEN_REQUIRED',
+      responseChecksumValidation: 'WHEN_REQUIRED',
     });
   }
 

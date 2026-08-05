@@ -22,6 +22,7 @@
     "prisma:studio": "node --env-file=../../.env ./node_modules/prisma/build/index.js studio",
     "prisma:seed": "node --env-file=../../.env ./node_modules/tsx/dist/cli.mjs prisma/seed.ts",
     "prisma:index:search": "node --env-file=../../.env ./node_modules/tsx/dist/cli.mjs prisma/apply-search-indexes.ts",
+    "prisma:rewrite-media-domain": "node --env-file=../../.env ./node_modules/tsx/dist/cli.mjs prisma/scripts/rewrite-media-domain.ts",
     "prisma:seed:content": "node --env-file=../../.env ./node_modules/tsx/dist/cli.mjs prisma/seed-content.ts",
     "prisma:seed:content:media": "node --env-file=../../.env ./node_modules/tsx/dist/cli.mjs prisma/seed-content-media.ts",
     "seed:contacts:mock": "node --env-file=../../.env ./node_modules/tsx/dist/cli.mjs scripts/seed-contacts-mock.ts",
