@@ -20,8 +20,10 @@ function isExternalHref(href?: string): boolean {
  */
 export const markdownBaseComponents: Components = {
   h1: ({ children }) => <h1 className="rb-h3 mt-12 text-neutral-900 first:mt-0">{children}</h1>,
-  h2: ({ children }) => <h2 className="rb-h4 mt-10 text-neutral-900 first:mt-0">{children}</h2>,
-  h3: ({ children }) => <h3 className="rb-h5 mt-8 text-neutral-900 first:mt-0">{children}</h3>,
+  // 首标题不归零上边距：CMS 正文（案例/新闻/博客）常从 h2 开始，且上方还有「概述/亮点」
+  // 等前置区块，first:mt-0 会让标题紧贴上文；统一保留 mt-10/mt-8。
+  h2: ({ children }) => <h2 className="rb-h4 mt-10 text-neutral-900">{children}</h2>,
+  h3: ({ children }) => <h3 className="rb-h5 mt-8 text-neutral-900">{children}</h3>,
   h4: ({ children }) => (
     <h4 className="mt-6 text-base font-bold text-neutral-900 first:mt-0">{children}</h4>
   ),
