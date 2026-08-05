@@ -159,7 +159,12 @@ async function main() {
   const descLen = description.replace(/\s/g, '').length;
   console.log('anchor facility:', ANCHOR.facility);
   console.log('description chars (no whitespace):', descLen);
-  console.log('cover/detail/images:', PAYLOAD.coverImage, PAYLOAD.detailCoverImage, PAYLOAD.images.length);
+  console.log(
+    'cover/detail/images:',
+    PAYLOAD.coverImage,
+    PAYLOAD.detailCoverImage,
+    PAYLOAD.images.length,
+  );
 
   if (descLen < 800 || descLen > 1200) {
     console.warn(`description length ${descLen} outside 800~1200 window`);

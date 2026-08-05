@@ -157,9 +157,14 @@ async function main() {
   assertMarkdownSpacing(description);
   assertEmbeddedGallery(description, PAYLOAD.images);
   assertNoTemplateResidue(
-    [PAYLOAD.summary, PAYLOAD.seoTitle, PAYLOAD.seoDesc, description, ANCHOR.title, ANCHOR.client ?? ''].join(
-      '\n',
-    ),
+    [
+      PAYLOAD.summary,
+      PAYLOAD.seoTitle,
+      PAYLOAD.seoDesc,
+      description,
+      ANCHOR.title,
+      ANCHOR.client ?? '',
+    ].join('\n'),
   );
 
   const descLen = description.replace(/\s/g, '').length;

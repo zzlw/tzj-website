@@ -16,8 +16,7 @@ const ANCHOR = {
   location: '山西',
   completionDate: new Date('2023-03-01'),
   caseType: 'enterprise' as const,
-  facility:
-    '地下空间模拟与垂直救援训练设施；模块化训练塔 · 4 模块；竖井模拟 / 烟雾系统',
+  facility: '地下空间模拟与垂直救援训练设施；模块化训练塔 · 4 模块；竖井模拟 / 烟雾系统',
 };
 
 const PAYLOAD = {
