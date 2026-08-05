@@ -2,7 +2,10 @@
   "name": "@tzj/web",
   "version": "0.1.0",
   "private": true,
-  "browserslist": ["chrome 86", "safari 14"],
+  "browserslist": [
+    "chrome 86",
+    "safari 14"
+  ],
   "scripts": {
     "dev": "node scripts/generate-placeholders.mjs && node -e \"try{require('child_process').execSync('lsof -ti:3001|xargs kill -9',{stdio:'ignore'})}catch{}\" && next dev --port 3001",
     "build": "node scripts/generate-placeholders.mjs && pnpm --filter @tzj/legacy-css build && next build",
