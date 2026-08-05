@@ -12,6 +12,7 @@ import type { WatermarkOverride } from '@tzj/types';
 import { PrismaService } from '../prisma/prisma.service';
 import { S3Service } from '../storage/s3.service';
 import { RegisterMediaDto } from './dto/media.dto';
+import { compressUploadImage } from './image-compression';
 import {
   MediaGuardService,
   PROTECTED_MEDIA_FOLDERS,
@@ -144,15 +145,21 @@ export class MediaService {
       dir,
       watermark,
     );
-    const result = await this.s3.upload(processed.buffer, key, processed.mimeType);
+    const optimized = await compressUploadImage(processed.buffer, processed.mimeType);
+    const uploadBuffer = optimized?.buffer ?? processed.buffer;
+    const uploadMimeType = optimized?.mimeType ?? processed.mimeType;
+    const width = optimized?.width ?? processed.width;
+    const height = optimized?.height ?? processed.height;
+
+    const result = await this.s3.upload(uploadBuffer, key, uploadMimeType);
     const data: Prisma.MediaAssetUncheckedCreateInput = {
       key: result.key,
       url: result.url,
       filename: file.originalname,
-      mimeType: processed.mimeType,
-      size: processed.buffer.length,
-      width: processed.width,
-      height: processed.height,
+      mimeType: uploadMimeType,
+      size: uploadBuffer.length,
+      width,
+      height,
       folder: dir,
       uploadedById: userId,
       // 按实际处理结果记录：true=已烧录；false=服务端经手但未烧录（skip/跳过/回退）

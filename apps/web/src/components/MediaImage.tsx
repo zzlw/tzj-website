@@ -12,9 +12,9 @@ import { cn } from '@/lib/utils';
  * 本地开发走 MinIO 原图；生产环境由阿里云 OSS 实时处理。
  * 非 preload 时默认 lazy，减少首屏外图片带宽。
  *
- * lazy 图片自动启用 unoptimized，跳过 Next.js 内部 allImgs 性能追踪，
- * 避免同一张图片在不同组件中因 loading 策略不同（eager vs lazy）导致
- * Map key 覆盖而误报 LCP 警告。生产环境的 OSS 图片处理不受影响。
+ * 所有图片（含 lazy）统一走 ossImageLoader，确保生产环境都附加
+ * x-oss-process（resize + webp + 分级质量）；否则 lazy 图会以原图直出，
+ * 2~3MB 的 PNG/JPG 会原样发给浏览器。unoptimized 仅允许调用方显式开启。
  *
  * 加载体验：lazy 图默认启用 fade-in 过渡（onLoad 后 400ms opacity + blur 渐入），
  * 期间由容器背景 shimmer 骨架占位；eager/preload 图自动禁用，避免人为延迟 LCP。
@@ -62,7 +62,7 @@ export function MediaImage({
       src={src || props.src}
       preload={preload}
       loading={resolvedLoading}
-      unoptimized={unoptimized ?? isLazy}
+      unoptimized={unoptimized}
       loader={ossImageLoader}
       className={cn(
         className,

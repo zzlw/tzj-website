@@ -5,12 +5,27 @@ import type { ImageLoaderProps } from 'next/image';
  *
  * 质量分级策略（通过 next/image 的 quality prop 传入）：
  * - quality={90} — Hero 背景 / 全屏大图（视觉优先，仅轻微压缩）
- * - quality={70} — 卡片缩略图 / 列表配图（体积优先）
- * - 默认 75     — 未指定时的通用值
+ * - quality={80} — 中等详情图
+ * - 未显式指定时按请求宽度自动分级：
+ *   ≤640 → 70（缩略图/卡片）、≤1200 → 75（列表/中等图）、>1200 → 82（大图）
  *
  * 生产环境（非 localhost）追加 ?x-oss-process 参数；
  * 本地开发（MinIO）直接返回原 URL。
  */
+const QUALITY_BY_WIDTH: Array<{ max: number; quality: number }> = [
+  { max: 640, quality: 70 },
+  { max: 1200, quality: 75 },
+  { max: Number.POSITIVE_INFINITY, quality: 82 },
+];
+
+function defaultQualityForWidth(width?: number): number {
+  if (!width || width <= 0) return 75;
+  for (const tier of QUALITY_BY_WIDTH) {
+    if (width <= tier.max) return tier.quality;
+  }
+  return 82;
+}
+
 export function ossImageLoader({ src, width, quality }: ImageLoaderProps): string {
   try {
     const url = new URL(src);
@@ -26,7 +41,7 @@ export function ossImageLoader({ src, width, quality }: ImageLoaderProps): strin
       return src;
     }
 
-    const q = quality ?? 75;
+    const q = quality ?? defaultQualityForWidth(width);
     url.searchParams.set('x-oss-process', `image/resize,w_${width}/quality,q_${q}/format,webp`);
     return url.toString();
   } catch {

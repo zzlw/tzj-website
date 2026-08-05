@@ -26,6 +26,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from '../auth/decorators/public.decorator';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
+import { compressUploadImage } from '../media/image-compression';
 import type { UploadResult } from './s3.service';
 import { S3Service } from './s3.service';
 
@@ -73,7 +74,12 @@ export class StorageController {
     const sanitized = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
     const key = `${dir}/${timestamp}-${sanitized}`;
 
-    return this.s3.upload(file.buffer, key, file.mimetype);
+    const optimized = await compressUploadImage(file.buffer, file.mimetype);
+    return this.s3.upload(
+      optimized?.buffer ?? file.buffer,
+      key,
+      optimized?.mimeType ?? file.mimetype,
+    );
   }
 
   // ── 删除文件 ─────────────────────────────────────────────
