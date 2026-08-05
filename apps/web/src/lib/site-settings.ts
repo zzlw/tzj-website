@@ -53,6 +53,7 @@ export function mergeSiteSettings(cms: SitePublicSettings): SitePublicSettings {
     social: cms.social,
     analytics: {
       geoMode: cms.analytics?.geoMode ?? DEFAULT_SITE_PUBLIC_SETTINGS.analytics.geoMode,
+      ipGeoSource: cms.analytics?.ipGeoSource ?? DEFAULT_SITE_PUBLIC_SETTINGS.analytics.ipGeoSource,
       // 后台配置优先，环境变量作兜底：上线后可随时在后台换号/停用
       baiduHmId: cms.analytics?.baiduHmId || env.baiduHmId,
     },

@@ -10,7 +10,6 @@ import { decryptSecrets, encryptSecrets, maskSecret } from '../common/crypto/sec
 import { LAST_OPERATOR_USER_SELECT, mapOperatorUser } from '../common/utils/content-list';
 import { PrismaService } from '../prisma/prisma.service';
 import {
-  AMAP_IP_LOCATION_MODES,
   getIntegrationDef,
   INFRASTRUCTURE_ENV_KEYS,
   INTEGRATION_ENV_FALLBACK,
@@ -178,17 +177,6 @@ export class IntegrationsService {
       ...((existing?.config ?? {}) as Record<string, string>),
       ...(dto.config ?? {}),
     };
-
-    // 高德 IP 定位接入方式：保存前校验并归一化，避免后台误填导致静默回退
-    if (slug === 'amap' && config.ipLocationMode) {
-      const mode = config.ipLocationMode.trim().toLowerCase();
-      if (!(AMAP_IP_LOCATION_MODES as readonly string[]).includes(mode)) {
-        throw new BadRequestException(
-          `未知 IP 定位接入方式：${config.ipLocationMode}（可选：off / on）`,
-        );
-      }
-      config.ipLocationMode = mode;
-    }
 
     if (dto.secrets && Object.keys(dto.secrets).length > 0) {
       const encryptionKey = this.getEncryptionKeyOrThrow();

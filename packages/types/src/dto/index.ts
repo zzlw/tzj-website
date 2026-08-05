@@ -172,6 +172,7 @@ export type {
 export type {
   AgentProfile,
   AnalyticsGeoMode,
+  AnalyticsIpGeoSource,
   BusinessHours,
   ChatPrompts,
   LocalizedText,

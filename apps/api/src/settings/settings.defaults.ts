@@ -123,6 +123,7 @@ export const DEFAULT_SITE_PUBLIC_SETTINGS: SitePublicSettings = {
   },
   analytics: {
     geoMode: 'ip',
+    ipGeoSource: 'offline',
   },
   businessHours: {
     enabled: true,
@@ -165,6 +166,8 @@ export function mergeSitePublicSettings(
     },
     analytics: {
       geoMode: partial.analytics?.geoMode ?? DEFAULT_SITE_PUBLIC_SETTINGS.analytics.geoMode,
+      ipGeoSource:
+        partial.analytics?.ipGeoSource ?? DEFAULT_SITE_PUBLIC_SETTINGS.analytics.ipGeoSource,
       baiduHmId: partial.analytics?.baiduHmId,
     },
     businessHours: {

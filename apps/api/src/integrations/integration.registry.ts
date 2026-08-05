@@ -13,19 +13,12 @@
  */
 import type { IntegrationDef } from '@tzj/types';
 
-/** 高德 IP 定位开关（后台「IP 定位接入方式」配置项的可选值） */
-export const AMAP_IP_LOCATION_MODES = ['off', 'on'] as const;
-export type AmapIpLocationMode = (typeof AMAP_IP_LOCATION_MODES)[number];
-
 /** 集成 env 兜底映射（DB 未配置时使用，便于迁移与 CI 注入） */
 export const INTEGRATION_ENV_FALLBACK: Record<
   string,
   { secrets?: Record<string, string>; config?: Record<string, string> }
 > = {
-  amap: {
-    secrets: { webKey: 'AMAP_WEB_KEY' },
-    config: { ipLocationMode: 'AMAP_IP_LOCATION_MODE' },
-  },
+  amap: { secrets: { webKey: 'AMAP_WEB_KEY' } },
   'aliyun-captcha': {
     secrets: {
       accessKeyId: 'ALIYUN_CAPTCHA_ACCESS_KEY_ID',
@@ -68,7 +61,7 @@ export const INTEGRATION_REGISTRY: IntegrationDef[] = [
     slug: 'amap',
     label: '高德地图',
     description:
-      '访客地区定位增强：IP 模式默认走内置 ip2region 离线库（免费、无需授权），可配置高德补充；GPS 模式将浏览器坐标解析为省/市/国家。未配置或解析失败时自动回退 BigDataCloud（免费、无需 Key）。',
+      '访客地区定位增强：IP 模式数据源在「站点设置 → 访客分析」中选择（离线库 / BigDataCloud / 高德）；GPS 模式将浏览器坐标解析为省/市/国家（仅高德）。',
     docUrl: 'https://lbs.amap.com/api/webservice/guide/create-project/get-key',
     setupGuide: [
       {
@@ -92,14 +85,14 @@ export const INTEGRATION_REGISTRY: IntegrationDef[] = [
           '打开右上角「启用」开关，保存后点击「测试连接」。测试会分别发起一次逆地理（郑州坐标）与一次 IP 定位（示例 IP）请求，均成功即表示 Key 有效。',
       },
       {
-        title: '5. IP 定位接入方式（可选）',
+        title: '5. 数据源选择（站点设置）',
         content:
-          '在下方「IP 定位接入方式」选择：**on**（启用，推荐）或 **off**（关闭）。IP 定位默认由内置 ip2region 离线库处理（国内省/市 + 运营商，免费无需授权）；开启高德后，离线库未命中的 IP 会再尝试高德 IP 定位（仅国内 IPv4），两者都失败时回退 BigDataCloud。与逆地理共用 Web 服务月配额，访客地区缓存 7 天，日常量级远低于免费配额。',
+          '在「站点设置 → 访客分析 → 地区定位方式」选择 IP 后，可手动选择数据源：**离线优先**（默认，ip2region 内置库，免费无需授权）、**BigDataCloud**（免费无需 Key，海外可用）或**高德**（使用下方 Key，仅国内 IPv4）。GPS 模式仅使用高德逆地理。与逆地理共用 Web 服务月配额，访客地区缓存 7 天，日常量级远低于免费配额。',
       },
       {
-        title: 'BigDataCloud 自动兜底（无需配置）',
+        title: '未配置时的行为',
         content:
-          '项目已移除 geoip-lite、纯真库与 ip-api 等旧方案；IP 模式默认 ip2region 离线库（免费），GPS 模式高德逆地理，未命中时自动使用 [BigDataCloud](https://www.bigdatacloud.com/)（免费、无需 Key）：GPS 坐标逆地理与海外 IP 归属地均可解析，保证地区图表有数据。',
+          '项目已移除 geoip-lite、纯真库与 ip-api 等旧方案。IP 模式数据源由站点设置手动选择；选择「高德」但未配置/未启用下方 Key 时，该数据源不生效（地区为未知）。GPS 模式仅高德逆地理，未配置或请求失败时保留 IP 定位结果。',
       },
     ],
     secretFields: [
@@ -112,14 +105,7 @@ export const INTEGRATION_REGISTRY: IntegrationDef[] = [
         required: true,
       },
     ],
-    configFields: [
-      {
-        key: 'ipLocationMode',
-        label: 'IP 定位接入方式',
-        description:
-          '是否在 ip2region 离线库未命中时调用高德 IP 定位（与逆地理共用配额）。on=启用（默认）；off=关闭高德，仅用离线库 + BigDataCloud。海外 IP 由 BigDataCloud 解析。',
-      },
-    ],
+    configFields: [],
   },
   {
     slug: 'aliyun-captcha',

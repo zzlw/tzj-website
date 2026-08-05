@@ -83,9 +83,10 @@ export const sitePublicSettingsSchema = z.object({
   analytics: z
     .object({
       geoMode: z.enum(['ip', 'gps']).default('ip'),
+      ipGeoSource: z.enum(['offline', 'bigdata', 'amap']).default('offline'),
       baiduHmId: z.string().max(64).optional(),
     })
-    .default({ geoMode: 'ip' }),
+    .default({ geoMode: 'ip', ipGeoSource: 'offline' }),
   businessHours: businessHoursSchema.default({
     enabled: true,
     timezone: 'Asia/Shanghai',

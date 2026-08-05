@@ -2,6 +2,7 @@
 
 import type {
   AnalyticsGeoMode,
+  AnalyticsIpGeoSource,
   SiteNotificationSettings,
   SitePublicSettings,
   SocialChannelPurpose,
@@ -57,7 +58,7 @@ import {
   useUpdateCacheTtl,
   useUpdateSitePublicSettings,
 } from '@/features/site-settings';
-import { GPS_GEO_MODE_HINT } from '@/lib/analytics-geo-hints';
+import { GPS_GEO_MODE_HINT, IP_GEO_SOURCES } from '@/lib/analytics-geo-hints';
 import { ApiError } from '@/lib/apiClient';
 import { formatCacheTtl } from '@/lib/cache-ttl';
 import { normalizeSocialQrForSave, resolveMediaUrl } from '@/lib/media-url';
@@ -88,7 +89,7 @@ const GEO_MODES: { id: AnalyticsGeoMode; label: string; hint: string }[] = [
   {
     id: 'ip',
     label: 'IP 定位（推荐）',
-    hint: '服务端 ip2region 离线库（免费）→ 高德（可配）→ BigDataCloud 兜底，无需用户授权',
+    hint: '服务端按所选数据源解析（离线优先默认 / BigDataCloud / 高德），无需用户授权',
   },
   {
     id: 'gps',
@@ -676,6 +677,37 @@ export default function SiteSettingsPage() {
               text={GEO_MODES.find((m) => m.id === form.analytics.geoMode)?.hint ?? ''}
               className="mt-2 text-xs text-muted-foreground"
             />
+            {form.analytics.geoMode === 'ip' && (
+              <>
+                <Label htmlFor="ipGeoSource" className="mt-5 block">
+                  IP 定位数据源
+                </Label>
+                <Select
+                  value={form.analytics.ipGeoSource ?? 'offline'}
+                  onValueChange={(ipGeoSource: AnalyticsIpGeoSource) =>
+                    patch((p) => ({
+                      ...p,
+                      analytics: { ...p.analytics, ipGeoSource },
+                    }))
+                  }
+                >
+                  <SelectTrigger id="ipGeoSource" className="mt-1.5">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {IP_GEO_SOURCES.map((source) => (
+                      <SelectItem key={source.id} value={source.id}>
+                        {source.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <RichHint
+                  text={IP_GEO_SOURCES.find((s) => s.id === form.analytics.ipGeoSource)?.hint ?? ''}
+                  className="mt-2 text-xs text-muted-foreground"
+                />
+              </>
+            )}
             <Label htmlFor="baiduHmId" className="mt-5 block">
               百度统计站点 ID
             </Label>

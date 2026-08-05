@@ -71,35 +71,9 @@ async function fetchAmap(
   return hasGeo(geo) ? geo : null;
 }
 
-/** BigDataCloud 免费逆地理（无需 Key，海外访客兜底）。 */
-async function fetchBigDataCloud(latitude: number, longitude: number): Promise<GeoLookup | null> {
-  const url = new URL('https://api.bigdatacloud.net/data/reverse-geocode-client');
-  url.searchParams.set('latitude', String(latitude));
-  url.searchParams.set('longitude', String(longitude));
-  url.searchParams.set('localityLanguage', 'zh');
-
-  const res = await fetch(url, {
-    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-  });
-  if (!res.ok) return null;
-
-  const data = (await res.json()) as {
-    countryCode?: string;
-    principalSubdivision?: string;
-    city?: string;
-    locality?: string;
-  };
-  const geo: GeoLookup = {
-    country: data.countryCode?.toUpperCase() ?? null,
-    region: data.principalSubdivision ?? null,
-    city: data.city ?? data.locality ?? null,
-  };
-  return hasGeo(geo) ? geo : null;
-}
-
 /**
- * GPS 逆地理编码（高德优先，BigDataCloud 兜底，带内存缓存）。
- * 高德 Key 未配置或请求失败时，回退 BigDataCloud（无需 Key，海外坐标可用）。
+ * GPS 逆地理编码（仅高德，带内存缓存）。
+ * 高德 Key 未配置或请求失败时返回空结果；上层采集链路会回退到 IP 定位。
  */
 export async function lookupGeoFromCoordinates(
   latitude: number,
@@ -121,27 +95,17 @@ export async function lookupGeoFromCoordinates(
   const hit = cache.get(key);
   if (hit && hit.exp > Date.now()) return hit.geo;
 
-  try {
-    const trimmedKey = amapKey?.trim();
-    if (trimmedKey) {
-      const geo = await fetchAmap(latitude, longitude, trimmedKey);
-      if (geo) {
-        cache.set(key, { geo, exp: Date.now() + CACHE_TTL_MS });
-        return geo;
-      }
-    }
-  } catch {
-    /* 高德失败，继续 BigDataCloud */
-  }
+  const trimmedKey = amapKey?.trim();
+  if (!trimmedKey) return { country: null, region: null, city: null };
 
   try {
-    const geo = await fetchBigDataCloud(latitude, longitude);
+    const geo = await fetchAmap(latitude, longitude, trimmedKey);
     if (geo) {
       cache.set(key, { geo, exp: Date.now() + CACHE_TTL_MS });
       return geo;
     }
   } catch {
-    /* 全部失败返回空结果 */
+    /* 高德失败返回空结果 */
   }
 
   return { country: null, region: null, city: null };

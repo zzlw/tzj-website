@@ -39,6 +39,7 @@ export const DEFAULT_SITE_PUBLIC_SETTINGS: SitePublicSettings = {
   },
   analytics: {
     geoMode: 'ip',
+    ipGeoSource: 'offline',
   },
   businessHours: {
     enabled: true,

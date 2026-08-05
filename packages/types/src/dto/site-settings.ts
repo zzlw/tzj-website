@@ -1,6 +1,9 @@
 /** 访客地区定位方式：ip=服务端 IP 解析（默认），gps=浏览器 Geolocation + 逆地理编码 */
 export type AnalyticsGeoMode = 'ip' | 'gps';
 
+/** IP 定位数据源（geoMode=ip 时可手动选择）：offline=离线库优先（默认），bigdata=BigDataCloud，amap=高德 */
+export type AnalyticsIpGeoSource = 'offline' | 'bigdata' | 'amap';
+
 /** 页面浏览记录中的定位依据 */
 export type PageViewGeoSource = 'ip' | 'gps';
 
@@ -110,6 +113,8 @@ export interface SitePublicSettings {
   analytics: {
     /** 默认 ip — 业内惯例，无需用户授权、隐私友好 */
     geoMode: AnalyticsGeoMode;
+    /** IP 定位数据源：offline（默认）| bigdata | amap；仅 geoMode=ip 时生效 */
+    ipGeoSource: AnalyticsIpGeoSource;
     /**
      * 百度统计站点 ID（hm.js 的 hash）。留空则不加载百度统计脚本。
      * 后台配置优先，环境变量 NEXT_PUBLIC_BAIDU_HM_ID 作兜底（见 apps/web 消费逻辑）。

@@ -1,9 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
+import type { AnalyticsIpGeoSource } from '@tzj/types';
 import * as ip2region from 'ip2region-ts';
-import {
-  AMAP_IP_LOCATION_MODES,
-  type AmapIpLocationMode,
-} from '../integrations/integration.registry';
 import { IntegrationsService } from '../integrations/integrations.service';
 
 /**
@@ -43,11 +40,10 @@ interface AmapConfig {
 }
 
 /**
- * IP 地理位置解析服务（ip2region 离线优先 + 高德可配 + BigDataCloud 兜底）。
- * - ip2region：内置离线库（MIT，免费商用），国内省/市 + 运营商，命中即返回
- * - 高德：后台「集成与凭证 → 高德地图 → IP 定位接入方式」可配置 off/on，
- *   Key 走 DB 加密存储优先、AMAP_WEB_KEY env 兜底
- * - BigDataCloud：免费 IP 归属地（无需 Key），负责海外 IP 与最终兜底
+ * IP 地理位置解析服务（数据源由站点设置「IP 定位数据源」手动选择）：
+ * - offline（默认）：ip2region 内置离线库，国内省/市 + 运营商，不外呼
+ * - bigdata：BigDataCloud 免费 IP 归属地（无需 Key，海外可用）
+ * - amap：高德 IP 定位（Key 在「集成与凭证 → 高德地图」配置，DB 加密优先、AMAP_WEB_KEY env 兜底）
  * - 结果按原始 IP 缓存 7 天；未命中短 TTL 30 分钟；同 IP 并发合并为单次外呼
  */
 @Injectable()
@@ -72,45 +68,58 @@ export class IpLocationService {
   constructor(private readonly integrations: IntegrationsService) {}
 
   /** 解析单个 IP，命中缓存优先；内网/无效返回 null。 */
-  async resolve(ip?: string | null): Promise<IpLocation | null> {
+  async resolve(
+    ip?: string | null,
+    source: AnalyticsIpGeoSource = 'offline',
+  ): Promise<IpLocation | null> {
     const normalized = this.normalizeIp(ip);
     if (!normalized || this.isPrivateIp(normalized)) return null;
 
-    const cached = this.cache.get(normalized);
+    const cacheKey = `${source}:${normalized}`;
+    const cached = this.cache.get(cacheKey);
     if (cached && cached.exp > Date.now()) return cached.value;
 
-    const inflight = this.inflight.get(normalized);
+    const inflight = this.inflight.get(cacheKey);
     if (inflight) return inflight;
 
-    const task = this.resolveUncached(normalized).finally(() => {
-      this.inflight.delete(normalized);
+    const task = this.resolveUncached(normalized, source).finally(() => {
+      this.inflight.delete(cacheKey);
     });
-    this.inflight.set(normalized, task);
+    this.inflight.set(cacheKey, task);
     return task;
   }
 
   /** 批量解析（并行，供列表读取路径一次解析整页 IP）。 */
   async resolveMany(
     ips: Array<string | null | undefined>,
+    source: AnalyticsIpGeoSource = 'offline',
   ): Promise<Map<string, IpLocation | null>> {
     const unique = Array.from(
       new Set(ips.map((ip) => this.normalizeIp(ip)).filter((ip): ip is string => Boolean(ip))),
     );
     const entries = await Promise.all(
-      unique.map(async (ip) => [ip, await this.resolve(ip)] as const),
+      unique.map(async (ip) => [ip, await this.resolve(ip, source)] as const),
     );
     return new Map(entries);
   }
 
-  private async resolveUncached(ip: string): Promise<IpLocation | null> {
-    const config = await this.getAmapConfig();
-    // ip2region 国内离线命中 → 高德（可配置）→ BigDataCloud 兜底
-    const location =
-      (await this.searchIp2Region(ip)) ??
-      (config.enabled ? await this.queryByAmap(ip, config.key) : null) ??
-      (await this.queryByBigDataCloud(ip));
+  private async resolveUncached(
+    ip: string,
+    source: AnalyticsIpGeoSource,
+  ): Promise<IpLocation | null> {
+    let location: IpLocation | null = null;
+    if (source === 'offline') {
+      location = await this.searchIp2Region(ip);
+    } else if (source === 'bigdata') {
+      location = await this.queryByBigDataCloud(ip);
+    } else if (source === 'amap') {
+      const config = await this.getAmapConfig();
+      if (config.enabled) {
+        location = await this.queryByAmap(ip, config.key);
+      }
+    }
 
-    this.cache.set(ip, {
+    this.cache.set(`${source}:${ip}`, {
       value: location,
       exp: Date.now() + (location ? this.cacheTtlMs : this.missTtlMs),
     });
@@ -250,21 +259,12 @@ export class IpLocationService {
     const active = await this.integrations.isActive('amap');
     const rawKey = active ? await this.integrations.resolveSecret('amap', 'webKey') : null;
     const key = rawKey?.trim() ?? '';
-    const rawMode = await this.integrations.resolveConfig('amap', 'ipLocationMode');
     const config: AmapConfig = {
-      enabled: Boolean(key) && this.normalizeAmapMode(rawMode) === 'on',
+      enabled: Boolean(key),
       key,
     };
     this.amapConfigCache = { value: config, exp: now + this.amapConfigTtlMs };
     return config;
-  }
-
-  /** 未知/未配置时默认启用（on）；off 为显式关闭 */
-  private normalizeAmapMode(raw?: string | null): AmapIpLocationMode {
-    const value = raw?.trim().toLowerCase() ?? '';
-    return AMAP_IP_LOCATION_MODES.includes(value as AmapIpLocationMode)
-      ? (value as AmapIpLocationMode)
-      : 'on';
   }
 
   private async fetchJson(url: string): Promise<Record<string, unknown>> {

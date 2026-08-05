@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 // biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
 import { ConfigService } from '@nestjs/config';
 import { Prisma } from '@prisma/client/index';
+import type { AnalyticsIpGeoSource } from '@tzj/types';
 import type { Request } from 'express';
 // biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
 import { IntegrationsService } from '../integrations/integrations.service';
@@ -459,11 +460,13 @@ export class AnalyticsService {
 
     const siteSettings = await this.settingsService.getSitePublicSettings();
     const geoMode = siteSettings.analytics?.geoMode ?? 'ip';
+    const ipGeoSource = siteSettings.analytics?.ipGeoSource ?? 'offline';
 
     let geo: GeoLookup;
     let geoSource: 'ip' | 'gps' = 'ip';
 
-    // 定位只走高德：IP 模式调用高德 IP 定位；GPS 模式有坐标时优先逆地理，失败保留 IP 结果
+    // GPS 模式：仅高德逆地理（Key 可配），失败保留 IP 定位结果；
+    // IP 模式：按站点设置选择离线库 / BigDataCloud / 高德
     if (geoMode === 'gps' && dto.latitude != null && dto.longitude != null) {
       const amapKey = await this.integrationsService.resolveSecret('amap', 'webKey');
       const gpsGeo = await lookupGeoFromCoordinates(dto.latitude, dto.longitude, amapKey);
@@ -471,10 +474,10 @@ export class AnalyticsService {
         geo = gpsGeo;
         geoSource = 'gps';
       } else {
-        geo = await this.resolveIpGeo(ip);
+        geo = await this.resolveIpGeo(ip, ipGeoSource);
       }
     } else {
-      geo = await this.resolveIpGeo(ip);
+      geo = await this.resolveIpGeo(ip, ipGeoSource);
     }
 
     const referrerHost = parseReferrerHost(dto.referrer);
@@ -526,10 +529,13 @@ export class AnalyticsService {
     return { ok: true };
   }
 
-  /** IP 定位（仅高德，后台可配置 off/on）；内网地址标记为本地网络，不外呼 */
-  private async resolveIpGeo(ip?: string | null): Promise<GeoLookup> {
+  /** IP 定位（数据源由站点设置选择）；内网地址标记为本地网络，不外呼 */
+  private async resolveIpGeo(
+    ip?: string | null,
+    source: AnalyticsIpGeoSource = 'offline',
+  ): Promise<GeoLookup> {
     if (isPrivateIp(ip)) return { country: 'LOCAL', region: null, city: null };
-    const ipGeo = await this.ipLocation.resolve(ip);
+    const ipGeo = await this.ipLocation.resolve(ip, source);
     return ipGeo
       ? {
           country: ipGeo.countryCode || ipGeo.country || null,
@@ -1407,8 +1413,13 @@ export class AnalyticsService {
         email: row.email,
       })),
     );
-    // 地区中文化：与「按 IP」视角同源（高德 IP 定位）；GPS 行保留入库值
-    const resolvedGeo = await this.ipLocation.resolveMany(rows.map((row) => row.lastIp));
+    // 地区中文化：与「按 IP」视角同源（站点设置的 IP 定位数据源）；GPS 行保留入库值
+    const siteSettings = await this.settingsService.getSitePublicSettings();
+    const ipGeoSource = siteSettings.analytics?.ipGeoSource ?? 'offline';
+    const resolvedGeo = await this.ipLocation.resolveMany(
+      rows.map((row) => row.lastIp),
+      ipGeoSource,
+    );
 
     return {
       data: rows.map((row) => ({
@@ -1619,8 +1630,13 @@ export class AnalyticsService {
     const techInfo = buildVisitorTechInfo(views);
     const attribution = buildVisitorAttribution(views);
     const networks = buildVisitorNetworks(views);
-    // 历史网络地区中文化：按网络 IP 读取时重解析（高德 IP 定位）
-    const networkGeo = await this.ipLocation.resolveMany(networks.map((network) => network.ip));
+    // 历史网络地区中文化：按网络 IP 读取时重解析（站点设置的 IP 定位数据源）
+    const siteSettings = await this.settingsService.getSitePublicSettings();
+    const ipGeoSource = siteSettings.analytics?.ipGeoSource ?? 'offline';
+    const networkGeo = await this.ipLocation.resolveMany(
+      networks.map((network) => network.ip),
+      ipGeoSource,
+    );
     for (const network of networks) {
       const hit = network.ip ? networkGeo.get(network.ip) : null;
       if (hit?.location) network.region = hit.location;

@@ -8,6 +8,7 @@ export type {
   AdSpendRecordDto,
   AgentProfile,
   AnalyticsGeoMode,
+  AnalyticsIpGeoSource,
   AnalyticsIpTrafficRow,
   BlockedIpItem,
   BlockIpDuration,
