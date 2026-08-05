@@ -68,6 +68,10 @@ export default async function CaseDetailPage({ params, searchParams }: CasePageP
     '';
   const description = (caseStudy as { description?: string }).description;
   const coverImage = pickCoverImage(caseStudy.coverImage);
+  // 详情页宽幅封面：优先使用独立设置，未设置时回退列表封面图
+  const heroImage = pickCoverImage(
+    (caseStudy as { detailCoverImage?: string | null }).detailCoverImage ?? caseStudy.coverImage,
+  );
   const completionLabel = formatContentDate(
     (caseStudy as { completionDate?: string | Date | null }).completionDate,
     locale,
@@ -97,7 +101,7 @@ export default async function CaseDetailPage({ params, searchParams }: CasePageP
       <div className="pb-20">
         <section className="relative h-[420px] overflow-hidden bg-neutral-800 lg:h-[520px]">
           <Image
-            src={coverImage}
+            src={heroImage}
             alt={caseStudy.title}
             fill
             preload

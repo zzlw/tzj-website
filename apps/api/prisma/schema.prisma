@@ -20,6 +20,8 @@ model Case {
   summary     String?  @db.Text
   description String?  @db.Text
   coverImage  String?
+  /** 详情页宽幅封面（比例特殊，与列表封面分离）；未设置时 C 端回退 coverImage */
+  detailCoverImage String?
   images      String[] @default([])
   location    String?
   client      String?

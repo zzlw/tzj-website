@@ -23,6 +23,7 @@ export interface CaseItem extends BaseEntity {
   summary?: string | null;
   description?: string | null;
   coverImage?: string | null;
+  detailCoverImage?: string | null;
   images: string[];
   location?: string | null;
   client?: string | null;

@@ -48,6 +48,11 @@ export class CreateCaseDto {
   @IsString()
   coverImage?: string;
 
+  @ApiPropertyOptional({ description: '详情页宽幅封面图 URL（未设置时回退封面图）' })
+  @IsOptional()
+  @IsString()
+  detailCoverImage?: string;
+
   @ApiPropertyOptional({ type: [String], description: '图片 URL 列表' })
   @IsOptional()
   @IsArray()
