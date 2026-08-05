@@ -55,6 +55,7 @@ jobs:
             NEXT_PUBLIC_S3_PUBLIC_DOMAIN=${{ vars.NEXT_PUBLIC_S3_PUBLIC_DOMAIN }}
             NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL }}
             NEXT_PUBLIC_WEB_URL=${{ vars.NEXT_PUBLIC_WEB_URL }}
+            NEXT_PUBLIC_ASSET_PREFIX=${{ matrix.app == 'web' && vars.NEXT_PUBLIC_ASSET_PREFIX_WEB || (matrix.app == 'admin' && vars.NEXT_PUBLIC_ASSET_PREFIX_ADMIN || '') }}
 
   deploy:
     runs-on: ubuntu-latest

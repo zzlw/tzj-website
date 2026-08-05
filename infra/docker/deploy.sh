@@ -156,6 +156,87 @@ smoke_test() {
   echo "admin:ok"
 }
 
+CDN_SYNC_DIR="${DEPLOY_DIR}/cdn-sync"
+
+# 将 Next 构建产物与 public 辅助静态资源同步到 OSS（static.tzjii.com CDN 源站）。
+# 必须在滚动更新前执行：新镜像 HTML 已烘焙 assetPrefix（NEXT_PUBLIC_ASSET_PREFIX），
+# _next/static 若未先上传会出现整站 CSS/JS 404。
+sync_cdn_static() {
+  local app=$1
+  local bucket
+  local image
+  local extractor="tzj-cdn-extract-${app}"
+  local local_count oss_count
+
+  set -a
+  # shellcheck disable=SC1091
+  source "$ENV_FILE"
+  # shellcheck disable=SC1091
+  source "$LOCAL_ENV_FILE"
+  set +a
+
+  bucket="${S3_BUCKET:-}"
+  image="${IMAGE_REGISTRY:-}/tzj-${app}:${TAG}"
+  if [[ -z "$bucket" ]]; then
+    echo "缺少 S3_BUCKET（.env.prod），无法同步 CDN 静态资源" >&2
+    exit 1
+  fi
+  if [[ -z "${ALI_KEY:-}" || -z "${ALI_SECRET:-}" ]]; then
+    echo "缺少 ALI_KEY/ALI_SECRET（.env.prod.local），无法同步 CDN 静态资源" >&2
+    exit 1
+  fi
+
+  echo "==> Extract ${app} 构建产物（${image}）"
+  rm -rf "${CDN_SYNC_DIR}/${app}"
+  mkdir -p "${CDN_SYNC_DIR}/${app}"
+  docker rm -f "$extractor" >/dev/null 2>&1 || true
+  docker create --name "$extractor" "$image" >/dev/null
+  docker cp "${extractor}:/app/apps/${app}/.next/static" "${CDN_SYNC_DIR}/${app}/next-static"
+  docker cp "${extractor}:/app/apps/${app}/public/vditor-assets" "${CDN_SYNC_DIR}/${app}/vditor-assets"
+  if [[ "$app" == "web" ]]; then
+    docker cp "${extractor}:/app/apps/web/public/browser-support.js" "${CDN_SYNC_DIR}/web/browser-support.js"
+    docker cp "${extractor}:/app/apps/web/public/apple-touch-icon.png" "${CDN_SYNC_DIR}/web/apple-touch-icon.png"
+  fi
+  if [[ "$app" == "admin" ]]; then
+    docker cp "${extractor}:/app/apps/admin/public/sounds" "${CDN_SYNC_DIR}/admin/sounds"
+  fi
+  docker rm -f "$extractor" >/dev/null
+
+  local oss_args=(-e oss-cn-beijing-internal.aliyuncs.com --region cn-beijing -i "$ALI_KEY" -k "$ALI_SECRET")
+
+  echo "==> Upload ${app} _next/static → oss://${bucket}/next/${app}/_next/static"
+  ossutil sync "${CDN_SYNC_DIR}/${app}/next-static" "oss://${bucket}/next/${app}/_next/static" \
+    "${oss_args[@]}" --cache-control "public, max-age=31536000, immutable"
+
+  echo "==> Upload ${app} vditor-assets → oss://${bucket}/statics/vditor-assets"
+  ossutil sync "${CDN_SYNC_DIR}/${app}/vditor-assets" "oss://${bucket}/statics/vditor-assets" \
+    "${oss_args[@]}" --cache-control "public, max-age=86400"
+
+  if [[ "$app" == "web" ]]; then
+    echo "==> Upload web public 静态资源（statics/）"
+    ossutil cp "${CDN_SYNC_DIR}/web/browser-support.js" "oss://${bucket}/statics/browser-support.js" \
+      "${oss_args[@]}" --cache-control "public, max-age=86400" -f
+    ossutil cp "${CDN_SYNC_DIR}/web/apple-touch-icon.png" "oss://${bucket}/statics/apple-touch-icon.png" \
+      "${oss_args[@]}" --cache-control "public, max-age=86400" -f
+  fi
+  if [[ "$app" == "admin" ]]; then
+    echo "==> Upload admin sounds → oss://${bucket}/statics/sounds"
+    ossutil sync "${CDN_SYNC_DIR}/admin/sounds" "oss://${bucket}/statics/sounds" \
+      "${oss_args[@]}" --cache-control "public, max-age=86400"
+  fi
+
+  # 校验：OSS 上前缀对象数 ≥ 本地文件数（历史部署会累积旧 hash，故用 ≥ 而非 =）
+  local_count=$(find "${CDN_SYNC_DIR}/${app}/next-static" -type f | wc -l | tr -d ' ')
+  oss_count=$(ossutil ls -r "oss://${bucket}/next/${app}/_next/static/" "${oss_args[@]}" 2>/dev/null \
+    | grep -Eo 'Object Number is: [0-9]+' | awk '{print $4}' | tail -1)
+  oss_count=${oss_count:-0}
+  if [[ "$oss_count" -lt "$local_count" ]]; then
+    echo "静态资源同步校验失败：${app} 本地 ${local_count} 个，OSS ${oss_count} 个" >&2
+    exit 1
+  fi
+  echo "==> ${app} 静态资源同步完成（OSS ≥ ${local_count} 个）"
+}
+
 # ── 参数解析（兼容 VMDeploy：仅 export IMAGE_TAG）────────────────
 if [[ $# -eq 0 ]]; then
   if [[ -n "${IMAGE_TAG:-}" ]]; then
@@ -205,6 +286,15 @@ fi
 
 echo "==> Pull images ($SERVICES → $TAG)"
 compose pull $SERVICES
+
+echo "==> Sync CDN 静态资源（OSS）"
+if [[ "$SERVICE" == "all" || "$SERVICE" == "web" || "$SERVICE" == "admin" ]]; then
+  for s in web admin; do
+    case " $SERVICES " in
+      *" $s "*) sync_cdn_static "$s" ;;
+    esac
+  done
+fi
 
 echo "==> Rolling update ($SERVICES)"
 if [[ "$SERVICE" == "all" ]]; then

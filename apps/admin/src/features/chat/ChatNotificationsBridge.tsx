@@ -3,6 +3,7 @@
 import { toast } from '@tzj/ui';
 import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useRef } from 'react';
+import { getS3PublicDomain } from '@/lib/media-url';
 import { useChatPresence } from './ChatPresenceProvider';
 import type { ChatMessage, ChatRoom } from './types';
 import { useOpenChatRoom } from './use-open-chat-room';
@@ -29,10 +30,11 @@ let audioInstance: HTMLAudioElement | null = null;
 
 function getAudio(): HTMLAudioElement {
   if (!audioInstance) {
+    const base = getS3PublicDomain().replace(/\/$/, '');
     const probe = document.createElement('audio');
     const src = probe.canPlayType('audio/webm; codecs="opus"')
-      ? '/sounds/notify.webm'
-      : '/sounds/notify.mp3';
+      ? `${base}/statics/sounds/notify.webm`
+      : `${base}/statics/sounds/notify.mp3`;
     audioInstance = new Audio(src);
     audioInstance.volume = 0.5;
   }

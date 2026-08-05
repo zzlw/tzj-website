@@ -7,7 +7,7 @@
 > 复评：2026-08-05 —— 依据仓库代码与 AWS SDK v3.1075.0 / OSS S3 兼容性核验补充：mc alias 显式 S3v4（§5.2）、ECS 同地域与内网端点连通性检查（§5.2）、反向订正防双前缀（§5.4）、归档需异地副本（§5.6）、API 公网 GET 成本行（§9）、预签名 URL 的 remotePatterns 备忘（§3.1 / §8）；**§5.1 P0 代码与 §5.4 订正脚本已实现，本地 lint/typecheck/演练通过（302 行，正向/反向归零）**。
 > 执行进度：2026-08-05 —— 前置准备完成（§4.1/4.2/4.3/4.4/4.5 SDK+CORS 预检；`tzj-prod-media-staging` 测试桶已完成使命，2026-08-05 确认空桶后删除）；**§5.2 存量全量同步完成**（路线 B：mc 导出 1225 对象/617.48 MiB → ossutil 双写根路径与 `tzj-uploads-prod/` 过渡前缀，均 1225 对象，`ossutil du` 2540 对象 = 2×1270）；**§5.3 DB 备份完成**（`/opt/tzj/backups/tzj_prod-pre-oss-202608051154.dump`）；**§5.4 生产 dry-run 完成：302 行，白名单外无命中**（与本地演练一致）。剩余：§4.5 真实浏览器预签名 PUT 用例、§5.5 切换窗口（需确认后执行）。**尚未进入切换窗口。**
 > 切换执行：2026-08-05 —— **§5.5 切换窗口已完成**：增量补同步（无新增对象）→ DNS `static.tzjii.com` A→CNAME（TTL 600；免费版 DNS 不允许 60，报 `QuotaExceeded.TTL`）→ DB 订正 `--apply`（302 行）→ `.env.prod` S3_* 全部切换（备份 `.env.prod.bak-20260805-preoss`）→ `deploy.sh api 47fca6e…`（健康，storage up）→ 窗口末补同步 → GitHub Var `NEXT_PUBLIC_S3_PUBLIC_DOMAIN=https://static.tzjii.com` → workflow dispatch 重建部署 web/admin/api（run 30974016086 success）。验证：DNS 解析到 OSS；新旧路径 HTTPS 均 200 `Server: AliyunOSS`；favicon / `x-oss-process` URL 200；www 首页/案例/新闻页旧前缀 0；admin login 200；`/api/v1/health` storage up；CORS 预检（www/admin origins）200；DB 正向 dry-run 0 行。**进入 7 天观察期（§5.6），MinIO 与 `STATIC_DOMAIN` 暂不清理**；待人工验收项见 §8（admin 上传/删除/水印、聊天附件真实浏览器直传、营销弹窗）。
-> 收尾执行：2026-08-05 —— **观察期提前结束（用户确认稳定，明确指示不做备份）**：生产 MinIO 已彻底移除——容器 `tzj-minio-1`、卷 `tzj_miniodata`、镜像 `minio/minio` / `minio/mc`、导出目录 `/opt/tzj/oss-export`、`.env.prod` 的 `MINIO_ROOT_*`/`STATIC_DOMAIN`、compose 的 minio 服务与 gateway/acme `STATIC_DOMAIN`、api `depends_on: minio`、Makefile `infra-up`、nginx `STATIC_DOMAIN` 443 反代块全部删除；OSS 过渡前缀 `tzj-uploads-prod/` 已删除（1270 对象），生产桶仅剩根副本 1270 对象 / 617.5 MiB。清理改动已提交仓库（含 `infra/docker/minio/cors.xml` 删除与 `apply-cors.sh` 去 mc 分支），确保后续部署不再带回 MinIO 配置。
+> 收尾执行：2026-08-05 —— **观察期提前结束（用户确认稳定，明确指示不做备份）**：生产 MinIO 已彻底移除——容器 `tzj-minio-1`、卷 `tzj_miniodata`、镜像 `minio/minio` / `minio/mc`、导出目录 `/opt/tzj/oss-export`、`.env.prod` 的 `MINIO_ROOT_*`/`STATIC_DOMAIN`、compose 的 minio 服务与 gateway/acme `STATIC_DOMAIN`、api `depends_on: minio`、Makefile `infra-up`、nginx `STATIC_DOMAIN` 443 反代块全部删除。OSS 旧前缀 `tzj-uploads-prod/` 曾两度删除/恢复，最终由 **CDN 302 重定向**替代（见 §11.5），生产桶当前仅根路径 1270 对象 / 617.5 MiB。清理改动已提交仓库（含 `infra/docker/minio/cors.xml` 删除与 `apply-cors.sh` 去 mc 分支），确保后续部署不再带回 MinIO 配置。
 > 范围：**仅生产环境**（阿里云 ECS 单机 compose）。本地开发环境继续使用 MinIO，不在本方案范围内。
 > 关联文档：`docs/deployment-plan.md`（§4 MinIO 生产化改造）、`docs/minio-to-rustfs-migration-plan.md`（另一候选方案，**已废弃**，本方案为最终采纳方案）、AGENTS.md「对象存储规范」
 
@@ -281,7 +281,7 @@ curl -sI -o /dev/null -w 'old=%{http_code}\n' https://static.tzjii.com/tzj-uploa
 
 1. compose 删 `minio` 服务、api 的 `depends_on: minio`、`miniodata` 卷声明、gateway 与 **acme environment 的 `STATIC_DOMAIN`**；nginx 模板删 `STATIC_DOMAIN` 的 443 server 块；`.env.prod` 删 `MINIO_ROOT_*` 与 `STATIC_DOMAIN`；Makefile `infra-up` 去掉 `minio` —— ✅ 2026-08-05 已执行并同步仓库
 2. `miniodata` 卷归档 —— ⏭️ **按用户指示跳过（明确无需备份）**，卷已直接删除
-3. 删除 `tzj-prod-media` 内过渡副本 `tzj-uploads-prod/` 前缀 —— ✅ 2026-08-05 已执行（1270 对象），生产桶现仅根副本 1270 对象
+3. 删除 `tzj-prod-media` 内过渡副本 `tzj-uploads-prod/` 前缀 —— ✅ 2026-08-05 曾执行（1270 对象），后恢复；最终由 CDN `host_redirect` 302 替代后**再次删除（1270 对象）**，旧 URL 经 CDN 跳转新地址，无需存储副本（见 §11.5）
 4. 同步文档与示例 —— ✅ `infra/docker/.env.prod.example`（删 `STATIC_DOMAIN` / `MINIO_ROOT_*`，S3 段换 OSS 示例值）、`apply-cors.sh` 去 mc 分支、删除 `infra/docker/minio/cors.xml`；`docs/deployment-plan.md` 已不在仓库（此前清理）
 5. acme 无需处理：现有证书为泛域名 `tzjii.com + *.tzjii.com`（`infra/docker/acme/issue.sh`），继续服务 web/admin/api，没有独立的 static 条目可移除；`static.tzjii.com` 的 HTTPS 改由 OSS 侧证书承担（§4.4）
 
@@ -357,7 +357,127 @@ curl -sI -o /dev/null -w 'old=%{http_code}\n' https://static.tzjii.com/tzj-uploa
 
 ## 10. 后续可选优化（不在本次范围）
 
-- **CDN**：`static.tzjii.com` CNAME 改指 CDN 加速域名，回源 OSS，进一步降流量单价并提升海外访问
+- **CDN**：~~`static.tzjii.com` CNAME 改指 CDN 加速域名，回源 OSS，进一步降流量单价并提升海外访问~~ ✅ 2026-08-05 已上线（见 §11），含 `www.tzjii.com` 全站 CDN
 - **`x-oss-process` 服务端图片处理**：动态缩略图/格式转换/动态水印（此前评估 MinIO 不具备的能力缺口）
 - **OSS 生命周期规则**：`chat/{YYYYMM}/` 前缀按月过期清理（`buildChatKey` 的目录设计本就为此预留）
 - **本地 dev 存储**：继续使用 MinIO，不做更换（RustFS 方案已废弃，见 `docs/minio-to-rustfs-migration-plan.md` 头部声明）
+
+---
+
+## 11. CDN 上线执行记录（2026-08-05，账号 account-b）
+
+### 11.1 加速域名与证书
+
+| 域名 | CNAME | 源站 | HTTPS |
+|------|-------|------|-------|
+| `www.tzjii.com` | `www.tzjii.com.w.cdngslb.com` | `REDACTED-IP:443`（ipaddr，nginx） | 泛域名证书已上传（CDN 侧托管，2026-10-27 到期） |
+| `static.tzjii.com` | `static.tzjii.com.w.cdngslb.com` | `tzj-prod-media.oss-cn-beijing.aliyuncs.com`（oss） | 同上泛域名证书（CDN 侧托管） |
+
+- 域名归属验证 TXT（`verification.tzjii.com`）已验证通过并**已删除**
+- `api.tzjii.com` / `admin.tzjii.com` / `@` **不上 CDN**：API 动态接口 + WebSocket 对缓存敏感，admin 为后台管理，保持 A 记录直连 ECS
+
+### 11.2 域名配置（BatchSetCdnDomainConfig）
+
+两个域名均配置：
+
+- `forward_scheme`：`enable=on, scheme_origin=https, scheme_origin_port=443`（强制 HTTPS 回源）
+- `https_origin_sni`：`enabled=on, https_origin_sni=<加速域名>`（回源 SNI 与 Host 一致）
+- `https_force`：`enable=on, https_rewrite=301`（HTTP 访问 301 跳 HTTPS，与源站 nginx 行为一致）
+
+差异项：
+
+| 域名 | 回源 Host（`set_req_host_header`） | 缓存规则 |
+|------|-----------------------------------|----------|
+| www | `www.tzjii.com` | `filetype_based_ttl_set`：常见静态后缀 30 天、`swift_origin_cache_high=on`；HTML 遵循源站 `no-store` 不缓存（页面始终新鲜） |
+| static | `static.tzjii.com`（OSS 自定义域名，SNI/证书匹配） | `path_based_ttl_set`：`/` 全路径 30 天（2592000s）、`swift_origin_cache_high=on`（OSS 无 Cache-Control 时按此 TTL） |
+
+### 11.3 DNS 切换与验证
+
+- 2026-08-05 切 DNS：`www.tzjii.com` A → CNAME CDN；`static.tzjii.com` CNAME OSS 桶域名 → CNAME CDN（TTL 600s）
+- 切前预验证（`curl --resolve` 直连边缘 IP）：www 根路径 308 跳 `/zh-CN`、页面 200、`/_next/static/*` 200 且 `cache-control: public, max-age=31536000, immutable` 透传；static 对象 200、二次请求 `X-Cache: HIT`、`X-Swift-CacheTime: 2592000`、404 正常
+- 切后实测：`dig` 两域名均解析到 `*.cdngslb.com`；www 页面/资源经 CDN（`Server: Tengine` + `Via` 链路）200；static `X-Cache: HIT`；HTTP 均 301 → HTTPS；HSTS/Set-Cookie/Vary 等响应头透传正常；api/admin 直连不受影响
+- 缓存语义确认：www HTML 为 `no-store` 不缓存（CMS 内容更新即时可见），Next 静态资源本身带 `immutable` 1 年缓存，由 CDN 兜底
+
+### 11.4 成本与运维注意
+
+- CDN 按量计费（account-b 已开通）：C 端静态资源命中率高后，OSS 公网流出费用显著下降；新增 CDN 流量费按量结算
+- ⚠️ 证书 2026-10-27 到期：CDN 两个域名当前用上传的泛域名证书，到期前需在 CDN 控制台/API 更新；OSS 侧（§4.4 CertId `26451242-cn-hangzhou`）同样到期，正式方案是改用 OSS 免费 DV 证书自动续期
+- 资源更新策略：static 上被覆盖的存量对象最坏 30 天缓存（上传均为时间戳命名，几乎不会覆盖）；如需立即生效，用 `aliyun cdn RefreshObjectCaches`（已随插件可用）刷新对应 URL
+- 回滚：将两条记录改回原值即可（www → A `REDACTED-IP`，static → CNAME `tzj-prod-media.oss-cn-beijing.aliyuncs.com`），TTL 600s
+
+### 11.5 旧 URL 兼容：副本 → CDN 302 重定向（2026-08-05）
+
+**背景**：迁移后收到顾客反馈——访问过旧网站的用户图片加载不出来。定位为客户端/外部渠道持有旧 URL `https://static.tzjii.com/tzj-uploads-prod/{key}`（未关闭的旧标签页、浏览器前进/后退缓存、微信/QQ 内置浏览器缓存、收藏/分享的旧链接等），而该前缀的过渡副本在收尾时已删除，实测旧 URL 404（CDN 与直连 OSS 均 404，存储层不存在）。
+
+**第一步（应急）**：从根路径复制恢复 `tzj-uploads-prod/` 前缀（1270 对象 / 617.5 MiB，内网端点 15s），让旧 URL 立即恢复 200：
+
+```bash
+ossutil cp -r oss://tzj-prod-media/ oss://tzj-prod-media/tzj-uploads-prod/ \
+  -e oss-cn-beijing-internal.aliyuncs.com --region cn-beijing -i $ALI_KEY -k $ALI_SECRET \
+  --exclude "/tzj-uploads-prod/**" -f
+```
+
+**第二步（最终方案，已上线）**：改为 CDN `host_redirect` 302 重定向，**强制用户换用新地址**，不再依赖存储副本：
+
+```json
+{
+  "functionName": "host_redirect",
+  "functionArgs": [
+    { "argName": "regex", "argValue": "^/tzj-uploads-prod/(.+)$" },
+    { "argName": "replacement", "argValue": "https://static.tzjii.com/$1" },
+    { "argName": "flag", "argValue": "redirect" },
+    { "argName": "rewrite_method", "argValue": "302" }
+  ]
+}
+```
+
+- 实测：旧 URL → `302 Location: https://static.tzjii.com/{key}`；带 `?x-oss-process=` 的旧 URL 重定向后**查询参数原样保留**；跟随跳转后 200；新路径不受影响
+- 局限：仅 CDN 支持 302/303/307（无 301，图片类 URL 对 SEO 无影响）；依赖 CDN 链路，若将来去掉 CDN 需在其他层实现等价规则
+- ✅ 2026-08-05 用户确认后**已删除兼容副本**（`ossutil rm -r` 1270 对象 / 4.6s）；生产桶恢复仅根路径 1270 对象 / 617.5 MiB
+- ⚠️ 删除后直连 OSS 自定义域名的旧前缀 URL 为 404（预期）；**生产路径全部经 CDN**，旧 URL 一律 302 → 新地址 200
+- ♻️ 桶开启了版本控制，若需回退可恢复删除标记前的版本；重定向规则在 CDN 侧，`BatchDeleteCdnDomainConfig` 可随时移除
+
+**运维注意**：
+- 302 重定向长期保留，直到旧 URL 自然淘汰（数月）后可按需移除
+- 新增上传仅写根路径，无副本同步负担
+
+### 11.6 静态资源全量上 OSS/CDN（2026-08-05）
+
+**目标**：除动态生成的 `robots.txt`/`sitemap.xml` 外，所有静态资源统一托管 OSS（`static.tzjii.com`，CDN 30 天缓存），ECS 不再承担前端静态分发。
+
+**改动清单**
+
+| 层 | 改动 |
+|----|------|
+| 构建 | web/admin `next.config.ts` 增加 `assetPrefix`（`NEXT_PUBLIC_ASSET_PREFIX` 注入，dev 为空）；web/admin Dockerfile 增加对应 ARG/ENV |
+| CI | `deploy.yml` 按 app 注入 `NEXT_PUBLIC_ASSET_PREFIX_WEB=https://static.tzjii.com/next/web`、`NEXT_PUBLIC_ASSET_PREFIX_ADMIN=https://static.tzjii.com/next/admin`（GitHub Vars） |
+| 部署 | `deploy.sh` 新增 `sync_cdn_static`：滚动更新前从新镜像提取 `.next/static` + public 辅助文件 → ossutil 内网端点同步 OSS → 校验对象数 ≥ 本地文件数才放行更新 |
+| 引用 | web layout 的 vditor lute prefetch / browser-support.js、admin layout 的 lute prefetch、MarkdownEditor `cdn`、聊天提示音、manifest apple-touch-icon 全部改指 `static.tzjii.com/statics/...` |
+
+**OSS 目录布局**
+
+| 前缀 | 内容 | Cache-Control |
+|------|------|---------------|
+| `next/web/_next/static/` | web 构建产物（41 文件，~2.7MB） | `public, max-age=31536000, immutable` |
+| `next/admin/_next/static/` | admin 构建产物（85 文件，~4.1MB） | 同上 |
+| `statics/vditor-assets/` | Vditor 编辑器资源（web/admin 同源） | `public, max-age=86400` |
+| `statics/sounds/`、`statics/browser-support.js`、`statics/apple-touch-icon.png` | public 辅助资源 | `public, max-age=86400` |
+
+**验证与回滚**
+- 部署后检查页面 HTML 中 `/_next/static/` 引用已变为 `https://static.tzjii.com/next/{web|admin}/_next/static/...`，且资源 200
+- 回滚 = 部署旧 sha：旧镜像未烘焙 assetPrefix，自动回落本地静态资源，无需额外操作
+- ⚠️ `robots.txt`/`sitemap.xml` 为 Next 路由动态生成，保留在 ECS；浏览器自动请求的根路径 `/favicon.ico` 兜底仍由 nginx 提供（HTML 主 favicon 引用早已指向 OSS `statics/favicon.ico`）
+
+### 11.6 补传缺失的 content 静态素材（2026-08-05）
+
+**背景**：顾客反馈 `https://static.tzjii.com/content/gongan.png` 无法显示。排查发现对象确实不在桶中（CDN/直连 OSS 均 `NoSuchKey`），而仓库存在 `apps/web/public/media/gongan.png`。
+
+**根因**：`resolveMediaUrl('/media/gongan.png')` 按 `STATIC_MEDIA_OBJECT_PREFIX='content'` 解析为 `content/gongan.png`，但迁移快照中该对象位于 `statics/gongan.png`（同名同大小），`content/` 下缺失。
+
+**处置**：
+- 桶内复制 `statics/gongan.png → content/gongan.png`（1403 B）
+- 用仓库 `apps/web/public/media/` 与 OSS `content/` 全量比对，发现另有 9 个被代码引用但桶中缺失的素材：`alarm-highrise.png`、`fixed-tower-overview-concept.png`、`fixed-tower-series-thumb-a.png`、`case-gd-interior.png`、`case-henan-burn.png`、`case-henan-structure.png`、`case-js-module.png`、`case-js-platform.png`、`about-cn.webp`，已一并补传（12.3 MiB，内网端点）
+- 其余 20 个本地存在但**未被代码/数据库引用**的 public 素材（`hero-banner-*`、`service-*`、`cert-honor-*`、`about-intro`、`story-timeline` 等）未上传
+- 验证：10 个 URL 经 CDN 均 200 且 Content-Type 正确
+
+**遗留**：桶内存在 macOS AppleDouble 垃圾对象（`content/._case-*` 等，约 10 个，极小），无引用、不影响线上，可后续清理；本地 `public/media` 与 OSS 的同步脚本（`sync-content-media`）应纳入 CI/发布流程，避免再次出现“仓库有、存储无”的漂移。

@@ -6,6 +6,7 @@ import { AppToaster } from '@/components/AppToaster';
 import { ActiveThemeProvider } from '@/components/theme/ActiveThemeProvider';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import { getFaviconUrl } from '@/lib/site-settings';
+import { getS3PublicDomain } from '@/lib/media-url';
 import '@/components/media/photo-view-overrides.css';
 import './globals.css';
 import './theme-presets.css';
@@ -38,7 +39,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {/* 空闲预取 Vditor 的 lute 解析引擎，缩短编辑器初始化等待；用 prefetch
             而非 preload：该脚本仅在打开 Markdown 编辑器时才执行，preload 会触发
             「预加载未及时使用」控制台警告并抢占首屏带宽（与 web 端修复对齐） */}
-        <link rel="prefetch" as="script" href="/vditor-assets/dist/js/lute/lute.min.js" />
+        <link
+          rel="prefetch"
+          as="script"
+          href={`${getS3PublicDomain().replace(/\/$/, '')}/statics/vditor-assets/dist/js/lute/lute.min.js`}
+        />
       </head>
       <body
         className={`bg-background text-foreground antialiased${

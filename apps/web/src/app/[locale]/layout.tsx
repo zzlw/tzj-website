@@ -108,9 +108,13 @@ export default async function LocaleLayout({ children, params }: Props) {
         {/* 空闲时预取 Vditor 的 lute 解析引擎，缩短聊天 Markdown 预览初始化等待；
             用 prefetch 而非 preload：该脚本仅在访客打开聊天时才执行，preload 会触发
             「预加载未及时使用」控制台警告并抢占首屏带宽 */}
-        <link rel="prefetch" as="script" href="/vditor-assets/dist/js/lute/lute.min.js" />
+        <link
+          rel="prefetch"
+          as="script"
+          href={`${mediaOrigin}/statics/vditor-assets/dist/js/lute/lute.min.js`}
+        />
         {/* 旧版浏览器检测与升级引导：ES5 自包含脚本，主包解析失败时仍能提示；defer 不阻塞渲染 */}
-        <script src="/browser-support.js" defer />
+        <script src={`${mediaOrigin}/statics/browser-support.js`} defer />
       </head>
       <body className="bg-background text-text antialiased">
         <NextIntlClientProvider messages={messages}>
