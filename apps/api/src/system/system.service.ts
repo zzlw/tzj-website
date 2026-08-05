@@ -70,15 +70,35 @@ export class SystemService {
   }
 
   private async readServerMemory(): Promise<SystemStatusResponse['serverMemory']> {
-    const totalMb = os.totalmem() / 1024 ** 2;
-    const freeMb = os.freemem() / 1024 ** 2;
-    const usedMb = Math.max(0, totalMb - freeMb);
-    const hostUsedPercent = totalMb > 0 ? clampPercent(Math.round((usedMb / totalMb) * 100)) : 0;
+    let hostTotalMb = os.totalmem() / 1024 ** 2;
+    let hostFreeMb = os.freemem() / 1024 ** 2;
+    let hostAvailableMb = hostFreeMb;
+    try {
+      // 宿主机口径与云厂商一致：MemAvailable（可回收缓存计入可用），不用 MemFree
+      const meminfo = await readFile('/proc/meminfo', 'utf8');
+      const readKb = (key: string): number | null => {
+        const match = meminfo.match(new RegExp(`^${key}:\\s+(\\d+) kB`, 'm'));
+        return match ? Number(match[1]) / 1024 : null;
+      };
+      const total = readKb('MemTotal');
+      const available = readKb('MemAvailable');
+      const free = readKb('MemFree');
+      if (total !== null && total > 0) hostTotalMb = total;
+      if (available !== null && available >= 0) hostAvailableMb = available;
+      if (free !== null && free >= 0) hostFreeMb = free;
+    } catch {
+      // 非 Linux / 无法读取时回退 os 接口
+    }
+    const usedMb = Math.max(0, hostTotalMb - hostAvailableMb);
+    const hostUsedPercent =
+      hostTotalMb > 0 ? clampPercent(Math.round((usedMb / hostTotalMb) * 100)) : 0;
 
     let containerLimitMb: number | null = null;
     let containerUsageMb: number | null = null;
     let containerCacheMb: number | null = null;
+    let containerInactiveCacheMb: number | null = null;
     let containerTotalMb: number | null = null;
+    let containerWorkingSetMb: number | null = null;
 
     // Docker/容器环境优先读 cgroup v2；老内核或 v1 挂载再回退。
     try {
@@ -93,10 +113,17 @@ export class SystemService {
       // memory.current 包含可回收页缓存（file），监控主口径用匿名内存（anon）
       const anon = stat.get('anon') ?? total;
       const file = stat.get('file') ?? 0;
+      const inactiveFile = stat.get('inactive_file') ?? 0;
+      // K8s working set 口径：不可回收的活跃内存 = current − inactive_file
+      const workingSet = Math.max(0, total - inactiveFile);
       if (Number.isFinite(limit) && limit > 0) containerLimitMb = round(limit / 1024 ** 2, 1);
       if (Number.isFinite(anon) && anon > 0) containerUsageMb = round(anon / 1024 ** 2, 1);
       if (Number.isFinite(file) && file > 0) containerCacheMb = round(file / 1024 ** 2, 1);
+      if (Number.isFinite(inactiveFile) && inactiveFile > 0)
+        containerInactiveCacheMb = round(inactiveFile / 1024 ** 2, 1);
       if (Number.isFinite(total) && total > 0) containerTotalMb = round(total / 1024 ** 2, 1);
+      if (Number.isFinite(workingSet) && workingSet > 0)
+        containerWorkingSetMb = round(workingSet / 1024 ** 2, 1);
     } catch {
       try {
         const limit = Number(
@@ -105,25 +132,34 @@ export class SystemService {
         const usage = Number(
           (await readFile('/sys/fs/cgroup/memory/memory.usage_in_bytes', 'utf8')).trim(),
         );
+        const statText = await readFile('/sys/fs/cgroup/memory/memory.stat', 'utf8');
+        const inactiveMatch = statText.match(/^total_inactive_file\s+(\d+)/m);
+        const inactiveFile = inactiveMatch ? Number(inactiveMatch[1]) : 0;
+        const workingSet = Math.max(0, usage - inactiveFile);
         if (Number.isFinite(limit) && limit > 0) containerLimitMb = round(limit / 1024 ** 2, 1);
         if (Number.isFinite(usage) && usage > 0) {
           containerUsageMb = round(usage / 1024 ** 2, 1);
           containerTotalMb = containerUsageMb;
         }
+        if (Number.isFinite(workingSet) && workingSet > 0)
+          containerWorkingSetMb = round(workingSet / 1024 ** 2, 1);
+        if (Number.isFinite(inactiveFile) && inactiveFile > 0)
+          containerInactiveCacheMb = round(inactiveFile / 1024 ** 2, 1);
       } catch {
         // 非容器环境：保留 null，由前端显示“无容器限制”
       }
     }
 
     const containerUsedPercent =
-      containerLimitMb !== null && containerUsageMb !== null
-        ? clampPercent(Math.round((containerUsageMb / containerLimitMb) * 100))
+      containerLimitMb !== null && containerWorkingSetMb !== null
+        ? clampPercent(Math.round((containerWorkingSetMb / containerLimitMb) * 100))
         : null;
 
     return {
       host: {
-        totalMb: round(totalMb),
-        freeMb: round(freeMb),
+        totalMb: round(hostTotalMb),
+        freeMb: round(hostFreeMb),
+        availableMb: round(hostAvailableMb),
         usedMb: round(usedMb),
         usedPercent: hostUsedPercent,
       },
@@ -131,7 +167,9 @@ export class SystemService {
         limitMb: containerLimitMb,
         usageMb: containerUsageMb,
         cacheMb: containerCacheMb,
+        inactiveCacheMb: containerInactiveCacheMb,
         totalMb: containerTotalMb,
+        workingSetMb: containerWorkingSetMb,
         usedPercent: containerUsedPercent,
       },
     };

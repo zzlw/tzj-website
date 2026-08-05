@@ -113,7 +113,7 @@ export default function SystemStatusPage() {
 
         <Card>
           <CardHeader>
-            <CardDescription>进程实际占用（不含可回收缓存）</CardDescription>
+            <CardDescription>容器工作集（K8s working set 口径）</CardDescription>
             <CardTitle className="text-lg">服务器内存</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -122,18 +122,18 @@ export default function SystemStatusPage() {
             </p>
             <MeterBar value={containerUsedPercent ?? 0} />
             <p className="text-xs text-muted-foreground">
-              {data.serverMemory.container.usageMb !== null
-                ? `容器实际 ${data.serverMemory.container.usageMb} / ${data.serverMemory.container.limitMb} MB`
+              {data.serverMemory.container.workingSetMb !== null
+                ? `容器工作集 ${data.serverMemory.container.workingSetMb} / ${data.serverMemory.container.limitMb} MB`
                 : '容器无内存上限（未配置 cgroup 限制）'}
             </p>
             <p className="text-xs text-muted-foreground">
               {data.serverMemory.container.totalMb !== null
-                ? `含可回收页缓存 ${data.serverMemory.container.cacheMb ?? '—'} MB · cgroup 总计 ${data.serverMemory.container.totalMb} MB`
+                ? `匿名 ${data.serverMemory.container.usageMb ?? '—'} MB · 页缓存 ${data.serverMemory.container.cacheMb ?? '—'} MB（可回收 ${data.serverMemory.container.inactiveCacheMb ?? '—'} MB）· cgroup 总计 ${data.serverMemory.container.totalMb} MB`
                 : 'cgroup 明细不可用'}
             </p>
             <p className="text-xs text-muted-foreground">
               宿主机 {data.serverMemory.host.usedMb} / {data.serverMemory.host.totalMb} MB（
-              {data.serverMemory.host.usedPercent}%）
+              {data.serverMemory.host.usedPercent}%）· 可用 {data.serverMemory.host.availableMb} MB
             </p>
             <p className="text-xs text-muted-foreground">
               进程 RSS {data.process.memory.rssMb} MB · 堆 {data.process.memory.heapUsedMb}/
