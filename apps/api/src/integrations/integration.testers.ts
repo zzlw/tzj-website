@@ -18,10 +18,23 @@ export const INTEGRATION_TESTERS: Record<string, IntegrationTester> = {
       url.searchParams.set('extensions', 'base');
       const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
       const data = (await res.json()) as { status?: string; info?: string };
-      if (data.status === '1') {
-        return { ok: true, message: '连接成功，逆地理编码可用' };
+      if (data.status !== '1') {
+        return { ok: false, message: data.info ?? '高德逆地理 API 返回错误' };
       }
-      return { ok: false, message: data.info ?? '高德 API 返回错误' };
+
+      // 顺带验证 IP 定位可用（同一 Key，配额共享）
+      const ipUrl = new URL('https://restapi.amap.com/v3/ip');
+      ipUrl.searchParams.set('key', webKey);
+      ipUrl.searchParams.set('ip', '114.247.50.2');
+      const ipRes = await fetch(ipUrl, { signal: AbortSignal.timeout(5000) });
+      const ipData = (await ipRes.json()) as { status?: string; info?: string; province?: string };
+      if (ipData.status !== '1') {
+        return { ok: false, message: `逆地理可用，但 IP 定位失败：${ipData.info ?? '未知错误'}` };
+      }
+      return {
+        ok: true,
+        message: `连接成功，逆地理 + IP 定位可用（示例 IP 归属：${ipData.province || '未知'}）`,
+      };
     } catch {
       return { ok: false, message: '无法连接高德 API，请检查网络与 Key' };
     }

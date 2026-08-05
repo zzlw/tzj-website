@@ -88,7 +88,7 @@ const GEO_MODES: { id: AnalyticsGeoMode; label: string; hint: string }[] = [
   {
     id: 'ip',
     label: 'IP 定位（推荐）',
-    hint: '服务端 geoip-lite 离线解析，无需用户授权，隐私友好，业内默认方案',
+    hint: '服务端 ip2region 离线库（免费）→ 高德（可配）→ BigDataCloud 兜底，无需用户授权',
   },
   {
     id: 'gps',

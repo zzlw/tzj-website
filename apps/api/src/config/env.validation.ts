@@ -35,8 +35,10 @@ const envSchema = z.object({
   S3_FORCE_PATH_STYLE: z.enum(['true', 'false']).default('false'),
 
   // Analytics
-  /** 高德 Web 服务 Key — GPS 逆地理（优先读后台集成凭证，env 兜底） */
+  /** 高德 Web 服务 Key — GPS 逆地理 + IP 定位（优先读后台集成凭证，env 兜底） */
   AMAP_WEB_KEY: z.string().optional(),
+  /** 高德 IP 定位开关：off | on（后台集成配置优先，env 兜底） */
+  AMAP_IP_LOCATION_MODE: z.string().optional(),
   /** 加密 integration secrets 与 2FA TOTP Secret；2FA 强依赖，必填 fail-fast（否则 enable 运行期才爆） */
   SECRETS_ENCRYPTION_KEY: z
     .string()

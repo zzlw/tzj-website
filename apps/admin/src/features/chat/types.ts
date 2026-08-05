@@ -112,7 +112,7 @@ export interface ChatVisitorProfile {
   location: string | null;
   /** 运营商（仅 IP 解析命中时有值） */
   isp: string | null;
-  /** 定位依据：ip（重解析）| geoip（入库粗定位）| unknown */
+  /** 定位依据：ip（重解析）| geoip（入库地区）| unknown */
   geoSource: 'ip' | 'geoip' | 'unknown';
   deviceType?: string | null;
   deviceModel?: string | null;

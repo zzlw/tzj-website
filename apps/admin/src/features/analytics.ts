@@ -501,7 +501,19 @@ export function regionLabel(
 ): string {
   if (parts.country === 'LOCAL') return '本地网络';
   const local = [parts.region, parts.city].filter(Boolean).join(' · ');
-  return local || parts.country || fallback;
+  return local || chineseCountryName(parts.country) || fallback;
+}
+
+/** 国家代码 → 中文名（Intl 兜底，与 API formatGeoLabel 口径一致）。 */
+function chineseCountryName(country?: string | null): string {
+  if (!country) return '';
+  try {
+    return (
+      new Intl.DisplayNames(['zh-CN'], { type: 'region' }).of(country.toUpperCase()) ?? country
+    );
+  } catch {
+    return country;
+  }
 }
 
 export function formatShortDate(v: string): string {

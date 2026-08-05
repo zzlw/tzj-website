@@ -24,7 +24,7 @@ function normalizeAmapCity(city: string | string[] | undefined): string | null {
 }
 
 /**
- * 高德逆地理编码（国内生产主方案）。
+ * 高德逆地理编码（GPS 定位唯一来源）。
  * 浏览器 Geolocation 为 WGS84，需传 coordsys=gps。
  * @see https://lbs.amap.com/api/webservice/guide/api/georegeo
  */
@@ -71,7 +71,7 @@ async function fetchAmap(
   return hasGeo(geo) ? geo : null;
 }
 
-/** 境外或高德不可用时的兜底（开发/海外访客）。 */
+/** BigDataCloud 免费逆地理（无需 Key，海外访客兜底）。 */
 async function fetchBigDataCloud(latitude: number, longitude: number): Promise<GeoLookup | null> {
   const url = new URL('https://api.bigdatacloud.net/data/reverse-geocode-client');
   url.searchParams.set('latitude', String(latitude));
@@ -97,7 +97,10 @@ async function fetchBigDataCloud(latitude: number, longitude: number): Promise<G
   return hasGeo(geo) ? geo : null;
 }
 
-/** GPS 逆地理编码（高德优先，失败回退 BigDataCloud，带内存缓存）。 */
+/**
+ * GPS 逆地理编码（高德优先，BigDataCloud 兜底，带内存缓存）。
+ * 高德 Key 未配置或请求失败时，回退 BigDataCloud（无需 Key，海外坐标可用）。
+ */
 export async function lookupGeoFromCoordinates(
   latitude: number,
   longitude: number,
@@ -118,23 +121,27 @@ export async function lookupGeoFromCoordinates(
   const hit = cache.get(key);
   if (hit && hit.exp > Date.now()) return hit.geo;
 
-  const providers: Array<() => Promise<GeoLookup | null>> = [];
-  const trimmedKey = amapKey?.trim();
-  if (trimmedKey) {
-    providers.push(() => fetchAmap(latitude, longitude, trimmedKey));
-  }
-  providers.push(() => fetchBigDataCloud(latitude, longitude));
-
-  for (const provider of providers) {
-    try {
-      const geo = await provider();
+  try {
+    const trimmedKey = amapKey?.trim();
+    if (trimmedKey) {
+      const geo = await fetchAmap(latitude, longitude, trimmedKey);
       if (geo) {
         cache.set(key, { geo, exp: Date.now() + CACHE_TTL_MS });
         return geo;
       }
-    } catch {
-      /* 尝试下一个提供商 */
     }
+  } catch {
+    /* 高德失败，继续 BigDataCloud */
+  }
+
+  try {
+    const geo = await fetchBigDataCloud(latitude, longitude);
+    if (geo) {
+      cache.set(key, { geo, exp: Date.now() + CACHE_TTL_MS });
+      return geo;
+    }
+  } catch {
+    /* 全部失败返回空结果 */
   }
 
   return { country: null, region: null, city: null };

@@ -8,7 +8,7 @@ import {
 import type { Prisma } from '@prisma/client/index';
 // biome-ignore lint/style/useImportType: NestJS DI 需要类作为运行期注入 token
 import { IpLocationService } from '../analytics/ip-location.service';
-import { lookupGeo } from '../analytics/utils/geo-ip';
+import { isPrivateIp } from '../analytics/utils/geo-ip';
 import { formatGeoLabel } from '../analytics/utils/geo-label';
 import { parseUserAgent } from '../analytics/utils/ua-parser';
 import { maskIp, parseReferrerHost } from '../common/utils/client-ip';
@@ -131,7 +131,7 @@ function pickLocation(
   return fallbackLabel && fallbackLabel !== '未知' ? fallbackLabel : null;
 }
 
-/** 定位依据：IP 重解析命中 → ip；否则有回退地址 → geoip；均无 → unknown。 */
+/** 定位依据：IP 重解析命中 → ip；否则有回退地址（入库地区）→ geoip；均无 → unknown。 */
 function resolveGeoSource(
   resolvedByIp: boolean,
   location: string | null,
@@ -149,9 +149,9 @@ export interface VisitorProfileResult extends VisitorBehavior {
   ipMasked?: string | null;
   /** 读取时重解析的最精确地址（省市区/城市），失败回退入库时的 GeoIP 值 */
   location: string | null;
-  /** 运营商（纯真库中文「电信/联通」等），仅 IP 解析命中时有值 */
+  /** 运营商（高德 IP 定位暂不返回，保留字段兼容历史数据） */
   isp: string | null;
-  /** 定位依据：ip（重解析）| geoip（入库粗定位）| unknown */
+  /** 定位依据：ip（重解析）| geoip（入库地区）| unknown */
   geoSource: 'ip' | 'geoip' | 'unknown';
   deviceType?: string | null;
   deviceModel?: string | null;
@@ -631,7 +631,19 @@ export class ChatRoomService {
     const ip = dto.clientIp;
     const ua = dto.userAgent;
     const parsedUa = parseUserAgent(ua);
-    const geo = lookupGeo(ip);
+    let geo: { country: string | null; region: string | null; city: string | null };
+    if (isPrivateIp(ip)) {
+      geo = { country: 'LOCAL', region: null, city: null };
+    } else {
+      const ipGeo = await this.ipLocation.resolve(ip);
+      geo = ipGeo
+        ? {
+            country: ipGeo.countryCode || ipGeo.country || null,
+            region: ipGeo.region || null,
+            city: ipGeo.city || null,
+          }
+        : { country: null, region: null, city: null };
+    }
     const referrerHost = parseReferrerHost(dto.referrer);
 
     const data: Prisma.ChatRoomCreateInput = {
@@ -885,7 +897,7 @@ export class ChatRoomService {
 
   /**
    * 访客档案（B 端「访客信息」）：对齐「访客分析」的数据与「依据 IP 取位置」原理。
-   * - 地区在读取时按原始 IP 重解析（IpLocationService：纯真库 + 在线补充），历史会话也能到省市区 + 运营商；
+   * - 地区在读取时按原始 IP 重解析（IpLocationService：高德 IP 定位），历史会话也能到省市区；
    *   解析失败回退入库时的 GeoIP 粗定位。原始 IP 不外泄，仅返回脱敏 ipMasked。
    * - 会话关联分析访客（visitorId）时，聚合其站内 PV/UV/会话数/首末访问/营销归因。
    */

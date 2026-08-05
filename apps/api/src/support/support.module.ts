@@ -25,8 +25,8 @@ import { MessageSearchService, PgTrgmMessageSearchService } from './message-sear
   controllers: [ChatRoomController],
   providers: [
     ChatRoomService,
-    // 复用「访客分析」的 IP 归属地解析服务（纯真库 + 在线补充），
-    // 供访客档案在读取时按原始 IP 重解析到省市区 + 运营商。无构造依赖，直接在本模块提供。
+    // 复用「访客分析」的 IP 归属地解析服务（高德 IP 定位，后台可配置开关），
+    // 供访客档案在读取时按原始 IP 重解析到省市区 + 运营商。依赖 IntegrationsService（已 import）。
     IpLocationService,
     ChatAttachmentCleanupService,
     ChatGateway,

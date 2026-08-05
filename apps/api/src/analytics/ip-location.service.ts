@@ -1,8 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
-import libQQWry from 'lib-qqwry';
+import * as ip2region from 'ip2region-ts';
+import {
+  AMAP_IP_LOCATION_MODES,
+  type AmapIpLocationMode,
+} from '../integrations/integration.registry';
+import { IntegrationsService } from '../integrations/integrations.service';
 
 /**
- * IP 归属地解析结果（尽可能精确）。location 为人类可读的完整地址，前端直接展示。
+ * IP 归属地解析结果。location 为人类可读的完整地址，前端直接展示。
  */
 export interface IpLocation {
   country: string;
@@ -10,51 +15,40 @@ export interface IpLocation {
   region: string;
   city: string;
   isp: string;
-  /** 拼接好的最精确地址，如「江苏省南京市玄武区」「美国加利福尼亚州圣克拉拉县山景市」 */
+  /** 拼接好的最精确地址，如「江苏省 南京市」 */
   location: string;
 }
 
-/** 单一上游归一化结果（place 为不含运营商的纯地理串） */
-interface ProviderResult {
-  country: string;
-  countryCode: string;
-  region: string;
-  city: string;
-  isp: string;
-  place: string;
-}
-
-/** ip-api.com 响应（仅取用字段） */
-interface IpApiResponse {
+/** 高德 /v3/ip 响应（仅取用字段） */
+interface AmapIpResponse {
   status?: string;
-  message?: string;
-  country?: string;
-  countryCode?: string;
-  regionName?: string;
+  info?: string;
+  province?: string;
   city?: string;
 }
 
-/** ipapi.co 响应（仅取用字段） */
-interface IpapiCoResponse {
-  error?: boolean;
-  reason?: string;
-  country_name?: string;
-  country_code?: string;
-  region?: string;
+/** BigDataCloud /data/ip-geolocation 响应（免费客户端端点，无需 Key） */
+interface BigDataCloudIpResponse {
+  countryName?: string;
+  countryCode?: string;
+  principalSubdivision?: string;
   city?: string;
-  org?: string;
+  locality?: string;
+}
+
+/** 高德接入配置（Key + 开关，短 TTL 缓存） */
+interface AmapConfig {
+  enabled: boolean;
+  key: string;
 }
 
 /**
- * IP 地理位置解析服务（参考 REDACTED-NAMESPACE-koa 的 IPLocationService，多源融合 + 缓存）。
- * - 主源：纯真 IP 库（qqwry，离线、随包内置 dat）。国内 IP 常到「省市区/街道 + 运营商」级，最精细
- * - 补充：ip-api.com（中文、带 ISO 国家码，用于国旗与国家维度聚合）+ ipapi.co 兜底
- * - 取两者中更详尽的地理串作为最终 location；结果按原始 IP 缓存
- * - 内网/保留地址直接跳过，不外呼
- *
- * 缓存实现说明：本项目 Redis 为可选依赖（仅多实例 Socket.IO/presence 用），
- * 故此处用进程内 TTL Map 缓存（与 utils/geo-reverse 的做法一致），无需强依赖 Redis。
- * 读取路径每页仅解析约 10 个 IP，命中缓存后重复读取近乎零成本。
+ * IP 地理位置解析服务（ip2region 离线优先 + 高德可配 + BigDataCloud 兜底）。
+ * - ip2region：内置离线库（MIT，免费商用），国内省/市 + 运营商，命中即返回
+ * - 高德：后台「集成与凭证 → 高德地图 → IP 定位接入方式」可配置 off/on，
+ *   Key 走 DB 加密存储优先、AMAP_WEB_KEY env 兜底
+ * - BigDataCloud：免费 IP 归属地（无需 Key），负责海外 IP 与最终兜底
+ * - 结果按原始 IP 缓存 7 天；未命中短 TTL 30 分钟；同 IP 并发合并为单次外呼
  */
 @Injectable()
 export class IpLocationService {
@@ -63,11 +57,19 @@ export class IpLocationService {
   private readonly cacheTtlMs = 7 * 24 * 60 * 60 * 1000;
   /** 未命中用短 TTL（30 分钟），避免对坏 IP 反复外呼 */
   private readonly missTtlMs = 30 * 60 * 1000;
-  /** 单次外呼超时，避免上游抖动拖慢管理端读取 */
+  /** 单次外呼超时，避免上游抖动拖慢请求 */
   private readonly timeoutMs = 3000;
-  /** 纯真库实例（载入内存，查询为本地操作） */
-  private readonly qqwry = this.initQqwry();
   private readonly cache = new Map<string, { value: IpLocation | null; exp: number }>();
+  /** 同 IP 并发去重（如整页批量解析 + 采集写入同时发生） */
+  private readonly inflight = new Map<string, Promise<IpLocation | null>>();
+  /** 高德接入配置缓存（后台可改，短 TTL 避免每次解析都查库） */
+  private amapConfigCache?: { value: AmapConfig; exp: number };
+  private readonly amapConfigTtlMs = 60 * 1000;
+  /** ip2region 离线 searcher（xdb 全量载入内存，查询为本地操作） */
+  private readonly ip2regionSearcher: ReturnType<typeof ip2region.newWithBuffer> | null =
+    this.initIp2Region();
+
+  constructor(private readonly integrations: IntegrationsService) {}
 
   /** 解析单个 IP，命中缓存优先；内网/无效返回 null。 */
   async resolve(ip?: string | null): Promise<IpLocation | null> {
@@ -77,19 +79,14 @@ export class IpLocationService {
     const cached = this.cache.get(normalized);
     if (cached && cached.exp > Date.now()) return cached.value;
 
-    // 纯真库本地查询（主源）；ip-api 在线补充国家码（兜底 ipapi.co）
-    const qq = this.searchQqwry(normalized);
-    const api =
-      (await this.queryByIpApi(normalized).catch(() => null)) ??
-      (await this.queryByIpapiCo(normalized).catch(() => null));
+    const inflight = this.inflight.get(normalized);
+    if (inflight) return inflight;
 
-    const location = qq || api ? this.merge(qq, api) : null;
-
-    this.cache.set(normalized, {
-      value: location,
-      exp: Date.now() + (location ? this.cacheTtlMs : this.missTtlMs),
+    const task = this.resolveUncached(normalized).finally(() => {
+      this.inflight.delete(normalized);
     });
-    return location;
+    this.inflight.set(normalized, task);
+    return task;
   }
 
   /** 批量解析（并行，供列表读取路径一次解析整页 IP）。 */
@@ -105,108 +102,169 @@ export class IpLocationService {
     return new Map(entries);
   }
 
-  /**
-   * 融合纯真库与 ip-api，地理串取「更详尽者」：
-   * - 纯真库住宅 IP 常到区县/街道；ip-api 对部分网关 IP 反而有区县级
-   * - 两者都规范化后按行政层级（去空格字符数近似）取更细的一个
-   * - isp 优先纯真库（中文「联通/电信」），国家码取 ip-api（用于国旗与国家维度聚合）
-   */
-  private merge(qq: { place: string; isp: string } | null, api: ProviderResult | null): IpLocation {
-    const guessedCn = /中国|省|市|自治区|特别行政区/.test(qq?.place ?? '');
-    const countryCode = api?.countryCode || (guessedCn ? 'CN' : '');
-    // 国内去掉「中国」前缀，与纯真库格式一致并便于公平比较详尽度
-    const apiPlace = this.stripCnPrefix(api?.place, countryCode);
-    const place = this.pickRicher(qq?.place, apiPlace);
-    const isp = qq?.isp || api?.isp || '';
-    return {
-      country: api?.country || (guessedCn ? '中国' : ''),
-      countryCode,
-      region: api?.region || '',
-      city: api?.city || '',
-      isp,
-      location: place || '未知',
-    };
+  private async resolveUncached(ip: string): Promise<IpLocation | null> {
+    const config = await this.getAmapConfig();
+    // ip2region 国内离线命中 → 高德（可配置）→ BigDataCloud 兜底
+    const location =
+      (await this.searchIp2Region(ip)) ??
+      (config.enabled ? await this.queryByAmap(ip, config.key) : null) ??
+      (await this.queryByBigDataCloud(ip));
+
+    this.cache.set(ip, {
+      value: location,
+      exp: Date.now() + (location ? this.cacheTtlMs : this.missTtlMs),
+    });
+    return location;
   }
 
-  /** 取行政层级更细（去空格后更长）的地理串 */
-  private pickRicher(a?: string, b?: string): string {
-    const x = (a ?? '').trim();
-    const y = (b ?? '').trim();
-    if (!x) return y;
-    if (!y) return x;
-    const len = (s: string) => s.replace(/\s/g, '').length;
-    return len(x) >= len(y) ? x : y;
-  }
-
-  /** 国内地理串去掉「中国」前缀（国旗已表达国家，且与纯真库格式统一） */
-  private stripCnPrefix(place: string | undefined, countryCode: string): string {
-    const value = (place ?? '').trim();
-    if (!value) return '';
-    return countryCode === 'CN' || /^中国/.test(value) ? value.replace(/^中国\s*/, '') : value;
-  }
-
-  private initQqwry(): ReturnType<typeof libQQWry> | null {
+  /** ip2region 离线查询：仅采用国内命中（省/市 + 运营商），国外交给 BigDataCloud 获取结构化国家码 */
+  private async searchIp2Region(ip: string): Promise<IpLocation | null> {
+    const searcher = this.ip2regionSearcher;
+    if (!searcher) return null;
     try {
-      return libQQWry(true);
-    } catch (error) {
-      this.logger.warn(`纯真 IP 库加载失败，降级为在线解析：${(error as Error).message}`);
-      return null;
-    }
-  }
+      const hit = await searcher.search(ip);
+      const parts = (hit?.region ?? '').split('|').map((part) => this.cleanIp2Field(part));
+      const [country = '', , rawRegion = '', rawCity = '', isp = ''] = parts;
+      if (country !== '中国' || (!rawRegion && !rawCity)) return null;
 
-  /** 纯真库查询：Country 为地理串，Area 为运营商/机房 */
-  private searchQqwry(ip: string): { place: string; isp: string } | null {
-    if (!this.qqwry) return null;
-    try {
-      const res = this.qqwry.searchIP(ip);
-      const place = this.cleanQqwry(res?.Country);
-      const isp = this.cleanQqwry(res?.Area);
-      if (!place && !isp) return null;
-      // 纯真库对未知 / 内网 IP 返回的占位文案，视为无效
-      if (/未知|保留|IANA|内网|局域网|本机地址/.test(place)) return null;
-      return { place, isp };
+      // 直辖市会出现「北京|北京市」重复层级，保留更详尽者作为省
+      let region = rawRegion;
+      let city = rawCity;
+      if (city && region && city.includes(region)) {
+        region = city;
+        city = '';
+      }
+
+      return {
+        country: '中国',
+        countryCode: 'CN',
+        region,
+        city,
+        isp,
+        location: this.joinPlace(region, city) || '未知',
+      };
     } catch {
       return null;
     }
   }
 
-  /** 清洗纯真库字段：去掉 CZ88.NET / 纯真网络 等占位与多余空白 */
-  private cleanQqwry(value?: string): string {
-    return (value ?? '')
-      .replace(/CZ88\.?NET/gi, '')
-      .replace(/纯真网络/g, '')
-      .replace(/\s+/g, ' ')
-      .trim();
+  /** ip2region 字段清洗：0 / 空串视为缺失 */
+  private cleanIp2Field(value: string): string {
+    const v = value.trim();
+    return v && v !== '0' ? v : '';
   }
 
-  /** ip-api.com：仅作补充，提供中文地名与 ISO 国家码（地理精度以纯真库为主） */
-  private async queryByIpApi(ip: string): Promise<ProviderResult> {
-    const fields = 'status,message,country,countryCode,regionName,city';
-    const url = `http://ip-api.com/json/${encodeURIComponent(ip)}?lang=zh-CN&fields=${fields}`;
-    const data = (await this.fetchJson(url)) as IpApiResponse;
-    if (data?.status !== 'success') throw new Error(data?.message || 'ip-api failed');
-    return this.normalize({
-      country: data.country,
-      countryCode: data.countryCode,
-      region: data.regionName,
-      city: data.city,
-      isp: '',
-    });
+  /** 载入内置 xdb（随包附带）；失败仅警告并降级到在线链路 */
+  private initIp2Region(): ReturnType<typeof ip2region.newWithBuffer> | null {
+    try {
+      return ip2region.newWithBuffer(ip2region.loadContentFromFile(ip2region.defaultDbFile));
+    } catch (error) {
+      this.logger.warn(`ip2region 离线库加载失败，跳过离线定位：${(error as Error).message}`);
+      return null;
+    }
   }
 
-  /** ipapi.co：HTTPS 兜底 */
-  private async queryByIpapiCo(ip: string): Promise<ProviderResult> {
-    const data = (await this.fetchJson(
-      `https://ipapi.co/${encodeURIComponent(ip)}/json/`,
-    )) as IpapiCoResponse;
-    if (data?.error) throw new Error(data?.reason || 'ipapi.co failed');
-    return this.normalize({
-      country: data.country_name,
-      countryCode: data.country_code,
-      region: data.region,
-      city: data.city,
-      isp: data.org,
-    });
+  /** 高德 IP 定位（/v3/ip）：仅支持国内 IPv4，国外/无法归属时返回空字段视为未命中 */
+  private async queryByAmap(ip: string, key: string): Promise<IpLocation | null> {
+    const url = new URL('https://restapi.amap.com/v3/ip');
+    url.searchParams.set('key', key);
+    url.searchParams.set('ip', ip);
+    url.searchParams.set('output', 'JSON');
+
+    try {
+      const data = (await this.fetchJson(url.toString())) as AmapIpResponse;
+      if (data?.status !== '1') return null;
+      const province = this.cleanAmapField(data.province);
+      const city = this.cleanAmapField(data.city);
+      if (!province && !city) return null;
+      return {
+        country: '中国',
+        countryCode: 'CN',
+        region: province,
+        city,
+        isp: '',
+        location: this.joinPlace(province, city) || '未知',
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  /** 高德空字段可能是空串或 []，统一清洗 */
+  private cleanAmapField(value?: string): string {
+    const v = (value ?? '').trim();
+    return v && v !== '[]' ? v : '';
+  }
+
+  /** BigDataCloud IP 归属地（免费、无需 Key，海外可用）；失败返回 null */
+  private async queryByBigDataCloud(ip: string): Promise<IpLocation | null> {
+    const url = new URL('https://api.bigdatacloud.net/data/ip-geolocation');
+    url.searchParams.set('ip', ip);
+    url.searchParams.set('localityLanguage', 'zh');
+
+    try {
+      const data = (await this.fetchJson(url.toString())) as BigDataCloudIpResponse;
+      const countryCode = (data.countryCode ?? '').trim().toUpperCase();
+      const region = (data.principalSubdivision ?? '').trim();
+      const city = (data.city ?? data.locality ?? '').trim();
+      if (!countryCode && !region && !city) return null;
+
+      const regionCity = this.joinPlace(region, city);
+      // 国内与高德口径一致（不带「中国」前缀），海外保留国家名
+      const countryLabel = countryCode === 'CN' ? '' : data.countryName?.trim() || countryCode;
+      return {
+        country: data.countryName?.trim() || countryCode,
+        countryCode,
+        region,
+        city,
+        isp: '',
+        location: [countryLabel, regionCity].filter(Boolean).join(' ') || '未知',
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  /** 拼接地理串并去重相邻重复（直辖市的省=市时只保留一个） */
+  private joinPlace(province: string, city: string): string {
+    const parts: string[] = [];
+    for (const part of [province, city]) {
+      if (!part) continue;
+      const prev = parts[parts.length - 1];
+      if (prev && (prev.includes(part) || part.includes(prev))) {
+        if (part.length > prev.length) parts[parts.length - 1] = part;
+        continue;
+      }
+      parts.push(part);
+    }
+    return parts.join(' ');
+  }
+
+  /** 读取后台配置：Key 沿用「高德地图」集成（DB 加密优先，AMAP_WEB_KEY env 兜底） */
+  private async getAmapConfig(): Promise<AmapConfig> {
+    const now = Date.now();
+    if (this.amapConfigCache && this.amapConfigCache.exp > now) {
+      return this.amapConfigCache.value;
+    }
+
+    const active = await this.integrations.isActive('amap');
+    const rawKey = active ? await this.integrations.resolveSecret('amap', 'webKey') : null;
+    const key = rawKey?.trim() ?? '';
+    const rawMode = await this.integrations.resolveConfig('amap', 'ipLocationMode');
+    const config: AmapConfig = {
+      enabled: Boolean(key) && this.normalizeAmapMode(rawMode) === 'on',
+      key,
+    };
+    this.amapConfigCache = { value: config, exp: now + this.amapConfigTtlMs };
+    return config;
+  }
+
+  /** 未知/未配置时默认启用（on）；off 为显式关闭 */
+  private normalizeAmapMode(raw?: string | null): AmapIpLocationMode {
+    const value = raw?.trim().toLowerCase() ?? '';
+    return AMAP_IP_LOCATION_MODES.includes(value as AmapIpLocationMode)
+      ? (value as AmapIpLocationMode)
+      : 'on';
   }
 
   private async fetchJson(url: string): Promise<Record<string, unknown>> {
@@ -216,36 +274,6 @@ export class IpLocationService {
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return (await res.json()) as Record<string, unknown>;
-  }
-
-  /** 统一字段、拼接地理串（去重相邻重复，如直辖市的省=市） */
-  private normalize(raw: {
-    country?: string;
-    countryCode?: string;
-    region?: string;
-    city?: string;
-    isp?: string;
-  }): ProviderResult {
-    const clean = (v?: string) => (v ?? '').trim();
-    const parts: string[] = [];
-    for (const part of [clean(raw.country), clean(raw.region), clean(raw.city)]) {
-      if (!part) continue;
-      const prev = parts[parts.length - 1];
-      // 相邻层级一方包含另一方（如「北京市」与「北京」）时，只保留更详尽的
-      if (prev && (prev.includes(part) || part.includes(prev))) {
-        if (part.length > prev.length) parts[parts.length - 1] = part;
-        continue;
-      }
-      parts.push(part);
-    }
-    return {
-      country: clean(raw.country),
-      countryCode: clean(raw.countryCode),
-      region: clean(raw.region),
-      city: clean(raw.city),
-      isp: clean(raw.isp),
-      place: parts.join(' '),
-    };
   }
 
   /** 去掉 IPv4-mapped IPv6 前缀并规整 */

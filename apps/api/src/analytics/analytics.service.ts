@@ -29,7 +29,7 @@ import {
   visitorOrderClause,
 } from './utils/analytics-list';
 import { extractClientIp, hashIp, maskIp, parseReferrerHost } from './utils/client-ip';
-import { lookupGeo } from './utils/geo-ip';
+import { type GeoLookup, isPrivateIp } from './utils/geo-ip';
 import { formatGeoLabel, formatGeoSource } from './utils/geo-label';
 import { lookupGeoFromCoordinates } from './utils/geo-reverse';
 import {
@@ -460,16 +460,21 @@ export class AnalyticsService {
     const siteSettings = await this.settingsService.getSitePublicSettings();
     const geoMode = siteSettings.analytics?.geoMode ?? 'ip';
 
-    let geo = lookupGeo(ip);
+    let geo: GeoLookup;
     let geoSource: 'ip' | 'gps' = 'ip';
 
+    // 定位只走高德：IP 模式调用高德 IP 定位；GPS 模式有坐标时优先逆地理，失败保留 IP 结果
     if (geoMode === 'gps' && dto.latitude != null && dto.longitude != null) {
       const amapKey = await this.integrationsService.resolveSecret('amap', 'webKey');
       const gpsGeo = await lookupGeoFromCoordinates(dto.latitude, dto.longitude, amapKey);
       if (gpsGeo.country || gpsGeo.region || gpsGeo.city) {
         geo = gpsGeo;
         geoSource = 'gps';
+      } else {
+        geo = await this.resolveIpGeo(ip);
       }
+    } else {
+      geo = await this.resolveIpGeo(ip);
     }
 
     const referrerHost = parseReferrerHost(dto.referrer);
@@ -519,6 +524,19 @@ export class AnalyticsService {
     });
 
     return { ok: true };
+  }
+
+  /** IP 定位（仅高德，后台可配置 off/on）；内网地址标记为本地网络，不外呼 */
+  private async resolveIpGeo(ip?: string | null): Promise<GeoLookup> {
+    if (isPrivateIp(ip)) return { country: 'LOCAL', region: null, city: null };
+    const ipGeo = await this.ipLocation.resolve(ip);
+    return ipGeo
+      ? {
+          country: ipGeo.countryCode || ipGeo.country || null,
+          region: ipGeo.region || null,
+          city: ipGeo.city || null,
+        }
+      : { country: null, region: null, city: null };
   }
 
   async getOverview(from?: string, to?: string, granularity?: string) {
@@ -1015,7 +1033,7 @@ export class AnalyticsService {
   /**
    * 按 IP 聚合的「访客明细」统一列表（合并原地区/IP/来源三张表）。
    * - 每行 = 一个访客 IP；地区、定位依据、流量来源作为该 IP 的属性聚合
-   * - 地区在「读取时重新解析」：优先用 IpLocationService（纯真库+在线补充）对原始 IP
+   * - 地区在「读取时重新解析」：优先用 IpLocationService（高德 IP 定位）对原始 IP
    *   重解析，历史数据也能显示更精确地区；GPS 采集的行沿用入库时的 GPS 地区
    * - 缓存由 IpLocationService 负责，整页 IP 并行解析
    */
@@ -1145,7 +1163,7 @@ export class AnalyticsService {
 
   /**
    * 单行 IP 访客明细的地区/来源/ISP 解析：GPS 行沿用入库值（更权威），
-   * 其余按 IP 读取时重解析（纯真库+在线补充）。抽出以收敛 map 回调复杂度。
+   * 其余按 IP 读取时重解析（高德 IP 定位）。抽出以收敛 map 回调复杂度。
    */
   private async resolveVisitorDetailGeo(row: {
     geoSource: string | null;
@@ -1252,6 +1270,7 @@ export class AnalyticsService {
         clientApp: string | null;
         region: string | null;
         city: string | null;
+        geoSource: string | null;
         lastIp: string | null;
         lastIpMasked: string | null;
         lastIpHash: string | null;
@@ -1285,6 +1304,7 @@ export class AnalyticsService {
           pv."country",
           pv."region",
           pv."city",
+          pv."geoSource",
           pv."browser",
           pv."browserVersion",
           pv."os",
@@ -1339,6 +1359,7 @@ export class AnalyticsService {
         (ARRAY_AGG("clientApp" ORDER BY "createdAt" DESC) FILTER (WHERE "clientApp" IS NOT NULL))[1] AS "clientApp",
         (ARRAY_AGG("region" ORDER BY "createdAt" DESC) FILTER (WHERE "region" IS NOT NULL))[1] AS "region",
         (ARRAY_AGG("city" ORDER BY "createdAt" DESC) FILTER (WHERE "city" IS NOT NULL))[1] AS "city",
+        (ARRAY_AGG("geoSource" ORDER BY "createdAt" DESC) FILTER (WHERE "geoSource" IS NOT NULL))[1] AS "geoSource",
         -- 最后一次访问的 IP（环境维度：展示/复制/下钻 IP 抽屉，非身份标识）
         (ARRAY_AGG("ip" ORDER BY "createdAt" DESC) FILTER (WHERE "ip" IS NOT NULL))[1] AS "lastIp",
         (ARRAY_AGG("ipMasked" ORDER BY "createdAt" DESC) FILTER (WHERE "ipMasked" IS NOT NULL))[1] AS "lastIpMasked",
@@ -1386,6 +1407,8 @@ export class AnalyticsService {
         email: row.email,
       })),
     );
+    // 地区中文化：与「按 IP」视角同源（高德 IP 定位）；GPS 行保留入库值
+    const resolvedGeo = await this.ipLocation.resolveMany(rows.map((row) => row.lastIp));
 
     return {
       data: rows.map((row) => ({
@@ -1414,7 +1437,11 @@ export class AnalyticsService {
         deviceModel: row.deviceModel,
         deviceVendor: row.deviceVendor,
         clientApp: row.clientApp,
-        region: row.region,
+        region:
+          row.geoSource === 'gps'
+            ? formatGeoLabel({ country: row.country, region: row.region, city: row.city })
+            : (resolvedGeo.get(row.lastIp ?? '')?.location ??
+              formatGeoLabel({ country: row.country, region: row.region, city: row.city })),
         city: row.city,
         lastIp: row.lastIp,
         lastIpMasked: row.lastIpMasked,
@@ -1592,6 +1619,12 @@ export class AnalyticsService {
     const techInfo = buildVisitorTechInfo(views);
     const attribution = buildVisitorAttribution(views);
     const networks = buildVisitorNetworks(views);
+    // 历史网络地区中文化：按网络 IP 读取时重解析（高德 IP 定位）
+    const networkGeo = await this.ipLocation.resolveMany(networks.map((network) => network.ip));
+    for (const network of networks) {
+      const hit = network.ip ? networkGeo.get(network.ip) : null;
+      if (hit?.location) network.region = hit.location;
+    }
     const identity = await this.resolveVisitorIdentity(visitorId);
     const first = views[0];
     const last = views[views.length - 1];
