@@ -332,6 +332,13 @@ function isLegacyCss(ua: string): boolean {
 - 灰度：`LEGACY_CSS_ENABLED`（构建+运行期，Dockerfile runner 与 `docker-compose.prod.yml` 均可覆盖）与 `LEGACY_CSS_PERCENT`（构建期写入 detect.js，UA 稳定分桶，默认 100）。
 - 验证：`pnpm --filter @tzj/legacy-css build && verify && theme:check`、web typecheck、`LEGACY_CSS_ENABLED=1` 生产构建与 `next start` HTML 注入、`/legacy/*` 缓存头均通过。
 
+### 实施记录（2026-08-06，真机反馈后补充）
+
+- 生产开启 `LEGACY_CSS_ENABLED=1` 后，安卓百度 App 样式恢复，但反馈「很多图片加载不出来」。
+- 根因：**旧内核 JS 水合失败**（生产 JS 含 class static block，Chrome 94+ 才支持；Chromium 86/91 整包 SyntaxError），而 lazy 图 SSR 即带 `opacity-0`，靠水合 + `onLoad` 淡入；水合不执行 → 图片已下载但永远透明。
+- 缓解（M5 的 JS 兼容最小工作线）：`MediaImage` 改为 SSR 不隐藏图片，水合后再决定 `opacity-0` 占位/淡入；JS 完全失败时图片保持可见，现代浏览器体验不变。完整 JS 兼容（导航/搜索/聊天交互）仍按 M5 条件触发。
+- 另：legacy CSS 为 `dvh/svh`（Chrome 108+）补充 `vh` 回退声明，避免旧内核聊天窗高度声明整条失效。
+
 ---
 
 ## 8. 决策记录（2026-08-05 已确认）
