@@ -12,7 +12,7 @@ import type {
   WatermarkOverride,
   WatermarkPosition,
 } from '@tzj/types';
-import sharp from 'sharp';
+import sharp, { type OverlayOptions } from 'sharp';
 import { SettingsService } from '../settings/settings.service';
 import { S3Service } from '../storage/s3.service';
 
@@ -331,7 +331,7 @@ export class WatermarkService {
     const pad = Math.ceil(Math.max(width, height) * 0.6);
     const ow = width + pad * 2;
     const oh = height + pad * 2;
-    const composites: sharp.OverlayOptions[] = [];
+    const composites: OverlayOptions[] = [];
 
     for (let y = 0; y < oh; y += stepY) {
       for (let x = 0; x < ow; x += stepX) {

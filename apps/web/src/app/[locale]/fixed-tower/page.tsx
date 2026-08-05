@@ -1,11 +1,12 @@
 import type { LucideIcon } from 'lucide-react';
 import { Check, ClipboardList, Factory, PencilRuler, ShieldCheck } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
+import { BaiduSafeVideoHero as VideoHero } from '@/components/BaiduSafeVideoHero';
 import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { JsonLd } from '@/components/JsonLd';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { RelatedLinks } from '@/components/sections/blocks';
-import { Container, RbLink, SectionHeading, VideoHero } from '@/components/ui';
+import { Container, RbLink, SectionHeading } from '@/components/ui';
 import { Link } from '@/i18n/navigation';
 import { getCaseBySlug } from '@/lib/cases';
 import { createPageMetadata } from '@/lib/i18n/metadata';

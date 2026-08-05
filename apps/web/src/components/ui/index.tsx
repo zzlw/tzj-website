@@ -125,6 +125,7 @@ export function VideoHero({
   description,
   video,
   poster,
+  posterOnly = false,
   className,
   children,
 }: {
@@ -133,6 +134,8 @@ export function VideoHero({
   description?: ReactNode;
   video: string;
   poster?: string;
+  /** 仅渲染封面图、不输出 <video>（百度 App 嗅探降级等场景）。 */
+  posterOnly?: boolean;
   className?: string;
   children?: ReactNode;
 }) {
@@ -159,16 +162,18 @@ export function VideoHero({
       ) : null}
       {/* poster 留给底层 eager <img> 承担，避免 <video poster> 的原始 URL
           与 allImgs 中 eager 图片的 ?w= 键不匹配导致 LCP 误报 */}
-      <MediaVideo
-        className="absolute inset-0 z-[1] h-full w-full object-cover object-center"
-        src={video}
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload="none"
-        aria-hidden="true"
-      />
+      {!posterOnly ? (
+        <MediaVideo
+          className="absolute inset-0 z-[1] h-full w-full object-cover object-center"
+          src={video}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="none"
+          aria-hidden="true"
+        />
+      ) : null}
       <div className="absolute inset-0 rb-media-shade-strong" />
       <Container className="rb-on-media relative z-10 flex flex-col items-center py-16 text-center lg:py-24">
         {eyebrow ? <Eyebrow inverted>{eyebrow}</Eyebrow> : null}

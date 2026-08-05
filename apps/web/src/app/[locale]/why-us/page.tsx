@@ -1,8 +1,9 @@
 import { Award, Check, Lightbulb, ShieldCheck } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+import { BaiduSafeVideoHero as VideoHero } from '@/components/BaiduSafeVideoHero';
 import { BookConsultButton } from '@/components/chat/BookConsultButton';
-import { Container, Eyebrow, SectionHeading, VideoHero } from '@/components/ui';
+import { Container, Eyebrow, SectionHeading } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 
 const HERO_IMAGE = '/media/galvanized-stair.webp';

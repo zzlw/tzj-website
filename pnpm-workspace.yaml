@@ -6,7 +6,7 @@ packages:
 catalog:
   # 共享运行时依赖（web 与 admin 均已使用）
   lucide-react: ^1.22.0
-  next: ^16.2.9
+  next: ^16.3.0
   react: ^19.2.7
   react-dom: ^19.2.7
   socket.io-client: ^4.8.1
@@ -17,10 +17,12 @@ catalog:
   "@types/node": ^26.0.1
   "@types/react": ^19.2.17
   "@types/react-dom": ^19.2.3
+  "@types/ua-parser-js": ^0.7.39
   postcss: ^8.5.16
   tailwindcss: ^4.3.1
   typescript: ^6.0.3
   # 单应用使用、但属于跨应用共享基础库，集中版本以便未来复用
+  "@amplitude/ua-parser-js": ^0.7.33
   zod: ^4.4.3
   recharts: ^3.9.1
   radix-ui: ^1.6.0
@@ -34,6 +36,17 @@ catalog:
   # 官网专属体验层，但 B 端未来也可能复用
   next-intl: ^4.13.1
   next-view-transitions: ^0.3.5
+# pnpm 11 的全局依赖覆盖（原 package.json 的 pnpm.overrides 已废弃）
+overrides:
+  brace-expansion: ^1.1.18
+  fast-uri: ^3.1.5
+  hono: ^4.12.34
+  ip-address: ^10.4.0
+  socket.io-parser: ^4.2.7
+  js-yaml: ^5.2.2
+  postcss: ^8.5.25
+  tar: ^7.5.21
+  undici: ^7.29.0
 allowBuilds:
   '@alicloud/openapi-core': true
   '@parcel/watcher': true
@@ -50,3 +63,5 @@ minimumReleaseAgeExclude:
   - lucide-react@1.22.0
   - postcss@8.5.16
   - png-to-ico@3.0.2
+patchedDependencies:
+  geoip-lite@1.4.10: patches/geoip-lite@1.4.10.patch

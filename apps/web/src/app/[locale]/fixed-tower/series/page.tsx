@@ -1,10 +1,11 @@
 import { Check, CloudRain, Link2, Recycle, Shield, X } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
+import { BaiduSafeVideoHero as VideoHero } from '@/components/BaiduSafeVideoHero';
 import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { FeatureGrid, RelatedLinks } from '@/components/sections/blocks';
 import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
-import { Container, RbLink, SectionHeading, VideoHero } from '@/components/ui';
+import { Container, RbLink, SectionHeading } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 
 export async function generateMetadata() {

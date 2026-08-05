@@ -1,7 +1,8 @@
 import { getTranslations } from 'next-intl/server';
+import { BaiduSafeVideoHero as VideoHero } from '@/components/BaiduSafeVideoHero';
 import { CtaBand, RelatedLinks } from '@/components/sections/blocks';
 import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
-import { Container, SectionHeading, VideoHero } from '@/components/ui';
+import { Container, SectionHeading } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 
 export async function generateMetadata() {

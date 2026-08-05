@@ -1,16 +1,20 @@
 import { ChevronDown } from 'lucide-react';
+import { headers } from 'next/headers';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { MediaImage } from '@/components/MediaImage';
 import { MediaVideo } from '@/components/MediaVideo';
 import { Container, Eyebrow, RbButton } from '@/components/ui';
 import { PRODUCT_LINE_COUNT } from '@/lib/product-catalog';
+import { isBaiduAppUserAgent } from '@tzj/device';
 
 const HERO_VIDEO = '/media/hero.mp4';
 const HERO_POSTER = '/media/fixed-tower-hero.jpg';
 
 export async function HeroSection() {
   const t = await getTranslations('home.hero');
+  const headerStore = await headers();
+  const isBaiduApp = isBaiduAppUserAgent(headerStore.get('user-agent') ?? '');
 
   return (
     <section className="relative flex min-h-screen flex-col justify-end overflow-hidden bg-neutral-900">
@@ -29,16 +33,18 @@ export async function HeroSection() {
       />
       {/* poster 留给底层 eager <img> 承担，避免 <video poster> 的原始 URL
           与 allImgs 中 eager 图片的 ?w= 键不匹配导致 LCP 误报 */}
-      <MediaVideo
-        className="absolute inset-0 z-[1] h-full w-full object-cover object-center"
-        src={HERO_VIDEO}
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload="none"
-        aria-hidden="true"
-      />
+      {!isBaiduApp ? (
+        <MediaVideo
+          className="absolute inset-0 z-[1] h-full w-full object-cover object-center"
+          src={HERO_VIDEO}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="none"
+          aria-hidden="true"
+        />
+      ) : null}
 
       <div
         className="pointer-events-none absolute inset-0 z-[5] flex items-center justify-center overflow-hidden"

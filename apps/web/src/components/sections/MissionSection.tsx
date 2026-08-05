@@ -1,14 +1,19 @@
+import { headers } from 'next/headers';
 import { getTranslations } from 'next-intl/server';
 import { LazyMediaVideo } from '@/components/LazyMediaVideo';
+import { MediaImage } from '@/components/MediaImage';
 import { AnimatedStat } from '@/components/sections/AnimatedStat';
 import { Container, Eyebrow, RbLink } from '@/components/ui';
 import { PRODUCT_LINE_COUNT } from '@/lib/product-catalog';
+import { isBaiduAppUserAgent } from '@tzj/device';
 
 const MISSION_VIDEO = '/media/mission.mp4';
 const MISSION_POSTER = '/media/modular-construction.jpg';
 
 export async function MissionSection() {
   const t = await getTranslations('home.mission');
+  const headerStore = await headers();
+  const isBaiduApp = isBaiduAppUserAgent(headerStore.get('user-agent') ?? '');
 
   const stats = [
     { value: '2018', label: t('statFounded'), duration: 0 },
@@ -22,18 +27,30 @@ export async function MissionSection() {
       id="mission"
       className="relative flex min-h-[620px] items-center justify-center overflow-hidden bg-neutral-900 py-20 lg:min-h-[720px] lg:py-28"
     >
-      <LazyMediaVideo
-        className="absolute inset-0 h-full w-full object-cover object-center"
-        src={MISSION_VIDEO}
-        poster={MISSION_POSTER}
-        autoPlay
-        muted
-        loop
-        playsInline
-        lazy
-        preload="metadata"
-        aria-hidden="true"
-      />
+      {isBaiduApp ? (
+        <MediaImage
+          src={MISSION_POSTER}
+          alt=""
+          fill
+          quality={90}
+          sizes="100vw"
+          className="absolute inset-0 h-full w-full object-cover object-center"
+          aria-hidden
+        />
+      ) : (
+        <LazyMediaVideo
+          className="absolute inset-0 h-full w-full object-cover object-center"
+          src={MISSION_VIDEO}
+          poster={MISSION_POSTER}
+          autoPlay
+          muted
+          loop
+          playsInline
+          lazy
+          preload="metadata"
+          aria-hidden="true"
+        />
+      )}
       <div className="absolute inset-0 rb-media-shade-strong" aria-hidden="true" />
 
       <Container className="rb-on-media relative z-10 flex flex-col items-center text-center">

@@ -48,8 +48,8 @@ import { useAgentPresence } from '@/features/chat/useAgentPresence';
 import { useChatMessages } from '@/features/chat/useChatMessages';
 import { useChatSession } from '@/features/chat/useChatSession';
 import { useVisitorChat } from '@/features/chat/useVisitorChat';
-import { isDialableMobile } from '@/lib/device';
 import { resolveMediaUrl } from '@/lib/media-url';
+import { isDialableMobile } from '@tzj/device';
 import { AgentAvatar } from './AgentAvatar';
 import {
   formatBytes,

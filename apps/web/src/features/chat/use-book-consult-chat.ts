@@ -4,7 +4,7 @@ import { useCallback } from 'react';
 import { useAgentPhone } from '@/features/chat/AgentPhoneContext';
 import { fetchAgentAvailability } from '@/features/chat/api';
 import { openChat } from '@/features/chat/open-chat';
-import { isDialableMobile } from '@/lib/device';
+import { isDialableMobile } from '@tzj/device';
 
 interface BookConsultOptions {
   /** 场景化开场消息（覆盖默认） */
