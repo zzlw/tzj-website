@@ -199,7 +199,6 @@ sync_cdn_static() {
   docker cp "${extractor}:/app/apps/${app}/public/vditor-assets" "${CDN_SYNC_DIR}/${app}/vditor-assets"
   if [[ "$app" == "web" ]]; then
     docker cp "${extractor}:/app/apps/web/public/browser-support.js" "${CDN_SYNC_DIR}/web/browser-support.js"
-    docker cp "${extractor}:/app/apps/web/public/apple-touch-icon.png" "${CDN_SYNC_DIR}/web/apple-touch-icon.png"
   fi
   if [[ "$app" == "admin" ]]; then
     docker cp "${extractor}:/app/apps/admin/public/sounds" "${CDN_SYNC_DIR}/admin/sounds"
@@ -219,8 +218,6 @@ sync_cdn_static() {
   if [[ "$app" == "web" ]]; then
     echo "==> Upload web public 静态资源（statics/）"
     ossutil cp "${CDN_SYNC_DIR}/web/browser-support.js" "oss://${bucket}/statics/browser-support.js" \
-      "${oss_args[@]}" --cache-control "public, max-age=86400" -f
-    ossutil cp "${CDN_SYNC_DIR}/web/apple-touch-icon.png" "oss://${bucket}/statics/apple-touch-icon.png" \
       "${oss_args[@]}" --cache-control "public, max-age=86400" -f
   fi
   if [[ "$app" == "admin" ]]; then
