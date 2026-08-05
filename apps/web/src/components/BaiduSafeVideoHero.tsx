@@ -1,7 +1,7 @@
+import { isBaiduAppUserAgent } from '@tzj/device';
 import { headers } from 'next/headers';
 import type { ComponentProps } from 'react';
 import { VideoHero } from '@/components/ui';
-import { isBaiduAppUserAgent } from '@tzj/device';
 
 type BaiduSafeVideoHeroProps = Omit<ComponentProps<typeof VideoHero>, 'posterOnly'>;
 

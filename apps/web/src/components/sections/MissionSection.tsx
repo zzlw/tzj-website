@@ -1,3 +1,4 @@
+import { isBaiduAppUserAgent } from '@tzj/device';
 import { headers } from 'next/headers';
 import { getTranslations } from 'next-intl/server';
 import { LazyMediaVideo } from '@/components/LazyMediaVideo';
@@ -5,7 +6,6 @@ import { MediaImage } from '@/components/MediaImage';
 import { AnimatedStat } from '@/components/sections/AnimatedStat';
 import { Container, Eyebrow, RbLink } from '@/components/ui';
 import { PRODUCT_LINE_COUNT } from '@/lib/product-catalog';
-import { isBaiduAppUserAgent } from '@tzj/device';
 
 const MISSION_VIDEO = '/media/mission.mp4';
 const MISSION_POSTER = '/media/modular-construction.jpg';

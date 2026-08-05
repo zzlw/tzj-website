@@ -1,5 +1,6 @@
 'use client';
 
+import { isDialableMobile } from '@tzj/device';
 import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
@@ -7,7 +8,6 @@ import { fetchAgentAvailability } from '@/features/chat/api';
 import { openChat } from '@/features/chat/open-chat';
 import { usePathname, useRouter } from '@/i18n/navigation';
 import { env } from '@/lib/env';
-import { isDialableMobile } from '@tzj/device';
 import { sendPopupEvent } from './events';
 import { alreadyShown, markShown } from './frequency';
 import type { MarketingActivity } from './types';

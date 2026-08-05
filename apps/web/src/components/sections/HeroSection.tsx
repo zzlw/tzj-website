@@ -1,3 +1,4 @@
+import { isBaiduAppUserAgent } from '@tzj/device';
 import { ChevronDown } from 'lucide-react';
 import { headers } from 'next/headers';
 import Link from 'next/link';
@@ -6,7 +7,6 @@ import { MediaImage } from '@/components/MediaImage';
 import { MediaVideo } from '@/components/MediaVideo';
 import { Container, Eyebrow, RbButton } from '@/components/ui';
 import { PRODUCT_LINE_COUNT } from '@/lib/product-catalog';
-import { isBaiduAppUserAgent } from '@tzj/device';
 
 const HERO_VIDEO = '/media/hero.mp4';
 const HERO_POSTER = '/media/fixed-tower-hero.jpg';

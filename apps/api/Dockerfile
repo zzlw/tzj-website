@@ -20,6 +20,8 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY apps/api/package.json apps/api/
 COPY packages/types/package.json packages/types/
+COPY packages/device/package.json packages/device/
+COPY patches/ patches/
 
 RUN corepack enable && corepack prepare pnpm@11.9.0 --activate
 RUN sed -i 's|https://dl-cdn.alpinelinux.org|https://mirrors.aliyun.com|g' /etc/apk/repositories \

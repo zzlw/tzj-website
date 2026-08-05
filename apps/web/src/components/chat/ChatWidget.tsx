@@ -1,5 +1,6 @@
 'use client';
 
+import { isDialableMobile } from '@tzj/device';
 import type { AgentProfile, BusinessHours, ChatPrompts, LocalizedText } from '@tzj/types';
 import {
   Button,
@@ -49,7 +50,6 @@ import { useChatMessages } from '@/features/chat/useChatMessages';
 import { useChatSession } from '@/features/chat/useChatSession';
 import { useVisitorChat } from '@/features/chat/useVisitorChat';
 import { resolveMediaUrl } from '@/lib/media-url';
-import { isDialableMobile } from '@tzj/device';
 import { AgentAvatar } from './AgentAvatar';
 import {
   formatBytes,

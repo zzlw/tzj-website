@@ -96,9 +96,7 @@ export function parseUserAgent(ua?: string | null): ParsedUserAgent {
   if (/harmonyos|openharmony/i.test(ua)) {
     osName = 'HarmonyOS';
     osVersion =
-      ua.match(/openharmony\s+([\d.]+)/i)?.[1] ??
-      ua.match(/harmonyos\s+([\d.]+)/i)?.[1] ??
-      null;
+      ua.match(/openharmony\s+([\d.]+)/i)?.[1] ?? ua.match(/harmonyos\s+([\d.]+)/i)?.[1] ?? null;
   }
 
   return {

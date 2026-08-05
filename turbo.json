@@ -1,6 +1,16 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "globalDependencies": ["**/.env.*local", "**/.env"],
+  "globalPassThroughEnv": [
+    "API_PORT",
+    "WEB_PORT",
+    "ADMIN_PORT",
+    "PERF_BASE_URL",
+    "PERF_USERNAME",
+    "PERF_PASSWORD",
+    "PERF_ROUNDS",
+    "PERF_ENFORCE"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
