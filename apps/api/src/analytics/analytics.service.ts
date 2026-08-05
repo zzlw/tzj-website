@@ -461,14 +461,18 @@ export class AnalyticsService {
     const siteSettings = await this.settingsService.getSitePublicSettings();
     const geoMode = siteSettings.analytics?.geoMode ?? 'ip';
     const ipGeoSource = siteSettings.analytics?.ipGeoSource ?? 'offline';
+    // 高德集成开关 = 全站高德总闸：关闭（或 Key 缺失）时 IP 与 GPS 均不调用高德
+    const amapActive = await this.integrationsService.isActive('amap');
+    const amapKey = amapActive
+      ? await this.integrationsService.resolveSecret('amap', 'webKey')
+      : null;
 
     let geo: GeoLookup;
     let geoSource: 'ip' | 'gps' = 'ip';
 
     // GPS 模式：仅高德逆地理（Key 可配），失败保留 IP 定位结果；
     // IP 模式：按站点设置选择离线库 / BigDataCloud / 高德
-    if (geoMode === 'gps' && dto.latitude != null && dto.longitude != null) {
-      const amapKey = await this.integrationsService.resolveSecret('amap', 'webKey');
+    if (geoMode === 'gps' && dto.latitude != null && dto.longitude != null && amapKey) {
       const gpsGeo = await lookupGeoFromCoordinates(dto.latitude, dto.longitude, amapKey);
       if (gpsGeo.country || gpsGeo.region || gpsGeo.city) {
         geo = gpsGeo;

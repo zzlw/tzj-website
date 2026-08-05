@@ -61,7 +61,7 @@ export const INTEGRATION_REGISTRY: IntegrationDef[] = [
     slug: 'amap',
     label: '高德地图',
     description:
-      '访客地区定位增强：IP 模式数据源在「站点设置 → 访客分析」中选择（离线库 / BigDataCloud / 高德）；GPS 模式将浏览器坐标解析为省/市/国家（仅高德）。',
+      '访客地区定位增强（全站高德总闸）：关闭后 IP 与 GPS 均不调用高德。IP 模式数据源在「站点设置 → 访客分析」中选择（离线库 / BigDataCloud / 高德）；GPS 模式将浏览器坐标解析为省/市/国家（仅高德）。',
     docUrl: 'https://lbs.amap.com/api/webservice/guide/create-project/get-key',
     setupGuide: [
       {
@@ -82,7 +82,7 @@ export const INTEGRATION_REGISTRY: IntegrationDef[] = [
       {
         title: '4. 启用并测试',
         content:
-          '打开右上角「启用」开关，保存后点击「测试连接」。测试会分别发起一次逆地理（郑州坐标）与一次 IP 定位（示例 IP）请求，均成功即表示 Key 有效。',
+          '打开右上角「启用」开关，保存后点击「测试连接」。测试会分别发起一次逆地理（郑州坐标）与一次 IP 定位（示例 IP）请求，均成功即表示 Key 有效。**该开关是全站高德总闸**：关闭时，站点设置中「IP 定位数据源=高德」与「GPS 定位」均不会调用高德。',
       },
       {
         title: '5. 数据源选择（站点设置）',
@@ -92,7 +92,7 @@ export const INTEGRATION_REGISTRY: IntegrationDef[] = [
       {
         title: '未配置时的行为',
         content:
-          '项目已移除 geoip-lite、纯真库与 ip-api 等旧方案。IP 模式数据源由站点设置手动选择；选择「高德」但未配置/未启用下方 Key 时，该数据源不生效（地区为未知）。GPS 模式仅高德逆地理，未配置或请求失败时保留 IP 定位结果。',
+          '项目已移除 geoip-lite、纯真库与 ip-api 等旧方案。IP 模式数据源由站点设置手动选择；选择「高德」但未配置/未启用下方 Key 时，该数据源不生效（地区为未知）。GPS 模式仅高德逆地理，开关关闭、未配置 Key 或请求失败时，自动保留 IP 定位结果。',
       },
     ],
     secretFields: [

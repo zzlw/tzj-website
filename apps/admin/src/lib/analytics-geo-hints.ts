@@ -3,7 +3,7 @@ import type { AnalyticsIpGeoSource } from '@tzj/types';
 /** 访客分析 GPS 逆地理策略说明（站点设置、访客分析页共用） */
 
 export const GPS_GEO_MODE_HINT =
-  '浏览器 Geolocation 获取坐标后，服务端调用高德逆地理（仅高德，Key 在「集成与凭证 → 高德地图」配置）。高德未配置或请求失败时，回退 IP 定位结果。';
+  '浏览器 Geolocation 获取坐标后，服务端调用高德逆地理（仅高德，Key 与启用开关在「集成与凭证 → 高德地图」配置）。开关关闭、未配置 Key 或请求失败时，回退 IP 定位结果。';
 
 export const GPS_GEO_RESOLVE_NOTE =
   'GPS 模式：仅高德逆地理（Key 可配），失败保留 IP 定位结果；IP 模式：数据源可在站点设置手动选择（离线优先默认 / BigDataCloud / 高德）。地区数据自本次升级后新产生的访问起记录。';
