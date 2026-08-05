@@ -338,6 +338,7 @@ function isLegacyCss(ua: string): boolean {
 - 根因：**旧内核 JS 水合失败**（生产 JS 含 class static block，Chrome 94+ 才支持；Chromium 86/91 整包 SyntaxError），而 lazy 图 SSR 即带 `opacity-0`，靠水合 + `onLoad` 淡入；水合不执行 → 图片已下载但永远透明。
 - 缓解（M5 的 JS 兼容最小工作线）：`MediaImage` 改为 SSR 不隐藏图片，水合后再决定 `opacity-0` 占位/淡入；JS 完全失败时图片保持可见，现代浏览器体验不变。完整 JS 兼容（导航/搜索/聊天交互）仍按 M5 条件触发。
 - 另：legacy CSS 为 `dvh/svh`（Chrome 108+）补充 `vh` 回退声明，避免旧内核聊天窗高度声明整条失效。
+- 再补：`apps/web` 设置 `browserslist: ["chrome 86", "safari 14"]`，Next 16 Turbopack 会把产物（含 Next 自身运行时）语法降级到 ES2021 兼容，覆盖真正 Chromium 86/91 内核的 JS 解析（本地已验证 `static{}` 消除、es-check es2021 全过）。注意 browserslist 的 `android` 查询只指老安卓浏览器，安卓 Chrome/WebView 要用 `chrome`/`and_chr`，写错会被 Next 静默忽略并回退现代目标。
 
 ---
 
