@@ -1,4 +1,5 @@
 import type { AppLocale } from '@/i18n/routing';
+import { isDev } from '@/lib/env';
 import { resolveMessageLoadPlan } from './message-modules';
 import { kebabToCamelCase } from './page-ids';
 
@@ -84,7 +85,7 @@ async function loadModule(
     }
     return mod.default as Record<string, unknown>;
   } catch (err) {
-    if (process.env.NODE_ENV === 'development') {
+    if (isDev) {
       console.error(`[i18n] Failed to load module ${locale}/${name}:`, err);
     }
     return null;
@@ -99,7 +100,7 @@ async function loadPageFile(
     const mod = await import(`@/messages/${locale}/pages/${id}.json`);
     return mod.default as Record<string, unknown>;
   } catch (err) {
-    if (process.env.NODE_ENV === 'development') {
+    if (isDev) {
       console.error(`[i18n] Failed to load page ${locale}/${id}:`, err);
     }
     return null;

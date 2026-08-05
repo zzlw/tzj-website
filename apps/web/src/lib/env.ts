@@ -12,7 +12,10 @@ import { z } from 'zod';
  *    仅作为独立部署时的可选覆盖，未配置时从 NEXT_PUBLIC_API_URL 派生。
  */
 
-const isProd = process.env.NODE_ENV === 'production';
+/** 构建模式：生产构建（next build/start）为 true；development/test 为非生产。 */
+export const isProduction = process.env.NODE_ENV === 'production';
+/** 非生产构建（development/test），用于日志、调试与本地资源兜底。 */
+export const isDev = !isProduction;
 
 const DEV_DEFAULTS = {
   NEXT_PUBLIC_API_URL: 'http://localhost:4000/api/v1',
@@ -24,7 +27,7 @@ const urlSchema = z.url();
 /** 校验必填 URL：生产缺失/非法即抛错（构建期暴露），开发回退本地默认值；统一去尾斜杠。 */
 function requiredUrl(name: keyof typeof DEV_DEFAULTS, value: string | undefined): string {
   if (!value) {
-    if (isProd) {
+    if (isProduction) {
       throw new Error(`[env] 缺少必需的环境变量 ${name}（生产构建禁止回退 localhost 默认值）`);
     }
     return DEV_DEFAULTS[name];

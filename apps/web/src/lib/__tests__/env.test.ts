@@ -23,6 +23,12 @@ afterEach(() => {
 });
 
 describe('开发/测试环境（非 production）', () => {
+  it('导出 isProduction=false / isDev=true', async () => {
+    const mod = await import('@/lib/env');
+    expect(mod.isProduction).toBe(false);
+    expect(mod.isDev).toBe(true);
+  });
+
   it('缺失必填变量时回退本地默认值', async () => {
     const env = await importEnv();
     expect(env.apiUrl).toBe('http://localhost:4000/api/v1');
@@ -67,8 +73,11 @@ describe('生产环境 fail-fast', () => {
     vi.stubEnv('NEXT_PUBLIC_API_URL', 'https://api.tzjii.com/api/v1');
     vi.stubEnv('NEXT_PUBLIC_S3_PUBLIC_DOMAIN', 'https://oss.tzjii.com/tzj-uploads');
     const env = await importEnv();
+    const mod = await import('@/lib/env');
     expect(env.apiUrl).toBe('https://api.tzjii.com/api/v1');
     expect(env.s3PublicDomain).toBe('https://oss.tzjii.com/tzj-uploads');
     expect(env.chatSocketUrl).toBe('https://api.tzjii.com');
+    expect(mod.isProduction).toBe(true);
+    expect(mod.isDev).toBe(false);
   });
 });

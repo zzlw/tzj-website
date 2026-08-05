@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { isDev } from '@/lib/env';
 
 /** 搜索交互事件采集（预留后端聚合；当前仅校验并返回 204）。 */
 export async function POST(request: Request) {
@@ -13,7 +14,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'invalid payload' }, { status: 400 });
     }
 
-    if (process.env.NODE_ENV === 'development') {
+    if (isDev) {
       console.info('[search-analytics]', body);
     }
 

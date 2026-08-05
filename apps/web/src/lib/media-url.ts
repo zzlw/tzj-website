@@ -1,8 +1,18 @@
-import { env } from './env';
+import { env, isProduction } from './env';
 
 /** 对象存储公开访问域名（与 API S3_PUBLIC_DOMAIN 一致）。 */
 export function getS3PublicDomain(): string {
   return env.s3PublicDomain;
+}
+
+/**
+ * statics/ 资源公开 URL（规则收口点，业务组件禁止自行判断 NODE_ENV）：
+ * - 生产：S3_PUBLIC_DOMAIN/statics/{path}（OSS/CDN 托管）
+ * - 开发/测试：应用自身 public/{path}（postinstall 已同步 vditor-assets 等）
+ */
+export function getStaticsUrl(path: string): string {
+  const relative = path.replace(/^\/+/, '');
+  return isProduction ? `${getS3PublicDomain()}/statics/${relative}` : `/${relative}`;
 }
 
 /** MinIO 中站点静态资源的 key 前缀（与 sync-content-media 上传路径一致）。 */

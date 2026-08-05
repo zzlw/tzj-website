@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { isProduction } from '@/lib/env';
 
 /**
  * 控制台品牌欢迎语 —— 仅在生产环境客户端执行
@@ -9,7 +10,7 @@ import { useEffect } from 'react';
 export function ConsoleBranding() {
   useEffect(() => {
     // 仅在生产环境执行，避免 React DevTools 冲突
-    if (process.env.NODE_ENV !== 'production') return;
+    if (!isProduction) return;
     if (typeof window === 'undefined') return;
 
     const timer = window.setTimeout(() => {

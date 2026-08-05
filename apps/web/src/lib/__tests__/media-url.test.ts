@@ -1,13 +1,41 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   defaultSocialQrPath,
   extractMediaObjectKey,
+  getStaticsUrl,
   normalizeStorageUrl,
   resolveMediaUrl,
 } from '@/lib/media-url';
 
 /** vitest 下 NODE_ENV=test，env.ts 走开发默认值（本地 MinIO 域名） */
 const DOMAIN = 'http://localhost:9000/tzj-uploads-dev';
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
+describe('getStaticsUrl（规则收口）', () => {
+  it('开发/测试环境走应用自身 public/ 根路径', () => {
+    expect(getStaticsUrl('vditor-assets/dist/js/lute/lute.min.js')).toBe(
+      '/vditor-assets/dist/js/lute/lute.min.js',
+    );
+    expect(getStaticsUrl('browser-support.js')).toBe('/browser-support.js');
+  });
+
+  it('生产环境走 OSS statics/ 前缀', async () => {
+    vi.resetModules();
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('NEXT_PUBLIC_API_URL', 'https://api.tzjii.com/api/v1');
+    vi.stubEnv('NEXT_PUBLIC_S3_PUBLIC_DOMAIN', 'https://oss.tzjii.com/tzj-uploads-prod');
+    const { getStaticsUrl: prodGetStaticsUrl } = await import('@/lib/media-url');
+    expect(prodGetStaticsUrl('vditor-assets/dist/js/lute/lute.min.js')).toBe(
+      'https://oss.tzjii.com/tzj-uploads-prod/statics/vditor-assets/dist/js/lute/lute.min.js',
+    );
+    expect(prodGetStaticsUrl('browser-support.js')).toBe(
+      'https://oss.tzjii.com/tzj-uploads-prod/statics/browser-support.js',
+    );
+  });
+});
 
 describe('extractMediaObjectKey', () => {
   it('空值 / 纯文件名返回 undefined', () => {

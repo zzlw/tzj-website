@@ -23,7 +23,7 @@ import { type AppLocale, routing } from '@/i18n/routing';
 import { organizationJsonLd } from '@/lib/jsonld';
 import { LOCALE_HTML_LANG } from '@/lib/locale-config';
 import { getMediaOrigin } from '@/lib/media-origin';
-import { getS3PublicDomain } from '@/lib/media-url';
+import { getS3PublicDomain, getStaticsUrl } from '@/lib/media-url';
 import { metadataBase } from '@/lib/seo';
 import { getFaviconUrl, getSitePublicSettings, localizedAddress } from '@/lib/site-settings';
 import { cn } from '@/lib/utils';
@@ -94,6 +94,10 @@ export default async function LocaleLayout({ children, params }: Props) {
   // statics/ 对象位于 bucket 内，文件 URL 必须用带 bucket 的公开域前缀
   // （preconnect/dns-prefetch 仍用 origin，避免多余 path 干扰连接复用）
   const mediaBase = getS3PublicDomain();
+  // statics 资源（vditor / browser-support）统一走 getStaticsUrl 的规则收口：
+  // 生产 OSS，开发/测试走应用自身 public/
+  const vditorLuteUrl = getStaticsUrl('vditor-assets/dist/js/lute/lute.min.js');
+  const browserSupportUrl = getStaticsUrl('browser-support.js');
   const siteSettings = await getSitePublicSettings();
   const streetAddress = localizedAddress(siteSettings, locale, tContact('address'));
   const faviconUrl = await getFaviconUrl();
@@ -113,13 +117,9 @@ export default async function LocaleLayout({ children, params }: Props) {
         {/* 空闲时预取 Vditor 的 lute 解析引擎，缩短聊天 Markdown 预览初始化等待；
             用 prefetch 而非 preload：该脚本仅在访客打开聊天时才执行，preload 会触发
             「预加载未及时使用」控制台警告并抢占首屏带宽 */}
-        <link
-          rel="prefetch"
-          as="script"
-          href={`${mediaBase}/statics/vditor-assets/dist/js/lute/lute.min.js`}
-        />
+        <link rel="prefetch" as="script" href={vditorLuteUrl} />
         {/* 旧版浏览器检测与升级引导：ES5 自包含脚本，主包解析失败时仍能提示；defer 不阻塞渲染 */}
-        <script src={`${mediaBase}/statics/browser-support.js`} defer />
+        <script src={browserSupportUrl} defer />
       </head>
       <body className="bg-background text-text antialiased">
         <NextIntlClientProvider messages={messages}>
