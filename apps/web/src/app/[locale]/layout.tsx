@@ -23,6 +23,7 @@ import { type AppLocale, routing } from '@/i18n/routing';
 import { organizationJsonLd } from '@/lib/jsonld';
 import { LOCALE_HTML_LANG } from '@/lib/locale-config';
 import { getMediaOrigin } from '@/lib/media-origin';
+import { getS3PublicDomain } from '@/lib/media-url';
 import { metadataBase } from '@/lib/seo';
 import { getFaviconUrl, getSitePublicSettings, localizedAddress } from '@/lib/site-settings';
 import { cn } from '@/lib/utils';
@@ -90,6 +91,9 @@ export default async function LocaleLayout({ children, params }: Props) {
   const tCommon = await getTranslations('common');
   const tContact = await getTranslations('contact');
   const mediaOrigin = getMediaOrigin();
+  // statics/ 对象位于 bucket 内，文件 URL 必须用带 bucket 的公开域前缀
+  // （preconnect/dns-prefetch 仍用 origin，避免多余 path 干扰连接复用）
+  const mediaBase = getS3PublicDomain();
   const siteSettings = await getSitePublicSettings();
   const streetAddress = localizedAddress(siteSettings, locale, tContact('address'));
   const faviconUrl = await getFaviconUrl();
@@ -102,7 +106,7 @@ export default async function LocaleLayout({ children, params }: Props) {
     >
       <head>
         {faviconUrl && <link rel="icon" href={faviconUrl} />}
-        <link rel="apple-touch-icon" href={`${mediaOrigin}/statics/apple-touch-icon.png`} />
+        <link rel="apple-touch-icon" href={`${mediaBase}/statics/apple-touch-icon.png`} />
         <link rel="preconnect" href={mediaOrigin} crossOrigin="anonymous" />
         <link rel="dns-prefetch" href={mediaOrigin} />
         <link rel="dns-prefetch" href="https://flagcdn.com" />
@@ -112,10 +116,10 @@ export default async function LocaleLayout({ children, params }: Props) {
         <link
           rel="prefetch"
           as="script"
-          href={`${mediaOrigin}/statics/vditor-assets/dist/js/lute/lute.min.js`}
+          href={`${mediaBase}/statics/vditor-assets/dist/js/lute/lute.min.js`}
         />
         {/* 旧版浏览器检测与升级引导：ES5 自包含脚本，主包解析失败时仍能提示；defer 不阻塞渲染 */}
-        <script src={`${mediaOrigin}/statics/browser-support.js`} defer />
+        <script src={`${mediaBase}/statics/browser-support.js`} defer />
       </head>
       <body className="bg-background text-text antialiased">
         <NextIntlClientProvider messages={messages}>
