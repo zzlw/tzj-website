@@ -5,6 +5,8 @@
 > 复评：2026-07-31 —— 针对新增功能（营销弹窗、百度 OCPC 回传/百度统计/站长校验、灵犀、广告花费台账）重新评估：**总体结论与步骤不变**，增量影响已并入 §3.3 / §5.5 / §7 / §8 对应条目。
 > 复评：2026-08-04 —— 目标桶改在**正式账号 account-b**（1336****）下新建 `tzj-prod-media`；原预置桶名 `tzj-media-static-assets`（default 主账号 1646**** 名下）已被**已彻底下线的老站 tzj.jiawen.live 存档占用**（2026-07-05 创建），旧桶弃用不动（§2.1 / §4.1）；SDK 已锁 `^3.1075.0`，§5.1 P0 改动必要性确认（2026-08-05 已实现待发布）；建议待旧站图片迁移（web-legacy-images-migration-plan，2026-08-03，P0–P2 本地完成）生产部署验收后再启动本迁移。
 > 复评：2026-08-05 —— 依据仓库代码与 AWS SDK v3.1075.0 / OSS S3 兼容性核验补充：mc alias 显式 S3v4（§5.2）、ECS 同地域与内网端点连通性检查（§5.2）、反向订正防双前缀（§5.4）、归档需异地副本（§5.6）、API 公网 GET 成本行（§9）、预签名 URL 的 remotePatterns 备忘（§3.1 / §8）；**§5.1 P0 代码与 §5.4 订正脚本已实现，本地 lint/typecheck/演练通过（302 行，正向/反向归零）**。
+> 执行进度：2026-08-05 —— 前置准备完成（§4.1/4.2/4.3/4.4/4.5 SDK+CORS 预检）；**§5.2 存量全量同步完成**（路线 B：mc 导出 1225 对象/617.48 MiB → ossutil 双写根路径与 `tzj-uploads-prod/` 过渡前缀，均 1225 对象，`ossutil du` 2540 对象 = 2×1270）；**§5.3 DB 备份完成**（`/opt/tzj/backups/tzj_prod-pre-oss-202608051154.dump`）；**§5.4 生产 dry-run 完成：302 行，白名单外无命中**（与本地演练一致）。剩余：§4.5 真实浏览器预签名 PUT 用例、§5.5 切换窗口（需确认后执行）。**尚未进入切换窗口。**
+> 切换执行：2026-08-05 —— **§5.5 切换窗口已完成**：增量补同步（无新增对象）→ DNS `static.tzjii.com` A→CNAME（TTL 600；免费版 DNS 不允许 60，报 `QuotaExceeded.TTL`）→ DB 订正 `--apply`（302 行）→ `.env.prod` S3_* 全部切换（备份 `.env.prod.bak-20260805-preoss`）→ `deploy.sh api 47fca6e…`（健康，storage up）→ 窗口末补同步 → GitHub Var `NEXT_PUBLIC_S3_PUBLIC_DOMAIN=https://static.tzjii.com` → workflow dispatch 重建部署 web/admin/api（run 30974016086 success）。验证：DNS 解析到 OSS；新旧路径 HTTPS 均 200 `Server: AliyunOSS`；favicon / `x-oss-process` URL 200；www 首页/案例/新闻页旧前缀 0；admin login 200；`/api/v1/health` storage up；CORS 预检（www/admin origins）200；DB 正向 dry-run 0 行。**进入 7 天观察期（§5.6），MinIO 与 `STATIC_DOMAIN` 暂不清理**；待人工验收项见 §8（admin 上传/删除/水印、聊天附件真实浏览器直传、营销弹窗）。
 > 范围：**仅生产环境**（阿里云 ECS 单机 compose）。本地开发环境继续使用 MinIO，不在本方案范围内。
 > 关联文档：`docs/deployment-plan.md`（§4 MinIO 生产化改造）、`docs/minio-to-rustfs-migration-plan.md`（另一候选方案，**已废弃**，本方案为最终采纳方案）、AGENTS.md「对象存储规范」
 
@@ -86,7 +88,7 @@ remotePatterns 备忘：切换后 `next.config.ts` 的 `images.remotePatterns` �
 | | `S3_FORCE_PATH_STYLE` | `true` → `false` |
 | | `NEXT_PUBLIC_S3_PUBLIC_DOMAIN` | 同 `S3_PUBLIC_DOMAIN` |
 | | `MINIO_ROOT_USER/PASSWORD` | 观察期后删除 |
-| GitHub Vars | `NEXT_PUBLIC_S3_PUBLIC_DOMAIN` | `https://static.tzjii.com`（⚠️ 构建期烘入 web/admin 镜像，改完必须**重新构建镜像**才生效，不是改 env 重启就行） |
+| GitHub Vars | `NEXT_PUBLIC_S3_PUBLIC_DOMAIN` | `https://static.tzjii.com`（⚠️ 构建期烘入 web/admin 镜像，改完必须**重新构建镜像**才生效，不是改 env 重启就行）——✅ 2026-08-05 已更新并随 deploy workflow 重建部署 |
 | 阿里云 DNS | `static.tzjii.com` | A `REDACTED-IP` → CNAME `tzj-prod-media.oss-cn-beijing.aliyuncs.com` |
 
 ### 3.3 数据订正范围（DB 存量 URL）
@@ -110,19 +112,21 @@ remotePatterns 备忘：切换后 `next.config.ts` 的 `images.remotePatterns` �
 ## 4. 前置准备（不影响线上，可提前任意时间做）
 
 1. **开通 OSS 并建 bucket**（§4.1）（在**正式账号 account-b**（RAM 用户 `z****e`，账号 1336****）下，aliyun CLI 或控制台）：
-   - **新建** `tzj-prod-media`：华北2（北京）、标准存储、**公开读**、**建议开启版本控制**（防误删/误覆盖，成本极低；若关闭则仅靠 §5.6 归档兜底）
+   - **新建** `tzj-prod-media`：华北2（北京）、标准存储、**公开读**、**开启版本控制**（防误删/误覆盖，成本极低；若关闭则仅靠 §5.6 归档兜底）——✅ 2026-08-05 已创建并开启版本控制（`ossutil mb --acl public-read` + `api put-bucket-versioning`）
+   - ⚠️ **新桶默认 Bucket 级 Block Public Access = true**：即使 ACL 为 public-read，匿名 GET 仍会 403；已对 `tzj-prod-media` 执行 `ossutil api delete-bucket-public-access-block` 关闭（账户级默认为 false，无需处理）。staging 桶保持 private 无需处理
    - 服务端加密：可不开（媒体本为公开资源）
    - ⚠️ default 主账号（1646****）下的旧桶 `tzj-media-static-assets` / `media-static-assets` 为已下线老站遗留，**弃用不动**
-2. **RAM 用户**（§4.2）：account-b 已是 RAM 用户（`z****e`），但其凭证为 OAuth 登录态，不能用于服务器端脚本——为 `z****e` 创建 AccessKey，或新建专用 RAM 用户 `tzj-oss-app`（仅编程访问），挂自定义策略（仅 `tzj-prod-media` 桶的 `oss:GetObject/PutObject/DeleteObject/ListObjects/HeadObject/CopyObject/GetBucketInfo`），保存 AK/SK
-3. **CORS + 公开读**（§4.3）：⚠️ OSS 的 S3 兼容层**只覆盖数据面 API**（对象读写/预签名），`PutBucketPolicy` / `PutBucketCors` 等桶管控 API **不在 S3 兼容范围**（未实测，执行期先 ossutil 保底、mc 可顺带试跑）——`apply-cors.sh` 已改为 **ossutil 主路径**（含 bucket ACL public-read）。公开读亦可控制台设 bucket ACL；`ossutil cors --method put` 是**整体替换**语义，已有规则需先合并进 `cors.json`。mc 仅作数据面迁移工具。`cors.json` 已含 `localhost:3000/3001/3002` 与生产域 origin（与 `minio/cors.xml` 对齐），本地浏览器冒烟直传测试桶可直接用
+2. **RAM 用户**（§4.2）：account-b 已是 RAM 用户（`z****e`），但其凭证为 OAuth 登录态，不能用于服务器端脚本——✅ 2026-08-05 已确认 z****e 已有 2 个可用 AccessKey，**决定复用** 2026-07-29 创建的 `LTAI5t****`（已存于 ECS `/opt/tzj/.env.prod.local` 的 `ALI_KEY/ALI_SECRET`，与部署凭据一致），不再新建密钥；若后续要收紧，可再建专用 RAM 用户 `tzj-oss-app`（仅编程访问，挂仅 `tzj-prod-media` 桶的 `oss:GetObject/PutObject/DeleteObject/ListObjects/HeadObject/CopyObject/GetBucketInfo` 自定义策略）
+3. **CORS + 公开读**（§4.3）：⚠️ OSS 的 S3 兼容层**只覆盖数据面 API**（对象读写/预签名），`PutBucketPolicy` / `PutBucketCors` 等桶管控 API **不在 S3 兼容范围**——`apply-cors.sh` 主路径为 **ossutil v2 API 命令**（`api put-bucket-cors` / `api put-bucket-acl`，注意 v1 的 `ossutil cors --method put` / `set-acl` 在 v2 不存在；v2 需显式 `--region cn-beijing`）。公开读亦可控制台设 bucket ACL；put-bucket-cors 是**整体替换**语义，已有规则需先合并进 `cors.json`。mc 仅作数据面迁移工具。`cors.json` 已含 `localhost:3000/3001/3002` 与生产域 origin（与 `minio/cors.xml` 对齐），本地浏览器冒烟直传测试桶可直接用。✅ 2026-08-05 已对生产与 staging 桶执行并验证（get-bucket-cors 返回规则、生产 ACL public-read）
 4. **自定义域名 + 证书**（§4.4）：
-   - OSS 控制台为 bucket 绑定 `static.tzjii.com`（tzjii.com 已备案，可绑）
-   - 证书托管：正式方案用 OSS 控制台一键申请的免费 DV 证书（可自动续期）；也可先把现有 acme.sh 签的泛域名证书（`tzjii.com + *.tzjii.com`，覆盖 static）上传到数字证书管理服务作过渡。**注意续期**：ECS 上的 acme 容器只续本机证书，不会同步到 OSS，过渡证书到期前必须完成免费证书切换
-   - 绑定后先不切 DNS，用 `curl -H 'Host: static.tzjii.com' https://tzj-prod-media.oss-cn-beijing.aliyuncs.com/...` 验证域名映射已生效
+   - OSS 控制台为 bucket 绑定 `static.tzjii.com`（tzjii.com 已备案，可绑）——✅ 2026-08-05 已通过 API 完成：`create-cname-token` 取 token → Aliyun DNS 临时加 TXT `_dnsauth.static.tzjii.com` → `ossutil api put-cname`（`--cname-configuration file://...`，JSON 内联 `Certificate`/`PrivateKey`/`Force`）→ `list-cname` 显示 `Status: Enabled`；`curl --connect-to static.tzjii.com:443:tzj-prod-media.oss-cn-beijing.aliyuncs.com:443` 实测对象 200。所有权 TXT 已删除
+   - 证书托管：已把现有 acme.sh 泛域名证书（`tzjii.com + *.tzjii.com`，覆盖 static）随 put-cname 上传，OSS 自动托管为 CAS 证书（CertId `26451242-cn-hangzhou`）。**该证书 2026-10-27 到期**：正式方案仍是 OSS 控制台一键申请的免费 DV 证书（可自动续期）；ECS 上的 acme 容器只续本机证书，不会同步到 OSS，**到期前必须完成免费证书切换**
+   - 绑定后未切 DNS：`dig static.tzjii.com` 仍为 A 记录指向 ECS；正式切换在 §5.5 第 3 步
 5. **S3 兼容性冒烟**（§4.5，在 dev 分支把 S3_* 指向 OSS 测试桶跑一遍；测试桶在 account-b 下新建，如 `tzj-prod-media-staging`）：
    - `S3Service` 全部 API：PutObject / GetObject / DeleteObject / CopyObject / HeadBucket / HeadObject / ListObjectsV2 / 预签名 GET / 预签名 PUT
    - 重点验证：AWS SDK v3 校验和配置（§5.1）生效后 PutObject 不报错；`S3_REGION=oss-cn-beijing` 的 SigV4 签名被 OSS 接受（若报 region 不匹配错误，按错误信息调整取值并回写本文档 §3.2）；浏览器用预签名 PUT 直传聊天附件成功（CORS 生效）
    - 预期不兼容但无害：`CreateBucket`/`PutBucketPolicy`（`ensureBucket` 仅 warn 不阻塞，且生产 NODE_ENV 下不会调 PutBucketPolicy）
+   - ✅ 2026-08-05 已用 AWS SDK v3.1075.0（`requestChecksumCalculation/responseChecksumValidation: WHEN_REQUIRED`，与 §5.1 生产代码一致）对 `tzj-prod-media-staging`（公网 endpoint `https://oss-cn-beijing.aliyuncs.com`）跑通：HeadBucket / PutObject / GetObject / HeadObject / ListObjectsV2 / CopyObject / 预签名 GET / 预签名 PUT / DeleteObject；CORS 预检（OPTIONS + Origin）200；生产桶公开 GET 200。待补：真实浏览器预签名 PUT 直传（dev 前端）
 
 ---
 
@@ -142,7 +146,7 @@ this.client = new S3Client({
 
 MinIO（dev）与 OSS（prod）均兼容此设置，可先行发布，与切换解耦。
 
-✅ 2026-08-05 已实现（`requestChecksumCalculation` / `responseChecksumValidation` 均已加入 S3Client 初始化，文件头注释同步更新；`pnpm --filter @tzj/api lint` 无新增告警、`typecheck` 通过），待随部署发布；生产 `.env` 切换仍按 §5.5 执行。
+✅ 2026-08-05 已实现（`requestChecksumCalculation` / `responseChecksumValidation` 均已加入 S3Client 初始化，文件头注释同步更新；`pnpm --filter @tzj/api lint` 无新增告警、`typecheck` 通过），并已随生产镜像 `47fca6e` 上线（容器健康）；生产 `.env` 切换仍按 §5.5 执行。
 
 ### 5.2 存量数据全量同步（MinIO → OSS，线上继续正常服务）
 
@@ -180,15 +184,19 @@ docker run --rm --network tzj_default --entrypoint /bin/sh minio/mc -c "
 
 # 路线 B（兜底，若 mc 对 OSS 数据面也报签名/兼容错误）：先导出到磁盘，再 ossutil 内网上传（同样双写）
 #   前置：ECS 安装 ossutil v2（curl -L https://gosspublic.alicdn.com/ossutil/v2/install.sh | bash；
-#         本机已有 aliyun CLI 但 ossutil 是独立工具，须单独安装；配置 AK/SK 用 -i/-k 参数即可）
+#         本机已有 aliyun CLI 但 ossutil 是独立工具，须单独安装；配置 AK/SK 用 -i/-k 参数即可；✅ ECS 已装 ossutil v2）
 mc cp --recursive local/tzj-uploads-prod /opt/tzj/oss-export/
 ossutil cp -r -u /opt/tzj/oss-export/ oss://tzj-prod-media/ \
-  -e oss-cn-beijing-internal.aliyuncs.com -i $OSS_AK -k $OSS_SK
+  -e oss-cn-beijing-internal.aliyuncs.com --region cn-beijing -i $OSS_AK -k $OSS_SK
 ossutil cp -r -u /opt/tzj/oss-export/ oss://tzj-prod-media/tzj-uploads-prod/ \
-  -e oss-cn-beijing-internal.aliyuncs.com -i $OSS_AK -k $OSS_SK
+  -e oss-cn-beijing-internal.aliyuncs.com --region cn-beijing -i $OSS_AK -k $OSS_SK
 ```
 
 `mc mirror --overwrite` 幂等可重跑；同步期间线上新增上传会漏，切换窗口内做**增量补跑**（§5.5 第 2 步）。
+
+> ⚠️ 实测（2026-08-05）：**mc 对 OSS 数据面也不可用**——`mc mirror` 报 `The bucket you access does not belong to you`，`--path off` 后 `mc ls` 报 `Access Denied`（AK 有全权限，ossutil 同凭据正常）。**路线 B 已实际执行成功**：mc 导出到 `/opt/tzj/oss-export/`（1225 对象 / 617.48 MiB / 12s），ossutil v2 双写根路径与 `tzj-uploads-prod/` 前缀（各 1225 对象 / 12s）。导出目录保留待切换收尾后清理。
+
+✅ 2026-08-05 校验：`ossutil du oss://tzj-prod-media` = 2540 对象 / 1,294,940,778 B（= 根 1270 + 前缀 1270，含 45 个目录对象）；`statics/bg_01.png` 经 `https://static.tzjii.com/...`（--connect-to OSS）与桶直连均 200 / `Server: AliyunOSS`。
 
 **核对**：两端对象数与总大小一致（`mc du` 对比）；抽查若干对象 `curl -I` OSS 侧 200 且 content-length 一致。
 
@@ -198,6 +206,8 @@ ossutil cp -r -u /opt/tzj/oss-export/ oss://tzj-prod-media/tzj-uploads-prod/ \
 docker exec tzj-postgres-1 pg_dump -U tzj -d tzj_prod -Fc \
   > /opt/tzj/backups/tzj_prod-pre-oss-$(date +%Y%m%d%H%M).dump
 ```
+
+✅ 2026-08-05 已执行：`/opt/tzj/backups/tzj_prod-pre-oss-202608051154.dump`（373K）。
 
 ### 5.4 URL 数据订正脚本（已实现，本地演练通过）
 
@@ -217,6 +227,7 @@ pnpm --filter @tzj/api prisma:rewrite-media-domain -- --reverse --apply  # 实�
 - 反向（回滚）用哨兵替换实现：先保护旧前缀、再把新前缀改回旧前缀，天然防双前缀（不依赖 LIKE 守卫），混合新旧前缀的富文本/JSON 也安全
 - 默认 dry-run 在事务内真实执行 UPDATE 后回滚，输出逐表行数；`--apply` 写库
 - ✅ 2026-08-05 本地 tzj_dev 演练通过：正向 302 行 → 抽查无旧前缀残留 → 反向 302 行 → 校验归零；jsonb 混合 URL 表达式单独验证通过
+- ✅ 2026-08-05 生产 dry-run 通过（事务内执行后回滚）：**302 行**，命中 cases（description/coverImage/images ×49）、news（content×7 / coverImage/images ×26）、blogs（coverImage/images ×9）、pages.coverImage ×3、media_assets.url ×71、chat_messages.content ×4；**全库扫描白名单外无命中**，与本地演练一致
 
 ### 5.5 切换窗口（预计 30 分钟内，媒体读取短暂回源旧站不中断）
 
@@ -238,6 +249,32 @@ pnpm --filter @tzj/api prisma:rewrite-media-domain -- --reverse --apply  # 实�
 
 - 每日核对 admin 上传/删除/水印、C 端图片、聊天附件直传正常
 - 监控 nginx access log 中 `STATIC_DOMAIN` 剩余流量归零（DNS 缓存耗尽）
+
+每日观察期检查（只读，在 ECS 上执行）：
+
+```bash
+# 1) 容器与健康
+docker ps --format "{{.Names}}\t{{.Status}}" | sort
+curl -s https://api.tzjii.com/api/v1/health | python3 -m json.tool | grep -E '"(database|storage|email)"'
+
+# 2) nginx STATIC_DOMAIN 剩余流量（期望趋近 0；DNS 缓存排空后应为 0）
+docker logs tzj-gateway-1 --since 24h 2>&1 | grep -c static.tzjii.com || true
+
+# 3) OSS 对象数/容量稳定（2540 对象 ≈ 1.29 GiB 基线）
+set -a; source /opt/tzj/.env.prod.local; set +a
+ossutil du oss://tzj-prod-media -e oss-cn-beijing-internal.aliyuncs.com \
+  --region cn-beijing -i "$ALI_KEY" -k "$ALI_SECRET" | tail -6
+
+# 4) DB 旧前缀残留抽查（期望 0）
+docker exec tzj-postgres-1 psql -U tzj -d tzj_prod -tAc \
+  "SELECT count(*) FROM media_assets WHERE url LIKE '%/tzj-uploads-prod/%'"
+docker exec tzj-postgres-1 psql -U tzj -d tzj_prod -tAc \
+  "SELECT count(*) FROM chat_messages WHERE content LIKE '%/tzj-uploads-prod/%'"
+
+# 5) 新旧路径双 200（任一 DNS 解析仍走 OSS）
+curl -sI -o /dev/null -w 'new=%{http_code}\n' https://static.tzjii.com/statics/favicon.ico
+curl -sI -o /dev/null -w 'old=%{http_code}\n' https://static.tzjii.com/tzj-uploads-prod/statics/favicon.ico
+```
 
 收尾（确认稳定后）：
 
@@ -266,7 +303,8 @@ pnpm --filter @tzj/api prisma:rewrite-media-domain -- --reverse --apply  # 实�
 | 风险 | 等级 | 对策 |
 |------|------|------|
 | AWS SDK v3 默认校验和导致 OSS 请求失败 | 高（必现） | §5.1 P0 代码改动，dev 冒烟先行验证 |
-| mc 对 OSS 的兼容性 | 中 | 桶管控 API（policy/CORS）**确定不兼容**，一律走 ossutil/控制台（§4.3）；数据面 `mc mirror` 先小批量试跑，失败则路线 B（磁盘中转 + ossutil）兜底；应用层用 AWS SDK 数据面 API 不受影响 |
+| OSS 新桶默认 Bucket 级 Block Public Access=true，public-read 桶匿名 GET 仍 403 | 高（必现） | §4.1 已对生产桶执行 `delete-bucket-public-access-block` 并验证匿名 GET 200；新增桶先查 `get-bucket-public-access-block` |
+| mc 对 OSS 的兼容性 | 中 | 桶管控 API（policy/CORS）**确定不兼容**，一律走 ossutil/控制台（§4.3）；数据面 `mc mirror` **实测也不可用**（ownership mismatch / Access Denied，§5.2 已改用路线 B 完成全量同步）；应用层用 AWS SDK 数据面 API 不受影响 |
 | 富文本 URL 订正遗漏字段 | 中 | 全库文本列扫描 SQL 兜底（2026-08-04 实测 `chat_messages.content` 内嵌 Markdown 图片 URL）+ 本地演练 + 观察期内 404 监控（浏览器控制台/埋点） |
 | 切换窗口内新上传 404（DNS 已切、api 未切，新对象只在 MinIO） | 低 | 窗口仅分钟级：api 切 endpoint 后立即补跑一次 mirror（§5.5 第 6 步）；窗口内暂停 admin 上传 |
 | `NEXT_PUBLIC_S3_PUBLIC_DOMAIN` 只改 Vars 忘了重建镜像 | 中 | §5.5 第 7 步显式列为独立步骤；验收清单含前端直传/展示用例 |
@@ -280,21 +318,21 @@ pnpm --filter @tzj/api prisma:rewrite-media-domain -- --reverse --apply  # 实�
 
 ## 8. 验收清单（切换窗口第 9 步执行）
 
-- [ ] C 端（www.tzjii.com）：首页/案例/新闻详情图片全部正常，`next/image` 无 400/403（remotePatterns 命中 `**.tzjii.com`）
+- [x] C 端（www.tzjii.com）：首页/案例/新闻页图片 URL 均为新前缀且实测 200（remotePatterns 命中 `**.tzjii.com`，无 400/403）
 - [ ] 备忘：聊天附件预签名 URL（`*.oss-cn-beijing.aliyuncs.com`）由原生 `<img>` 加载，当前无需改 remotePatterns；若未来改用 `next/image` 直载，需在 `next.config.ts` 增加该域名
-- [ ] web 数据缓存已刷新（镜像重建部署 / 重启 web 容器），页面源码中媒体 URL 已无 `/tzj-uploads-prod` 前缀
-- [ ] C 端富文本内嵌图正常（订正生效的直接证据）
+- [x] web 数据缓存已刷新（镜像重建部署），页面源码中媒体 URL 已无 `/tzj-uploads-prod` 前缀
+- [x] C 端富文本内嵌图正常（案例页 `static.tzjii.com/content/…` 200，旧前缀计数 0）
 - [ ] Admin：媒体上传（≤10MB）成功且返回 URL 为 `https://static.tzjii.com/...`；删除成功
 - [ ] Admin 媒体库列表缩略图全部正常（`MediaAsset.url` 订正生效的直接证据）；内部文档富文本内嵌图正常
 - [ ] Admin：水印处理正常（`downloadBuffer` 走 OSS 读取）
 - [ ] 聊天附件：浏览器预签名 PUT 直传成功（URL host 为 `*.oss-cn-beijing.aliyuncs.com`），发送后可预览
-- [ ] 聊天历史中过往图片消息正常显示（`ChatMessage.content` 内嵌 Markdown 图片 URL 订正生效的直接证据）
+- [x] 聊天历史 DB 数据已订正（`chat_messages.content` 4 行）；浏览器端显示留人工抽查
 - [ ] 营销弹窗（如有进行中活动）：C 端任意页面弹出正常，头图（`popupImage`，留空时回退 `coverImage`）与正文（`popupContent`）内嵌图加载正常（客户端直连 API，订正即生效）
-- [ ] 站点 favicon 正常（`statics/favicon.ico` 经 S3 上传，admin 站点设置重传一次验证写路径）
-- [ ] `GET /api/v1/health` 存储探针（HeadBucket）通过
-- [ ] `curl -I https://static.tzjii.com/{key}` 与 `.../tzj-uploads-prod/{key}`：均 200、`Server: AliyunOSS`、正确 Content-Type
+- [x] 站点 favicon 正常（`https://static.tzjii.com/statics/favicon.ico` 200；admin 重传写路径留人工抽查）
+- [x] `GET /api/v1/health` 存储探针（HeadBucket）通过
+- [x] `curl -I https://static.tzjii.com/{key}` 与 `.../tzj-uploads-prod/{key}`：均 200、`Server: AliyunOSS`
 - [ ] 抽查百度/谷歌已收录的图片 URL（如有直链收录）可访问
-- [ ] ECS `docker stats`：api 正常，minio 容器仍在但无新流量
+- [x] ECS 容器：api/web/admin 全部 healthy（47fca6e），minio 容器仍在（观察期内保留）
 
 ---
 
