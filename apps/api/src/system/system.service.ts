@@ -77,13 +77,26 @@ export class SystemService {
 
     let containerLimitMb: number | null = null;
     let containerUsageMb: number | null = null;
+    let containerCacheMb: number | null = null;
+    let containerTotalMb: number | null = null;
 
     // Docker/容器环境优先读 cgroup v2；老内核或 v1 挂载再回退。
     try {
       const limit = Number((await readFile('/sys/fs/cgroup/memory.max', 'utf8')).trim());
-      const usage = Number((await readFile('/sys/fs/cgroup/memory.current', 'utf8')).trim());
+      const total = Number((await readFile('/sys/fs/cgroup/memory.current', 'utf8')).trim());
+      const statText = await readFile('/sys/fs/cgroup/memory.stat', 'utf8');
+      const stat = new Map<string, number>();
+      for (const line of statText.split('\n')) {
+        const [key, raw] = line.trim().split(/\s+/);
+        if (key && raw !== undefined) stat.set(key, Number(raw));
+      }
+      // memory.current 包含可回收页缓存（file），监控主口径用匿名内存（anon）
+      const anon = stat.get('anon') ?? total;
+      const file = stat.get('file') ?? 0;
       if (Number.isFinite(limit) && limit > 0) containerLimitMb = round(limit / 1024 ** 2, 1);
-      if (Number.isFinite(usage) && usage > 0) containerUsageMb = round(usage / 1024 ** 2, 1);
+      if (Number.isFinite(anon) && anon > 0) containerUsageMb = round(anon / 1024 ** 2, 1);
+      if (Number.isFinite(file) && file > 0) containerCacheMb = round(file / 1024 ** 2, 1);
+      if (Number.isFinite(total) && total > 0) containerTotalMb = round(total / 1024 ** 2, 1);
     } catch {
       try {
         const limit = Number(
@@ -93,7 +106,10 @@ export class SystemService {
           (await readFile('/sys/fs/cgroup/memory/memory.usage_in_bytes', 'utf8')).trim(),
         );
         if (Number.isFinite(limit) && limit > 0) containerLimitMb = round(limit / 1024 ** 2, 1);
-        if (Number.isFinite(usage) && usage > 0) containerUsageMb = round(usage / 1024 ** 2, 1);
+        if (Number.isFinite(usage) && usage > 0) {
+          containerUsageMb = round(usage / 1024 ** 2, 1);
+          containerTotalMb = containerUsageMb;
+        }
       } catch {
         // 非容器环境：保留 null，由前端显示“无容器限制”
       }
@@ -114,6 +130,8 @@ export class SystemService {
       container: {
         limitMb: containerLimitMb,
         usageMb: containerUsageMb,
+        cacheMb: containerCacheMb,
+        totalMb: containerTotalMb,
         usedPercent: containerUsedPercent,
       },
     };

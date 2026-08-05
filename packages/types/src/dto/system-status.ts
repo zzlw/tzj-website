@@ -28,7 +28,9 @@ export interface SystemStatusResponse {
     };
     container: {
       limitMb: number | null;
-      usageMb: number | null;
+      usageMb: number | null; // 匿名内存（进程实际占用，不含可回收页缓存）
+      cacheMb: number | null; // 页缓存（可回收）
+      totalMb: number | null; // cgroup 当前总计（含缓存）
       usedPercent: number | null;
     };
   };

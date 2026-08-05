@@ -113,7 +113,7 @@ export default function SystemStatusPage() {
 
         <Card>
           <CardHeader>
-            <CardDescription>容器 cgroup + 宿主机</CardDescription>
+            <CardDescription>进程实际占用（不含可回收缓存）</CardDescription>
             <CardTitle className="text-lg">服务器内存</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -123,8 +123,13 @@ export default function SystemStatusPage() {
             <MeterBar value={containerUsedPercent ?? 0} />
             <p className="text-xs text-muted-foreground">
               {data.serverMemory.container.usageMb !== null
-                ? `容器 ${data.serverMemory.container.usageMb} / ${data.serverMemory.container.limitMb} MB`
+                ? `容器实际 ${data.serverMemory.container.usageMb} / ${data.serverMemory.container.limitMb} MB`
                 : '容器无内存上限（未配置 cgroup 限制）'}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {data.serverMemory.container.totalMb !== null
+                ? `含可回收页缓存 ${data.serverMemory.container.cacheMb ?? '—'} MB · cgroup 总计 ${data.serverMemory.container.totalMb} MB`
+                : 'cgroup 明细不可用'}
             </p>
             <p className="text-xs text-muted-foreground">
               宿主机 {data.serverMemory.host.usedMb} / {data.serverMemory.host.totalMb} MB（
