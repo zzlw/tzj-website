@@ -1,6 +1,6 @@
 'use client';
 
-import { Dialog, DialogContent, DialogTitle, Sheet, SheetContent } from '@tzj/ui';
+import { Dialog, DialogContent, DialogTitle, ScrollArea, Sheet, SheetContent } from '@tzj/ui';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { MarkdownBody } from '@/components/content/MarkdownBody';
@@ -88,8 +88,11 @@ export function MarketingPopupDialog({
         </div>
       )}
 
-      {/* 段 2：唯一滚动区（含头图） */}
-      <div className="min-h-0 overflow-y-auto">
+      {/* 段 2：唯一滚动区（含头图）——统一公共 ScrollArea，可滚动时滚动条常显 */}
+      <ScrollArea
+        type="always"
+        className="min-h-0 [&>[data-slot=scroll-area-viewport]]:overscroll-contain"
+      >
         {hasImage && <CoverBanner src={bannerImage} title={activity.title} />}
         <div className="px-6 pb-4 pt-5 sm:px-8">
           {hasImage && (
@@ -103,7 +106,7 @@ export function MarketingPopupDialog({
             className={`text-sm leading-relaxed text-secondary-text ${hasImage ? 'mt-4' : ''}`}
           />
         </div>
-      </div>
+      </ScrollArea>
 
       {/* 段 3：常驻 CTA 区——主 CTA 是唯一强视觉按钮，「关闭」为描边次级按钮 */}
       <div className="flex flex-col gap-3 border-t border-border px-6 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-8 sm:py-5">
