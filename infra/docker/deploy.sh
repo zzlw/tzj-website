@@ -295,6 +295,24 @@ if [[ "$SERVICE" == "all" || "$SERVICE" == "web" || "$SERVICE" == "admin" ]]; th
       *" $s "*) sync_cdn_static "$s" ;;
     esac
   done
+
+  # 应用 OSS 桶 CORS：admin/web 静态资源托管在 static.tzjii.com（跨域），
+  # 浏览器加载跨域 JS/图片需要 Access-Control-Allow-Origin，否则报 CORS 拦截。
+  # 内联实现（服务器无 oss/apply-cors.sh，且每次部署都应确保规则存在）。
+  echo "==> 应用 OSS 桶 CORS（跨域静态资源读取）"
+  set -a
+  # shellcheck disable=SC1091
+  source "$ENV_FILE"
+  # shellcheck disable=SC1091
+  source "$LOCAL_ENV_FILE"
+  set +a
+  if [[ -n "${S3_BUCKET:-}" && -n "${ALI_KEY:-}" && -n "${ALI_SECRET:-}" ]]; then
+    CORS_BODY='{"CORSRule":[{"AllowedOrigin":["http://localhost:3000","http://localhost:3001","http://localhost:3002","https://www.tzjii.com","https://admin.tzjii.com"],"AllowedMethod":["GET","PUT","POST","HEAD"],"AllowedHeader":["*"],"ExposeHeader":["ETag","x-amz-request-id","x-oss-request-id"],"MaxAgeSeconds":3000}]}'
+    ossutil api put-bucket-cors --bucket "$S3_BUCKET" --cors-configuration "$CORS_BODY" \
+      -e oss-cn-beijing-internal.aliyuncs.com --region cn-beijing -i "$ALI_KEY" -k "$ALI_SECRET"
+  else
+    echo "缺少 S3_BUCKET / ALI_KEY / ALI_SECRET，跳过 OSS CORS 配置（不影响本次部署）" >&2
+  fi
 fi
 
 echo "==> Rolling update ($SERVICES)"
