@@ -84,6 +84,19 @@
           }
         }
       }
+    },
+    {
+      "includes": ["packages/legacy-css/**"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsole": "off"
+          },
+          "complexity": {
+            "noExcessiveCognitiveComplexity": "off"
+          }
+        }
+      }
     }
   ],
   "files": {
@@ -95,7 +108,11 @@
       "!**/.turbo",
       "!**/coverage",
       "!**/pnpm-lock.yaml",
-      "!**/next-env.d.ts"
+      "!**/next-env.d.ts",
+      "!**/apps/web/public",
+      "!**/apps/web/src/generated",
+      "!**/packages/legacy-css/tailwind.config.cjs",
+      "!**/packages/legacy-css/legacy-theme.css"
     ]
   }
 }

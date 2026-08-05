@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "node scripts/generate-placeholders.mjs && node -e \"try{require('child_process').execSync('lsof -ti:3001|xargs kill -9',{stdio:'ignore'})}catch{}\" && next dev --port 3001",
-    "build": "node scripts/generate-placeholders.mjs && next build",
+    "build": "node scripts/generate-placeholders.mjs && pnpm --filter @tzj/legacy-css build && next build",
     "start": "next start --port 3001",
     "lint": "biome lint src/",
     "typecheck": "tsc --noEmit",

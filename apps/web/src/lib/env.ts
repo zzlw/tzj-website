@@ -66,4 +66,6 @@ export const env = {
     new URL(apiUrl).origin,
   /** 百度统计站点 ID（hm.js hash）兜底：优先用后台「站点设置 → 访客分析」，未配置时回退此值 */
   baiduHmId: process.env.NEXT_PUBLIC_BAIDU_HM_ID || undefined,
+  /** 双轨 CSS 灰度开关：=1 时旧内核（不支持 oklch/color-mix）自动加载 legacy.css（动态页运行期生效） */
+  legacyCssEnabled: process.env.LEGACY_CSS_ENABLED === '1',
 } as const;

@@ -2,6 +2,7 @@ import { Toaster } from '@tzj/ui';
 import type { Metadata } from 'next';
 import { Archivo, Geist } from 'next/font/google';
 import { notFound } from 'next/navigation';
+import Script from 'next/script';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server';
 import { ViewTransitions } from 'next-view-transitions';
@@ -19,7 +20,9 @@ import { DeferredVisitorTracker } from '@/components/performance/DeferredVisitor
 import { ProductLineNav } from '@/components/products/ProductLineNav';
 import { SearchProvider } from '@/components/search/SearchProvider';
 import { AgentPhoneProvider } from '@/features/chat/AgentPhoneContext';
+import { legacyDetectJsHref } from '@/generated/legacy-css';
 import { type AppLocale, routing } from '@/i18n/routing';
+import { env } from '@/lib/env';
 import { organizationJsonLd } from '@/lib/jsonld';
 import { LOCALE_HTML_LANG } from '@/lib/locale-config';
 import { getMediaOrigin } from '@/lib/media-origin';
@@ -120,6 +123,8 @@ export default async function LocaleLayout({ children, params }: Props) {
         <link rel="prefetch" as="script" href={vditorLuteUrl} />
         {/* 旧版浏览器检测与升级引导：ES5 自包含脚本，主包解析失败时仍能提示；defer 不阻塞渲染 */}
         <script src={browserSupportUrl} defer />
+        {/* 双轨 CSS 客户端检测：beforeInteractive 在首屏渲染前注入 legacy.css，避免 FOUC */}
+        {env.legacyCssEnabled && <Script src={legacyDetectJsHref} strategy="beforeInteractive" />}
       </head>
       <body className="bg-background text-text antialiased">
         <NextIntlClientProvider messages={messages}>

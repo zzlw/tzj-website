@@ -60,6 +60,9 @@ jobs:
       - name: Generate Prisma Client
         run: pnpm --filter @tzj/api exec prisma generate
 
+      - name: Check legacy CSS tokens (dual-track)
+        run: pnpm --filter @tzj/legacy-css theme:check
+
       - name: Lint (Biome)
         run: pnpm run check
 
@@ -78,6 +81,11 @@ jobs:
         env:
           NEXT_PUBLIC_API_URL: http://localhost:4000/api/v1
           NEXT_PUBLIC_S3_PUBLIC_DOMAIN: http://localhost:9000/tzj-uploads-dev
+
+      - name: Verify legacy CSS artifacts (dual-track)
+        run: |
+          pnpm --filter @tzj/legacy-css verify
+          git diff --exit-code -- packages/legacy-css/tailwind.config.cjs packages/legacy-css/legacy-theme.css apps/web/public/legacy apps/web/src/generated/legacy-css.ts
 
   # ── 1b. Lighthouse CI (Web) ────────────────────────────────
   lighthouse-web:

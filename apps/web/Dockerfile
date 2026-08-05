@@ -25,6 +25,7 @@ COPY packages/types/package.json packages/types/
 COPY packages/ui/package.json packages/ui/
 COPY packages/device/package.json packages/device/
 COPY packages/env/package.json packages/env/
+COPY packages/legacy-css/package.json packages/legacy-css/
 
 RUN corepack enable && corepack prepare pnpm@11.9.0 --activate
 # deps 阶段仅有 package.json，跳过 postinstall（copy-vditor-assets 在 builder 阶段显式执行）
@@ -42,11 +43,15 @@ ARG NEXT_PUBLIC_S3_PUBLIC_DOMAIN
 ARG NEXT_PUBLIC_SITE_URL
 ARG NEXT_PUBLIC_WEB_URL
 ARG NEXT_PUBLIC_ASSET_PREFIX
+ARG LEGACY_CSS_ENABLED
+ARG LEGACY_CSS_PERCENT
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_S3_PUBLIC_DOMAIN=$NEXT_PUBLIC_S3_PUBLIC_DOMAIN
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 ENV NEXT_PUBLIC_WEB_URL=$NEXT_PUBLIC_WEB_URL
 ENV NEXT_PUBLIC_ASSET_PREFIX=$NEXT_PUBLIC_ASSET_PREFIX
+ENV LEGACY_CSS_ENABLED=$LEGACY_CSS_ENABLED
+ENV LEGACY_CSS_PERCENT=$LEGACY_CSS_PERCENT
 
 RUN corepack enable && corepack prepare pnpm@11.9.0 --activate
 RUN node apps/web/scripts/copy-vditor-assets.mjs
@@ -61,6 +66,10 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
+
+# 双轨 CSS 开关：动态页面在运行期读取，图像构建期烘入以便单容器可直接生效
+ARG LEGACY_CSS_ENABLED
+ENV LEGACY_CSS_ENABLED=$LEGACY_CSS_ENABLED
 
 # 创建非 root 用户
 RUN addgroup --system --gid 1001 nodejs && \

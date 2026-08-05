@@ -42,6 +42,8 @@ services:
     mem_limit: 256m
     environment:
       NODE_OPTIONS: "--max-old-space-size=256"
+      # 双轨 CSS：=1 时旧内核自动加载 legacy.css；留空/0 关闭（回滚开关，可运行时覆盖）
+      LEGACY_CSS_ENABLED: ${LEGACY_CSS_ENABLED:-}
     depends_on:
       api:
         condition: service_healthy

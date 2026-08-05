@@ -1,0 +1,20 @@
+{
+  "name": "@tzj/legacy-css",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "sync": "node scripts/sync-theme.mjs",
+    "theme:check": "node scripts/theme-check.mjs",
+    "verify": "node scripts/verify-artifacts.mjs",
+    "build": "node build.mjs"
+  },
+  "dependencies": {
+    "@csstools/postcss-oklab-function": "^5.0.7",
+    "autoprefixer": "^10.4.20",
+    "culori": "^4.0.1",
+    "postcss": "^8.5.16",
+    "postcss-preset-env": "^11.3.2",
+    "tailwindcss": "3.4.19"
+  }
+}

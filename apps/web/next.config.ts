@@ -84,6 +84,16 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        // 双轨 CSS：legacy 产物带内容 hash，可安全 immutable 长期缓存
+        source: '/legacy/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
         source: '/(.*)',
         headers: securityHeaders,
       },
