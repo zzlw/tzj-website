@@ -101,7 +101,9 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build Web
-        run: pnpm --filter @tzj/web build
+        # 走 turbo 以先构建 workspace 依赖（@tzj/device / @tzj/types / @tzj/ui 的 dist），
+        # 与 Docker 构建链路保持一致；直接 --filter build 会因依赖未构建而 module not found
+        run: pnpm exec turbo run build --filter=@tzj/web
         env:
           NEXT_PUBLIC_API_URL: http://localhost:4000/api/v1
           NEXT_PUBLIC_S3_PUBLIC_DOMAIN: http://localhost:9000/tzj-uploads-dev
