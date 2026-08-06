@@ -66,20 +66,20 @@ services:
       - "3000"
 
   # Turbo 远端缓存（构建加速）：GitHub Actions / Docker 构建共享，存储用 OSS 私有桶
-  # （OSS 生命周期 7 天自动清理，不占 ECS 磁盘；token 由 .env.prod.local 提供）
+  # （ducktors 的 S3 provider 硬编码 path-style，OSS 不兼容，故用本地卷；
+  #   deploy.sh 每次部署清理 7 天前的旧产物，token 由 .env.prod.local 提供）
   turbo-cache:
     image: ghcr.io/ducktors/turborepo-remote-cache:2.12.0
     restart: unless-stopped
     mem_limit: 256m
     environment:
       TURBO_TOKEN: ${TURBO_CACHE_TOKEN:?required}
-      STORAGE_PROVIDER: s3
-      STORAGE_PATH: ${TURBO_CACHE_BUCKET:-tzj-turbo-cache}
-      AWS_ACCESS_KEY_ID: ${ALI_KEY:?required}
-      AWS_SECRET_ACCESS_KEY: ${ALI_SECRET:?required}
-      AWS_REGION: cn-beijing
-      S3_ENDPOINT: https://oss-cn-beijing.aliyuncs.com
+      STORAGE_PROVIDER: local
+      STORAGE_PATH: /data/turborepocache
+      STORAGE_PATH_USE_TMP_FOLDER: "false"
       LOG_LEVEL: warn
+    volumes:
+      - turbo-cache-data:/data
     expose:
       - "3000"
 
@@ -125,3 +125,4 @@ services:
 volumes:
   pgdata:
   acme-data:
+  turbo-cache-data:

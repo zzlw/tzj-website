@@ -285,6 +285,8 @@ docker_login_if_needed
 # Turbo 远端缓存服务（构建加速），gateway 反代 /turbo-cache/ 前先确保其在运行
 echo "==> Ensure turbo-cache（Turbo 远端缓存服务）"
 compose up -d turbo-cache
+# 缓存仅用于加速构建，7 天前的旧产物直接清理，防止本地卷无限增长
+compose exec -T turbo-cache sh -c 'find /data/turborepocache -type f -mtime +7 -delete' >/dev/null 2>&1 || true
 
 for s in $SERVICES; do
   persist_tag "$(service_tag_var "$s")" "$TAG"
