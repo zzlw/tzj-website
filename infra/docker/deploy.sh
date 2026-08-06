@@ -57,6 +57,26 @@ docker_login_if_needed() {
   fi
 }
 
+# 清理旧镜像：每服务仅保留最近 KEEP_IMAGE_VERSIONS 个版本（默认 3），
+# 防止 ECS 磁盘被积压镜像打满导致部署失败（镜像在 ACR 均有备份，可随时重拉）。
+prune_old_images() {
+  local keep="${KEEP_IMAGE_VERSIONS:-3}"
+  echo "==> 清理旧镜像（每服务保留最近 ${keep} 个版本）"
+  for app in api web admin; do
+    local repo="${IMAGE_REGISTRY}/tzj-${app}"
+    local keep_ids
+    keep_ids=$(docker images "$repo" --format '{{.CreatedAt}}\t{{.ID}}' | sort -r | awk '{print $2}' | uniq | head -n "$keep")
+    local ids
+    ids=$(docker images "$repo" --format '{{.ID}}' | sort -u)
+    for id in $ids; do
+      if ! grep -qx "$id" <<<"$keep_ids"; then
+        docker rmi "$id" >/dev/null 2>&1 || true
+      fi
+    done
+  done
+  docker image prune -f >/dev/null 2>&1 || true
+}
+
 persist_tag() {
   local var=$1
   local tag=$2
@@ -262,6 +282,10 @@ esac
 
 docker_login_if_needed
 
+# Turbo 远端缓存服务（构建加速），gateway 反代 /turbo-cache/ 前先确保其在运行
+echo "==> Ensure turbo-cache（Turbo 远端缓存服务）"
+compose up -d turbo-cache
+
 for s in $SERVICES; do
   persist_tag "$(service_tag_var "$s")" "$TAG"
 done
@@ -284,6 +308,9 @@ fi
 if [[ "$SERVICE" == "all" || "$SERVICE" == "api" ]]; then
   run_migrate
 fi
+
+echo "==> 清理旧镜像（为拉取新镜像腾出磁盘空间）"
+prune_old_images
 
 echo "==> Pull images ($SERVICES → $TAG)"
 compose pull $SERVICES
@@ -327,8 +354,8 @@ else
   fi
 fi
 
-echo "==> Prune dangling images"
-docker image prune -f >/dev/null
+echo "==> Prune old images"
+prune_old_images
 
 echo "==> Ensure gateway (+ acme if needed)"
 compose up -d --force-recreate --no-deps gateway

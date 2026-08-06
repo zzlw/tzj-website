@@ -65,6 +65,24 @@ services:
     expose:
       - "3000"
 
+  # Turbo 远端缓存（构建加速）：GitHub Actions / Docker 构建共享，存储用 OSS 私有桶
+  # （OSS 生命周期 7 天自动清理，不占 ECS 磁盘；token 由 .env.prod.local 提供）
+  turbo-cache:
+    image: docker.m.daocloud.io/ducktors/turborepo-remote-cache:2.12.0
+    restart: unless-stopped
+    mem_limit: 256m
+    environment:
+      TURBO_TOKEN: ${TURBO_CACHE_TOKEN:?required}
+      STORAGE_PROVIDER: s3
+      STORAGE_PATH: ${TURBO_CACHE_BUCKET:-tzj-turbo-cache}
+      AWS_ACCESS_KEY_ID: ${ALI_KEY:?required}
+      AWS_SECRET_ACCESS_KEY: ${ALI_SECRET:?required}
+      AWS_REGION: cn-beijing
+      S3_ENDPOINT: https://oss-cn-beijing.aliyuncs.com
+      LOG_LEVEL: warn
+    expose:
+      - "3000"
+
   gateway:
     image: docker.m.daocloud.io/library/nginx:1.27-alpine
     restart: unless-stopped

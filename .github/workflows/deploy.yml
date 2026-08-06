@@ -25,6 +25,7 @@ env:
   IMAGE_PREFIX: ${{ vars.ACR_REGISTRY }}/${{ vars.ACR_NAMESPACE }}
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
   TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+  TURBO_API: ${{ vars.TURBO_API }}
 
 jobs:
   build-push:
@@ -52,8 +53,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
-            TURBO_TOKEN=${{ secrets.TURBO_TOKEN }}
-            TURBO_TEAM=${{ secrets.TURBO_TEAM }}
+            TURBO_API=${{ vars.TURBO_API }}
             NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
             NEXT_PUBLIC_ADMIN_API_URL=${{ vars.NEXT_PUBLIC_ADMIN_API_URL }}
             NEXT_PUBLIC_S3_PUBLIC_DOMAIN=${{ vars.NEXT_PUBLIC_S3_PUBLIC_DOMAIN }}
@@ -62,6 +62,9 @@ jobs:
             NEXT_PUBLIC_ASSET_PREFIX=${{ matrix.app == 'web' && vars.NEXT_PUBLIC_ASSET_PREFIX_WEB || (matrix.app == 'admin' && vars.NEXT_PUBLIC_ASSET_PREFIX_ADMIN || '') }}
             LEGACY_CSS_ENABLED=${{ vars.LEGACY_CSS_ENABLED }}
             LEGACY_CSS_PERCENT=${{ vars.LEGACY_CSS_PERCENT }}
+          secrets: |
+            TURBO_TOKEN=${{ secrets.TURBO_TOKEN }}
+            TURBO_TEAM=${{ secrets.TURBO_TEAM }}
 
       # main 分支的镜像安全扫描（PR 由 CI 的 docker-build 承担）；结果只输出，不阻断部署（与 CI 口径一致）
       - name: Security Scan (Trivy)

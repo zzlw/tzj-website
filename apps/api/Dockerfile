@@ -30,16 +30,19 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
 
 COPY . .
 
-# Turbo Remote Cache：CI/Deploy 构建共享远端缓存（令牌缺失时自动退化为本地缓存）
-ARG TURBO_TOKEN
-ARG TURBO_TEAM
-ENV TURBO_TOKEN=$TURBO_TOKEN
-ENV TURBO_TEAM=$TURBO_TEAM
+# Turbo Remote Cache 服务地址（非敏感，构建参数注入）；token/team 通过 BuildKit secret
+# 在 turbo run 的 RUN 内临时注入，避免写入镜像层
+ARG TURBO_API
+ENV TURBO_API=$TURBO_API
 
 RUN find . -name '*.tsbuildinfo' -delete
 RUN pnpm --filter @tzj/api exec prisma generate
 # pnpm exec 使用 lockfile 固定版本（npx 会浮动拉取最新，且触发 pnpm run 自动 install）
-RUN pnpm exec turbo run build --filter=@tzj/api...
+RUN --mount=type=secret,id=TURBO_TOKEN \
+  --mount=type=secret,id=TURBO_TEAM \
+  TURBO_TOKEN="$(cat /run/secrets/TURBO_TOKEN 2>/dev/null || true)" \
+  TURBO_TEAM="$(cat /run/secrets/TURBO_TEAM 2>/dev/null || true)" \
+  pnpm exec turbo run build --filter=@tzj/api...
 # 打包 api 及生产依赖（pnpm 扁平 node_modules，避免根 node_modules 软链在运行时失效）
 RUN pnpm --filter @tzj/api deploy --prod --legacy /prod/api
 # deploy --prod 会留下未初始化的 @prisma/client stub；复制 builder 内已 generate 的完整 .prisma（含 query engine）

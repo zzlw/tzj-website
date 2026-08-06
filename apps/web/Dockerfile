@@ -54,16 +54,19 @@ ENV NEXT_PUBLIC_ASSET_PREFIX=$NEXT_PUBLIC_ASSET_PREFIX
 ENV LEGACY_CSS_ENABLED=$LEGACY_CSS_ENABLED
 ENV LEGACY_CSS_PERCENT=$LEGACY_CSS_PERCENT
 
-# Turbo Remote Cache：CI/Deploy 构建共享远端缓存（令牌缺失时自动退化为本地缓存）
-ARG TURBO_TOKEN
-ARG TURBO_TEAM
-ENV TURBO_TOKEN=$TURBO_TOKEN
-ENV TURBO_TEAM=$TURBO_TEAM
+# Turbo Remote Cache 服务地址（非敏感，构建参数注入）；token/team 通过 BuildKit secret
+# 在 turbo run 的 RUN 内临时注入，避免写入镜像层
+ARG TURBO_API
+ENV TURBO_API=$TURBO_API
 
 RUN corepack enable && corepack prepare pnpm@11.9.0 --activate
 RUN node apps/web/scripts/copy-vditor-assets.mjs
 # pnpm exec 使用 lockfile 固定版本（npx 会浮动拉取最新，且触发 pnpm run 自动 install）
 RUN --mount=type=cache,target=/app/apps/web/.next/cache \
+  --mount=type=secret,id=TURBO_TOKEN \
+  --mount=type=secret,id=TURBO_TEAM \
+  TURBO_TOKEN="$(cat /run/secrets/TURBO_TOKEN 2>/dev/null || true)" \
+  TURBO_TEAM="$(cat /run/secrets/TURBO_TEAM 2>/dev/null || true)" \
   pnpm exec turbo run build --filter=@tzj/web
 
 # ── Stage 4: Runner (Standalone 模式提取) ────────────────────

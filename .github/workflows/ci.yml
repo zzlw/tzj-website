@@ -22,6 +22,7 @@ env:
   # Turbo Remote Cache (Vercel)
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
   TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+  TURBO_API: ${{ vars.TURBO_API }}
 
 jobs:
   # ── 1. Build & Test (Turbo) ────────────────────────────────
@@ -151,13 +152,15 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
-            TURBO_TOKEN=${{ secrets.TURBO_TOKEN }}
-            TURBO_TEAM=${{ secrets.TURBO_TEAM }}
+            TURBO_API=${{ vars.TURBO_API }}
             NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
             NEXT_PUBLIC_ADMIN_API_URL=${{ vars.NEXT_PUBLIC_ADMIN_API_URL }}
             NEXT_PUBLIC_S3_PUBLIC_DOMAIN=${{ vars.NEXT_PUBLIC_S3_PUBLIC_DOMAIN }}
             NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL }}
             NEXT_PUBLIC_WEB_URL=${{ vars.NEXT_PUBLIC_WEB_URL }}
+          secrets: |
+            TURBO_TOKEN=${{ secrets.TURBO_TOKEN }}
+            TURBO_TEAM=${{ secrets.TURBO_TEAM }}
 
       # Trivy 安全扫描：结果直接输出到 CI 日志
       # （私有仓库无 GHAS，Code Scanning 不可用，不上传 SARIF）
