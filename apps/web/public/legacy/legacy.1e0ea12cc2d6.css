@@ -5992,6 +5992,10 @@ body[data-scroll-locked] {
     margin-bottom: 3rem;
   }
 
+  .md\:mt-0 {
+    margin-top: 0px;
+  }
+
   .md\:block {
     display: block;
   }

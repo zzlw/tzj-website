@@ -95,16 +95,16 @@ export default async function NewsPage({ searchParams }: PageProps) {
                       href={`/resources/news/${n.slug}`}
                       className="rb-content-list-row group"
                     >
-                      <div className="relative aspect-[16/9] w-full shrink-0 overflow-hidden bg-neutral-200 md:aspect-[16/10] md:w-64">
-                        <Image
-                          src={pickCoverImage(n.coverImage)}
-                          alt={n.title}
-                          fill
-                          sizes="(max-width: 768px) 100vw, 256px"
-                          className="object-cover transition-transform duration-700 group-hover:scale-105"
-                        />
-                      </div>
-                      <div className="min-w-0 flex-1">
+                      <div className="flex min-w-0 flex-col gap-3 md:flex-1 md:flex-row md:items-center md:gap-8">
+                        <div className="relative aspect-[16/9] w-full shrink-0 overflow-hidden bg-neutral-200 md:aspect-[16/10] md:w-64">
+                          <Image
+                            src={pickCoverImage(n.coverImage)}
+                            alt={n.title}
+                            fill
+                            sizes="(max-width: 768px) 100vw, 256px"
+                            className="object-cover transition-transform duration-700 group-hover:scale-105"
+                          />
+                        </div>
                         <div className="max-w-3xl">
                           <span className="text-xs font-bold uppercase tracking-wide text-primary">
                             {newsCategoryLabel(n.category)}
@@ -116,11 +116,11 @@ export default async function NewsPage({ searchParams }: PageProps) {
                             {pickSummary(n.summary)}
                           </p>
                         </div>
-                        <span className="mt-5 flex items-center gap-3 text-sm text-secondary-text">
-                          {formatContentDate(n.publishedAt)}
-                          <ArrowRight className="h-4 w-4 text-primary transition-transform duration-300 group-hover:translate-x-1.5" />
-                        </span>
                       </div>
+                      <span className="mt-2 flex shrink-0 items-center gap-3 text-sm text-secondary-text md:mt-0">
+                        {formatContentDate(n.publishedAt)}
+                        <ArrowRight className="h-4 w-4 text-primary transition-transform duration-300 group-hover:translate-x-1.5" />
+                      </span>
                     </Link>
                   ))}
                 </div>
