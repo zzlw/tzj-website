@@ -44,6 +44,8 @@ export interface News extends BaseEntity {
   summary: string;
   content: string;
   coverImage: string;
+  /** 详情页宽幅封面（比例特殊，与列表封面分离）；未设置时 C 端回退 coverImage */
+  detailCoverImage?: string | null;
   category: NewsCategory;
   author: string;
   publishedAt: Date | null;

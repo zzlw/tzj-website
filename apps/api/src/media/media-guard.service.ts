@@ -95,6 +95,7 @@ export class MediaGuardService {
           id: true,
           title: true,
           coverImage: true,
+          detailCoverImage: true,
           images: true,
           description: true,
         },
@@ -104,6 +105,7 @@ export class MediaGuardService {
           id: true,
           title: true,
           coverImage: true,
+          detailCoverImage: true,
           images: true,
           content: true,
         },
@@ -135,6 +137,9 @@ export class MediaGuardService {
       if (this.textReferencesAsset(row.coverImage, asset)) {
         refs.push({ type: 'case', id: row.id, title: row.title, field: 'coverImage' });
       }
+      if (this.textReferencesAsset(row.detailCoverImage, asset)) {
+        refs.push({ type: 'case', id: row.id, title: row.title, field: 'detailCoverImage' });
+      }
       if (this.arrayReferencesAsset(row.images, asset)) {
         refs.push({ type: 'case', id: row.id, title: row.title, field: 'images' });
       }
@@ -146,6 +151,9 @@ export class MediaGuardService {
     for (const row of news) {
       if (this.textReferencesAsset(row.coverImage, asset)) {
         refs.push({ type: 'news', id: row.id, title: row.title, field: 'coverImage' });
+      }
+      if (this.textReferencesAsset(row.detailCoverImage, asset)) {
+        refs.push({ type: 'news', id: row.id, title: row.title, field: 'detailCoverImage' });
       }
       if (this.arrayReferencesAsset(row.images, asset)) {
         refs.push({ type: 'news', id: row.id, title: row.title, field: 'images' });
@@ -250,12 +258,13 @@ export class MediaGuardService {
       this.prisma.case.findMany({
         select: {
           coverImage: true,
+          detailCoverImage: true,
           images: true,
           description: true,
         },
       }),
       this.prisma.news.findMany({
-        select: { coverImage: true, images: true, content: true },
+        select: { coverImage: true, detailCoverImage: true, images: true, content: true },
       }),
       this.prisma.blog.findMany({
         select: { coverImage: true, images: true, content: true },
@@ -278,6 +287,7 @@ export class MediaGuardService {
     for (const row of rows.cases) {
       if (
         this.textReferencesAsset(row.coverImage, asset) ||
+        this.textReferencesAsset(row.detailCoverImage, asset) ||
         this.arrayReferencesAsset(row.images, asset) ||
         this.textReferencesAsset(row.description, asset)
       ) {
@@ -287,6 +297,7 @@ export class MediaGuardService {
     for (const row of rows.news) {
       if (
         this.textReferencesAsset(row.coverImage, asset) ||
+        this.textReferencesAsset(row.detailCoverImage, asset) ||
         this.arrayReferencesAsset(row.images, asset) ||
         this.textReferencesAsset(row.content, asset)
       ) {

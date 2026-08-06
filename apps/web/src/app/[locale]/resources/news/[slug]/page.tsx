@@ -57,6 +57,10 @@ export default async function NewsDetailPage({ params, searchParams }: NewsPageP
 
   const summary = pickSummary(item.summary, item.content);
   const coverImage = pickCoverImage(item.coverImage);
+  // 详情页宽幅封面：优先使用独立设置，未设置时回退列表封面图
+  const heroImage = pickCoverImage(
+    (item as { detailCoverImage?: string | null }).detailCoverImage ?? item.coverImage,
+  );
   const dateLabel = formatContentDate(item.publishedAt, locale);
 
   let related: Awaited<ReturnType<typeof getNewsList>>['data'] = [];
@@ -89,7 +93,7 @@ export default async function NewsDetailPage({ params, searchParams }: NewsPageP
       <div className="pb-20">
         <section className="relative h-[360px] overflow-hidden bg-neutral-800 lg:h-[460px]">
           <Image
-            src={coverImage}
+            src={heroImage}
             alt={item.title}
             fill
             preload

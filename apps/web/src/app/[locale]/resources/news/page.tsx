@@ -4,6 +4,7 @@ import { getTranslations } from 'next-intl/server';
 import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { ContentListShell, ContentPaginationShell } from '@/components/content/ContentListShell';
 import { ContentPagination } from '@/components/content/ContentPagination';
+import { MediaImage as Image } from '@/components/MediaImage';
 import { RelatedLinks } from '@/components/sections/blocks';
 import { StatBandI18n } from '@/components/sections/blocks-i18n';
 import { Container, PageHero, SectionHeading } from '@/components/ui';
@@ -13,6 +14,7 @@ import {
   buildListQuery,
   normalizePagination,
   parseContentListState,
+  pickCoverImage,
   pickSummary,
 } from '@/lib/content-list';
 import { getNewsCategoryFilter } from '@/lib/i18n/content-filters';
@@ -93,7 +95,16 @@ export default async function NewsPage({ searchParams }: PageProps) {
                       href={`/resources/news/${n.slug}`}
                       className="rb-content-list-row group"
                     >
-                      <div className="max-w-3xl">
+                      <div className="relative aspect-[16/9] w-full shrink-0 overflow-hidden bg-neutral-200 md:aspect-[16/10] md:w-64">
+                        <Image
+                          src={pickCoverImage(n.coverImage)}
+                          alt={n.title}
+                          fill
+                          sizes="(max-width: 768px) 100vw, 256px"
+                          className="object-cover transition-transform duration-700 group-hover:scale-105"
+                        />
+                      </div>
+                      <div className="max-w-3xl flex-1">
                         <span className="text-xs font-bold uppercase tracking-wide text-primary">
                           {newsCategoryLabel(n.category)}
                         </span>

@@ -51,6 +51,7 @@ export interface NewsItem extends BaseEntity {
   summary?: string | null;
   content?: string | null;
   coverImage?: string | null;
+  detailCoverImage?: string | null;
   images: string[];
   category: string;
   author?: string | null;
