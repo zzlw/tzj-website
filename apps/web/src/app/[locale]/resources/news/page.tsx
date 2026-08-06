@@ -104,21 +104,23 @@ export default async function NewsPage({ searchParams }: PageProps) {
                           className="object-cover transition-transform duration-700 group-hover:scale-105"
                         />
                       </div>
-                      <div className="max-w-3xl flex-1">
-                        <span className="text-xs font-bold uppercase tracking-wide text-primary">
-                          {newsCategoryLabel(n.category)}
+                      <div className="min-w-0 flex-1">
+                        <div className="max-w-3xl">
+                          <span className="text-xs font-bold uppercase tracking-wide text-primary">
+                            {newsCategoryLabel(n.category)}
+                          </span>
+                          <h3 className="rb-h5 mt-2 text-neutral-900 transition-colors group-hover:text-primary">
+                            {n.title}
+                          </h3>
+                          <p className="mt-2 text-sm leading-relaxed text-secondary-text">
+                            {pickSummary(n.summary)}
+                          </p>
+                        </div>
+                        <span className="mt-5 flex items-center gap-3 text-sm text-secondary-text">
+                          {formatContentDate(n.publishedAt)}
+                          <ArrowRight className="h-4 w-4 text-primary transition-transform duration-300 group-hover:translate-x-1.5" />
                         </span>
-                        <h3 className="rb-h5 mt-2 text-neutral-900 transition-colors group-hover:text-primary">
-                          {n.title}
-                        </h3>
-                        <p className="mt-2 text-sm leading-relaxed text-secondary-text">
-                          {pickSummary(n.summary)}
-                        </p>
                       </div>
-                      <span className="flex shrink-0 items-center gap-3 text-sm text-secondary-text">
-                        {formatContentDate(n.publishedAt)}
-                        <ArrowRight className="h-4 w-4 text-primary transition-transform duration-300 group-hover:translate-x-1.5" />
-                      </span>
                     </Link>
                   ))}
                 </div>

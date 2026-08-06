@@ -6004,6 +6004,10 @@ body[data-scroll-locked] {
     display: none;
   }
 
+  .md\:aspect-\[16\/10\] {
+    aspect-ratio: 16/10;
+  }
+
   .md\:h-10 {
     height: 2.5rem;
   }
@@ -6014,6 +6018,10 @@ body[data-scroll-locked] {
 
   .md\:w-16 {
     width: 4rem;
+  }
+
+  .md\:w-64 {
+    width: 16rem;
   }
 
   .md\:flex-1 {
