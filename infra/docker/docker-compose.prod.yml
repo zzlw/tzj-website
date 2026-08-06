@@ -68,7 +68,7 @@ services:
   # Turbo 远端缓存（构建加速）：GitHub Actions / Docker 构建共享，存储用 OSS 私有桶
   # （OSS 生命周期 7 天自动清理，不占 ECS 磁盘；token 由 .env.prod.local 提供）
   turbo-cache:
-    image: docker.m.daocloud.io/ducktors/turborepo-remote-cache:2.12.0
+    image: ghcr.io/ducktors/turborepo-remote-cache:2.12.0
     restart: unless-stopped
     mem_limit: 256m
     environment:
