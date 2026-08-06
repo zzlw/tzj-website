@@ -61,6 +61,12 @@ docker_login_if_needed() {
 # 防止 ECS 磁盘被积压镜像打满导致部署失败（镜像在 ACR 均有备份，可随时重拉）。
 prune_old_images() {
   local keep="${KEEP_IMAGE_VERSIONS:-3}"
+  set -a
+  # shellcheck disable=SC1091
+  source "$ENV_FILE"
+  # shellcheck disable=SC1091
+  source "$LOCAL_ENV_FILE"
+  set +a
   echo "==> 清理旧镜像（每服务保留最近 ${keep} 个版本）"
   for app in api web admin; do
     local repo="${IMAGE_REGISTRY}/tzj-${app}"
