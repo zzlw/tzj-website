@@ -72,6 +72,8 @@ services:
     image: ghcr.io/ducktors/turborepo-remote-cache:2.12.0
     restart: unless-stopped
     mem_limit: 256m
+    # 镜像默认非 root，本地卷根目录为 root 所有；内部缓存服务以 root 运行（仅写专用缓存卷）
+    user: root
     environment:
       TURBO_TOKEN: ${TURBO_CACHE_TOKEN:?required}
       STORAGE_PROVIDER: local
