@@ -6,7 +6,7 @@ import 'vditor/dist/index.css';
 import { getStaticsUrl } from '@tzj/env';
 import { uploadMedia } from '@/features/media';
 import type { MediaAsset } from '@/features/types';
-import { getS3PublicDomain } from '@/lib/media-url';
+import { getS3PublicDomain, resolveMediaUrl } from '@/lib/media-url';
 import { VDITOR_I18N_ZH_CN } from '@/lib/vditor-i18n-zh-cn';
 
 export interface MarkdownEditorProps {
@@ -50,6 +50,33 @@ const textareaCls =
 
 /** Vditor 工具栏高度（material 图标主题约 36px），用于加载态预留高度，避免布局跳动 */
 const TOOLBAR_RESERVE = 44;
+
+/**
+ * CMS 正文里图片常以对象存储相对 key 保存（如 content/xxx.webp），
+ * Vditor 预览/编辑时按页面 URL 解析会 404。这里在喂给 Vditor 前把
+ * 图片地址解析为当前环境公开域名绝对 URL（C 端 resolveMediaUrl 同款语义；
+ * 代码围栏内的内容不转换，避免误伤示例代码）。
+ */
+function resolveMarkdownImageUrls(markdown: string): string {
+  const lines = markdown.split('\n');
+  let inFence = false;
+  const out = lines.map((line) => {
+    const trimmed = line.trimStart();
+    if (trimmed.startsWith('```')) {
+      inFence = !inFence;
+      return line;
+    }
+    if (inFence) return line;
+    return line.replace(
+      /!\[([^\]]*)\]\(([^)\s]+)(?:\s+["'][^"']*["'])?\)/g,
+      (match, alt: string, url: string) => {
+        const resolved = resolveMediaUrl(url);
+        return resolved && resolved !== url ? `![${alt}](${resolved})` : match;
+      },
+    );
+  });
+  return out.join('\n');
+}
 
 function isVditorInitialized(v: VditorInternal | null | undefined): boolean {
   return Boolean(v?.vditor?.element);
@@ -154,6 +181,7 @@ export function MarkdownEditor({
   defaultMode: defaultModeProp,
 }: MarkdownEditorProps) {
   const defaultMode = defaultModeProp ?? (folder === 'documents' ? 'ir' : 'wysiwyg');
+  const displayValue = resolveMarkdownImageUrls(value);
   const containerRef = useRef<HTMLDivElement>(null);
   const vditorRef = useRef<Vditor | null>(null);
   const mountIdRef = useRef(0);
@@ -221,7 +249,7 @@ export function MarkdownEditor({
         i18n: VDITOR_I18N_ZH_CN,
         placeholder,
         cache: { enable: false },
-        value: valueRef.current || '',
+        value: displayValue,
         // 全屏需盖住 Admin 的侧边栏（z-40/50）与顶栏（z-30）
         fullscreen: { index: 100 },
         toolbarConfig: { pin: true },
@@ -334,11 +362,12 @@ export function MarkdownEditor({
           vditorRef.current = pending;
           setEditorReady(true);
           const initial = valueRef.current || '';
+          const initialDisplay = resolveMarkdownImageUrls(initial);
           try {
-            if (pending && pending.getValue() !== initial) {
-              pending.setValue(initial);
-              lastEmittedRef.current = initial;
+            if (pending && pending.getValue() !== initialDisplay) {
+              pending.setValue(initialDisplay);
             }
+            lastEmittedRef.current = initialDisplay;
           } catch {
             // lute 尚未就绪
           }
@@ -464,10 +493,11 @@ export function MarkdownEditor({
   useEffect(() => {
     const vd = vditorRef.current;
     if (!vd || !editorReady) return;
-    if (value === lastEmittedRef.current) return;
+    const display = resolveMarkdownImageUrls(value);
+    if (display === lastEmittedRef.current) return;
     try {
-      vd.setValue(value || '');
-      lastEmittedRef.current = value;
+      vd.setValue(display);
+      lastEmittedRef.current = display;
     } catch {
       // 编辑器尚未 ready
     }
