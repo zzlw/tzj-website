@@ -28,7 +28,8 @@ COPY packages/device/package.json packages/device/
 COPY packages/env/package.json packages/env/
 
 RUN corepack enable && corepack prepare pnpm@11.9.0 --activate
-RUN pnpm install --frozen-lockfile --ignore-scripts
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
+  pnpm install --frozen-lockfile --ignore-scripts
 
 # ── Stage 3: Builder (Turbo Build) ───────────────────────────
 FROM base AS builder
@@ -46,10 +47,17 @@ ENV NEXT_PUBLIC_S3_PUBLIC_DOMAIN=$NEXT_PUBLIC_S3_PUBLIC_DOMAIN
 ENV NEXT_PUBLIC_WEB_URL=$NEXT_PUBLIC_WEB_URL
 ENV NEXT_PUBLIC_ASSET_PREFIX=$NEXT_PUBLIC_ASSET_PREFIX
 
+# Turbo Remote Cache：CI/Deploy 构建共享远端缓存（令牌缺失时自动退化为本地缓存）
+ARG TURBO_TOKEN
+ARG TURBO_TEAM
+ENV TURBO_TOKEN=$TURBO_TOKEN
+ENV TURBO_TEAM=$TURBO_TEAM
+
 RUN corepack enable && corepack prepare pnpm@11.9.0 --activate
 RUN node apps/admin/scripts/copy-vditor-assets.mjs
 # pnpm exec 使用 lockfile 固定版本（npx 会浮动拉取最新，且触发 pnpm run 自动 install）
-RUN pnpm exec turbo run build --filter=@tzj/admin
+RUN --mount=type=cache,target=/app/apps/admin/.next/cache \
+  pnpm exec turbo run build --filter=@tzj/admin
 
 # ── Stage 4: Runner (Standalone 模式提取) ────────────────────
 FROM base AS runner

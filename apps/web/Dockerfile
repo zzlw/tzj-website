@@ -29,7 +29,8 @@ COPY packages/legacy-css/package.json packages/legacy-css/
 
 RUN corepack enable && corepack prepare pnpm@11.9.0 --activate
 # deps 阶段仅有 package.json，跳过 postinstall（copy-vditor-assets 在 builder 阶段显式执行）
-RUN pnpm install --frozen-lockfile --ignore-scripts
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
+  pnpm install --frozen-lockfile --ignore-scripts
 
 # ── Stage 3: Builder (Turbo Build) ───────────────────────────
 FROM base AS builder
@@ -53,10 +54,17 @@ ENV NEXT_PUBLIC_ASSET_PREFIX=$NEXT_PUBLIC_ASSET_PREFIX
 ENV LEGACY_CSS_ENABLED=$LEGACY_CSS_ENABLED
 ENV LEGACY_CSS_PERCENT=$LEGACY_CSS_PERCENT
 
+# Turbo Remote Cache：CI/Deploy 构建共享远端缓存（令牌缺失时自动退化为本地缓存）
+ARG TURBO_TOKEN
+ARG TURBO_TEAM
+ENV TURBO_TOKEN=$TURBO_TOKEN
+ENV TURBO_TEAM=$TURBO_TEAM
+
 RUN corepack enable && corepack prepare pnpm@11.9.0 --activate
 RUN node apps/web/scripts/copy-vditor-assets.mjs
 # pnpm exec 使用 lockfile 固定版本（npx 会浮动拉取最新，且触发 pnpm run 自动 install）
-RUN pnpm exec turbo run build --filter=@tzj/web
+RUN --mount=type=cache,target=/app/apps/web/.next/cache \
+  pnpm exec turbo run build --filter=@tzj/web
 
 # ── Stage 4: Runner (Standalone 模式提取) ────────────────────
 FROM base AS runner

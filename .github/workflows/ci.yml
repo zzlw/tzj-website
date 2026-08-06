@@ -10,6 +10,8 @@ name: CI/CD Pipeline
 on:
   push:
     branches: ["main", "develop"]
+    # 文档提交不触发全量构建测试（Deploy 已有同类过滤）
+    paths-ignore: ["docs/**", "**/*.md"]
   pull_request:
 
 concurrency:
@@ -124,6 +126,8 @@ jobs:
   # ── 2. Docker Build & Security Scan ────────────────────────
   docker-build:
     name: Docker Build & Scan
+    # main/develop 的镜像由 Deploy 工作流构建并扫描，这里只在 PR 校验构建，避免一次 push 重复构建 3 次
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     needs: build-and-test
     strategy:
@@ -147,6 +151,8 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
+            TURBO_TOKEN=${{ secrets.TURBO_TOKEN }}
+            TURBO_TEAM=${{ secrets.TURBO_TEAM }}
             NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
             NEXT_PUBLIC_ADMIN_API_URL=${{ vars.NEXT_PUBLIC_ADMIN_API_URL }}
             NEXT_PUBLIC_S3_PUBLIC_DOMAIN=${{ vars.NEXT_PUBLIC_S3_PUBLIC_DOMAIN }}

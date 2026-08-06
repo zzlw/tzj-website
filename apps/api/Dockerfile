@@ -25,9 +25,16 @@ COPY packages/device/package.json packages/device/
 RUN corepack enable && corepack prepare pnpm@11.9.0 --activate
 RUN sed -i 's|https://dl-cdn.alpinelinux.org|https://mirrors.aliyun.com|g' /etc/apk/repositories \
   && apk add --no-cache libc6-compat python3 make g++ vips-dev
-RUN pnpm install --frozen-lockfile
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
+  pnpm install --frozen-lockfile
 
 COPY . .
+
+# Turbo Remote Cache：CI/Deploy 构建共享远端缓存（令牌缺失时自动退化为本地缓存）
+ARG TURBO_TOKEN
+ARG TURBO_TEAM
+ENV TURBO_TOKEN=$TURBO_TOKEN
+ENV TURBO_TEAM=$TURBO_TEAM
 
 RUN find . -name '*.tsbuildinfo' -delete
 RUN pnpm --filter @tzj/api exec prisma generate
