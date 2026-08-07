@@ -1,4 +1,4 @@
-import { Factory, PencilRuler, Phone, Truck } from 'lucide-react';
+import { Factory, PencilRuler, Truck } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { MediaImage as Image } from '@/components/MediaImage';
@@ -10,7 +10,6 @@ import { getCases } from '@/lib/api';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 import { relatedLinksWithImages } from '@/lib/product-line-page';
 import { RESOURCES_IMAGES } from '@/lib/resources-images';
-import { getSitePublicSettings, resolveContactPhones } from '@/lib/site-settings';
 
 export async function generateMetadata() {
   return createPageMetadata({
@@ -74,13 +73,7 @@ export default async function WarrantyPage() {
   const relatedLinks = t.raw('relatedLinks') as Array<{ label: string; desc: string }>;
   const tableHeaders = t.raw('tableHeaders') as { item: string; scope: string; note: string };
   const sceneImageAlts = t.raw('sceneImageAlts') as string[];
-  const [featuredCases, settings] = await Promise.all([
-    fetchFeaturedCases(),
-    getSitePublicSettings(),
-  ]);
-  // CTA 拨号按钮用主电话（后台可配置）
-  const { primary: primaryPhone } = resolveContactPhones(settings);
-  const phoneHref = `tel:${primaryPhone.replace(/-/g, '')}`;
+  const featuredCases = await fetchFeaturedCases();
 
   return (
     <div className="pb-20">
@@ -260,19 +253,10 @@ export default async function WarrantyPage() {
       <Container>
         <div className="flex flex-col items-center gap-5 border border-neutral-300 bg-white p-10 text-center md:p-14">
           <h2 className="rb-h3 text-neutral-900">{t('cta.title')}</h2>
-          <div className="flex flex-wrap items-center justify-center gap-4">
-            <BookConsultButton message={tCommon('bookConsultContent')}>
-              {tCta('bookConsult')}
-            </BookConsultButton>
-            <a
-              href={phoneHref}
-              className="inline-flex items-center gap-2 border border-neutral-900 px-6 py-3 font-display text-base font-bold text-neutral-900 transition-colors hover:bg-neutral-900 hover:text-white"
-            >
-              <Phone className="h-4 w-4" aria-hidden="true" />
-              {primaryPhone}
-            </a>
-            <RbLink href="/contact">{t('cta.inquiryLink')}</RbLink>
-          </div>
+          {/* CTA 仅保留单一「预约咨询」按钮（拨号/询盘入口已全局移除） */}
+          <BookConsultButton message={tCommon('bookConsultContent')}>
+            {tCta('bookConsult')}
+          </BookConsultButton>
         </div>
       </Container>
     </div>

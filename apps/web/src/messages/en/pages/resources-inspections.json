@@ -105,8 +105,7 @@
   "cta": {
     "title": "Schedule annual inspection service",
     "description": "Contact our team to develop an inspection and maintenance plan for your facility — keeping every live-fire drill safe.",
-    "secondaryLabel": "View warranty service",
-    "inquiryLink": "Send an Inquiry"
+    "secondaryLabel": "View warranty service"
   },
   "sceneImageAlts": [
     "Inspector measuring steel structure wall thickness",

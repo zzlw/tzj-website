@@ -105,8 +105,7 @@
   "cta": {
     "title": "預約年度檢測服务",
     "description": "聯繫我們的團隊，為您的訓練設施制定檢測與維護計劃，讓每一次實戰訓練都安全無虞。",
-    "secondaryLabel": "查看質保服务",
-    "inquiryLink": "發送詢盤"
+    "secondaryLabel": "查看質保服务"
   },
   "sceneImageAlts": ["檢測員測量鋼結構壁厚", "檢查樓梯踏板與扶手固定"],
   "cases": {

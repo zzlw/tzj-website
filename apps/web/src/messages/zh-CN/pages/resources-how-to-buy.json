@@ -81,8 +81,7 @@
   "cta": {
     "title": "开始您的采购咨询",
     "description": "联系我们的团队，获取针对您项目的方案建议与报价，一起把训练基地落到实处。",
-    "secondaryLabel": "前往塔型设计中心",
-    "inquiryLink": "发送询盘"
+    "secondaryLabel": "前往塔型设计中心"
   },
   "sceneImageAlts": ["采购文件与项目清单评审", "新训练塔交付验收现场"],
   "cases": {

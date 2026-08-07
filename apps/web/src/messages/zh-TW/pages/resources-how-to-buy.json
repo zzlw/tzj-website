@@ -81,8 +81,7 @@
   "cta": {
     "title": "開始您的採購諮詢",
     "description": "聯繫我們的團隊，獲取針對您項目的方案建議與報價，一起把訓練基地落到實處。",
-    "secondaryLabel": "前往塔型設計中心",
-    "inquiryLink": "發送詢盤"
+    "secondaryLabel": "前往塔型設計中心"
   },
   "sceneImageAlts": ["採購文件與項目清單評審", "新訓練塔交付驗收現場"],
   "cases": {

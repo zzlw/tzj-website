@@ -105,8 +105,7 @@
   "cta": {
     "title": "预约年度检测服务",
     "description": "联系我们的团队，为您的训练设施制定检测与维护计划，让每一次实战训练都安全无虞。",
-    "secondaryLabel": "查看质保服务",
-    "inquiryLink": "发送询盘"
+    "secondaryLabel": "查看质保服务"
   },
   "sceneImageAlts": ["检测员测量钢结构壁厚", "检查楼梯踏板与扶手固定"],
   "cases": {
