@@ -67,6 +67,9 @@ server {
     server_name ${ADMIN_DOMAIN};
     include /etc/nginx/snippets/ssl.conf;
 
+    # Admin 上传媒体/富文本附件：与 API 侧 Multer 100MB 上限对齐
+    client_max_body_size 100m;
+
     location / {
         include /etc/nginx/snippets/proxy-docker.conf;
         set $upstream_admin admin:3000;
