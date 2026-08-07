@@ -250,10 +250,13 @@ export function RelatedLinks({
             >
               {l.image ? (
                 <div className="rb-img-shimmer relative aspect-[16/9] overflow-hidden bg-neutral-200">
+                  {/* 卡图滚动后是真实 LCP 候选，且封面 URL 常与其他页面复用：
+                      统一 eager 避免 next/image LCP 告警与 allImgs 同 URL lazy 覆盖冲突 */}
                   <Image
                     src={l.image}
                     alt={l.label}
                     fill
+                    loading="eager"
                     sizes="(max-width: 768px) 100vw, 33vw"
                     className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
                   />
