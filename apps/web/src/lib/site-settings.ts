@@ -12,6 +12,9 @@ const CACHE_TTL_META_REVALIDATE = 60;
 /** 与 api 端 DEFAULT_CACHE_TTL_SECONDS 对齐的兜底值（无配置/请求失败时） */
 const DEFAULT_CACHE_TTL_SECONDS = 300;
 
+/** SSR 站点设置请求超时：API 不可用时快速走 fallback，避免整站渲染被拖死 */
+const SSR_FETCH_TIMEOUT_MS = 3_000;
+
 /**
  * 读取后台配置的官网设置缓存 TTL（秒）。
  * 两级缓存：TTL 元数据固定 60s 缓存（后台改 TTL 最长 1 分钟生效），
@@ -21,6 +24,7 @@ async function getCacheTtl(): Promise<number> {
   try {
     const res = await fetch(`${API_BASE}/settings/cache-ttl`, {
       next: { revalidate: CACHE_TTL_META_REVALIDATE },
+      signal: AbortSignal.timeout(SSR_FETCH_TIMEOUT_MS),
     });
     if (!res.ok) throw new Error(`cache-ttl ${res.status}`);
     const json = (await res.json()) as { data?: { ttl?: number } };
@@ -84,6 +88,7 @@ export async function getSitePublicSettings(): Promise<SitePublicSettings> {
     const ttl = await getCacheTtl();
     const res = await fetch(`${API_BASE}/settings/site/public`, {
       next: { revalidate: ttl, tags: ['site-settings'] },
+      signal: AbortSignal.timeout(SSR_FETCH_TIMEOUT_MS),
     });
     if (!res.ok) throw new Error(`settings ${res.status}`);
     const json = (await res.json()) as { data?: SitePublicSettings };
@@ -142,6 +147,7 @@ export async function getFaviconUrl(): Promise<string | null> {
     const ttl = await getCacheTtl();
     const res = await fetch(`${API_BASE}/site-settings/favicon`, {
       next: { revalidate: ttl, tags: ['site-settings'] },
+      signal: AbortSignal.timeout(SSR_FETCH_TIMEOUT_MS),
     });
     if (!res.ok) throw new Error(`favicon ${res.status}`);
     const json = (await res.json()) as { data?: { url: string | null } };

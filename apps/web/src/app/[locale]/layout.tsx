@@ -108,11 +108,11 @@ export default async function LocaleLayout({ children, params }: Props) {
   // 生产 OSS，开发/测试走应用自身 public/
   const vditorLuteUrl = getStaticsUrl(mediaBase, 'vditor-assets/dist/js/lute/lute.min.js');
   const browserSupportUrl = getStaticsUrl(mediaBase, 'browser-support.js');
-  const siteSettings = await getSitePublicSettings();
+  // 站点设置与 favicon 相互独立：并行拉取，避免两个 3s 超时串行叠加
+  const [siteSettings, faviconUrl] = await Promise.all([getSitePublicSettings(), getFaviconUrl()]);
   // 主电话：用于「点击咨询」无人在线时的兜底拨号与结构化数据（后台可配置）
   const { primary: primaryPhone } = resolveContactPhones(siteSettings);
   const streetAddress = localizedAddress(siteSettings, locale, tContact('address'));
-  const faviconUrl = await getFaviconUrl();
 
   return (
     <html
