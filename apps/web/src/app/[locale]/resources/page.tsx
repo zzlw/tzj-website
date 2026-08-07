@@ -76,6 +76,7 @@ export default async function ResourcesPage() {
                         src={cardImage}
                         alt={s.label}
                         fill
+                        {...(i < 3 ? { loading: 'eager' as const } : {})}
                         sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                         className="object-cover transition-transform duration-700 group-hover:scale-105"
                       />

@@ -88,7 +88,6 @@ export default async function SolutionDetailPage({ params }: SolutionPageProps) 
   const tBread = await getTranslations('breadcrumbs');
   const tCommon = await getTranslations('common');
   const others = (await getLocalizedSolutions()).filter((s) => s.slug !== solution.slug);
-  const sceneImageAlts = t.raw('sceneImageAlts') as string[];
   const [featuredCases, settings] = await Promise.all([
     solution.caseType ? fetchSolutionCases(solution.caseType) : Promise.resolve([]),
     getSitePublicSettings(),
@@ -166,7 +165,7 @@ export default async function SolutionDetailPage({ params }: SolutionPageProps) 
                 >
                   <Image
                     src={src}
-                    alt={sceneImageAlts[i] ?? solution.name}
+                    alt={solution.sceneImageAlts[i] ?? solution.name}
                     fill
                     quality={75}
                     sizes="(max-width: 768px) 100vw, 50vw"

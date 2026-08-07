@@ -64,6 +64,8 @@ export interface Solution {
   ogImage: string;
   /** 详情页场景/结构配图（4:3） */
   detailImages: string[];
+  /** 详情页场景配图的 alt 文案（与 detailImages 一一对应） */
+  sceneImageAlts: string[];
   tagline: string;
   intro: string[];
   focus: SolutionFocus[];

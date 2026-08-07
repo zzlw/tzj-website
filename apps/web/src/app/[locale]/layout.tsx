@@ -44,8 +44,10 @@ const geist = Geist({
 });
 
 const archivo = Archivo({
+  // 全站只用 600/700/800（rb-* 标题 700、font-bold/extrabold/semibold）；
+  // 不声明 400，避免每页 preload 未使用字重触发浏览器告警
   subsets: ['latin'],
-  weight: ['400', '600', '700', '800'],
+  weight: ['600', '700', '800'],
   variable: '--font-archivo',
   display: 'swap',
 });

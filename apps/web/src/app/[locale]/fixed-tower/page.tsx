@@ -137,10 +137,12 @@ export default async function FixedTowerPage() {
                 description={t('overview.description')}
               />
               <div className="rb-img-shimmer relative aspect-[4/3] overflow-hidden bg-neutral-200">
+                {/* 页面核心内容图，滚动后是真实 LCP 候选：显式 eager 避免告警 */}
                 <Image
                   src={OVERVIEW_IMAGE}
                   alt={t('overview.title')}
                   fill
+                  loading="eager"
                   sizes="(max-width: 1024px) 100vw, 560px"
                   className="object-cover"
                 />

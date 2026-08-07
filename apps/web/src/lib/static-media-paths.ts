@@ -825,6 +825,7 @@ const EXTRA_SITE_MEDIA_PATHS = [
   '/media/resources/warranty-og.webp',
   '/media/resources/warranty-detail-1.webp',
   '/media/resources/warranty-detail-2.webp',
+  '/media/footer-cta-bg.webp',
   '/og-default.jpg',
   '/content/wechat.jpg',
   '/content/douyin.jpg',
