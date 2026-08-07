@@ -1,5 +1,7 @@
 import { cookies } from 'next/headers';
+import type { NextRequest } from 'next/server';
 import { API_BASE, COOKIE } from '@/lib/config';
+import { forwardMetaHeaders } from '@/lib/forward-meta';
 
 /**
  * 坐席 chat token BFF（P0 C1）。
@@ -8,7 +10,7 @@ import { API_BASE, COOKIE } from '@/lib/config';
  * 作用域为 chat 的短令牌；该令牌仅用于 Socket.IO 握手鉴权，无法用于业务接口。
  * 失败（无会话/令牌过期）返回 401，由前端引导重新登录。
  */
-export async function POST() {
+export async function POST(req: NextRequest) {
   const store = await cookies();
   const accessToken = store.get(COOKIE.access)?.value;
   if (!accessToken) {
@@ -21,6 +23,8 @@ export async function POST() {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${accessToken}`,
+        // 透传真实客户端 IP/UA，供 API 侧按浏览器 IP 限流，避免 BFF 共享桶被打满
+        ...forwardMetaHeaders(req),
       },
       cache: 'no-store',
     });

@@ -246,13 +246,9 @@ export function useChatSocket(params: { token: string | null }): UseChatSocketRe
       });
       sock.on('auth-error', () => {
         setConnected(false);
-        // 服务端 auth-error + disconnect(true) 会禁止 Socket.IO 自动重连。
-        // 延迟 1s 后显式重连，此时 Provider 已拉取到新 token 并更新了 sock.auth。
-        setTimeout(() => {
-          if (!sock.connected && !manualOfflineRef.current) {
-            sock.connect();
-          }
-        }, 1000);
+        // 不再用旧 token 自动重连：auth-error + disconnect(true) 会禁用 Socket.IO
+        // 自动重连，若仍用旧 token 重连会形成「auth-error → 重连 → auth-error」死循环，
+        // 打满限流桶。等 Provider 兑换到新 token 后，useEffect([token]) 会显式 connect。
       });
 
       const heartbeatTimer = setInterval(() => {

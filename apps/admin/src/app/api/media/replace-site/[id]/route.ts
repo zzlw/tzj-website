@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 import { API_BASE, COOKIE } from '@/lib/config';
+import { forwardMetaHeaders } from '@/lib/forward-meta';
 import {
   applyTokenCookies,
   refreshAccessToken,
@@ -38,7 +39,11 @@ export async function POST(req: NextRequest, { params }: Ctx) {
   const forward = (bearer?: string) =>
     fetch(`${API_BASE}/media/${id}/replace-site`, {
       method: 'POST',
-      headers: bearer ? { Authorization: `Bearer ${bearer}` } : undefined,
+      headers: {
+        ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
+        // 透传真实客户端 IP/UA，供 API 侧按浏览器 IP 限流，避免 BFF 共享桶被打满
+        ...forwardMetaHeaders(req),
+      },
       body: buildForm(),
       cache: 'no-store',
     });

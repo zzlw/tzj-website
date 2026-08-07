@@ -49,7 +49,12 @@ export function ChatPresenceProvider({
   /** 我的未读总数（分配给我的会话 + 待认领会话） */
   const [actionableUnread, setActionableUnread] = useState(0);
 
+  // 429/网络抖动时避免 auth-error 驱动的高频重试把限流桶打满
+  const lastFetchAttemptRef = useRef(0);
   const fetchToken = useCallback(async () => {
+    const now = Date.now();
+    if (now - lastFetchAttemptRef.current < 3000) return;
+    lastFetchAttemptRef.current = now;
     try {
       const res = await fetch('/api/chat/token', { method: 'POST' });
       if (res.ok) {
