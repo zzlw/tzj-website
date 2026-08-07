@@ -53,6 +53,12 @@ describe('开发/测试环境（非 production）', () => {
     vi.stubEnv('NEXT_PUBLIC_API_URL', 'not-a-url');
     await expect(importEnv()).rejects.toThrow(/不是合法 URL/);
   });
+
+  it('开发环境允许 localhost 覆盖（本地联调）', async () => {
+    vi.stubEnv('NEXT_PUBLIC_CHAT_API_URL', 'http://localhost:4000/api/v1');
+    const env = await importEnv();
+    expect(env.chatApiUrl).toBe('http://localhost:4000/api/v1');
+  });
 });
 
 describe('生产环境 fail-fast', () => {
@@ -79,5 +85,20 @@ describe('生产环境 fail-fast', () => {
     expect(env.chatSocketUrl).toBe('https://api.tzjii.com');
     expect(mod.isProduction).toBe(true);
     expect(mod.isDev).toBe(false);
+  });
+
+  it('可选覆盖项指向 localhost 时构建期抛错（防 .env.local 开发值烤进镜像，2026-08-07 事故）', async () => {
+    vi.stubEnv('NEXT_PUBLIC_API_URL', 'https://api.tzjii.com/api/v1');
+    vi.stubEnv('NEXT_PUBLIC_S3_PUBLIC_DOMAIN', 'https://oss.tzjii.com/tzj-uploads');
+    vi.stubEnv('NEXT_PUBLIC_CHAT_API_URL', 'http://localhost:4000/api/v1');
+    await expect(importEnv()).rejects.toThrow(/指向 localhost/);
+  });
+
+  it('可选覆盖项为生产地址时正常生效', async () => {
+    vi.stubEnv('NEXT_PUBLIC_API_URL', 'https://api.tzjii.com/api/v1');
+    vi.stubEnv('NEXT_PUBLIC_S3_PUBLIC_DOMAIN', 'https://oss.tzjii.com/tzj-uploads');
+    vi.stubEnv('NEXT_PUBLIC_CHAT_API_URL', 'https://chat.tzjii.com/api/v1');
+    const env = await importEnv();
+    expect(env.chatApiUrl).toBe('https://chat.tzjii.com/api/v1');
   });
 });

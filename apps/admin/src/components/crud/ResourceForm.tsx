@@ -20,6 +20,7 @@ import {
   TagsInput,
   Textarea,
 } from '@tzj/ui';
+import { isUsableExternalUrl } from '@tzj/utils';
 import { ImagePlus, X } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useEffect, useRef, useState } from 'react';
@@ -91,7 +92,7 @@ function fieldPlaceholder(f: FieldDef): string | undefined {
   if (f.name === 'seoDesc') return '不懂不要填，留空则使用摘要，建议 120–160 字';
   if (f.name === 'location') return '如 上海 · 国家会展中心';
   if (f.name === 'client') return '如 XX 消防局';
-  if (f.name === 'externalUrl') return 'https://';
+  if (f.name === 'externalUrl') return 'https://www.example.com';
   if (f.name === 'eventDateLabel') return '如 2026年5月、年度展会';
   if (f.name === 'boothNumber') return '如 A1-08';
   if (f.type === 'tags') return '每行一条';
@@ -101,6 +102,17 @@ function fieldPlaceholder(f: FieldDef): string | undefined {
   if (f.type === 'date') return '选择日期';
   if (f.type === 'datetime') return '选择日期和时间';
   return undefined;
+}
+
+/** 官网链接字段非阻断提示：填了值但不是可用外链（与前台 @tzj/utils 同口径） */
+function ExternalUrlHint({ control, name }: { control: Control<FieldValues>; name: string }) {
+  const value = useWatch({ control, name }) as string | undefined;
+  if (!value?.trim() || isUsableExternalUrl(value)) return null;
+  return (
+    <p className="text-xs font-medium text-amber-600 dark:text-amber-500">
+      当前值不是可用外链（缺域名或非 http(s) 协议），前台将按未填写处理并跳站内详情页
+    </p>
+  );
 }
 
 const MarkdownEditor = dynamic(
@@ -502,6 +514,7 @@ export function ResourceForm({
             )}
 
             {f.help ? <FieldDescription id={`${fieldId}-desc`}>{f.help}</FieldDescription> : null}
+            {f.name === 'externalUrl' ? <ExternalUrlHint control={control} name={f.name} /> : null}
             {err ? (
               <p className="text-xs font-medium text-destructive" role="alert">
                 {err}

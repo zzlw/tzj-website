@@ -124,7 +124,7 @@ export default async function BlogDetailPage({ params, searchParams }: BlogPageP
               </p>
             ) : null}
 
-            <MarkdownBody content={post.content} />
+            <MarkdownBody content={post.content} className={excerpt ? 'mt-8' : ''} />
 
             <div className="mt-12 border border-neutral-300 bg-neutral-100 p-8 text-center">
               <h3 className="rb-h4 text-neutral-900">{t('ctaTitle')}</h3>

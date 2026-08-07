@@ -4,7 +4,6 @@ import { BaiduSafeVideoHero as VideoHero } from '@/components/BaiduSafeVideoHero
 import { MediaImage as Image } from '@/components/MediaImage';
 import { CtaBand, FeatureGrid, RelatedLinks } from '@/components/sections/blocks';
 import { StatBandI18n } from '@/components/sections/blocks-i18n';
-import { CertificationTrustStrip } from '@/components/sections/CertificationTrustStrip';
 import { Container, SectionHeading } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 import { siteCoverByHref } from '@/lib/site-cover';
@@ -46,8 +45,6 @@ export default async function StoryPage() {
         video="/media/mission.mp4"
         poster={WHY_US_IMAGES.story.hero}
       />
-
-      <CertificationTrustStrip />
 
       <section>
         <Container className="py-16 lg:py-24">

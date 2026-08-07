@@ -21,6 +21,7 @@
     "@tzj/env": "workspace:*",
     "@tzj/types": "workspace:*",
     "@tzj/ui": "workspace:*",
+    "@tzj/utils": "workspace:*",
     "clsx": "catalog:",
     "lucide-react": "catalog:",
     "next": "catalog:",
@@ -32,6 +33,7 @@
     "socket.io-client": "catalog:",
     "tailwind-merge": "catalog:",
     "tw-animate-css": "catalog:",
+    "typewriter-effect": "^2.22.0",
     "vditor": "catalog:",
     "zod": "catalog:"
   },

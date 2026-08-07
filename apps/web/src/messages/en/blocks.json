@@ -45,15 +45,6 @@
       "titleDefault": "Learn More",
       "learnMore": "Learn More"
     },
-    "certificationTrust": {
-      "label": "Certifications",
-      "items": {
-        "iso9001": "ISO 9001",
-        "iso14001": "ISO 14001",
-        "iso45001": "ISO 45001",
-        "aftersales": "5-Star After-Sales"
-      }
-    },
     "certification": {
       "eyebrow": "Credentials & Trust",
       "title": "Certified Systems, Controlled Quality",

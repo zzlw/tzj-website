@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { MediaImage } from '@/components/MediaImage';
 import { MediaVideo } from '@/components/MediaVideo';
+import { HeroLoopTypewriter } from '@/components/sections/HeroLoopTypewriter';
 import { Container, Eyebrow, RbButton } from '@/components/ui';
 import { PRODUCT_LINE_COUNT } from '@/lib/product-catalog';
 
@@ -13,6 +14,10 @@ const HERO_POSTER = '/media/fixed-tower-hero.jpg';
 
 export async function HeroSection() {
   const t = await getTranslations('home.hero');
+  // 后缀轮换短语：首条即品牌主标语（与 titleLine2 一致，兼顾 SEO）；配置缺失时退化为静态单条
+  const rotations = Array.isArray(t.raw('titleRotations'))
+    ? (t.raw('titleRotations') as string[]).filter((s) => s.trim())
+    : [t('titleLine2')];
   const headerStore = await headers();
   const isBaiduApp = isBaiduAppUserAgent(headerStore.get('user-agent') ?? '');
 
@@ -61,9 +66,7 @@ export async function HeroSection() {
         <Eyebrow inverted>{t('eyebrow')}</Eyebrow>
 
         <h1 className="rb-display mt-6 max-w-4xl text-white">
-          {t('titleLine1')}
-          <br />
-          <span className="text-primary">{t('titleLine2')}</span>
+          <HeroLoopTypewriter line1={t('titleLine1')} phrases={rotations} />
         </h1>
 
         <p className="mt-6 mb-9 max-w-2xl text-base leading-relaxed text-white/85 md:text-lg">

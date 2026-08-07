@@ -854,6 +854,14 @@ const QUICK_LINK_IMAGES = [
   '/media/product/towers/hub-og.webp',
   '/media/product/specialized/hub-hero.webp',
   '/media/product/specialized/hub-og.webp',
+  '/media/series-highrise.png',
+  '/media/series-5th-alarm.png',
+  '/media/series-3rd-alarm.png',
+  '/media/series-1st-alarm.png',
+  '/media/series-highrise.webp',
+  '/media/series-5th-alarm.webp',
+  '/media/series-3rd-alarm.webp',
+  '/media/series-1st-alarm.webp',
 ] as const;
 
 export function isSiteStaticMediaPath(url: string): boolean {

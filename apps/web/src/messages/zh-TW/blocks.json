@@ -45,15 +45,6 @@
       "titleDefault": "延伸了解",
       "learnMore": "了解更多"
     },
-    "certificationTrust": {
-      "label": "資質認證",
-      "items": {
-        "iso9001": "ISO 9001",
-        "iso14001": "ISO 14001",
-        "iso45001": "ISO 45001",
-        "aftersales": "五星級售後"
-      }
-    },
     "certification": {
       "eyebrow": "資質與信任",
       "title": "體系認證，質量過程可控",

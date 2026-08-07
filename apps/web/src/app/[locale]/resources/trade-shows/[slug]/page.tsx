@@ -141,7 +141,7 @@ export default async function TradeShowDetailPage({ params, searchParams }: Trad
               </p>
             ) : null}
 
-            <MarkdownBody content={item.content} />
+            <MarkdownBody content={item.content} className={summary ? 'mt-8' : ''} />
 
             <div className="mt-12 border border-neutral-300 bg-neutral-100 p-8 text-center">
               <h3 className="rb-h4 text-neutral-900">{t('ctaTitleTradeShow')}</h3>

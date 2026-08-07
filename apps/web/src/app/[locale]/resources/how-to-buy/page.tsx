@@ -5,7 +5,6 @@ import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { RelatedLinks } from '@/components/sections/blocks';
 import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
-import { CertificationTrustStrip } from '@/components/sections/CertificationTrustStrip';
 import { Container, RbLink, SectionHeading } from '@/components/ui';
 import { Link as I18nLink } from '@/i18n/navigation';
 import { getCases } from '@/lib/api';
@@ -82,8 +81,6 @@ export default async function HowToBuyPage() {
         video="/media/mission.mp4"
         poster={RESOURCES_IMAGES['how-to-buy'].hero}
       />
-
-      <CertificationTrustStrip />
 
       <section>
         <Container className="py-16 lg:py-24">

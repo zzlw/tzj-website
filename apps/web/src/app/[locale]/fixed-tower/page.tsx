@@ -1,42 +1,42 @@
-import type { LucideIcon } from 'lucide-react';
-import { Check, ClipboardList, Factory, PencilRuler, ShieldCheck } from 'lucide-react';
-import type { Metadata } from 'next';
+import { Check } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { BaiduSafeVideoHero as VideoHero } from '@/components/BaiduSafeVideoHero';
 import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { JsonLd } from '@/components/JsonLd';
 import { MediaImage as Image } from '@/components/MediaImage';
-import { UsersBand } from '@/components/products/ProductLineMedia';
 import { RelatedLinks } from '@/components/sections/blocks';
+import { ProcessBandI18n } from '@/components/sections/blocks-i18n';
 import { Container, RbLink, SectionHeading } from '@/components/ui';
 import { Link } from '@/i18n/navigation';
+import { getCaseBySlug } from '@/lib/cases';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 import { breadcrumbJsonLd, productJsonLd } from '@/lib/jsonld';
-import { productLineHeroImage, productLineOgImage } from '@/lib/product-catalog';
-import { getProductPageImages } from '@/lib/product-images';
-import {
-  fetchFeaturedCases,
-  relatedLinksWithImages,
-  requireProductLine,
-} from '@/lib/product-line-page';
 
-const LINE = requireProductLine('fixed-tower');
-const SERIES_IMAGES = getProductPageImages('fixed-series');
-const CUSTOM_IMAGES = getProductPageImages('fixed-custom');
+export async function generateMetadata() {
+  return createPageMetadata({ namespace: 'pages.fixedTower', path: '/fixed-tower' });
+}
 
-const HERO_POSTER = productLineHeroImage(LINE);
+const HERO_IMAGE = '/media/fixed-tower-hero.jpg';
+/** 对象存储唯一事实源：content/hero.mp4（旧 fixed-tower.mp4 已下线） */
 const HERO_VIDEO = '/media/hero.mp4';
-const OVERVIEW_IMAGE = LINE.extraImage ?? LINE.detailImages?.[0] ?? LINE.image;
-const PATH_STANDARD_IMAGE =
-  SERIES_IMAGES.detailImages?.[0] ?? '/media/product/towers/fixed-series-structure-1.webp';
-const PATH_CUSTOM_IMAGE =
-  CUSTOM_IMAGES.detailImages?.[0] ?? '/media/product/towers/fixed-custom-structure-1.webp';
-const USERS_SRC = LINE.usersImage;
-const CONFIG_SRC = LINE.configImage;
+const OVERVIEW_IMAGE = '/media/ft-overview-detail.png';
+const PATH_STANDARD_IMAGE = '/media/ft-path-standard.png';
+const PATH_CUSTOM_IMAGE = '/media/ft-path-custom.png';
+const RELATED_IMAGES = [
+  '/media/ft-path-standard.png',
+  '/media/ft-path-custom.png',
+  '/media/burn-room.webp',
+] as const;
 
-const PROCESS_ICONS: LucideIcon[] = [ClipboardList, PencilRuler, Factory, ShieldCheck];
-
-const RELATED_HREFS = ['/fixed-tower/series', '/fixed-tower/custom', '/burn-rooms'] as const;
+/**
+ * 固定塔 Hub 精选案例：文案/链接用真实案例。
+ * 封面必须与案例详情 `coverImage` 同源（content/case-*-hero），避免卡片→详情视觉跳变。
+ */
+const FEATURED_CASES = [
+  { slug: 'henan-fire-rescue', image: '/media/case-henan-hero.png' },
+  { slug: 'guangdong-cfbt', image: '/media/case-gd-hero.png' },
+  { slug: 'jiangsu-university', image: '/media/case-js-hero.png' },
+] as const;
 
 type SeriesCard = {
   name: string;
@@ -51,16 +51,6 @@ type PathColumn = {
   linkText: string;
 };
 
-type ProcessStep = { title: string; desc: string };
-
-export async function generateMetadata(): Promise<Metadata> {
-  return createPageMetadata({
-    namespace: 'pages.fixedTower',
-    path: '/fixed-tower',
-    image: productLineOgImage(LINE),
-  });
-}
-
 export default async function FixedTowerPage() {
   const t = await getTranslations('pages.fixedTower');
   const tSeries = await getTranslations('pages.fixedTowerSeries');
@@ -74,11 +64,20 @@ export default async function FixedTowerPage() {
   const seriesCards = (Array.isArray(seriesRaw) ? seriesRaw : []) as SeriesCard[];
   const pathStandard = t.raw('paths.standard') as PathColumn;
   const pathCustom = t.raw('paths.custom') as PathColumn;
-  const processSteps = t.raw('process.steps') as ProcessStep[];
   const relatedLinks = t.raw('relatedLinks') as Array<{ label: string; desc: string }>;
-  const users = t.raw('users') as string[];
+  const relatedHrefs = ['/fixed-tower/series', '/fixed-tower/custom', '/burn-rooms'] as const;
 
-  const featuredCases = await fetchFeaturedCases(LINE.relatedCaseSlugs);
+  const featuredCases = FEATURED_CASES.map(({ slug, image }) => {
+    const study = getCaseBySlug(slug);
+    if (!study) return null;
+    return {
+      slug,
+      image,
+      title: study.title,
+      location: study.location,
+      summary: study.summary,
+    };
+  }).filter((c): c is NonNullable<typeof c> => c !== null);
 
   return (
     <>
@@ -92,7 +91,7 @@ export default async function FixedTowerPage() {
             name: t('jsonLd.productName'),
             description: t('jsonLd.productDescription'),
             path: '/fixed-tower',
-            image: HERO_POSTER,
+            image: HERO_IMAGE,
           }),
         ]}
       />
@@ -102,7 +101,7 @@ export default async function FixedTowerPage() {
           title={t('hero.title')}
           description={t('hero.description')}
           video={HERO_VIDEO}
-          poster={HERO_POSTER}
+          poster={HERO_IMAGE}
         >
           <BookConsultButton variant="light" message={tCommon('bookConsultProduct')}>
             {tCta('bookConsult')}
@@ -140,7 +139,7 @@ export default async function FixedTowerPage() {
               <div className="rb-img-shimmer relative aspect-[4/3] overflow-hidden bg-neutral-200">
                 <Image
                   src={OVERVIEW_IMAGE}
-                  alt={t('overviewImageAlt')}
+                  alt={t('overview.title')}
                   fill
                   sizes="(max-width: 1024px) 100vw, 560px"
                   className="object-cover"
@@ -216,6 +215,7 @@ export default async function FixedTowerPage() {
                       src={s.image}
                       alt={s.name}
                       fill
+                      quality={80}
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                       className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
                     />
@@ -245,37 +245,6 @@ export default async function FixedTowerPage() {
             </div>
           </Container>
         </section>
-
-        {CONFIG_SRC ? (
-          <section className="bg-neutral-100">
-            <Container className="py-16 lg:py-24">
-              <SectionHeading
-                eyebrow={t('configSection.eyebrow')}
-                title={t('configSection.title')}
-                description={t('configSection.description')}
-              />
-              <div className="rb-img-shimmer relative mt-10 aspect-[21/9] overflow-hidden bg-neutral-200">
-                <Image
-                  src={CONFIG_SRC}
-                  alt={t('configImageAlt')}
-                  fill
-                  quality={75}
-                  sizes="100vw"
-                  className="object-cover"
-                />
-              </div>
-            </Container>
-          </section>
-        ) : null}
-
-        <UsersBand
-          eyebrow={t('usersSection.eyebrow')}
-          title={t('usersSection.title')}
-          description={t('usersSection.description')}
-          imageSrc={USERS_SRC}
-          imageAlt={t('usersImageAlt')}
-          users={users}
-        />
 
         <section id="cases" className="scroll-mt-24 bg-neutral-100">
           <Container className="py-16 lg:py-24">
@@ -316,38 +285,17 @@ export default async function FixedTowerPage() {
           </Container>
         </section>
 
-        <section id="process" className="scroll-mt-24">
-          <Container className="py-16 lg:py-24">
-            <SectionHeading
-              eyebrow={t('process.eyebrow')}
-              title={t('process.title')}
-              description={t('process.description')}
-            />
-            <ol className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {processSteps.map((step, i) => {
-                const Icon = PROCESS_ICONS[i] ?? ClipboardList;
-                return (
-                  <li key={step.title} className="relative border border-neutral-300 bg-white p-6">
-                    <span className="absolute right-4 top-4 font-display text-2xl font-bold text-neutral-200">
-                      {String(i + 1).padStart(2, '0')}
-                    </span>
-                    <div className="mb-4 flex h-11 w-11 items-center justify-center bg-primary/10">
-                      <Icon className="h-5 w-5 text-primary" aria-hidden="true" />
-                    </div>
-                    <h3 className="rb-h5 text-neutral-900">{step.title}</h3>
-                    <p className="mt-2 text-sm leading-relaxed text-secondary-text">{step.desc}</p>
-                  </li>
-                );
-              })}
-            </ol>
-          </Container>
-        </section>
+        <ProcessBandI18n />
 
         <RelatedLinks
           title={tBlocks('titleDefault')}
           learnMore={tBlocks('learnMore')}
           eyebrow={tBlocks('eyebrow')}
-          links={relatedLinksWithImages(relatedLinks, RELATED_HREFS)}
+          links={relatedLinks.map((l, i) => ({
+            ...l,
+            href: relatedHrefs[i]!,
+            image: RELATED_IMAGES[i],
+          }))}
         />
 
         <Container className="pt-16 lg:pt-24">

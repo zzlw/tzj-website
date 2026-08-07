@@ -133,7 +133,7 @@ export const tradeShowsConfig: ResourceConfig<TradeShowItem> = {
       label: '官网链接',
       type: 'text',
       colSpan: 2,
-      help: '填写后前台列表卡片与营销弹窗 CTA 均跳转该链接；留空则去站内详情页',
+      help: '填写后前台列表卡片与营销弹窗 CTA 均跳转该链接；留空（或仅填 https:// 等无域名占位值）则去站内详情页',
       // 可空文本字段统一 emptyAsNull：清空须显式提交 null，否则 PATCH 省略导致无法删除旧值
       emptyAsNull: true,
     },
@@ -241,7 +241,7 @@ export const tradeShowsConfig: ResourceConfig<TradeShowItem> = {
       name: 'ctaText',
       label: 'CTA 按钮文字',
       type: 'text',
-      help: '面向海外受众时请自行填写对应语言文案（中英 locale 弹同一内容）；点击后跳转上方「官网链接」，未填则去站内详情页',
+      help: '面向海外受众时请自行填写对应语言文案（中英 locale 弹同一内容）；CTA 点击后按三级兜底跳转：① 有客服坐席可接待 → 打开在线客服并自动咨询本活动；② 无坐席且为可拨号移动端 → 直接拨打站点主电话；③ 前两级都不满足 → 新标签页打开上方「官网链接」，未填则去站内活动详情页',
       visibleWhen: (v) => v.isMarketing === true,
     },
   ],

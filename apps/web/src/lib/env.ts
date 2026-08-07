@@ -37,12 +37,20 @@ function requiredUrl(name: keyof typeof DEV_DEFAULTS, value: string | undefined)
   return value.replace(/\/$/, '');
 }
 
-/** 校验可选 URL 覆盖项：未配置返回 undefined 交由调用方派生，配置了则必须合法。 */
+/** 校验可选 URL 覆盖项：未配置返回 undefined 交由调用方派生，配置了则必须合法。
+ * 生产构建额外拒绝 localhost 值——2026-08-07 事故：本地 apps/web/.env.local 的开发值
+ * （NEXT_PUBLIC_CHAT_API_URL=localhost:4000）随「本地构建→ACR」烤进生产 bundle，导致
+ * 线上访客的坐席可用性/聊天请求全打到访客自己的 localhost 而静默失败（CTA 拨号分流失效）。 */
 function optionalUrl(name: string, value: string | undefined): string | undefined {
   if (!value) return undefined;
   const parsed = urlSchema.safeParse(value);
   if (!parsed.success) {
     throw new Error(`[env] 环境变量 ${name} 不是合法 URL：${value}`);
+  }
+  if (isProduction && /^https?:\/\/(localhost|127\.0\.0\.1)(?::\d+)?(?:\/|$)/.test(value)) {
+    throw new Error(
+      `[env] 生产构建中 ${name} 指向 localhost（疑似本地 .env.local 泄漏进生产镜像）：${value}`,
+    );
   }
   return value.replace(/\/$/, '');
 }

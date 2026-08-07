@@ -14,7 +14,6 @@ import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { MediaImage as Image } from '@/components/MediaImage';
-import { CertificationTrustStrip } from '@/components/sections/CertificationTrustStrip';
 import { Container, PageHero, RbLink } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 import { RESOURCES_CARD_BY_HREF, RESOURCES_IMAGES } from '@/lib/resources-images';
@@ -58,8 +57,6 @@ export default async function ResourcesPage() {
         title={t('hero.title')}
         description={t('hero.description')}
       />
-
-      <CertificationTrustStrip />
 
       <section>
         <Container className="py-16 lg:py-24">

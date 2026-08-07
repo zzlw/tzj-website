@@ -13,7 +13,6 @@ import { getTranslations } from 'next-intl/server';
 import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { FeatureGrid, RelatedLinks } from '@/components/sections/blocks';
-import { CertificationTrustStrip } from '@/components/sections/CertificationTrustStrip';
 import { Container, Eyebrow, RbLink, SectionHeading } from '@/components/ui';
 import { Link as I18nLink } from '@/i18n/navigation';
 import { getCases } from '@/lib/api';
@@ -104,8 +103,6 @@ export default async function InspectionsPage() {
           </p>
         </Container>
       </section>
-
-      <CertificationTrustStrip />
 
       <section>
         <Container className="py-16 lg:py-24">

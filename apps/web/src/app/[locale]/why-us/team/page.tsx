@@ -3,7 +3,6 @@ import { getTranslations } from 'next-intl/server';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { CtaBand, FeatureGrid, RelatedLinks } from '@/components/sections/blocks';
 import { StatBandI18n } from '@/components/sections/blocks-i18n';
-import { CertificationTrustStrip } from '@/components/sections/CertificationTrustStrip';
 import { Container, PageHero, SectionHeading } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 import { siteCoverByHref } from '@/lib/site-cover';
@@ -47,7 +46,6 @@ export default async function TeamPage() {
           loading="eager"
         />
       </div>
-      <CertificationTrustStrip />
       <section>
         <Container className="py-16 lg:py-24">
           <SectionHeading eyebrow={t('teamSection.eyebrow')} title={t('teamSection.title')} />

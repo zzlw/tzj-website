@@ -33,8 +33,10 @@ export async function Footer() {
     <footer className="bg-white">
       <div className="grid lg:grid-cols-2">
         <div className="rb-img-shimmer-dark relative flex min-h-[360px] flex-col justify-center overflow-hidden bg-neutral-900 px-5 py-14 sm:px-8 lg:px-12 lg:py-20 xl:px-16">
+          {/* 勿与 hero 背景图同 URL：next/image 的 LCP 检测以 URL 为键，
+              同 URL 的 lazy 图会覆盖 eager 记录导致 LCP 误报 */}
           <Image
-            src="/media/fixed-tower-hero.jpg"
+            src="/media/ft-overview-detail.png"
             alt=""
             fill
             loading="lazy"

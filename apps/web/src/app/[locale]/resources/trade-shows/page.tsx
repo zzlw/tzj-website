@@ -1,3 +1,4 @@
+import { isUsableExternalUrl } from '@tzj/utils';
 import { CalendarDays, Eye, Handshake, MapPin, MessagesSquare } from 'lucide-react';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
@@ -143,7 +144,7 @@ export default async function TradeShowsPage({ searchParams }: PageProps) {
                       </>
                     );
 
-                    if (e.externalUrl?.trim()) {
+                    if (isUsableExternalUrl(e.externalUrl)) {
                       return (
                         <a
                           key={e.id}

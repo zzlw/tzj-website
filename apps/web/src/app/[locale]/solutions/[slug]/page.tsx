@@ -8,7 +8,6 @@ import { JsonLd } from '@/components/JsonLd';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { FeatureGrid } from '@/components/sections/blocks';
 import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
-import { CertificationTrustStrip } from '@/components/sections/CertificationTrustStrip';
 import { Container, Eyebrow, RbLink, SectionHeading } from '@/components/ui';
 import { Link as I18nLink } from '@/i18n/navigation';
 import { getCases } from '@/lib/api';
@@ -138,8 +137,6 @@ export default async function SolutionDetailPage({ params }: SolutionPageProps) 
             </p>
           </Container>
         </section>
-
-        <CertificationTrustStrip />
 
         <section>
           <Container className="py-16 lg:py-24">

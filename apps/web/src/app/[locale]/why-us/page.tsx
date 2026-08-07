@@ -4,7 +4,6 @@ import { getTranslations } from 'next-intl/server';
 import { BaiduSafeVideoHero as VideoHero } from '@/components/BaiduSafeVideoHero';
 import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { MediaImage as Image } from '@/components/MediaImage';
-import { CertificationTrustStrip } from '@/components/sections/CertificationTrustStrip';
 import { Container, Eyebrow, SectionHeading } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 import { WHY_US_IMAGES } from '@/lib/why-us-images';
@@ -41,8 +40,6 @@ export default async function WhyUsPage() {
         video={HERO_VIDEO}
         poster={HERO_IMAGE}
       />
-
-      <CertificationTrustStrip />
 
       <section className="scroll-mt-24">
         <Container className="py-16 lg:py-24">

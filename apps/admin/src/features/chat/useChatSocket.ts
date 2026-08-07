@@ -8,10 +8,17 @@ import type { ChatMessage, ChatRoom, PresenceStatus } from './types';
 // 聊天 Socket.IO 地址：默认取主 API 的 origin（复用已注入的 NEXT_PUBLIC_ADMIN_API_URL），
 // 独立部署时可用 NEXT_PUBLIC_CHAT_SOCKET_URL 覆盖。切勿写死 localhost：那会在构建
 // 时烤进镜像导致生产环境连到 ws://localhost:4000。
-const SOCKET_URL = (process.env.NEXT_PUBLIC_CHAT_SOCKET_URL ?? new URL(API_BASE).origin).replace(
-  /\/$/,
-  '',
-);
+// 2026-08-07 事故后补防：本地 .env.local 的开发值会随「本地构建→ACR」烤进生产 bundle，
+// 故生产构建下显式忽略指向 localhost 的覆盖值，强制回退主 API origin 派生。
+const rawChatSocketUrl = process.env.NEXT_PUBLIC_CHAT_SOCKET_URL;
+const isLocalhostOverride =
+  !!rawChatSocketUrl &&
+  /^https?:\/\/(localhost|127\.0\.0\.1)(?::\d+)?(?:\/|$)/.test(rawChatSocketUrl);
+const SOCKET_URL = (
+  process.env.NODE_ENV === 'production' && isLocalhostOverride
+    ? new URL(API_BASE).origin
+    : (rawChatSocketUrl ?? new URL(API_BASE).origin)
+).replace(/\/$/, '');
 
 /** 在线坐席（供转接选择，P1 H3） */
 export interface OnlineAgent {

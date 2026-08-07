@@ -4,7 +4,6 @@ import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { RelatedLinks } from '@/components/sections/blocks';
 import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
-import { CertificationTrustStrip } from '@/components/sections/CertificationTrustStrip';
 import { Container, Eyebrow, RbLink, SectionHeading } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 import { relatedLinksWithImages } from '@/lib/product-line-page';
@@ -21,12 +20,12 @@ export async function generateMetadata() {
 
 const DOWNLOAD_ICONS = [FileText, Ruler, Boxes, FileBox] as const;
 const RELATED_HREFS = ['/resources/how-to-buy', '/fixed-tower/series', '/resources/faqs'];
-/** 目录卡封面：复用产品线实拍图（真实优先） */
+/** 目录卡封面：产品线高清卡图（1536×1024，与产品页卡片同源） */
 const CATALOG_COVERS = [
-  '/media/fixed-tower-hero.jpg',
-  '/media/modular-hero.jpg',
-  '/media/burn-room.webp',
-  '/media/tactical.jpg',
+  '/media/product/towers/fixed-card.webp',
+  '/media/product/towers/modular-card.webp',
+  '/media/product/burn/liner-card.webp',
+  '/media/product/accessories/accessories-card.webp',
 ] as const;
 
 export default async function DesignCenterPage() {
@@ -68,8 +67,6 @@ export default async function DesignCenterPage() {
           </p>
         </Container>
       </section>
-
-      <CertificationTrustStrip />
 
       <section>
         <Container className="py-16 lg:py-24">

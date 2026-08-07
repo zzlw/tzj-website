@@ -18,6 +18,7 @@
     "@tzj/env": "workspace:*",
     "@tzj/types": "workspace:*",
     "@tzj/ui": "workspace:*",
+    "@tzj/utils": "workspace:*",
     "lucide-react": "catalog:",
     "next": "catalog:",
     "next-themes": "^0.4.6",

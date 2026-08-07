@@ -8,7 +8,9 @@ const CARDS = [
     title: '固定训练塔',
     desc: '标准塔型与深度定制，工业级钢结构固定式训练塔',
     href: '/fixed-tower',
-    image: '/media/fixed-tower-hero.jpg',
+    // 勿与首页 hero 背景图同 URL：next/image 的 LCP 检测以 URL 为键，
+    // 同 URL 的 lazy 图会覆盖 eager 记录导致 LCP 误报
+    image: '/media/ft-path-standard.png',
   },
   {
     title: '模块化训练塔',

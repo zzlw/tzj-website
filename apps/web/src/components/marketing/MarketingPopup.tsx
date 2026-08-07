@@ -1,6 +1,7 @@
 'use client';
 
 import { isDialableMobile } from '@tzj/device';
+import { isUsableExternalUrl } from '@tzj/utils';
 import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
@@ -135,7 +136,7 @@ export function MarketingPopup({ phone }: { phone?: string }) {
       window.location.href = `tel:${phone.replace(/-/g, '')}`;
       return;
     }
-    if (activity.externalUrl?.trim()) {
+    if (isUsableExternalUrl(activity.externalUrl)) {
       window.open(activity.externalUrl, '_blank', 'noopener');
     } else {
       // 未填官网链接时默认去该活动详情页（站内导航，保留 locale 前缀）

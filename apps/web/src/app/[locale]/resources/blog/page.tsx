@@ -104,10 +104,14 @@ export default async function BlogPage({ searchParams }: PageProps) {
               className="group mt-10 grid grid-cols-1 overflow-hidden border border-neutral-300 bg-white transition-colors hover:border-neutral-900 lg:grid-cols-2"
             >
               <div className="rb-img-shimmer relative min-h-[240px] overflow-hidden bg-neutral-200">
+                {/* 首屏 featured 大图是 LCP 候选：preload + eager 避免 LCP 告警与延迟加载 */}
                 <Image
                   src={pickCoverImage(featured.coverImage, '/media/fixed-tower-hero.jpg')}
                   alt={featured.title}
                   fill
+                  preload
+                  loading="eager"
+                  fetchPriority="high"
                   sizes="(max-width: 1024px) 100vw, 50vw"
                   className="object-cover transition-transform duration-700 group-hover:scale-105"
                 />

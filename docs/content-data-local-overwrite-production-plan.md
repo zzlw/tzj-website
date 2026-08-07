@@ -1,6 +1,6 @@
 # 内容数据本地覆盖生产方案（2026-08-07）
 
-> 状态：**方案定稿（待执行），尚未执行任何代码 / 数据变更**。
+> 状态：**已执行完成（2026-08-07，镜像 tag `4a91756`）**。
 > 用户指示：案例管理、新闻管理、博客管理、活动（展会）管理、法务页面，**一律以本地库为准，直接覆盖线上，线上对应内容全部删除**。
 > 已确认决策：① 走方案 A（提交迁移 + 代码一起发布）；② OSS 走本地覆盖线上（`content/` 全量替换，注意 baseurl 替换）；③ 执行窗口由用户发令触发，不预设时间（见 §1.1）；④ 提交范围 = 全量提交当前工作区；⑤ media_assets 的 `content/` 孤儿记录彻底删除；⑥ 新媒体补登记到 Admin 媒体库（Phase 5.6）；⑦ **以本地 MinIO `content/` 为唯一主源，OSS 为生产同步副本，`public/media` 降级为冗余暂存**。
 > 生产唯一事实：真生产 `ssh root@REDACTED-IP`；废弃服务器 `REDACTED-IP` 严禁使用。
@@ -355,3 +355,4 @@ ssh root@REDACTED-IP "docker exec tzj-postgres-1 psql -U tzj -d tzj_prod -c \"se
 | 2026-08-07 | 原则修订：以本地 MinIO `content/` 为唯一主源；新增 Phase 2.5 补全 MinIO（848∪842≈867）；Phase 3/5.6 改以 MinIO 为准；`public/media` 降级为导入暂存，删除需上线后另行确认 |
 | 2026-08-07 | 复核修正：MinIO 缺失的 25 个 public/media 文件全部无引用（废弃），不补传；MinIO 842 个对象已含全部被引用文件；Phase 2.5 改为“核对完整性”，主源规模 867→842 |
 | 2026-08-07 | 执行删除无引用资源：本地 media 25 个废弃文件移至 `/tmp/tzj-unreferenced-media-20260807/` 并移除；MinIO 删除 2 个无引用对象（`alarm-highrise.jpg`、`tower-titusville.jpg`）；本地 `media_assets` 同步删除对应 2 行；主源 842→840，`public/media` 848→823 |
+| 2026-08-07 | **上线执行完成**：本地 amd64 构建 api/web/admin 推送 ACR（`4a91756`）；`deploy.sh` 部署成功（两条迁移已应用）；OSS `content/` 清空重建 840 对象 + CDN 刷新完成；五表数据本地覆盖（52/26/9/4/9，封面 9/4）；`media_assets` 41 条孤儿删除 + 840 条补登记；线上页面/API/图片全部 200 |

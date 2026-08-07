@@ -162,8 +162,9 @@ export function ProcessBand({
           )}
         >
           {showImage ? (
-            <div className="lg:col-span-5">
-              <div className="rb-img-shimmer relative aspect-[4/5] overflow-hidden bg-neutral-200 lg:sticky lg:top-28">
+            <div className="lg:col-span-5 lg:sticky lg:top-28">
+              {/* fill 图的直接父级必须是 relative/absolute/fixed，sticky 放外层 */}
+              <div className="rb-img-shimmer relative aspect-[4/5] overflow-hidden bg-neutral-200">
                 <Image
                   src={image!}
                   alt={imageAlt ?? title}

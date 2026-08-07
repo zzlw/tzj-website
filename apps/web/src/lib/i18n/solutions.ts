@@ -10,6 +10,7 @@ async function buildSolution(meta: SolutionMeta): Promise<Solution> {
   const focusRaw = t.raw('focus') as Array<{ title: string; desc: string }>;
   const recommendedRaw = t.raw('recommended') as Array<{ label: string; desc: string }>;
   const programs = t.raw('programs') as string[];
+  const sceneImageAlts = t.raw('sceneImageAlts') as string[];
 
   const focus: SolutionFocus[] = focusRaw.map((item, i) => ({
     icon: meta.focusIcons[i]!,
@@ -31,6 +32,7 @@ async function buildSolution(meta: SolutionMeta): Promise<Solution> {
     heroImage: meta.heroImage,
     ogImage: meta.ogImage,
     detailImages: meta.detailImages,
+    sceneImageAlts,
     tagline: t('tagline'),
     intro,
     focus,
