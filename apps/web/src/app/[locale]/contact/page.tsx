@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { getLocale, getTranslations } from 'next-intl/server';
+import { CertificationWall } from '@/components/sections/CertificationWall';
 import { ContactSectionDynamic } from '@/components/sections/ContactSectionDynamic';
 import { PageHero } from '@/components/ui';
 import { generateSeo } from '@/lib/seo';
@@ -28,6 +29,7 @@ export default async function ContactPage() {
   return (
     <div>
       <PageHero eyebrow={t('eyebrow')} title={t('title')} description={t('heroDescription')} />
+      <CertificationWall />
       <ContactSectionDynamic settings={settings} address={address} />
     </div>
   );

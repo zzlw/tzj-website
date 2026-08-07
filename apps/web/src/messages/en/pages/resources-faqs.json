@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "FAQs",
+    "title": "Training Tower FAQs | Pricing, Timeline, Certifications & Support",
     "description": "Frequently asked questions about TZJ training towers, burn rooms, modular systems, and the procurement process."
   },
   "hero": {
@@ -102,6 +102,18 @@
         {
           "q": "How long is the typical project timeline?",
           "a": "Timeline depends on tower size and customization. After design approval, we provide a clear production and installation schedule."
+        },
+        {
+          "q": "How is pricing calculated?",
+          "a": "Pricing depends on the tower series, number of levels and height, functional configuration (burn rooms, props and accessories, etc.) and site conditions. We provide an itemized quotation covering design, manufacturing, shipping and installation — no hidden costs after signing."
+        },
+        {
+          "q": "Are your certifications complete?",
+          "a": "We are certified to ISO 9001 (quality), ISO 14001 (environmental) and ISO 45001 (occupational health & safety), plus five-star after-sales service certification, and can supply the qualification documents required for government procurement and bidding."
+        },
+        {
+          "q": "How is after-sales support guaranteed?",
+          "a": "We provide integrated design, manufacturing and installation warranty with itemized warranty policies, plus annual inspections, maintenance and spare parts support. Issues can be reported via online chat, phone or inquiry form, and are followed up by our after-sales team."
         }
       ]
     },
@@ -125,6 +137,7 @@
   ],
   "cta": {
     "title": "Didn't find your answer?",
-    "description": "Contact our team directly for expert answers tailored to your project."
+    "description": "Contact our team directly for expert answers tailored to your project.",
+    "inquiryLink": "Send an Inquiry"
   }
 }

@@ -10,6 +10,9 @@
       "eyebrow": "交钥匙服务",
       "title": "从构想到落成，全程为您护航",
       "description": "作为一体化供应商，我们把设计、制造、安装与售后集于一体——一站式对接，全程跟进。",
+      "imageAlt": "交钥匙服务 · 训练设施现场安装与交付",
+      "ctaLabel": "预约交钥匙咨询",
+      "ctaMessage": "您好，我想了解交钥匙服务流程、交付周期与售后保障，请协助介绍。",
       "steps": {
         "survey": {
           "title": "需求勘察",
@@ -35,6 +38,39 @@
       "eyebrow": "相关内容",
       "titleDefault": "延伸了解",
       "learnMore": "了解更多"
+    },
+    "certificationTrust": {
+      "label": "资质认证",
+      "items": {
+        "iso9001": "ISO 9001",
+        "iso14001": "ISO 14001",
+        "iso45001": "ISO 45001",
+        "aftersales": "五星级售后"
+      }
+    },
+    "certification": {
+      "eyebrow": "资质与信任",
+      "title": "体系认证，质量过程可控",
+      "description": "ISO 9001 / 14001 / 45001 与五星级售后服务认证，是我们对品质与诚信的坚守。",
+      "viewCerts": "查看全部资质",
+      "viewLarge": "查看大图",
+      "items": {
+        "iso9001": { "title": "ISO 9001", "subtitle": "质量管理体系认证" },
+        "iso14001": { "title": "ISO 14001", "subtitle": "环境管理体系认证" },
+        "iso45001": { "title": "ISO 45001", "subtitle": "职业健康安全管理体系认证" },
+        "aftersales": { "title": "五星级售后服务", "subtitle": "商品售后服务评价体系" }
+      },
+      "clientsHeading": "服务客户行业",
+      "clients": {
+        "fire": "消防救援",
+        "police": "公安特警",
+        "mine": "矿山救援",
+        "university": "高等院校",
+        "tourism": "旅游景区",
+        "military": "部队训练",
+        "petrochemical": "石化企业",
+        "maritime": "港口海事"
+      }
     }
   },
   "cta": {

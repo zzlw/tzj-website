@@ -1,13 +1,26 @@
 {
   "meta": {
-    "title": "Hazmat Training",
-    "description": "TZJ hazmat training props — chlorine cylinders, leaking drums, reaction drums, falling cylinders, instructor series props, mobile training trailers, and integrated hazard training complexes for realistic leak, plug, and decon scenarios."
+    "title": "Hazmat Training Facilities | Leak, Plug & Decon Drills",
+    "description": "TZJ hazmat training facilities — chlorine cylinders, leaking drums, reaction drums, falling cylinders, instructor series props, mobile training trailers, and integrated hazard training complexes for realistic leak, plug, and decon scenarios."
   },
   "hero": {
     "eyebrow": "Specialized Training · Hazmat",
-    "title": "Hazmat Training",
-    "description": "Controllable, repeatable, combinable hazard props and mobile training trailers that replicate realistic leak, plug, and decon scenarios — prepare for the worst case."
+    "title": "Hazmat Training Facilities",
+    "description": "For hazmat response teams: Can you locate a leak fast? Are plugging drills repeatable? Can decon run across agencies? Controllable, repeatable hazard props and mobile trailers let crews walk through worst-case scenarios before they happen in the field."
   },
+  "heroImageAlt": "Hazmat training facility · integrated hazard training scene overview",
+  "gallery": [
+    { "alt": "Hazmat training facility · chlorine cylinder leak response" },
+    { "alt": "Hazmat training facility · mobile trailer with side doors deployed" },
+    { "alt": "Hazmat training facility · integrated hazard training complex exterior" }
+  ],
+  "why": {
+    "eyebrow": "Client challenge",
+    "title": "Scenarios are hard to recreate and teams are hard to gather — how do you train for real response?",
+    "description": "Mobile training trailers and instructor series props bring leak, plug, reaction, and decon scenarios to your teams without requiring a permanent large-scale site.",
+    "lead": "For agencies running cross-region or cross-unit drills, enclosed mobile trailers deploy complete hazmat scenes anywhere — flip-up side doors and a rear ramp simplify setup, built-in equipment bays centralize electrical controls, and one operator can manage the entire scene."
+  },
+  "extraImageAlt": "Mobile hazmat training trailer · side doors open with props deployed",
   "propsSection": {
     "eyebrow": "Instructor Series Props",
     "title": "Hazmat training scenarios",
@@ -60,6 +73,27 @@
     "point1": "Custom industrial buildings and sites integrating dozens of simulators to replicate real-world complex hazard scenarios.",
     "point2": "Advanced control rooms generate sound, odor, and sudden actions for the most realistic hazmat training drills."
   },
+  "configImageAlt": "Integrated hazard training complex · typical site layout",
+  "usersSection": {
+    "eyebrow": "Who it's for",
+    "title": "Who uses hazmat training facilities",
+    "description": "For emergency and industrial safety training units that need leak response, decon coordination, and cross-region drill capability."
+  },
+  "usersImageAlt": "Fire and hazmat response teams training at an integrated hazard scene",
+  "users": [
+    "Fire & rescue departments",
+    "Dedicated hazmat response teams",
+    "Chemical parks & corporate EHS",
+    "Emergency management agencies",
+    "Safety engineering education",
+    "Cross-region joint drill organizers"
+  ],
+  "casesSection": {
+    "eyebrow": "Related projects",
+    "title": "Delivered training complex projects",
+    "description": "These projects include integrated training scenarios for hazmat facility selection reference.",
+    "linkText": "View more case studies"
+  },
   "relatedLinks": [
     {
       "label": "Training Props & Accessories",
@@ -70,13 +104,13 @@
       "desc": "Integrate hazmat scenarios into comprehensive training complexes."
     },
     {
-      "label": "Project Case Studies",
-      "desc": "Explore delivered TZJ training complex projects."
+      "label": "Modular Training Tower",
+      "desc": "Reconfigurable structures for complex industrial and warehouse scenarios."
     }
   ],
   "cta": {
-    "title": "Plan your hazmat training capability",
-    "description": "Our team can help identify and configure the props and facilities best suited to your needs — from individual props to full integrated complexes.",
+    "title": "Get a hazmat training plan and quote",
+    "description": "Tell us team size, training subjects, and deployment needs — our engineers will recommend prop packages, trailer configurations, or complex integrations and deliver an actionable hazmat training plan.",
     "secondaryLabel": "Back to specialized training"
   }
 }

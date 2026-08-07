@@ -88,6 +88,8 @@ export function normalizeSocialQrPath(
 export const DEFAULT_SITE_PUBLIC_SETTINGS: SitePublicSettings = {
   contact: {
     phone: '0371-58691119',
+    phoneAlt: 'REDACTED-PHONE',
+    primaryPhone: 'phone',
     email: 'contact@tzjii.com',
     address: {
       'zh-CN': '河南省郑州市高新技术开发区科学大道',

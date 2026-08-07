@@ -38,6 +38,7 @@ export type {
   NotificationLogItem,
   NotificationTemplate,
   PageViewGeoSource,
+  PrimaryPhoneKey,
   ScreenWatermark,
   SecurityAuthSettings,
   SiteMediaSettings,

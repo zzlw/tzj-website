@@ -78,40 +78,6 @@
           "category": "CFBT"
         }
       }
-    },
-    "certification": {
-      "eyebrow": "資質與信任",
-      "title": "體系認證，質量過程可控",
-      "description": "多項行業資質認證與客户背書，是我們對品質與诚信的坚守。",
-      "items": {
-        "iso9001": {
-          "title": "ISO 9001",
-          "subtitle": "質量管理體系"
-        },
-        "hitech": {
-          "title": "高新技術企業",
-          "subtitle": "認定證書"
-        },
-        "patents": {
-          "title": "多項專利",
-          "subtitle": "實用新型 & 外觀"
-        },
-        "safety": {
-          "title": "安全生產標準化",
-          "subtitle": "三级達標"
-        }
-      },
-      "clientsHeading": "服務客户行業",
-      "clients": {
-        "fire": "消防救援",
-        "police": "公安特警",
-        "mine": "礦山救援",
-        "university": "高等院校",
-        "tourism": "旅游景區",
-        "military": "部隊訓練",
-        "petrochemical": "石化企業",
-        "maritime": "港口海事"
-      }
     }
   }
 }

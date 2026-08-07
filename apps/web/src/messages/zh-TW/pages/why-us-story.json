@@ -98,5 +98,7 @@
   "cta": {
     "title": "與我們共建可傳承的事業",
     "secondaryLabel": "認識我們的團隊"
-  }
+  },
+  "timelineImageAltFactory": "里程碑配圖 · 工廠鍍鋅鋼構件產線",
+  "timelineImageAltDelivery": "里程碑配圖 · 訓練塔構件發運交付"
 }

@@ -108,6 +108,8 @@ model Blog {
   excerpt     String?  @db.Text
   content     String?  @db.Text
   coverImage  String?
+  /** 详情页宽幅封面（比例特殊，与列表封面分离）；未设置时 C 端回退 coverImage */
+  detailCoverImage String?
   images      String[] @default([])
   category    String   // training_facility | burn_room | modular | practice | industry
   readTime    String?
@@ -155,6 +157,8 @@ model TradeShow {
   boothNumber    String?
   eventType      String    @default("exhibition") // exhibition | seminar | roadshow | promotion
   coverImage     String?
+  /** 详情页宽幅封面（比例特殊，与列表封面分离）；未设置时 C 端回退 coverImage */
+  detailCoverImage String?
   images         String[]  @default([])
   externalUrl    String?
   seoTitle       String?

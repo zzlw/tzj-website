@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { ContentListShell, ContentPaginationShell } from '@/components/content/ContentListShell';
 import { ContentPagination } from '@/components/content/ContentPagination';
+import { MediaImage as Image } from '@/components/MediaImage';
 import { CtaBand, FeatureGrid, RelatedLinks } from '@/components/sections/blocks';
 import { StatBandI18n } from '@/components/sections/blocks-i18n';
 import { Container, PageHero, SectionHeading } from '@/components/ui';
@@ -12,11 +13,13 @@ import {
   buildListQuery,
   normalizePagination,
   parseContentListState,
+  pickCoverImage,
   pickSummary,
 } from '@/lib/content-list';
 import { getTradeShowTypeFilter } from '@/lib/i18n/content-filters';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 import { getTradeShowSortOptions } from '@/lib/i18n/sort-options';
+import { relatedLinksWithImages } from '@/lib/product-line-page';
 
 const FEATURE_ICONS = [Eye, MessagesSquare, Handshake] as const;
 const RELATED_HREFS = ['/cases', '/resources/news', '/resources/design-center'];
@@ -94,38 +97,49 @@ export default async function TradeShowsPage({ searchParams }: PageProps) {
                   {items.map((e) => {
                     const cardInner = (
                       <>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-xs font-bold uppercase tracking-wide text-primary">
-                            {tradeShowTypeLabel(e.eventType)}
-                          </span>
-                          {e.isFeatured ? (
-                            <span className="bg-neutral-900 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
-                              {tContent('labels.featured')}
-                            </span>
-                          ) : null}
+                        <div className="relative aspect-[16/9] w-full overflow-hidden bg-neutral-200">
+                          <Image
+                            src={pickCoverImage(e.coverImage)}
+                            alt={e.title}
+                            fill
+                            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                            className="object-cover transition-transform duration-700 group-hover:scale-105"
+                          />
                         </div>
-                        <h3 className="rb-h5 mt-2 text-neutral-900">{e.title}</h3>
-                        <div className="mt-3 flex flex-wrap gap-4 text-sm text-secondary-text">
-                          {e.location ? (
+                        <div className="flex flex-1 flex-col p-6">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-xs font-bold uppercase tracking-wide text-primary">
+                              {tradeShowTypeLabel(e.eventType)}
+                            </span>
+                            {e.isFeatured ? (
+                              <span className="bg-neutral-900 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                                {tContent('labels.featured')}
+                              </span>
+                            ) : null}
+                          </div>
+                          <h3 className="rb-h5 mt-2 text-neutral-900">{e.title}</h3>
+                          <div className="mt-3 flex flex-wrap gap-4 text-sm text-secondary-text">
+                            {e.location ? (
+                              <span className="inline-flex items-center gap-1">
+                                <MapPin className="h-4 w-4 text-primary" aria-hidden />
+                                {e.location}
+                              </span>
+                            ) : null}
                             <span className="inline-flex items-center gap-1">
-                              <MapPin className="h-4 w-4 text-primary" aria-hidden />
-                              {e.location}
+                              <CalendarDays className="h-4 w-4 text-primary" aria-hidden />
+                              {e.eventDateLabel || formatContentDateRange(e.startDate, e.endDate)}
                             </span>
+                          </div>
+                          {e.boothNumber ? (
+                            <p className="mt-2 text-xs font-medium text-neutral-900">
+                              {tContent('labels.booth')}
+                              {e.boothNumber}
+                            </p>
                           ) : null}
-                          <span className="inline-flex items-center gap-1">
-                            <CalendarDays className="h-4 w-4 text-primary" aria-hidden />
-                            {e.eventDateLabel || formatContentDateRange(e.startDate, e.endDate)}
-                          </span>
-                        </div>
-                        {e.boothNumber ? (
-                          <p className="mt-2 text-xs font-medium text-neutral-900">
-                            {tContent('labels.booth')}
-                            {e.boothNumber}
+                          <p className="mt-3 text-sm leading-relaxed text-secondary-text">
+                            {pickSummary(e.summary)}
                           </p>
-                        ) : null}
-                        <p className="mt-3 text-sm leading-relaxed text-secondary-text">
-                          {pickSummary(e.summary)}
-                        </p>
+                        </div>
                       </>
                     );
 
@@ -136,7 +150,7 @@ export default async function TradeShowsPage({ searchParams }: PageProps) {
                           href={e.externalUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="block border border-neutral-300 bg-white p-6 transition-colors hover:border-neutral-900"
+                          className="group flex h-full flex-col border border-neutral-300 bg-white transition-colors hover:border-neutral-900"
                         >
                           {cardInner}
                         </a>
@@ -147,7 +161,7 @@ export default async function TradeShowsPage({ searchParams }: PageProps) {
                       <Link
                         key={e.id}
                         href={`/resources/trade-shows/${e.slug}`}
-                        className="group block border border-neutral-300 bg-white p-6 transition-colors hover:border-neutral-900"
+                        className="group flex h-full flex-col border border-neutral-300 bg-white transition-colors hover:border-neutral-900"
                       >
                         {cardInner}
                       </Link>
@@ -186,7 +200,7 @@ export default async function TradeShowsPage({ searchParams }: PageProps) {
         title={tBlocks('titleDefault')}
         learnMore={tBlocks('learnMore')}
         eyebrow={tBlocks('eyebrow')}
-        links={relatedLinks.map((l, i) => ({ ...l, href: RELATED_HREFS[i]! }))}
+        links={relatedLinksWithImages(relatedLinks, RELATED_HREFS)}
       />
 
       <CtaBand title={t('cta.title')} primaryLabel={tCta('bookConsult')} />

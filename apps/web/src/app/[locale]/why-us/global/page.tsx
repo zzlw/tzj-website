@@ -1,15 +1,23 @@
+import { Globe, MapPin } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { CtaBand, RelatedLinks } from '@/components/sections/blocks';
 import { StatBandI18n } from '@/components/sections/blocks-i18n';
+import { CertificationTrustStrip } from '@/components/sections/CertificationTrustStrip';
 import { Container, Eyebrow, SectionHeading } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
+import { siteCoverByHref } from '@/lib/site-cover';
+import { WHY_US_IMAGES } from '@/lib/why-us-images';
 
-const HERO_IMAGE = '/media/tower-wylie.jpg';
+const HERO_IMAGE = WHY_US_IMAGES.global.hero;
 const RELATED_HREFS = ['/cases', '/why-us/story', '/why-us/team'] as const;
 
 export async function generateMetadata() {
-  return createPageMetadata({ namespace: 'pages.whyUsGlobal', path: '/why-us/global' });
+  return createPageMetadata({
+    namespace: 'pages.whyUsGlobal',
+    path: '/why-us/global',
+    image: WHY_US_IMAGES.global.og,
+  });
 }
 
 export default async function GlobalPage() {
@@ -17,7 +25,8 @@ export default async function GlobalPage() {
   const tCta = await getTranslations('cta');
   const tBlocks = await getTranslations('blocks.relatedLinks');
 
-  const regions = t.raw('regions') as string[];
+  const regionsDomestic = t.raw('regionsDomestic') as string[];
+  const regionsOverseas = t.raw('regionsOverseas') as string[];
   const sectors = t.raw('sectors') as string[];
   const highlights = t.raw('highlights') as Array<{ title: string; desc: string }>;
   const relatedLinks = t.raw('relatedLinks') as Array<{ label: string; desc: string }>;
@@ -47,6 +56,8 @@ export default async function GlobalPage() {
         </Container>
       </section>
 
+      <CertificationTrustStrip />
+
       <section>
         <Container className="py-16 lg:py-24">
           <SectionHeading
@@ -54,15 +65,46 @@ export default async function GlobalPage() {
             title={t('overviewSection.title')}
             description={t('overviewSection.description')}
           />
-          <div className="mt-10 flex flex-wrap gap-3">
-            {regions.map((r) => (
-              <span
-                key={r}
-                className="border border-neutral-300 bg-neutral-100 px-4 py-2 text-sm font-bold text-neutral-900"
-              >
-                {r}
-              </span>
-            ))}
+          <div className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <div className="border border-neutral-300 bg-white p-8">
+              <div className="mb-5 flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center bg-primary/10">
+                  <MapPin className="h-5 w-5 text-primary" aria-hidden="true" />
+                </span>
+                <h3 className="rb-h5 text-neutral-900">{t('regionsDomesticLabel')}</h3>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <span className="bg-primary px-3 py-1.5 text-sm font-bold text-white">
+                  {t('regionsBadge')}
+                </span>
+                {regionsDomestic.map((r) => (
+                  <span
+                    key={r}
+                    className="border border-neutral-300 bg-neutral-100 px-3 py-1.5 text-sm font-bold text-neutral-900"
+                  >
+                    {r}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div className="border border-neutral-300 bg-white p-8">
+              <div className="mb-5 flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center bg-primary/10">
+                  <Globe className="h-5 w-5 text-primary" aria-hidden="true" />
+                </span>
+                <h3 className="rb-h5 text-neutral-900">{t('regionsOverseasLabel')}</h3>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {regionsOverseas.map((r) => (
+                  <span
+                    key={r}
+                    className="border border-neutral-300 bg-neutral-100 px-3 py-1.5 text-sm font-bold text-neutral-900"
+                  >
+                    {r}
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
         </Container>
       </section>
@@ -116,7 +158,10 @@ export default async function GlobalPage() {
         title={tBlocks('titleDefault')}
         learnMore={tBlocks('learnMore')}
         eyebrow={tBlocks('eyebrow')}
-        links={relatedLinks.map((l, i) => ({ ...l, href: RELATED_HREFS[i] ?? RELATED_HREFS[0] }))}
+        links={relatedLinks.map((l, i) => {
+          const href = RELATED_HREFS[i] ?? RELATED_HREFS[0];
+          return { ...l, href, image: siteCoverByHref(href) };
+        })}
       />
       <CtaBand title={t('cta.title')} primaryLabel={tCta('bookConsult')} />
     </div>

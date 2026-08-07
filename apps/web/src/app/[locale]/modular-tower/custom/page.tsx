@@ -1,10 +1,16 @@
 import { Check } from 'lucide-react';
+import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { MediaImage as Image } from '@/components/MediaImage';
+import { ProductGallery, ProductHeroBand } from '@/components/products/ProductLineMedia';
 import { CtaBand, RelatedLinks } from '@/components/sections/blocks';
 import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
 import { Container, PageHero, SectionHeading } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
+import { getProductPageImages } from '@/lib/product-images';
+import { relatedLinksWithImages } from '@/lib/product-line-page';
+
+const PAGE = getProductPageImages('modular-custom');
+const STRUCTURE_IMAGES = PAGE.detailImages ?? [];
 
 const RELATED_HREFS = [
   '/modular-tower/series',
@@ -12,10 +18,11 @@ const RELATED_HREFS = [
   '/resources/design-center',
 ] as const;
 
-export async function generateMetadata() {
+export async function generateMetadata(): Promise<Metadata> {
   return createPageMetadata({
     namespace: 'pages.modularTowerCustom',
     path: '/modular-tower/custom',
+    image: PAGE.ogImage ?? PAGE.heroImage,
   });
 }
 
@@ -24,8 +31,14 @@ export default async function ModularCustomPage() {
   const tCta = await getTranslations('cta');
   const tBlocks = await getTranslations('blocks.relatedLinks');
 
+  const gallery = t.raw('gallery') as Array<{ alt: string }>;
   const options = t.raw('options') as string[];
   const relatedLinks = t.raw('relatedLinks') as Array<{ label: string; desc: string }>;
+
+  const galleryItems = gallery.map((g, i) => ({
+    src: STRUCTURE_IMAGES[i] ?? STRUCTURE_IMAGES[0] ?? PAGE.heroImage,
+    alt: g.alt,
+  }));
 
   return (
     <div className="pb-20">
@@ -35,19 +48,8 @@ export default async function ModularCustomPage() {
         description={t('hero.description')}
       />
 
-      <section>
-        <Container className="pt-16 lg:pt-24">
-          <div className="rb-img-shimmer relative aspect-[21/9] overflow-hidden bg-neutral-200">
-            <Image
-              src="/media/modular-construction.jpg"
-              alt={t('gallery.imageAlt')}
-              fill
-              sizes="(max-width: 768px) 100vw, 50vw"
-              className="object-cover"
-            />
-          </div>
-        </Container>
-      </section>
+      <ProductHeroBand src={PAGE.heroImage} alt={t('heroImageAlt')} />
+      <ProductGallery items={galleryItems} fallbackSrc={PAGE.heroImage} />
 
       <section>
         <Container className="py-16 lg:py-24">
@@ -86,7 +88,7 @@ export default async function ModularCustomPage() {
         title={tBlocks('titleDefault')}
         learnMore={tBlocks('learnMore')}
         eyebrow={tBlocks('eyebrow')}
-        links={relatedLinks.map((l, i) => ({ ...l, href: RELATED_HREFS[i] ?? RELATED_HREFS[0] }))}
+        links={relatedLinksWithImages(relatedLinks, RELATED_HREFS)}
       />
 
       <CtaBand

@@ -10,6 +10,9 @@
       "eyebrow": "Turnkey Service",
       "title": "From Concept to Completion, We Are With You",
       "description": "As an integrated supplier, we bring design, manufacturing, installation, and after-sales together — one-stop coordination with clear follow-through.",
+      "imageAlt": "Turnkey service · on-site installation and handover of a training facility",
+      "ctaLabel": "Book a Turnkey Consultation",
+      "ctaMessage": "Hi, I'd like to learn about your turnkey process, delivery timeline, and after-sales support.",
       "steps": {
         "survey": {
           "title": "Needs Assessment",
@@ -41,6 +44,45 @@
       "eyebrow": "Related Content",
       "titleDefault": "Learn More",
       "learnMore": "Learn More"
+    },
+    "certificationTrust": {
+      "label": "Certifications",
+      "items": {
+        "iso9001": "ISO 9001",
+        "iso14001": "ISO 14001",
+        "iso45001": "ISO 45001",
+        "aftersales": "5-Star After-Sales"
+      }
+    },
+    "certification": {
+      "eyebrow": "Credentials & Trust",
+      "title": "Certified Systems, Controlled Quality",
+      "description": "ISO 9001 / 14001 / 45001 and five-star after-sales service certification reflect our commitment to quality and integrity.",
+      "viewCerts": "View All Certifications",
+      "viewLarge": "View Larger",
+      "items": {
+        "iso9001": { "title": "ISO 9001", "subtitle": "Quality Management System" },
+        "iso14001": { "title": "ISO 14001", "subtitle": "Environmental Management System" },
+        "iso45001": {
+          "title": "ISO 45001",
+          "subtitle": "Occupational Health & Safety Management"
+        },
+        "aftersales": {
+          "title": "5-Star After-Sales",
+          "subtitle": "Commodity After-Sales Service Evaluation"
+        }
+      },
+      "clientsHeading": "Industries We Serve",
+      "clients": {
+        "fire": "Fire & Rescue",
+        "police": "Police & SWAT",
+        "mine": "Mine Rescue",
+        "university": "Universities",
+        "tourism": "Tourism & Scenic",
+        "military": "Military Training",
+        "petrochemical": "Petrochemical",
+        "maritime": "Ports & Maritime"
+      }
     }
   },
   "cta": {

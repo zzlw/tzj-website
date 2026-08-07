@@ -1,29 +1,33 @@
 import { Check, CloudRain, Link2, Recycle, Shield, X } from 'lucide-react';
+import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { BaiduSafeVideoHero as VideoHero } from '@/components/BaiduSafeVideoHero';
 import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { MediaImage as Image } from '@/components/MediaImage';
+import { ProductGallery } from '@/components/products/ProductLineMedia';
 import { FeatureGrid, RelatedLinks } from '@/components/sections/blocks';
 import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
 import { Container, RbLink, SectionHeading } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
+import { getProductPageImages } from '@/lib/product-images';
+import { relatedLinksWithImages } from '@/lib/product-line-page';
 
-export async function generateMetadata() {
-  return createPageMetadata({ namespace: 'pages.fixedTowerSeries', path: '/fixed-tower/series' });
-}
-
-/** 与 Hub「延伸了解」标准塔型卡同源，保证列表→详情封面一致 */
-const HERO_POSTER = '/media/ft-path-standard.png';
-const HERO_VIDEO = '/media/fixed-series.mp4';
+const PAGE = getProductPageImages('fixed-series');
+const HERO_POSTER = PAGE.heroImage;
+const HERO_VIDEO = '/media/mission.mp4';
+const STRUCTURE_IMAGES = PAGE.detailImages ?? [];
 const DURABILITY_ICONS = [Shield, Link2, CloudRain, Recycle] as const;
 const RELATED_HREFS = ['/fixed-tower/custom', '/burn-rooms', '/resources/design-center'] as const;
-const RELATED_IMAGES = [
-  '/media/ft-path-custom.png',
-  '/media/burn-room.webp',
-  '/media/ft-overview-detail.png',
-] as const;
 
 type CmpRow = { feature: string; standard: boolean | string; custom: boolean | string };
+
+export async function generateMetadata(): Promise<Metadata> {
+  return createPageMetadata({
+    namespace: 'pages.fixedTowerSeries',
+    path: '/fixed-tower/series',
+    image: PAGE.ogImage ?? PAGE.heroImage,
+  });
+}
 
 export default async function FixedTowerSeriesPage() {
   const t = await getTranslations('pages.fixedTowerSeries');
@@ -31,8 +35,12 @@ export default async function FixedTowerSeriesPage() {
   const tBlocks = await getTranslations('blocks.relatedLinks');
   const tCommon = await getTranslations('common');
 
+  const gallery = t.raw('gallery') as Array<{ alt: string }>;
   const durabilityRaw = t.raw('durability') as Array<{ title: string; desc: string }>;
-  const durability = durabilityRaw.map((item, i) => ({ ...item, icon: DURABILITY_ICONS[i]! }));
+  const durability = durabilityRaw.map((item, i) => ({
+    ...item,
+    icon: DURABILITY_ICONS[i] ?? DURABILITY_ICONS[0],
+  }));
   const series = t.raw('series') as Array<{
     name: string;
     variants: string;
@@ -48,6 +56,11 @@ export default async function FixedTowerSeriesPage() {
   };
   const relatedLinks = t.raw('relatedLinks') as Array<{ label: string; desc: string }>;
 
+  const galleryItems = gallery.map((g, i) => ({
+    src: STRUCTURE_IMAGES[i] ?? STRUCTURE_IMAGES[0] ?? HERO_POSTER,
+    alt: g.alt,
+  }));
+
   return (
     <div className="pb-20">
       <VideoHero
@@ -61,6 +74,8 @@ export default async function FixedTowerSeriesPage() {
           {tCta('bookConsult')}
         </BookConsultButton>
       </VideoHero>
+
+      <ProductGallery items={galleryItems} fallbackSrc={HERO_POSTER} />
 
       <section>
         <Container className="py-16 lg:py-24">
@@ -194,11 +209,7 @@ export default async function FixedTowerSeriesPage() {
         title={tBlocks('titleDefault')}
         learnMore={tBlocks('learnMore')}
         eyebrow={tBlocks('eyebrow')}
-        links={relatedLinks.map((l, i) => ({
-          ...l,
-          href: RELATED_HREFS[i]!,
-          image: RELATED_IMAGES[i],
-        }))}
+        links={relatedLinksWithImages(relatedLinks, RELATED_HREFS)}
       />
 
       <Container className="pt-16 lg:pt-24">

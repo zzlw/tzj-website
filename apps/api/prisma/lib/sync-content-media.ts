@@ -207,9 +207,11 @@ export async function patchContentImageUrls(
   const [cases, news, blogs, tradeShows] = await Promise.all([
     prisma.case.findMany({ select: { id: true, coverImage: true, images: true } }),
     prisma.news.findMany({ select: { id: true, coverImage: true, images: true } }),
-    prisma.blog.findMany({ select: { id: true, coverImage: true, images: true } }),
+    prisma.blog.findMany({
+      select: { id: true, coverImage: true, detailCoverImage: true, images: true },
+    }),
     prisma.tradeShow.findMany({
-      select: { id: true, coverImage: true, images: true },
+      select: { id: true, coverImage: true, detailCoverImage: true, images: true },
     }),
   ]);
 
@@ -237,6 +239,7 @@ export async function patchContentImageUrls(
         where: { id: row.id },
         data: {
           coverImage: resolveContentUrl(row.coverImage, map),
+          detailCoverImage: resolveContentUrl(row.detailCoverImage, map),
           images: resolveImages(row.images, map),
         },
       }),
@@ -246,6 +249,7 @@ export async function patchContentImageUrls(
         where: { id: row.id },
         data: {
           coverImage: resolveContentUrl(row.coverImage, map),
+          detailCoverImage: resolveContentUrl(row.detailCoverImage, map),
           images: resolveImages(row.images, map),
         },
       }),

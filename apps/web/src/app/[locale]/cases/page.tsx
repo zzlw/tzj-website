@@ -20,6 +20,7 @@ import {
 import { getCaseTypeFilter } from '@/lib/i18n/content-filters';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 import { getCaseSortOptions } from '@/lib/i18n/sort-options';
+import { relatedLinksWithImages } from '@/lib/product-line-page';
 
 const RELATED_HREFS = ['/fixed-tower', '/modular-tower', '/specialized-training'] as const;
 
@@ -164,10 +165,10 @@ export default async function CasesPage({ searchParams }: PageProps) {
         title={tBlocks('titleDefault')}
         learnMore={tBlocks('learnMore')}
         eyebrow={tBlocks('eyebrow')}
-        links={(t.raw('relatedLinks') as Array<{ label: string; desc: string }>).map((l, i) => ({
-          ...l,
-          href: RELATED_HREFS[i] ?? RELATED_HREFS[0],
-        }))}
+        links={relatedLinksWithImages(
+          t.raw('relatedLinks') as Array<{ label: string; desc: string }>,
+          RELATED_HREFS,
+        )}
       />
 
       <Container>

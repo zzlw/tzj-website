@@ -98,5 +98,7 @@
   "cta": {
     "title": "Build a legacy together with us",
     "secondaryLabel": "Meet our team"
-  }
+  },
+  "timelineImageAltFactory": "Milestone photo — galvanized steel production line at the factory",
+  "timelineImageAltDelivery": "Milestone photo — training tower sections shipped for delivery"
 }

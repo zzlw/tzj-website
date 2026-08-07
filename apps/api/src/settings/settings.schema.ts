@@ -8,29 +8,39 @@ const localizedTextSchema = z.object({
 
 const socialPlatformSchema = z.enum(['wechat', 'douyin', 'weibo', 'xiaohongshu']);
 
-const optionalUrl = z
-  .string()
-  .max(2000)
-  .optional()
-  .transform((v) => (v?.trim() ? v.trim() : undefined))
-  .refine((v) => v === undefined || /^https?:\/\//i.test(v), {
-    message: 'Invalid url',
-  });
-
 const socialChannelPurposeSchema = z.enum(['contact', 'follow']);
 
 const socialHrefActionSchema = z.enum(['open', 'copy']);
 
-const socialChannelSchema = z.object({
-  id: z.string().min(1).max(64),
-  platform: socialPlatformSchema,
-  purpose: socialChannelPurposeSchema.optional(),
-  enabled: z.boolean(),
-  sortOrder: z.number().int().min(0).max(999),
-  qr: z.string().max(2000).optional(),
-  href: optionalUrl,
-  hrefAction: socialHrefActionSchema.optional(),
-});
+const socialChannelSchema = z
+  .object({
+    id: z.string().min(1).max(64),
+    platform: socialPlatformSchema,
+    purpose: socialChannelPurposeSchema.optional(),
+    enabled: z.boolean(),
+    sortOrder: z.number().int().min(0).max(999),
+    qr: z.string().max(2000).optional(),
+    href: z
+      .string()
+      .max(2000)
+      .optional()
+      .transform((v) => (v?.trim() ? v.trim() : undefined)),
+    hrefAction: socialHrefActionSchema.optional(),
+    copyHint: z
+      .string()
+      .max(200)
+      .optional()
+      .transform((v) => (v?.trim() ? v.trim() : undefined)),
+  })
+  .superRefine((value, ctx) => {
+    if (value.href && value.hrefAction !== 'copy' && !/^https?:\/\//i.test(value.href)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['href'],
+        message: '链接跳转模式下外链必须是 http(s) URL',
+      });
+    }
+  });
 
 const businessHoursSchema = z.object({
   enabled: z.boolean().default(true),
@@ -68,6 +78,10 @@ const screenWatermarkSchema = z.object({
 export const sitePublicSettingsSchema = z.object({
   contact: z.object({
     phone: z.string().min(3).max(32),
+    /** 备用电话（选填）：空串显式落库，避免清空后被默认值复活 */
+    phoneAlt: z.string().max(32).default(''),
+    /** 主电话指向：主电话用于 C 端「点击咨询」无人在线时的兜底拨号 */
+    primaryPhone: z.enum(['phone', 'phoneAlt']).default('phone'),
     email: z.string().email().max(200),
     address: localizedTextSchema,
   }),

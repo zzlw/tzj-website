@@ -121,6 +121,7 @@ apps/admin/public/vditor-assets/
 
 # ── C 端 public 静态资源（图片/视频/文档 → OSS sync，不进 Git）──
 apps/web/public/media/
+apps/web/.assets-cache/
 apps/web/public/docs/
 apps/web/public/**/*.png
 apps/web/public/**/*.jpg

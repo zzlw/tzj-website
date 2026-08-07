@@ -28,7 +28,12 @@ import { LOCALE_HTML_LANG } from '@/lib/locale-config';
 import { getMediaOrigin } from '@/lib/media-origin';
 import { getS3PublicDomain, getStaticsUrl } from '@/lib/media-url';
 import { metadataBase } from '@/lib/seo';
-import { getFaviconUrl, getSitePublicSettings, localizedAddress } from '@/lib/site-settings';
+import {
+  getFaviconUrl,
+  getSitePublicSettings,
+  localizedAddress,
+  resolveContactPhones,
+} from '@/lib/site-settings';
 import { cn } from '@/lib/utils';
 import '../globals.css';
 
@@ -102,6 +107,8 @@ export default async function LocaleLayout({ children, params }: Props) {
   const vditorLuteUrl = getStaticsUrl(mediaBase, 'vditor-assets/dist/js/lute/lute.min.js');
   const browserSupportUrl = getStaticsUrl(mediaBase, 'browser-support.js');
   const siteSettings = await getSitePublicSettings();
+  // 主电话：用于「点击咨询」无人在线时的兜底拨号与结构化数据（后台可配置）
+  const { primary: primaryPhone } = resolveContactPhones(siteSettings);
   const streetAddress = localizedAddress(siteSettings, locale, tContact('address'));
   const faviconUrl = await getFaviconUrl();
 
@@ -128,7 +135,7 @@ export default async function LocaleLayout({ children, params }: Props) {
       </head>
       <body className="bg-background text-text antialiased">
         <NextIntlClientProvider messages={messages}>
-          <AgentPhoneProvider phone={siteSettings.contact.phone}>
+          <AgentPhoneProvider phone={primaryPhone}>
             <LanguageSelectorProvider>
               <SearchProvider>
                 <JsonLd
@@ -136,7 +143,7 @@ export default async function LocaleLayout({ children, params }: Props) {
                     legalName: tCommon('legalName'),
                     brandName: tCommon('brandName'),
                     description: tCommon('siteDescription'),
-                    phone: siteSettings.contact.phone,
+                    phone: primaryPhone,
                     email: siteSettings.contact.email,
                     streetAddress,
                     addressLocality: tContact('addressLocality'),
@@ -152,9 +159,9 @@ export default async function LocaleLayout({ children, params }: Props) {
                   businessHours={siteSettings.businessHours}
                   agentProfile={siteSettings.agentProfile}
                   chatPrompts={siteSettings.chatPrompts}
-                  phone={siteSettings.contact.phone}
+                  phone={primaryPhone}
                 />
-                <MarketingPopup phone={siteSettings.contact.phone} />
+                <MarketingPopup phone={primaryPhone} />
                 <HeaderShell />
                 <ProductLineNav />
                 <ViewTransitions>

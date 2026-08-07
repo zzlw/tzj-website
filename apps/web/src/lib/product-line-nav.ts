@@ -91,6 +91,24 @@ export const PRODUCT_LINE_SINGLE_CONFIGS: ProductLineNavConfig[] = [
     ],
   },
   {
+    basePath: '/burn-rooms/cfbt',
+    lineId: 'cfbt',
+    tabs: [{ key: 'productLine06', href: '/burn-rooms/cfbt', exact: true }],
+    related: [
+      { key: 'productLine05', href: '/burn-rooms/liner' },
+      { key: 'productLine07', href: '/burn-rooms/fire-simulation' },
+    ],
+  },
+  {
+    basePath: '/burn-rooms/fire-simulation',
+    lineId: 'fire-simulation',
+    tabs: [{ key: 'productLine07', href: '/burn-rooms/fire-simulation', exact: true }],
+    related: [
+      { key: 'productLine05', href: '/burn-rooms/liner' },
+      { key: 'productLine06', href: '/burn-rooms/cfbt' },
+    ],
+  },
+  {
     basePath: '/accessories/maritime',
     lineId: 'maritime',
     tabs: [{ key: 'productLine08', href: '/accessories/maritime', exact: true }],

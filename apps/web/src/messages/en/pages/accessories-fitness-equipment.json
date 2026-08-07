@@ -9,6 +9,12 @@
     "description": "Strong physical fitness and a stable vestibular system are foundational capabilities for high-angle, rotational, and high-intensity missions.",
     "imageAlt": "Fitness and vestibular training equipment"
   },
+  "heroImageAlt": "Fitness and vestibular training equipment — facility overview",
+  "gallery": [
+    { "alt": "Fitness equipment · strength and conditioning stations" },
+    { "alt": "Fitness equipment · vestibular rotation training" },
+    { "alt": "Fitness equipment · balance and coordination apparatus" }
+  ],
   "breadcrumb": {
     "parent": "Training Equipment",
     "current": "Fitness & Vestibular Training Equipment"
@@ -26,7 +32,8 @@
   },
   "featuresSection": {
     "eyebrow": "Core Features",
-    "title": "Six capabilities of fitness equipment"
+    "title": "Six capabilities of fitness equipment",
+    "description": "From strength conditioning to durability — covering foundational physical capabilities for high-risk missions."
   },
   "features": [
     {
@@ -56,7 +63,37 @@
   ],
   "programsSection": {
     "eyebrow": "Training Disciplines",
-    "title": "Supported training disciplines"
+    "title": "Supported training disciplines",
+    "description": "From strength training to integrated fitness circuits — covering core physical conditioning disciplines."
+  },
+  "extraImageAlt": "Fitness equipment · multi-station training area details",
+  "configSection": {
+    "eyebrow": "Typical Configuration",
+    "title": "Tailored fitness training zones for your facility",
+    "description": "From single-station equipment to integrated fitness zones — configured based on your team size and training goals.",
+    "point1": "Modular equipment selection supports phased investment — start with core stations and expand as training programs evolve.",
+    "point2": "Industrial-grade construction withstands high-frequency daily use with minimal maintenance requirements."
+  },
+  "configImageAlt": "Fitness training zone · typical facility configuration",
+  "usersSection": {
+    "eyebrow": "Who Uses It",
+    "title": "Who uses fitness and vestibular training equipment",
+    "description": "For fire, police, and military units requiring physical conditioning and vestibular stability for high-risk missions."
+  },
+  "usersImageAlt": "Firefighters training on fitness and vestibular equipment",
+  "users": [
+    "Fire & rescue services",
+    "Police & tactical units",
+    "Military training bases",
+    "Industrial emergency teams",
+    "Training academies",
+    "Competition preparation camps"
+  ],
+  "casesSection": {
+    "eyebrow": "Related Projects",
+    "title": "Fitness training in real deliveries",
+    "description": "Explore how fitness equipment integrates into complete training facilities.",
+    "linkText": "View more case studies"
   },
   "programs": [
     "Strength and power training",
@@ -82,6 +119,7 @@
   ],
   "cta": {
     "title": "Configure fitness training equipment for your team",
-    "description": "Tell us your training goals — we'll recommend the right fitness and vestibular equipment combination."
+    "description": "Tell us your training goals — we'll recommend the right fitness and vestibular equipment combination.",
+    "secondaryLabel": "Back to props & accessories"
   }
 }

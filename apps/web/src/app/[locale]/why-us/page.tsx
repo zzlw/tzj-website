@@ -3,15 +3,22 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { BaiduSafeVideoHero as VideoHero } from '@/components/BaiduSafeVideoHero';
 import { BookConsultButton } from '@/components/chat/BookConsultButton';
+import { MediaImage as Image } from '@/components/MediaImage';
+import { CertificationTrustStrip } from '@/components/sections/CertificationTrustStrip';
 import { Container, Eyebrow, SectionHeading } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
+import { WHY_US_IMAGES } from '@/lib/why-us-images';
 
-const HERO_IMAGE = '/media/galvanized-stair.webp';
-const HERO_VIDEO = '/media/why.mp4';
+const HERO_IMAGE = WHY_US_IMAGES.overview.hero;
+const HERO_VIDEO = '/media/hero.mp4';
 const PILLAR_ICONS = [Award, Lightbulb, ShieldCheck] as const;
 
 export async function generateMetadata(): Promise<Metadata> {
-  return createPageMetadata({ namespace: 'pages.whyUs', path: '/why-us' });
+  return createPageMetadata({
+    namespace: 'pages.whyUs',
+    path: '/why-us',
+    image: WHY_US_IMAGES.overview.og,
+  });
 }
 
 export default async function WhyUsPage() {
@@ -34,6 +41,8 @@ export default async function WhyUsPage() {
         video={HERO_VIDEO}
         poster={HERO_IMAGE}
       />
+
+      <CertificationTrustStrip />
 
       <section className="scroll-mt-24">
         <Container className="py-16 lg:py-24">
@@ -69,6 +78,16 @@ export default async function WhyUsPage() {
 
       <section className="bg-neutral-100">
         <Container className="py-16 lg:py-24">
+          <div className="rb-img-shimmer relative mb-12 aspect-[21/9] overflow-hidden bg-neutral-200">
+            <Image
+              src={WHY_US_IMAGES.overview.pillars}
+              alt={t('pillarsImageAlt')}
+              fill
+              quality={75}
+              sizes="100vw"
+              className="object-cover"
+            />
+          </div>
           <div className="grid grid-cols-1 gap-10 lg:grid-cols-3">
             <div>
               <Eyebrow>{t('mission.eyebrow')}</Eyebrow>

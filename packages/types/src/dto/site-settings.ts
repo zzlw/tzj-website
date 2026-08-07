@@ -29,6 +29,8 @@ export interface SocialChannelSetting {
   href?: string;
   /** 外链触发方式，默认 open（新窗口跳转） */
   hrefAction?: SocialHrefAction;
+  /** 复制模式点击后的提示语，留空使用 C 端默认「链接已复制」 */
+  copyHint?: string;
 }
 
 export interface LocalizedText {
@@ -92,10 +94,20 @@ export interface ScreenWatermark {
   opacity: number;
 }
 
+/** 主电话指向：phone=服务热线（默认），phoneAlt=备用电话 */
+export type PrimaryPhoneKey = 'phone' | 'phoneAlt';
+
 /** 官网公开站点设置（C 端 + 页脚 + 联系页消费） */
 export interface SitePublicSettings {
   contact: {
     phone: string;
+    /** 备用电话（选填），留空则不展示 */
+    phoneAlt?: string;
+    /**
+     * 主电话（默认 phone）。主电话用于 C 端「点击咨询」分流：
+     * 无坐席在线时兜底唤起拨号（见 apps/web AgentPhoneProvider / ChatWidget）。
+     */
+    primaryPhone?: PrimaryPhoneKey;
     email: string;
     address: LocalizedText;
   };

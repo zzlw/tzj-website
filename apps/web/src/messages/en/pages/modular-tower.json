@@ -8,6 +8,57 @@
     "title": "Modular Fire Training Buildings",
     "description": "A modular training system built by firefighters for firefighters. Stackable, configurable, and expandable—maximum flexibility and value for your training program."
   },
+  "gallery": [
+    { "alt": "Modular training tower — open floor plan main structure" },
+    { "alt": "Modular training tower — module stacking and reconfiguration" },
+    { "alt": "Modular training tower — on-site installation and delivery" }
+  ],
+  "extraImageAlt": "Modular training tower — open floor plan and module details",
+  "featuresSection": {
+    "eyebrow": "Core capabilities",
+    "title": "Six capabilities of modular systems",
+    "description": "Open floor plans and reconfigurable modules supporting fast installation through phased expansion."
+  },
+  "features": [
+    {
+      "title": "Open floor plan",
+      "desc": "No interior load-bearing walls — higher space utilization and flexible scenario layout."
+    },
+    {
+      "title": "Reconfigurable walls & openings",
+      "desc": "Walls independent of structure; doors and windows freely added, removed, and rearranged."
+    },
+    {
+      "title": "Phased expansion",
+      "desc": "Modules stack, align, and expand as needed — phased construction and capability upgrades."
+    },
+    {
+      "title": "No interior load walls",
+      "desc": "Fully galvanized steel frame carries all loads — completely open interior plans."
+    },
+    {
+      "title": "Fast installation",
+      "desc": "Factory prefabrication and bolted on-site assembly — shorter schedules, less site disruption."
+    },
+    {
+      "title": "Capability upgrades",
+      "desc": "Add burn rooms, breach points, and prop interfaces later without demolition."
+    }
+  ],
+  "usersSection": {
+    "eyebrow": "Who uses it",
+    "title": "Organizations using modular training towers",
+    "description": "For units needing flexible layout, phased construction, and fast deployment."
+  },
+  "usersImageAlt": "Fire crews training in front of a modular training tower",
+  "users": [
+    "Fire & rescue departments",
+    "Emergency management agencies",
+    "Police & SWAT units",
+    "School fire safety programs",
+    "Industrial fire brigades",
+    "Phased construction on limited budgets"
+  ],
   "overview": {
     "eyebrow": "Built for fire service",
     "title": "More than container conversion",

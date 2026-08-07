@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "How to Buy",
+    "title": "How to Buy a Training Tower | Procurement Process",
     "description": "Learn how to procure TZJ training towers and facilities — from needs consultation, design, and contracting through production, installation, and acceptance."
   },
   "hero": {
@@ -81,6 +81,17 @@
   "cta": {
     "title": "Start your procurement consultation",
     "description": "Contact our team for project-specific recommendations and quotes — let's bring your training complex to life.",
-    "secondaryLabel": "Visit the Tower Design Center"
+    "secondaryLabel": "Visit the Tower Design Center",
+    "inquiryLink": "Send an Inquiry"
+  },
+  "sceneImageAlts": [
+    "Reviewing procurement documents and project checklists",
+    "Handover and acceptance of a newly delivered training tower"
+  ],
+  "cases": {
+    "eyebrow": "Real Projects",
+    "title": "Delivered Training Facilities",
+    "description": "From procurement to handover — see how other organizations built their training bases.",
+    "linkText": "View all fire service cases"
   }
 }

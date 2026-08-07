@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "Warranty Service",
+    "title": "Training Tower Warranty | Warranty Policy & After-Sales Support",
     "description": "TZJ training facility warranty — integrated design, manufacturing, and installation warranty with component-level coverage for structure, liner, and accessories, plus inspection, maintenance, and parts support."
   },
   "hero": {
@@ -85,6 +85,18 @@
   ],
   "cta": {
     "title": "Learn about your warranty and maintenance plan",
-    "secondaryLabel": "View annual inspection service"
+    "secondaryLabel": "View annual inspection service",
+    "inquiryLink": "Send an Inquiry",
+    "description": "Talk to our after-sales team to confirm warranty coverage and a maintenance plan for your facility."
+  },
+  "sceneImageAlts": [
+    "Spare parts warehouse with replacement components",
+    "Foundation maintenance and bolt tightening at the tower base"
+  ],
+  "cases": {
+    "eyebrow": "Real Projects",
+    "title": "Projects Under Long-Term Warranty",
+    "description": "Delivery is just the beginning — see projects that keep receiving warranty and maintenance support.",
+    "linkText": "View all enterprise cases"
   }
 }

@@ -1,27 +1,77 @@
+import { Phone } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { BaiduSafeVideoHero as VideoHero } from '@/components/BaiduSafeVideoHero';
-import { CtaBand, RelatedLinks } from '@/components/sections/blocks';
+import { BookConsultButton } from '@/components/chat/BookConsultButton';
+import { MediaImage as Image } from '@/components/MediaImage';
+import { RelatedLinks } from '@/components/sections/blocks';
 import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
-import { Container, SectionHeading } from '@/components/ui';
+import { CertificationTrustStrip } from '@/components/sections/CertificationTrustStrip';
+import { Container, RbLink, SectionHeading } from '@/components/ui';
+import { Link as I18nLink } from '@/i18n/navigation';
+import { getCases } from '@/lib/api';
 import { createPageMetadata } from '@/lib/i18n/metadata';
+import { relatedLinksWithImages } from '@/lib/product-line-page';
+import { RESOURCES_IMAGES } from '@/lib/resources-images';
+import { getSitePublicSettings, resolveContactPhones } from '@/lib/site-settings';
 
 export async function generateMetadata() {
   return createPageMetadata({
     namespace: 'pages.resourcesHowToBuy',
     path: '/resources/how-to-buy',
+    image: RESOURCES_IMAGES['how-to-buy'].og,
   });
 }
 
 const RELATED_HREFS = ['/resources/design-center', '/resources/faqs', '/resources/warranty'];
 
+interface FeaturedCase {
+  slug: string;
+  title: string;
+  location: string;
+  summary: string;
+  image: string;
+}
+
+/** 拉取已发布的消防类案例（内嵌真实案例卡）；接口异常时降级为空。 */
+async function fetchFeaturedCases(limit = 3): Promise<FeaturedCase[]> {
+  try {
+    const res = await getCases({
+      type: 'fire',
+      limit,
+      sortBy: 'completionDate',
+      sortOrder: 'desc',
+    });
+    return (res.data ?? [])
+      .filter((c) => c.coverImage)
+      .map((c) => ({
+        slug: c.slug,
+        title: c.title,
+        location: c.location ?? '',
+        summary: ((c as unknown as { summary?: string }).summary ?? c.description) || '',
+        image: c.coverImage,
+      }));
+  } catch {
+    return [];
+  }
+}
+
 export default async function HowToBuyPage() {
   const t = await getTranslations('pages.resourcesHowToBuy');
   const tCta = await getTranslations('cta');
   const tBlocks = await getTranslations('blocks.relatedLinks');
+  const tCommon = await getTranslations('common');
 
   const steps = t.raw('steps') as Array<{ step: string; title: string; desc: string }>;
   const procurement = t.raw('procurement') as string[];
   const relatedLinks = t.raw('relatedLinks') as Array<{ label: string; desc: string }>;
+  const sceneImageAlts = t.raw('sceneImageAlts') as string[];
+  const [featuredCases, settings] = await Promise.all([
+    fetchFeaturedCases(),
+    getSitePublicSettings(),
+  ]);
+  // CTA 拨号按钮用主电话（后台可配置）
+  const { primary: primaryPhone } = resolveContactPhones(settings);
+  const phoneHref = `tel:${primaryPhone.replace(/-/g, '')}`;
 
   return (
     <div className="pb-20">
@@ -29,9 +79,11 @@ export default async function HowToBuyPage() {
         eyebrow={t('hero.eyebrow')}
         title={t('hero.title')}
         description={t('hero.description')}
-        video="/media/louisville-case.mp4"
-        poster="/media/fixed-tower-hero.jpg"
+        video="/media/mission.mp4"
+        poster={RESOURCES_IMAGES['how-to-buy'].hero}
       />
+
+      <CertificationTrustStrip />
 
       <section>
         <Container className="py-16 lg:py-24">
@@ -60,6 +112,23 @@ export default async function HowToBuyPage() {
                 </li>
               </ul>
             </div>
+          </div>
+          <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {RESOURCES_IMAGES['how-to-buy'].detailImages.map((src, i) => (
+              <div
+                key={src}
+                className="rb-img-shimmer relative aspect-[4/3] overflow-hidden bg-neutral-200"
+              >
+                <Image
+                  src={src}
+                  alt={sceneImageAlts[i] ?? t('hero.title')}
+                  fill
+                  quality={75}
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  className="object-cover"
+                />
+              </div>
+            ))}
           </div>
         </Container>
       </section>
@@ -102,20 +171,77 @@ export default async function HowToBuyPage() {
 
       <ProcessBandI18n />
 
+      {featuredCases.length > 0 ? (
+        <section>
+          <Container className="py-16 lg:py-24">
+            <SectionHeading
+              eyebrow={t('cases.eyebrow')}
+              title={t('cases.title')}
+              description={t('cases.description')}
+            />
+            <div className="mt-10 grid grid-cols-1 gap-4 md:grid-cols-3">
+              {featuredCases.map((item) => (
+                <I18nLink
+                  key={item.slug}
+                  href={`/cases/${item.slug}`}
+                  className="group flex flex-col border border-neutral-300 bg-white transition-colors hover:border-neutral-900"
+                >
+                  <div className="rb-img-shimmer relative aspect-[4/3] overflow-hidden bg-neutral-200">
+                    <Image
+                      src={item.image}
+                      alt={item.title}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 33vw"
+                      className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                    />
+                  </div>
+                  <div className="p-5">
+                    {item.location ? (
+                      <p className="text-xs font-bold tracking-wide text-primary">
+                        {item.location}
+                      </p>
+                    ) : null}
+                    <h3 className="rb-h5 mt-2 text-neutral-900">{item.title}</h3>
+                    <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-secondary-text">
+                      {item.summary}
+                    </p>
+                  </div>
+                </I18nLink>
+              ))}
+            </div>
+            <div className="mt-8">
+              <RbLink href="/cases?type=fire">{t('cases.linkText')}</RbLink>
+            </div>
+          </Container>
+        </section>
+      ) : null}
+
       <RelatedLinks
         title={tBlocks('titleDefault')}
         learnMore={tBlocks('learnMore')}
         eyebrow={tBlocks('eyebrow')}
-        links={relatedLinks.map((l, i) => ({ ...l, href: RELATED_HREFS[i]! }))}
+        links={relatedLinksWithImages(relatedLinks, RELATED_HREFS)}
       />
 
-      <CtaBand
-        title={t('cta.title')}
-        description={t('cta.description')}
-        primaryLabel={tCta('bookConsult')}
-        secondaryLabel={t('cta.secondaryLabel')}
-        secondaryHref="/resources/design-center"
-      />
+      <Container>
+        <div className="flex flex-col items-center gap-5 border border-neutral-300 bg-white p-10 text-center md:p-14">
+          <h2 className="rb-h3 text-neutral-900">{t('cta.title')}</h2>
+          <p className="max-w-xl text-secondary-text">{t('cta.description')}</p>
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            <BookConsultButton message={tCommon('bookConsultContent')}>
+              {tCta('bookConsult')}
+            </BookConsultButton>
+            <a
+              href={phoneHref}
+              className="inline-flex items-center gap-2 border border-neutral-900 px-6 py-3 font-display text-base font-bold text-neutral-900 transition-colors hover:bg-neutral-900 hover:text-white"
+            >
+              <Phone className="h-4 w-4" aria-hidden="true" />
+              {primaryPhone}
+            </a>
+            <RbLink href="/contact">{t('cta.inquiryLink')}</RbLink>
+          </div>
+        </div>
+      </Container>
     </div>
   );
 }

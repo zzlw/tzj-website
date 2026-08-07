@@ -1,23 +1,28 @@
+import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { MediaImage as Image } from '@/components/MediaImage';
+import { ProductHeroBand } from '@/components/products/ProductLineMedia';
 import { RelatedLinks } from '@/components/sections/blocks';
 import { StatBandI18n } from '@/components/sections/blocks-i18n';
 import { Container, PageHero, RbLink, SectionHeading } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
+import { getProductPageImages } from '@/lib/product-images';
+import { relatedLinksWithImages } from '@/lib/product-line-page';
 
-const SERIES_IMAGES = [
-  '/media/modular-m.jpg',
-  '/media/modular-o.png',
-  '/media/modular-d.png',
-  '/media/modular-x.png',
+const PAGE = getProductPageImages('modular-series');
+const SERIES_CODES = ['m', 'o', 'd', 'x'] as const;
+const RELATED_HREFS = [
+  '/modular-tower/vs-containers',
+  '/fixed-tower',
+  '/resources/design-center',
 ] as const;
-const RELATED_HREFS = ['/modular-tower/vs-containers', '/fixed-tower', '/resources/design-center'];
 
-export async function generateMetadata() {
+export async function generateMetadata(): Promise<Metadata> {
   return createPageMetadata({
     namespace: 'pages.modularTowerSeries',
     path: '/modular-tower/series',
+    image: PAGE.ogImage ?? PAGE.heroImage,
   });
 }
 
@@ -35,6 +40,7 @@ export default async function ModularSeriesPage() {
   }>;
   const advantages = t.raw('advantages') as string[];
   const relatedLinks = t.raw('relatedLinks') as Array<{ label: string; desc: string }>;
+  const featureImages = PAGE.featureImages ?? {};
 
   return (
     <div className="pb-20">
@@ -44,34 +50,40 @@ export default async function ModularSeriesPage() {
         description={t('hero.description')}
       />
 
+      <ProductHeroBand src={PAGE.heroImage} alt={t('heroImageAlt')} />
+
       <section>
         <Container className="py-16 lg:py-24">
           <SectionHeading eyebrow={t('seriesSection.eyebrow')} title={t('seriesSection.title')} />
           <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {series.map((s, i) => (
-              <div key={s.code} className="flex flex-col border border-neutral-300 bg-white">
-                <div className="relative aspect-[16/10] overflow-hidden border-b border-neutral-300 bg-neutral-100">
-                  <Image
-                    src={SERIES_IMAGES[i]!}
-                    alt={`${s.code} ${s.name}`}
-                    fill
-                    sizes="(max-width: 640px) 100vw, 50vw"
-                    className="object-contain p-4"
-                  />
+            {series.map((s, i) => {
+              const codeKey = SERIES_CODES[i] ?? SERIES_CODES[0];
+              const imageSrc = featureImages[codeKey] ?? PAGE.heroImage;
+              return (
+                <div key={s.code} className="flex flex-col border border-neutral-300 bg-white">
+                  <div className="relative aspect-[16/10] overflow-hidden border-b border-neutral-300 bg-neutral-100">
+                    <Image
+                      src={imageSrc}
+                      alt={`${s.code} ${s.name}`}
+                      fill
+                      sizes="(max-width: 640px) 100vw, 50vw"
+                      className="object-contain p-4"
+                    />
+                  </div>
+                  <div className="p-6">
+                    <span className="text-xs font-bold uppercase tracking-wide text-primary">
+                      {s.code}
+                    </span>
+                    <h3 className="rb-h5 mt-1 text-neutral-900">{s.name}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-secondary-text">{s.desc}</p>
+                    <span className="mt-4 inline-block border border-neutral-300 px-3 py-1 text-xs font-bold text-neutral-900">
+                      {t('seriesUsePrefix')}
+                      {s.use}
+                    </span>
+                  </div>
                 </div>
-                <div className="p-6">
-                  <span className="text-xs font-bold uppercase tracking-wide text-primary">
-                    {s.code}
-                  </span>
-                  <h3 className="rb-h5 mt-1 text-neutral-900">{s.name}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-secondary-text">{s.desc}</p>
-                  <span className="mt-4 inline-block border border-neutral-300 px-3 py-1 text-xs font-bold text-neutral-900">
-                    {t('seriesUsePrefix')}
-                    {s.use}
-                  </span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </Container>
       </section>
@@ -101,7 +113,7 @@ export default async function ModularSeriesPage() {
         title={tBlocks('titleDefault')}
         learnMore={tBlocks('learnMore')}
         eyebrow={tBlocks('eyebrow')}
-        links={relatedLinks.map((l, idx) => ({ ...l, href: RELATED_HREFS[idx]! }))}
+        links={relatedLinksWithImages(relatedLinks, RELATED_HREFS)}
       />
 
       <Container className="pt-16 lg:pt-24">

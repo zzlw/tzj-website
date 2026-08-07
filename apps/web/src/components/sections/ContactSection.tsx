@@ -15,6 +15,7 @@ import { Container, Eyebrow } from '@/components/ui';
 import { identify } from '@/lib/analytics';
 import { ApiError, submitContact } from '@/lib/api';
 import { resolveAllSocialQrChannels } from '@/lib/resolve-social-channels';
+import { resolveContactPhones } from '@/lib/site-settings';
 import {
   type ContactFieldErrors,
   type ContactFormValues,
@@ -74,14 +75,17 @@ export function ContactSection({
     [settings, t],
   );
 
-  const contactInfo = useMemo(
-    () => [
-      {
+  const contactInfo = useMemo(() => {
+    // 双号码展示：主电话在前，备用电话在后（备用留空则不展示）
+    const { primary, secondary } = resolveContactPhones(settings);
+    const phones = secondary ? [primary, secondary] : [primary];
+    return [
+      ...phones.map((phone) => ({
         icon: Phone,
         label: t('phoneLabel'),
-        value: settings.contact.phone,
-        href: `tel:${settings.contact.phone.replace(/-/g, '')}`,
-      },
+        value: phone,
+        href: `tel:${phone.replace(/-/g, '')}`,
+      })),
       {
         icon: Mail,
         label: t('emailLabel'),
@@ -94,9 +98,8 @@ export function ContactSection({
         value: address,
         href: undefined,
       },
-    ],
-    [settings, address, t],
-  );
+    ];
+  }, [settings, address, t]);
 
   const submitPayload = useCallback(
     async (captchaVerifyParam?: string) => {
@@ -185,7 +188,7 @@ export function ContactSection({
               {contactInfo.map((info) => {
                 const Icon = info.icon;
                 return info.href ? (
-                  <a key={info.label} href={info.href} className="group flex items-center gap-4">
+                  <a key={info.value} href={info.href} className="group flex items-center gap-4">
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center bg-primary/10 transition-colors group-hover:bg-primary/15">
                       <Icon className="h-5 w-5 text-primary" aria-hidden="true" />
                     </div>
@@ -197,7 +200,7 @@ export function ContactSection({
                     </div>
                   </a>
                 ) : (
-                  <div key={info.label} className="flex items-center gap-4">
+                  <div key={info.value} className="flex items-center gap-4">
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center bg-primary/10">
                       <Icon className="h-5 w-5 text-primary" aria-hidden="true" />
                     </div>

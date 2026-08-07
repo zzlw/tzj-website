@@ -1,91 +1,126 @@
-import {
-  Activity,
-  AlertTriangle,
-  Biohazard,
-  Building2,
-  Container as ContainerIcon,
-  Cpu,
-  Droplets,
-  Truck,
-} from 'lucide-react';
+import { Truck } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+import { JsonLd } from '@/components/JsonLd';
 import { MediaImage as Image } from '@/components/MediaImage';
+import {
+  CasesBand,
+  FeatureImageGrid,
+  ProductGallery,
+  ProductHeroBand,
+  UsersBand,
+} from '@/components/products/ProductLineMedia';
 import { CtaBand, RelatedLinks } from '@/components/sections/blocks';
 import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
 import { Container, PageHero, SectionHeading } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
+import { breadcrumbJsonLd, productJsonLd } from '@/lib/jsonld';
+import { productLineHeroImage, productLineOgImage } from '@/lib/product-catalog';
+import {
+  fetchFeaturedCases,
+  relatedLinksWithImages,
+  requireProductLine,
+} from '@/lib/product-line-page';
+
+const LINE = requireProductLine('hazmat');
+
+/** 与 i18n `props` 数组顺序一一对应 */
+const FEATURE_IDS = ['chlorine', 'drum', 'tank', 'reaction', 'falling', 'panel'] as const;
+
+const HERO_SRC = productLineHeroImage(LINE);
+const GALLERY_SRCS = LINE.detailImages ?? [LINE.image];
+const FEATURE_IMAGES = LINE.featureImages ?? {};
+const CONFIG_SRC = LINE.configImage;
+const EXTRA_SRC = LINE.extraImage;
+const USERS_SRC = LINE.usersImage;
+const RELATED_HREFS = ['/accessories', '/fixed-tower', '/modular-tower'] as const;
 
 export async function generateMetadata(): Promise<Metadata> {
-  return createPageMetadata({ namespace: 'pages.accessoriesHazmat', path: '/accessories/hazmat' });
+  return createPageMetadata({
+    namespace: 'pages.accessoriesHazmat',
+    path: '/accessories/hazmat',
+    image: productLineOgImage(LINE),
+  });
 }
-
-const PROP_ICONS = [AlertTriangle, Droplets, ContainerIcon, Activity, Biohazard, Cpu] as const;
-const RELATED_HREFS = ['/accessories', '/fixed-tower', '/cases'] as const;
 
 export default async function HazmatPage() {
   const t = await getTranslations('pages.accessoriesHazmat');
   const tCta = await getTranslations('cta');
   const tBlocks = await getTranslations('blocks.relatedLinks');
+  const tBread = await getTranslations('breadcrumbs');
 
-  const propsRaw = t.raw('props') as Array<{ title: string; desc: string }>;
-  const props = propsRaw.map((item, i) => ({ ...item, icon: PROP_ICONS[i] ?? PROP_ICONS[0] }));
+  const gallery = t.raw('gallery') as Array<{ alt: string }>;
+  const props = t.raw('props') as Array<{ title: string; desc: string }>;
   const trailerFeatures = t.raw('trailer.features') as string[];
+  const users = t.raw('users') as string[];
   const relatedLinks = t.raw('relatedLinks') as Array<{ label: string; desc: string }>;
+
+  const featuredCases = await fetchFeaturedCases(LINE.relatedCaseSlugs);
+
+  const galleryItems = gallery.map((g, i) => ({
+    src: GALLERY_SRCS[i] ?? GALLERY_SRCS[0] ?? LINE.image,
+    alt: g.alt,
+  }));
+
+  const featureItems = props.map((p, i) => {
+    const featureId = FEATURE_IDS[i] ?? FEATURE_IDS[0];
+    return {
+      id: featureId,
+      title: p.title,
+      desc: p.desc,
+      src: FEATURE_IMAGES[featureId] ?? LINE.image,
+    };
+  });
 
   return (
     <div className="pb-20">
+      <JsonLd
+        data={[
+          breadcrumbJsonLd([
+            { name: tBread('home'), path: '/' },
+            { name: t('hero.eyebrow'), path: '/specialized-training' },
+            { name: t('meta.title'), path: '/accessories/hazmat' },
+          ]),
+          productJsonLd({
+            name: LINE.title,
+            description: t('meta.description'),
+            path: '/accessories/hazmat',
+            image: HERO_SRC,
+          }),
+        ]}
+      />
+
       <PageHero
         eyebrow={t('hero.eyebrow')}
         title={t('hero.title')}
         description={t('hero.description')}
       />
 
+      <ProductHeroBand src={HERO_SRC} alt={t('heroImageAlt')} />
+      <ProductGallery items={galleryItems} fallbackSrc={LINE.image} />
+
       <section>
         <Container className="py-16 lg:py-24">
-          <SectionHeading
-            eyebrow={t('propsSection.eyebrow')}
-            title={t('propsSection.title')}
-            description={t('propsSection.description')}
-          />
-          <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {props.map((p) => {
-              const Icon = p.icon;
-              return (
-                <div key={p.title} className="border border-neutral-300 bg-white p-6">
-                  <div className="mb-4 flex h-11 w-11 items-center justify-center bg-primary/10">
-                    <Icon className="h-5 w-5 text-primary" aria-hidden="true" />
-                  </div>
-                  <h3 className="rb-h5 text-neutral-900">{p.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-secondary-text">{p.desc}</p>
+          <div className="grid grid-cols-1 gap-10 lg:grid-cols-2 lg:gap-16">
+            <SectionHeading
+              eyebrow={t('why.eyebrow')}
+              title={t('why.title')}
+              description={t('why.description')}
+            />
+            <div className="flex flex-col justify-center">
+              {EXTRA_SRC ? (
+                <div className="rb-img-shimmer relative mb-8 aspect-[4/3] overflow-hidden bg-neutral-200">
+                  <Image
+                    src={EXTRA_SRC}
+                    alt={t('extraImageAlt')}
+                    fill
+                    quality={70}
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                    className="object-cover"
+                  />
                 </div>
-              );
-            })}
-          </div>
-        </Container>
-      </section>
-
-      <StatBandI18n />
-
-      <section className="bg-neutral-100">
-        <Container className="py-16 lg:py-24">
-          <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-16">
-            <div className="rb-img-shimmer relative aspect-[4/3] overflow-hidden bg-neutral-200">
-              <Image
-                src="/media/hazmat-trailer.webp"
-                alt={t('trailer.imageAlt')}
-                fill
-                quality={80}
-                sizes="(max-width: 768px) 100vw, 50vw"
-                className="object-cover"
-              />
-            </div>
-            <div>
-              <SectionHeading
-                eyebrow={t('trailer.eyebrow')}
-                title={t('trailer.title')}
-                description={t('trailer.description')}
-              />
+              ) : null}
+              <p className="text-base leading-relaxed text-neutral-900">{t('why.lead')}</p>
               <ul className="mt-8 grid grid-cols-1 gap-3">
                 {trailerFeatures.map((f) => (
                   <li
@@ -102,41 +137,69 @@ export default async function HazmatPage() {
         </Container>
       </section>
 
+      <StatBandI18n />
+
+      <section className="bg-neutral-100">
+        <Container className="py-16 lg:py-24">
+          <SectionHeading
+            eyebrow={t('propsSection.eyebrow')}
+            title={t('propsSection.title')}
+            description={t('propsSection.description')}
+          />
+          <FeatureImageGrid items={featureItems} columns={3} />
+        </Container>
+      </section>
+
       <section>
         <Container className="py-16 lg:py-24">
-          <div className="grid grid-cols-1 gap-10 lg:grid-cols-2 lg:gap-16">
-            <SectionHeading
-              eyebrow={t('facility.eyebrow')}
-              title={t('facility.title')}
-              description={t('facility.description')}
-            />
-            <div className="flex flex-col justify-center gap-5">
-              <div className="flex items-start gap-4">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center bg-primary/10">
-                  <Building2 className="h-5 w-5 text-primary" aria-hidden="true" />
-                </div>
-                <p className="text-base leading-relaxed text-neutral-900">{t('facility.point1')}</p>
-              </div>
-              <div className="flex items-start gap-4">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center bg-primary/10">
-                  <Cpu className="h-5 w-5 text-primary" aria-hidden="true" />
-                </div>
-                <p className="text-base leading-relaxed text-secondary-text">
-                  {t('facility.point2')}
-                </p>
-              </div>
+          <SectionHeading
+            eyebrow={t('facility.eyebrow')}
+            title={t('facility.title')}
+            description={t('facility.description')}
+          />
+          {CONFIG_SRC ? (
+            <div className="rb-img-shimmer relative mt-10 aspect-[21/9] overflow-hidden bg-neutral-200">
+              <Image
+                src={CONFIG_SRC}
+                alt={t('configImageAlt')}
+                fill
+                quality={75}
+                sizes="100vw"
+                className="object-cover"
+              />
             </div>
+          ) : null}
+          <div className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <p className="text-base leading-relaxed text-neutral-900">{t('facility.point1')}</p>
+            <p className="text-base leading-relaxed text-secondary-text">{t('facility.point2')}</p>
           </div>
         </Container>
       </section>
 
-      <ProcessBandI18n />
+      <UsersBand
+        eyebrow={t('usersSection.eyebrow')}
+        title={t('usersSection.title')}
+        description={t('usersSection.description')}
+        imageSrc={USERS_SRC}
+        imageAlt={t('usersImageAlt')}
+        users={users}
+      />
+
+      <CasesBand
+        eyebrow={t('casesSection.eyebrow')}
+        title={t('casesSection.title')}
+        description={t('casesSection.description')}
+        linkText={t('casesSection.linkText')}
+        cases={featuredCases}
+      />
+
+      <ProcessBandI18n image={LINE.processImage} />
 
       <RelatedLinks
         title={tBlocks('titleDefault')}
         learnMore={tBlocks('learnMore')}
         eyebrow={tBlocks('eyebrow')}
-        links={relatedLinks.map((l, i) => ({ ...l, href: RELATED_HREFS[i] ?? RELATED_HREFS[0] }))}
+        links={relatedLinksWithImages(relatedLinks, RELATED_HREFS)}
       />
 
       <CtaBand

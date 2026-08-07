@@ -30,6 +30,13 @@
     "titlePrefix": "為",
     "titleSuffix": "定制專屬訓練方案",
     "description": "告訴我們您的場地、科目與預算，我們的工程師與消防專家團隊將為您量身設計整體方案。",
-    "backLink": "返回全部解決方案"
+    "backLink": "返回全部解決方案",
+    "inquiryLink": "發送詢盤"
+  },
+  "cases": {
+    "eyebrow": "真實案例",
+    "title": "已交付的同行業項目",
+    "description": "以下為已交付的同行業代表案例，點擊查看完整項目詳情與參數。",
+    "linkText": "查看更多該領域案例"
   }
 }

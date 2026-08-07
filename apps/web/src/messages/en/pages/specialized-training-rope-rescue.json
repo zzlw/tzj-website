@@ -1,22 +1,19 @@
 {
   "meta": {
     "title": "Mountain & Rope Rescue Training Facilities",
-    "description": "TZJ mountain and rope rescue training facilities — replicating cliffs, elevation changes, and shafts to train rope skills, high-angle transfer, and litter rescue."
+    "description": "TZJ mountain and rope rescue training facilities — cliff, elevation, and shaft terrain replication with multi-anchor, multi-path design for rope skills, high-angle transfer, litter rescue, and team coordination."
   },
   "hero": {
     "eyebrow": "Specialized Training · Rope Rescue",
     "title": "Mountain & Rope Rescue Training Facilities",
-    "description": "Bring cliffs, elevation changes, and shafts to the training ground — hone rope skills and high-angle rescue capability in a controlled environment.",
-    "imageAlt": "Mountain and rope rescue training facilities"
+    "description": "For mountain and high-angle rescue teams: Can you rig systems fast on cliff faces? Is litter transfer drilled to standard? Can shaft rescue run as a coordinated team? A controllable, repeatable, multi-path rope training ground lets complex terrain play out in training first."
   },
-  "breadcrumb": {
-    "parent": "Specialized Training",
-    "current": "Mountain & Rope Rescue Training Facilities"
-  },
-  "jsonLd": {
-    "productName": "Mountain & Rope Rescue Training Facilities",
-    "productDescription": "Replicating cliffs, elevation changes, and shafts to train rope skills, high-angle transfer, and litter rescue."
-  },
+  "heroImageAlt": "Mountain and rope rescue training facility — cliff and elevation training panorama",
+  "gallery": [
+    { "alt": "Rope rescue facility · cliff terrain and belay stations" },
+    { "alt": "Rope rescue facility · vertical lift and traverse training" },
+    { "alt": "Rope rescue facility · shaft and confined-space rescue" }
+  ],
   "overview": {
     "eyebrow": "Higher and Deeper",
     "title": "Rescue capability in complex terrain",
@@ -25,8 +22,9 @@
     "body": "Belay stations and fall-protection redundancy enable high-intensity training of high-risk disciplines within safe boundaries."
   },
   "featuresSection": {
-    "eyebrow": "Core Features",
-    "title": "Six capabilities of rope rescue facilities"
+    "eyebrow": "Core Capabilities",
+    "title": "Six capabilities of rope rescue facilities",
+    "description": "Built on cliff, elevation, and shaft terrain — covering the full rescue workflow from rope skills to litter transfer."
   },
   "features": [
     {
@@ -56,8 +54,10 @@
   ],
   "programsSection": {
     "eyebrow": "Training Disciplines",
-    "title": "Supported training disciplines"
+    "title": "Supported training disciplines",
+    "description": "From foundational rope skills to team coordination — covering core mountain and high-angle rescue disciplines."
   },
+  "extraImageAlt": "Rope rescue facility · multi-path anchors and belay station details",
   "programs": [
     "Rope descent, ascent, and traverse",
     "Anchor building and system rigging",
@@ -66,22 +66,51 @@
     "Shaft and confined-space vertical rescue",
     "Team coordination and command"
   ],
+  "configSection": {
+    "eyebrow": "Typical Configuration",
+    "title": "Tailored rope rescue training grounds for your site and mission",
+    "description": "From cliff modules to shaft structures — engineers deliver deployable facility configurations based on rescue mission and site conditions.",
+    "point1": "Cliff, elevation, and shaft modules combine to fit your site — supporting phased construction and capability upgrades.",
+    "point2": "Pre-installed anchors, belay stations, and fall-protection redundancy enable high-intensity high-risk training within controlled boundaries."
+  },
+  "configImageAlt": "Mountain rope rescue training ground · typical site configuration",
+  "usersSection": {
+    "eyebrow": "Who Uses It",
+    "title": "Who uses rope rescue training facilities",
+    "description": "For mountain and emergency rescue units requiring high-angle transfer, litter rescue, and team coordination capability."
+  },
+  "usersImageAlt": "Mountain rescue teams training at a cliff rope rescue scene",
+  "users": [
+    "Fire & rescue services",
+    "Mountain rescue teams",
+    "Mining & underground rescue",
+    "Outdoor search & rescue organizations",
+    "Emergency management agencies",
+    "Academic safety & rescue programs"
+  ],
+  "casesSection": {
+    "eyebrow": "Related Projects",
+    "title": "High-angle and rescue scenarios in real deliveries",
+    "description": "These projects include high-angle, outdoor, and rescue-related disciplines for rope facility reference.",
+    "linkText": "View more case studies"
+  },
   "relatedLinks": [
     {
       "label": "Psychological Expansion Training",
-      "desc": "High-angle courses building will and courage."
+      "desc": "High-angle courses building will and courage — complementary to rope rescue."
     },
     {
-      "label": "Mining Rescue Solutions",
-      "desc": "Underground and shaft vertical rescue."
+      "label": "Fixed Training Tower",
+      "desc": "Multi-level steel structure integrating high-angle and rope disciplines."
     },
     {
-      "label": "Fixed Training Tower (Steel)",
-      "desc": "Multi-level high-angle training structure."
+      "label": "Modular Training Tower",
+      "desc": "Reconfigurable structure for complex terrain and phased expansion."
     }
   ],
   "cta": {
     "title": "Customize your rope rescue training ground",
-    "description": "Tell us your rescue mission and site conditions — we'll design rope rescue facilities tailored to your needs."
+    "description": "Tell us your rescue mission and site conditions — our engineers will advise on terrain modules, anchor layout, and belay configuration, and deliver a deployable rope rescue training plan.",
+    "secondaryLabel": "Back to specialized training"
   }
 }

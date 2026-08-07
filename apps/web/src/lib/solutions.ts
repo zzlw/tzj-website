@@ -24,6 +24,22 @@ export function solutionCasesHref(caseType: SolutionCaseType): string {
   return `/cases?type=${caseType}`;
 }
 
+/** /solutions hub 页专属 OG（训练基地全景） */
+export const SOLUTIONS_HUB_OG = '/media/solution/hub-og.webp';
+
+function solutionMedia(slug: string) {
+  return {
+    /** hub 卡片图（16:10） */
+    image: `/media/solution/${slug}-card.webp`,
+    heroImage: `/media/solution/${slug}-hero.webp`,
+    ogImage: `/media/solution/${slug}-og.webp`,
+    detailImages: [
+      `/media/solution/${slug}-detail-1.webp`,
+      `/media/solution/${slug}-detail-2.webp`,
+    ],
+  };
+}
+
 export interface SolutionFocus {
   icon: LucideIcon;
   title: string;
@@ -40,19 +56,34 @@ export interface Solution {
   slug: string;
   name: string;
   icon: LucideIcon;
+  /** hub 卡片图（16:10） */
   image: string;
+  /** 详情 hero（16:9） */
+  heroImage: string;
+  /** 社交分享 OG（1200×630） */
+  ogImage: string;
+  /** 详情页场景/结构配图（4:3） */
+  detailImages: string[];
   tagline: string;
   intro: string[];
   focus: SolutionFocus[];
   recommended: SolutionConfig[];
   programs: string[];
+  caseType?: SolutionCaseType;
   caseHref?: string;
 }
 
 export type SolutionMeta = {
   slug: string;
   icon: LucideIcon;
+  /** hub 卡片图（16:10） */
   image: string;
+  /** 详情 hero（16:9） */
+  heroImage: string;
+  /** 社交分享 OG（1200×630） */
+  ogImage: string;
+  /** 详情页场景/结构配图（4:3） */
+  detailImages: string[];
   /** 对应工程案例分类（`/cases?type=…`） */
   caseType?: SolutionCaseType;
   focusIcons: LucideIcon[];
@@ -63,7 +94,7 @@ export const SOLUTION_META: SolutionMeta[] = [
   {
     slug: 'fire-rescue',
     icon: Flame,
-    image: '/media/tower-wylie.jpg',
+    ...solutionMedia('fire-rescue'),
     caseType: 'fire',
     focusIcons: [Flame, Building2, Beaker, ClipboardCheck],
     recommendedHrefs: ['/fixed-tower', '/burn-rooms', '/burn-rooms/cfbt', '/accessories/hazmat'],
@@ -71,7 +102,7 @@ export const SOLUTION_META: SolutionMeta[] = [
   {
     slug: 'police',
     icon: Shield,
-    image: '/media/tower-hamilton.jpg',
+    ...solutionMedia('police'),
     caseType: 'police',
     focusIcons: [Building2, Target, Shield, Users],
     recommendedHrefs: [
@@ -84,7 +115,7 @@ export const SOLUTION_META: SolutionMeta[] = [
   {
     slug: 'military',
     icon: Target,
-    image: '/media/tower-titusville.jpg',
+    ...solutionMedia('military'),
     caseType: 'military',
     focusIcons: [Dumbbell, Brain, Mountain, Layers],
     recommendedHrefs: [
@@ -97,7 +128,7 @@ export const SOLUTION_META: SolutionMeta[] = [
   {
     slug: 'mine-rescue',
     icon: Mountain,
-    image: '/media/tower-eastside.jpg',
+    ...solutionMedia('mine-rescue'),
     caseType: 'enterprise',
     focusIcons: [Layers, Flame, Mountain, ClipboardCheck],
     recommendedHrefs: [
@@ -110,7 +141,7 @@ export const SOLUTION_META: SolutionMeta[] = [
   {
     slug: 'education',
     icon: GraduationCap,
-    image: '/media/tower-macon.jpg',
+    ...solutionMedia('education'),
     caseType: 'school',
     focusIcons: [GraduationCap, Building2, Users, ClipboardCheck],
     recommendedHrefs: [
@@ -123,7 +154,7 @@ export const SOLUTION_META: SolutionMeta[] = [
   {
     slug: 'enterprise',
     icon: Factory,
-    image: '/media/tower-chino.jpg',
+    ...solutionMedia('enterprise'),
     caseType: 'enterprise',
     focusIcons: [Beaker, Flame, Trophy, ClipboardCheck],
     recommendedHrefs: [

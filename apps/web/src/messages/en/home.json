@@ -78,28 +78,6 @@
           "category": "CFBT"
         }
       }
-    },
-    "certification": {
-      "eyebrow": "Credentials & Trust",
-      "title": "Certified Systems, Controlled Quality",
-      "description": "Industry certifications and client endorsements reflect our commitment to quality and integrity.",
-      "items": {
-        "iso9001": { "title": "ISO 9001", "subtitle": "Quality Management System" },
-        "hitech": { "title": "High-Tech Enterprise", "subtitle": "Certificate on File" },
-        "patents": { "title": "Multiple Patents", "subtitle": "Utility & Design" },
-        "safety": { "title": "Work Safety Standardization", "subtitle": "Level 3 Compliance" }
-      },
-      "clientsHeading": "Industries We Serve",
-      "clients": {
-        "fire": "Fire & Rescue",
-        "police": "Police & SWAT",
-        "mine": "Mine Rescue",
-        "university": "Universities",
-        "tourism": "Tourism & Scenic",
-        "military": "Military Training",
-        "petrochemical": "Petrochemical",
-        "maritime": "Ports & Maritime"
-      }
     }
   }
 }

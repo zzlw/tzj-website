@@ -9,9 +9,14 @@ import { Container, PageHero } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 import { getLocalizedSolutions } from '@/lib/i18n/solutions';
 import { breadcrumbJsonLd } from '@/lib/jsonld';
+import { SOLUTIONS_HUB_OG } from '@/lib/solutions';
 
 export async function generateMetadata() {
-  return createPageMetadata({ namespace: 'pages.solutions', path: '/solutions' });
+  return createPageMetadata({
+    namespace: 'pages.solutions',
+    path: '/solutions',
+    image: SOLUTIONS_HUB_OG,
+  });
 }
 
 export default async function SolutionsPage() {

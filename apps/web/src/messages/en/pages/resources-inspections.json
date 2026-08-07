@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "Annual Inspection Service",
+    "title": "Training Tower Inspections | Annual Facility Inspection & Maintenance",
     "description": "TZJ annual inspection service for training towers and burn rooms — structural, burn room, and liner inspection by professional engineers with documented reports aligned with live-fire training facility standards."
   },
   "hero": {
@@ -105,6 +105,17 @@
   "cta": {
     "title": "Schedule annual inspection service",
     "description": "Contact our team to develop an inspection and maintenance plan for your facility — keeping every live-fire drill safe.",
-    "secondaryLabel": "View warranty service"
+    "secondaryLabel": "View warranty service",
+    "inquiryLink": "Send an Inquiry"
+  },
+  "sceneImageAlts": [
+    "Inspector measuring steel structure wall thickness",
+    "Checking stair treads and handrail fixings"
+  ],
+  "cases": {
+    "eyebrow": "Real Projects",
+    "title": "Facilities We Keep Running",
+    "description": "Our inspection service covers every completed training facility, safeguarding every live drill.",
+    "linkText": "View all cases"
   }
 }

@@ -9,6 +9,12 @@
     "description": "Purpose-built climbing and tactical training for police, SWAT, and military — climbing, rappelling, and entry scenarios in one rugged multi-story structure.",
     "imageAlt": "Police and military climbing tower"
   },
+  "heroImageAlt": "Police & military climbing tower — multi-level tactical training structure",
+  "gallery": [
+    { "alt": "Climbing tower — multi-level structure and climbing positions" },
+    { "alt": "Climbing tower — rappel anchors and work platforms" },
+    { "alt": "Climbing tower — tactical entry scenario layout" }
+  ],
   "breadcrumb": {
     "parent": "Training Towers",
     "current": "Police & Military Climbing Tower"
@@ -26,7 +32,8 @@
   },
   "featuresSection": {
     "eyebrow": "Core Features",
-    "title": "Six capabilities of climbing towers"
+    "title": "Six capabilities of climbing towers",
+    "description": "Multi-level structures supporting the full chain from climbing and rappelling to tactical entry."
   },
   "features": [
     {
@@ -56,8 +63,10 @@
   ],
   "programsSection": {
     "eyebrow": "Training Disciplines",
-    "title": "Supported training disciplines"
+    "title": "Supported training disciplines",
+    "description": "From basic climbing to team assault — core tactical disciplines for police and military units."
   },
+  "extraImageAlt": "Climbing tower — multi-level entry points and training details",
   "programs": [
     "Unassisted climbing and rapid ascent",
     "Rope rappelling, descent, and high traverse",
@@ -66,6 +75,34 @@
     "Team coordination and command drills",
     "Optional climbing walls, rope ladders, and obstacle props"
   ],
+  "configSection": {
+    "eyebrow": "Typical configuration",
+    "title": "Climbing towers customized to tactical flows",
+    "description": "From floor layouts to entry points — engineers deliver build-ready climbing tower configurations for your unit's tactical requirements.",
+    "point1": "Multi-level structures with rooms, corridors, and entry points customized to operational flows.",
+    "point2": "Pre-installed rope anchors, fall-arrest systems, and equipment interfaces for high-frequency training."
+  },
+  "configImageAlt": "Police & military climbing tower — typical structural configuration",
+  "usersSection": {
+    "eyebrow": "Who uses it",
+    "title": "Organizations using climbing towers",
+    "description": "For police, SWAT, and military units needing integrated climbing, rappelling, and tactical entry training."
+  },
+  "usersImageAlt": "Police and SWAT crews training at a climbing tower",
+  "users": [
+    "Police & SWAT",
+    "Military units",
+    "Fire & rescue departments",
+    "Emergency management agencies",
+    "School safety programs",
+    "International tactical training providers"
+  ],
+  "casesSection": {
+    "eyebrow": "Related projects",
+    "title": "Tactical training in delivered projects",
+    "description": "Selected police, SWAT, and tactical training deliveries for climbing tower reference.",
+    "linkText": "View more case studies"
+  },
   "relatedLinks": [
     {
       "label": "Tactical Training",
@@ -82,6 +119,7 @@
   ],
   "cta": {
     "title": "Customize a climbing tower for your unit",
-    "description": "Tell us your tactical requirements and site conditions — our engineering team will design a climbing tower program for you."
+    "description": "Tell us your tactical requirements and site conditions — our engineering team will design a climbing tower program for you.",
+    "secondaryLabel": "Explore custom training towers"
   }
 }

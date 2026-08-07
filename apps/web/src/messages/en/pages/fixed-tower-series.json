@@ -8,6 +8,10 @@
     "title": "Standard Tower Series",
     "description": "Choose from 15 preset layouts to accelerate your project — or start from any layout and customize easily."
   },
+  "gallery": [
+    { "alt": "Standard tower series — high-rise structural layout" },
+    { "alt": "Standard tower series — multi-level main structure and stair tower" }
+  ],
   "complianceSection": {
     "eyebrow": "Standards Compliance",
     "title": "Aligned with international live-fire training standards",

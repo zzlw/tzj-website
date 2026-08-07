@@ -57,6 +57,10 @@ export default async function BlogDetailPage({ params, searchParams }: BlogPageP
 
   const excerpt = pickSummary((post as { excerpt?: string }).excerpt, post.content);
   const coverImage = pickCoverImage(post.coverImage);
+  // 详情页宽幅封面：优先使用独立设置，未设置时回退列表封面图
+  const heroImage = pickCoverImage(
+    (post as { detailCoverImage?: string | null }).detailCoverImage ?? post.coverImage,
+  );
   const dateLabel = formatContentDate(post.publishedAt, locale);
   const readTime = (post as { readTime?: string }).readTime;
 
@@ -90,7 +94,7 @@ export default async function BlogDetailPage({ params, searchParams }: BlogPageP
       <div className="pb-20">
         <section className="relative h-[360px] overflow-hidden bg-neutral-800 lg:h-[460px]">
           <Image
-            src={coverImage}
+            src={heroImage}
             alt={post.title}
             fill
             preload

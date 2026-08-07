@@ -95,6 +95,7 @@ export function FeatureGrid({ items, columns = 3 }: { items: Feature[]; columns?
 
 /* ──────────────────────────────────────────────────────────
  * ProcessBand — 交钥匙服务流程（从构想到落成，及售后）
+ * 默认：左图 + 右时间轴 + 区尾 CTA；compact：仅时间轴（极密页）
  * ────────────────────────────────────────────────────────── */
 export interface ProcessStep {
   icon: LucideIcon;
@@ -132,33 +133,82 @@ export function ProcessBand({
   title = '从构想到落成，全程为您护航',
   description = '作为一体化供应商，我们把设计、制造、安装与售后集于一体——一站式对接，全程跟进。',
   steps = DEFAULT_STEPS,
+  image,
+  imageAlt,
+  compact = false,
+  ctaLabel,
+  ctaMessage,
 }: {
   eyebrow?: string;
   title?: string;
   description?: string;
   steps?: ProcessStep[];
+  /** 交钥匙服务主图；默认由 ProcessBandI18n 注入 shared 图 */
+  image?: string;
+  imageAlt?: string;
+  /** 仅时间轴（无图），用于已很密的页面 */
+  compact?: boolean;
+  ctaLabel?: string;
+  ctaMessage?: string;
 }) {
+  const showImage = Boolean(image) && !compact;
+
   return (
-    <section className="bg-neutral-100">
+    <section className="border-y border-neutral-200 bg-white">
       <Container className="py-16 lg:py-24">
-        <SectionHeading eyebrow={eyebrow} title={title} description={description} />
-        <ol className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {steps.map((s, i) => {
-            const Icon = s.icon;
-            return (
-              <li key={s.title} className="relative border border-neutral-300 bg-white p-6">
-                <span className="absolute right-4 top-4 font-display text-2xl font-bold text-neutral-200">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <div className="mb-4 flex h-11 w-11 items-center justify-center bg-primary/10">
-                  <Icon className="h-5 w-5 text-primary" aria-hidden="true" />
-                </div>
-                <h3 className="rb-h5 text-neutral-900">{s.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-secondary-text">{s.desc}</p>
-              </li>
-            );
-          })}
-        </ol>
+        <div
+          className={cn(
+            showImage && 'grid grid-cols-1 items-start gap-10 lg:grid-cols-12 lg:gap-14',
+          )}
+        >
+          {showImage ? (
+            <div className="lg:col-span-5">
+              <div className="rb-img-shimmer relative aspect-[4/5] overflow-hidden bg-neutral-200 lg:sticky lg:top-28">
+                <Image
+                  src={image!}
+                  alt={imageAlt ?? title}
+                  fill
+                  quality={75}
+                  sizes="(max-width: 1024px) 100vw, 40vw"
+                  className="object-cover"
+                />
+              </div>
+            </div>
+          ) : null}
+
+          <div className={cn(showImage ? 'lg:col-span-7' : 'max-w-3xl')}>
+            <SectionHeading eyebrow={eyebrow} title={title} description={description} />
+
+            <ol className="mt-10">
+              {steps.map((s, i) => {
+                const Icon = s.icon;
+                return (
+                  <li
+                    key={s.title}
+                    className="grid grid-cols-[3rem_1fr] gap-4 border-b border-neutral-200 py-5 first:pt-0 last:border-b-0 last:pb-0"
+                  >
+                    <span className="font-display text-2xl font-bold leading-none text-primary">
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+                    <div>
+                      <div className="flex items-center gap-2.5">
+                        <Icon className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                        <h3 className="rb-h5 text-neutral-900">{s.title}</h3>
+                      </div>
+                      <p className="mt-2 text-sm leading-relaxed text-secondary-text">{s.desc}</p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+
+            {ctaLabel ? (
+              <div className="mt-10 flex flex-wrap items-center gap-4 border-t border-neutral-200 pt-8">
+                <BookConsultButton message={ctaMessage}>{ctaLabel}</BookConsultButton>
+              </div>
+            ) : null}
+          </div>
+        </div>
       </Container>
     </section>
   );

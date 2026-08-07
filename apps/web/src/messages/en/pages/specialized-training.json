@@ -1,30 +1,14 @@
 {
   "meta": {
     "title": "Specialized Training",
-    "description": "TZJ specialized training programs — maritime, tactical, and hazmat training with realistic props and facilities for fire, military, police, and other teams."
+    "description": "TZJ specialized training — maritime, tactical, hazmat, rope rescue, and psychological programs with realistic props and facilities for fire, military, and police teams."
   },
   "hero": {
     "eyebrow": "Specialized Training",
     "title": "Live-fire specialized training programs",
-    "description": "Beyond general training towers and accessories, different teams need highly specialized live-fire scenarios. TZJ offers maritime, tactical, and hazmat programs to build realistic training environments for specific missions."
+    "description": "Beyond general training towers and accessories, teams need highly specialized scenarios. TZJ offers maritime, tactical, hazmat, rope rescue, and psychological programs for mission-specific training environments."
   },
-  "programs": [
-    {
-      "title": "Maritime Training",
-      "href": "/accessories/maritime",
-      "desc": "Ship compartment, deck, engine room, and narrow-space rescue scenarios replicating real shipboard fires — for port, dock, and waterborne fire/rescue training."
-    },
-    {
-      "title": "Tactical Training",
-      "href": "/accessories/tactical",
-      "desc": "Reconfigurable breach-and-entry, indoor CQB, stairwell movement, and rope/high-angle scenarios for police, SWAT, and military tactical drills."
-    },
-    {
-      "title": "Hazmat Training",
-      "href": "/accessories/hazmat",
-      "desc": "A dozen hazard scenario props and mobile training trailers replicating leak, plug, and decon scenarios for cross-regional coordinated training."
-    }
-  ],
+  "heroImageAlt": "Specialized training props and live scenario facilities overview",
   "cta": {
     "title": "Need a custom specialized training scenario?",
     "description": "Tell us your mission requirements — our engineers and fire service experts will design a specialized training program for you."

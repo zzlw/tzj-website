@@ -1,18 +1,51 @@
 import { Check, X } from 'lucide-react';
+import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { BaiduSafeVideoHero as VideoHero } from '@/components/BaiduSafeVideoHero';
 import { BookConsultButton } from '@/components/chat/BookConsultButton';
+import { MediaImage as Image } from '@/components/MediaImage';
+import {
+  FeatureImageGrid,
+  ProductGallery,
+  UsersBand,
+} from '@/components/products/ProductLineMedia';
 import { RelatedLinks } from '@/components/sections/blocks';
 import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
 import { Container, RbLink, SectionHeading } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
+import { productLineHeroImage, productLineOgImage } from '@/lib/product-catalog';
+import { relatedLinksWithImages, requireProductLine } from '@/lib/product-line-page';
 
-const HERO_IMAGE = '/media/modular-hero.jpg';
-const HERO_VIDEO = '/media/modular-tower.mp4';
-const RELATED_HREFS = ['/modular-tower/series', '/modular-tower/vs-containers', '/fixed-tower'];
+const LINE = requireProductLine('modular-tower');
 
-export async function generateMetadata() {
-  return createPageMetadata({ namespace: 'pages.modularTower', path: '/modular-tower' });
+/** 与 i18n `features` 数组顺序一一对应 */
+const FEATURE_IDS = [
+  'openplan',
+  'reconfigure',
+  'expand',
+  'nointernal',
+  'install',
+  'upgrade',
+] as const;
+
+const HERO_POSTER = productLineHeroImage(LINE);
+const HERO_VIDEO = '/media/hero.mp4';
+const GALLERY_SRCS = LINE.detailImages ?? [LINE.image];
+const FEATURE_IMAGES = LINE.featureImages ?? {};
+const EXTRA_SRC = LINE.extraImage;
+const USERS_SRC = LINE.usersImage;
+const RELATED_HREFS = [
+  '/modular-tower/series',
+  '/modular-tower/vs-containers',
+  '/fixed-tower',
+] as const;
+
+export async function generateMetadata(): Promise<Metadata> {
+  return createPageMetadata({
+    namespace: 'pages.modularTower',
+    path: '/modular-tower',
+    image: productLineOgImage(LINE),
+  });
 }
 
 export default async function ModularTowerPage() {
@@ -21,6 +54,8 @@ export default async function ModularTowerPage() {
   const tBlocks = await getTranslations('blocks.relatedLinks');
   const tCommon = await getTranslations('common');
 
+  const gallery = t.raw('gallery') as Array<{ alt: string }>;
+  const features = t.raw('features') as Array<{ title: string; desc: string }>;
   const series = t.raw('series') as Array<{ name: string; desc: string; spec: string }>;
   const compareRows = t.raw('compareRows') as Array<{
     label: string;
@@ -28,6 +63,22 @@ export default async function ModularTowerPage() {
     container: string;
   }>;
   const relatedLinks = t.raw('relatedLinks') as Array<{ label: string; desc: string }>;
+  const users = t.raw('users') as string[];
+
+  const galleryItems = gallery.map((g, i) => ({
+    src: GALLERY_SRCS[i] ?? GALLERY_SRCS[0] ?? LINE.image,
+    alt: g.alt,
+  }));
+
+  const featureItems = features.map((f, i) => {
+    const featureId = FEATURE_IDS[i] ?? FEATURE_IDS[0];
+    return {
+      id: featureId,
+      title: f.title,
+      desc: f.desc,
+      src: FEATURE_IMAGES[featureId] ?? LINE.image,
+    };
+  });
 
   return (
     <div className="pb-20">
@@ -36,12 +87,14 @@ export default async function ModularTowerPage() {
         title={t('hero.title')}
         description={t('hero.description')}
         video={HERO_VIDEO}
-        poster={HERO_IMAGE}
+        poster={HERO_POSTER}
       >
         <BookConsultButton variant="light" message={tCommon('bookConsultProduct')}>
           {tCta('bookConsult')}
         </BookConsultButton>
       </VideoHero>
+
+      <ProductGallery items={galleryItems} fallbackSrc={LINE.image} />
 
       <section id="overview" className="scroll-mt-24">
         <Container className="py-16 lg:py-24">
@@ -52,6 +105,18 @@ export default async function ModularTowerPage() {
               description={t('overview.description')}
             />
             <div className="flex flex-col justify-center gap-4 border-l-2 border-primary pl-6">
+              {EXTRA_SRC ? (
+                <div className="rb-img-shimmer relative mb-4 aspect-[4/3] overflow-hidden bg-neutral-200">
+                  <Image
+                    src={EXTRA_SRC}
+                    alt={t('extraImageAlt')}
+                    fill
+                    quality={70}
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                    className="object-cover"
+                  />
+                </div>
+              ) : null}
               <p className="text-lg leading-relaxed text-neutral-900">{t('overview.lead')}</p>
               <p className="text-secondary-text">{t('overview.body')}</p>
             </div>
@@ -61,7 +126,18 @@ export default async function ModularTowerPage() {
 
       <StatBandI18n />
 
-      <section id="series" className="scroll-mt-24 bg-neutral-100">
+      <section className="bg-neutral-100">
+        <Container className="py-16 lg:py-24">
+          <SectionHeading
+            eyebrow={t('featuresSection.eyebrow')}
+            title={t('featuresSection.title')}
+            description={t('featuresSection.description')}
+          />
+          <FeatureImageGrid items={featureItems} columns={3} />
+        </Container>
+      </section>
+
+      <section id="series" className="scroll-mt-24">
         <Container className="py-16 lg:py-24">
           <SectionHeading
             eyebrow={t('seriesSection.eyebrow')}
@@ -88,7 +164,7 @@ export default async function ModularTowerPage() {
         </Container>
       </section>
 
-      <section id="vs-containers" className="scroll-mt-24">
+      <section id="vs-containers" className="scroll-mt-24 bg-neutral-100">
         <Container className="py-16 lg:py-24">
           <SectionHeading
             eyebrow={t('compareSection.eyebrow')}
@@ -137,7 +213,16 @@ export default async function ModularTowerPage() {
         </Container>
       </section>
 
-      <section id="custom" className="scroll-mt-24 bg-neutral-100">
+      <UsersBand
+        eyebrow={t('usersSection.eyebrow')}
+        title={t('usersSection.title')}
+        description={t('usersSection.description')}
+        imageSrc={USERS_SRC}
+        imageAlt={t('usersImageAlt')}
+        users={users}
+      />
+
+      <section id="custom" className="scroll-mt-24">
         <Container className="py-16 lg:py-24">
           <div className="grid grid-cols-1 gap-10 lg:grid-cols-2 lg:gap-16">
             <div className="flex flex-col gap-6">
@@ -162,7 +247,7 @@ export default async function ModularTowerPage() {
         title={tBlocks('titleDefault')}
         learnMore={tBlocks('learnMore')}
         eyebrow={tBlocks('eyebrow')}
-        links={relatedLinks.map((l, i) => ({ ...l, href: RELATED_HREFS[i]! }))}
+        links={relatedLinksWithImages(relatedLinks, RELATED_HREFS)}
       />
 
       <Container className="pt-16 lg:pt-24">

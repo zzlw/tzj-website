@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "Tower Design Center",
+    "title": "Training Tower Design Center | Selection & Design Resources",
     "description": "TZJ Tower Design Center — browse standard tower series, access design resources and technical specifications to plan your training facility."
   },
   "hero": {
@@ -85,6 +85,8 @@
   ],
   "cta": {
     "title": "Start designing your training tower",
-    "secondaryLabel": "Learn about procurement"
+    "secondaryLabel": "Learn about procurement",
+    "inquiryLink": "Send an Inquiry",
+    "description": "Talk to our design engineers for selection advice and design resource support."
   }
 }

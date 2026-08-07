@@ -2,7 +2,7 @@
   "solutions": {
     "fire-rescue": {
       "name": "Fire & Rescue",
-      "tagline": "Integrated live-fire training solutions for fire departments, brigades, and training bases.",
+      "tagline": "Integrated fire rescue training facilities for fire departments, brigades, and training bases — live-fire base construction and multi-scenario operational training.",
       "intro": [
         "Fire and rescue teams face the broadest training requirements — from high-rise firefighting and interior search to CFBT live fire and hazmat response. Facilities must withstand high-frequency, high-temperature use while supporting diverse training objectives.",
         "TZJ delivers turnkey training bases — from fixed towers and burn rooms to specialized scenarios — designed to NFPA and relevant GB standards, balancing realism with long-term durability."
@@ -28,19 +28,19 @@
       "recommended": [
         {
           "label": "Fixed Training Tower (Steel)",
-          "desc": "Multi-story live-fire structure, heat- and wind-load rated."
+          "desc": "Choose it as the multi-story live-fire structure; pick the high-rise series for high-rise scenarios."
         },
         {
           "label": "Burn Room & Interlocking Liner",
-          "desc": "The core of safe, realistic live-fire training."
+          "desc": "Choose it for live-fire training; multiple rooms enable parallel batches."
         },
         {
           "label": "CFBT Fire Behavior Training",
-          "desc": "Train fire behavior recognition and flashover warning."
+          "desc": "Choose it for fire behavior recognition and flashover warning training."
         },
         {
           "label": "Hazmat Training",
-          "desc": "Full-process leak, plug, and decontamination drills."
+          "desc": "Choose it for hazmat leak, plug, and decontamination drills."
         }
       ],
       "programs": [
@@ -50,11 +50,15 @@
         "Hazmat leak, plug, and decontamination",
         "Rope rescue and high-angle transfer",
         "Forcible entry and breaching"
+      ],
+      "sceneImageAlts": [
+        "Interlocking refractory-lined burn room for controlled, repeatable live-fire training",
+        "Multi-story training tower with rope rescue anchor points and training equipment"
       ]
     },
     "police": {
       "name": "Police & SWAT",
-      "tagline": "Climbing and tactical operational training solutions for police, SWAT, and paramilitary units.",
+      "tagline": "Police and paramilitary training facilities for SWAT and paramilitary units — climbing towers and custom tactical training facilities.",
       "intro": [
         "Police and SWAT training emphasizes climbing, entry, and tactical coordination. Climbing towers and reconfigurable tactical scenarios are essential for rapid mobility and real-world response.",
         "TZJ customizes climbing towers and tactical training facilities that integrate realistic scenarios into the structure — supporting breaching, building movement, and rope descent drills."
@@ -80,13 +84,19 @@
       "recommended": [
         {
           "label": "Police & SWAT Climbing Tower",
-          "desc": "Integrated climbing, rappelling, and entry structure."
+          "desc": "Choose it to combine climbing, rappelling, and entry in one structure."
         },
-        { "label": "Tactical Training", "desc": "Reconfigurable breaching and CQB scenarios." },
-        { "label": "Custom Training Tower", "desc": "Layouts tailored to tactical workflows." },
+        {
+          "label": "Tactical Training",
+          "desc": "Choose it for repeatable breaching and CQB drills."
+        },
+        {
+          "label": "Custom Training Tower",
+          "desc": "Choose it when standard layouts cannot fit your tactical workflow."
+        },
         {
           "label": "Fitness & Vestibular Equipment",
-          "desc": "Build fitness and vestibular tolerance."
+          "desc": "Choose it to strengthen fitness and vestibular tolerance."
         }
       ],
       "programs": [
@@ -96,11 +106,15 @@
         "Window entry and building movement",
         "Team coordination and command",
         "Fitness and vestibular training"
+      ],
+      "sceneImageAlts": [
+        "Tactical breach training corridor with reconfigurable props",
+        "Rope descent training setup on the climbing tower facade"
       ]
     },
     "military": {
       "name": "Military",
-      "tagline": "Integrated physical, tactical, and rescue training for military and emergency forces.",
+      "tagline": "Military training facilities for armed forces and emergency forces — combinable military training towers and combined training grounds.",
       "intro": [
         "Military training demands physical strength, mental resilience, and coordinated operations. A single site must support climbing, obstacle courses, psychological challenges, and specialized rescue.",
         "TZJ provides combinable towers, psychological challenge courses, and fitness equipment to build high-intensity, multi-discipline training grounds within limited space."
@@ -126,19 +140,19 @@
       "recommended": [
         {
           "label": "Fixed Training Tower (Steel)",
-          "desc": "Multi-story climbing and comprehensive training structure."
+          "desc": "Choose it as the multi-story climbing and comprehensive training structure."
         },
         {
           "label": "Psychological Challenge Course",
-          "desc": "High-altitude elements to build mental toughness."
+          "desc": "Choose it for high-altitude psychological challenge courses."
         },
         {
           "label": "Mountain & Rope Rescue",
-          "desc": "Complex terrain rope and high-angle transfer."
+          "desc": "Choose it for complex-terrain rope rescue and high-angle transfer."
         },
         {
           "label": "Fitness & Vestibular Equipment",
-          "desc": "Physical and vestibular conditioning."
+          "desc": "Choose it to reinforce physical and vestibular conditioning."
         }
       ],
       "programs": [
@@ -148,11 +162,15 @@
         "Vestibular tolerance training",
         "Team tactical coordination",
         "Integrated rescue operational training"
+      ],
+      "sceneImageAlts": [
+        "High-altitude broken-bridge psychological training structure",
+        "Obstacle course with wall climb and cargo net"
       ]
     },
     "mine-rescue": {
       "name": "Mine Rescue",
-      "tagline": "Underground and high-risk environment training for mine and industrial rescue teams.",
+      "tagline": "Mine rescue training facilities for mine and industrial rescue teams — underground tunnel and high-risk environment training.",
       "intro": [
         "Mine rescue operates in tunnels, shafts, and confined spaces where training must closely mirror reality to build search and rescue skills under complex conditions.",
         "TZJ simulates underground tunnels, shafts, and confined spaces with smoke and heat systems to create safe, controlled high-risk rescue training environments."
@@ -178,14 +196,20 @@
       "recommended": [
         {
           "label": "Modular Training Tower",
-          "desc": "Flexible underground and confined-space simulation."
+          "desc": "Choose it to simulate underground tunnels and confined spaces."
         },
-        { "label": "Mountain & Rope Rescue", "desc": "Shaft and vertical elevation rescue." },
+        {
+          "label": "Mountain & Rope Rescue",
+          "desc": "Choose it for shaft and vertical elevation rescue training."
+        },
         {
           "label": "Burn Room & Interlocking Liner",
-          "desc": "Search and self-rescue in smoke and heat."
+          "desc": "Choose it for search and self-rescue drills in smoke and heat."
         },
-        { "label": "Hazmat Training", "desc": "Toxic gas and hazardous atmosphere response." }
+        {
+          "label": "Hazmat Training",
+          "desc": "Choose it for toxic and hazardous atmosphere response training."
+        }
       ],
       "programs": [
         "Tunnel and confined-space search and rescue",
@@ -194,11 +218,15 @@
         "Toxic gas and hazardous atmosphere response",
         "Litter carry and casualty care",
         "Self-rescuer and breathing protection training"
+      ],
+      "sceneImageAlts": [
+        "Confined-space mine tunnel search and rescue training corridor",
+        "Vertical shaft rescue training rig with tripod and winch"
       ]
     },
     "education": {
       "name": "Education",
-      "tagline": "Teaching, hands-on training, and public fire safety education for universities and training institutions.",
+      "tagline": "Campus fire training bases for universities, vocational schools, and training institutions — hands-on teaching and public fire safety education.",
       "intro": [
         "Educational institutions need teaching-friendly, multi-program, and safe facilities — supporting fire and safety engineering programs while often serving public education and experiential learning.",
         "TZJ provides teaching-friendly towers, low-intensity burn rooms, and education centers with complete drawings to deliver standardized training bases within budget."
@@ -224,19 +252,19 @@
       "recommended": [
         {
           "label": "Fire Safety Education Center",
-          "desc": "Immersive public fire safety experience space."
+          "desc": "Choose it to build an immersive fire safety experience space for students and the public."
         },
         {
           "label": "Standard Tower Series",
-          "desc": "Preset layouts for rapid teaching deployment."
+          "desc": "Choose it for fast, standardized teaching deployment within budget."
         },
         {
           "label": "Modular Training Tower",
-          "desc": "Flexible, open design for multi-program use."
+          "desc": "Choose it for flexible, multi-program shared use."
         },
         {
           "label": "Fire Simulation Systems",
-          "desc": "Safe, controlled simulation for instruction."
+          "desc": "Choose it for safe, controlled simulation-based instruction."
         }
       ],
       "programs": [
@@ -246,11 +274,15 @@
         "Public education and experiential learning",
         "Emergency plan tabletop exercises",
         "Skills competition preparation"
+      ],
+      "sceneImageAlts": [
+        "Fire safety education experience hall with training stations",
+        "Low-intensity teaching burn room training equipment"
       ]
     },
     "enterprise": {
       "name": "Enterprise & Industrial Parks",
-      "tagline": "Emergency response capability building for enterprises, chemical parks, and industrial fire brigades.",
+      "tagline": "Enterprise fire training facilities for companies, chemical parks, and industrial fire brigades — regular park emergency drills.",
       "intro": [
         "Enterprises and industrial parks — especially petrochemical, energy, and manufacturing — need response capabilities matched to their process risks. Training must align with site hazards and emergency plans.",
         "TZJ customizes facilities combining hazmat, simulation, and live-fire training to help industrial brigades build sustainable, repeatable emergency response capability."
@@ -276,14 +308,20 @@
       "recommended": [
         {
           "label": "Hazmat Training",
-          "desc": "Leak, plug, and decontamination operational drills."
+          "desc": "Choose it for hazmat leak, plug, and decontamination operational drills."
         },
-        { "label": "Fire Simulation Systems", "desc": "Low-cost, repeatable simulation training." },
+        {
+          "label": "Fire Simulation Systems",
+          "desc": "Choose it for low-cost, repeatable simulation training."
+        },
         {
           "label": "Competition Training Facilities",
-          "desc": "Motivate regular brigade skill maintenance."
+          "desc": "Choose it to drive regular brigade training through competitions."
         },
-        { "label": "Modular Training Tower", "desc": "Flexible deployment with phased expansion." }
+        {
+          "label": "Modular Training Tower",
+          "desc": "Choose it for flexible deployment with phased expansion."
+        }
       ],
       "programs": [
         "Hazmat leak and plug response",
@@ -292,6 +330,10 @@
         "Emergency plan operational exercises",
         "Brigade competition and skill drills",
         "Employee fire safety training"
+      ],
+      "sceneImageAlts": [
+        "Hazmat leak-plugging training trailer prop with decontamination station",
+        "Industrial fire brigade skills training and competition course"
       ]
     }
   }

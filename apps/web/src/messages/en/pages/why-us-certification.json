@@ -1,33 +1,48 @@
 {
   "meta": {
     "title": "Certifications",
-    "description": "TZJ holds ISO 9001, High-Tech Enterprise, and Work Safety Standardization certifications — earning customer trust through rigorous standards."
+    "description": "TZJ holds ISO 9001, ISO 14001, ISO 45001, and five-star after-sales service certifications — earning customer trust through rigorous standards."
   },
   "hero": {
     "eyebrow": "Why TZJ · Certifications",
     "title": "Certifications",
-    "description": "ISO 9001, High-Tech Enterprise, Work Safety Standardization, and more — earning customer trust through rigorous standards."
+    "description": "ISO 9001, ISO 14001, ISO 45001, and five-star after-sales service certification — earning customer trust through rigorous standards.",
+    "imageAlt": "QC inspector measuring galvanized steel plate — quality control in action"
   },
   "certsSection": {
     "eyebrow": "Credentials & Systems",
     "title": "Commitments you can verify"
   },
+  "certNumberLabel": "Certificate No.:",
+  "viewLargeLabel": "View full certificate",
   "certs": [
     {
-      "title": "ISO 9001 Quality Management",
-      "desc": "Standardized quality management system ensuring controlled design, manufacturing, and installation processes."
+      "image": "/media/cert-iso9001.webp",
+      "title": "ISO 9001 Quality Management System",
+      "issuer": "Beijing OYCC International Certification Center Co., Ltd.",
+      "number": "55123Q00113ROS",
+      "desc": "Management system conforms to GB/T19001-2016 / ISO 9001:2015, covering sales of electronic equipment, firefighting equipment, training equipment, sports equipment, and electromechanical equipment."
     },
     {
-      "title": "High-Tech Enterprise Certification",
-      "desc": "Continuous R&D investment with proprietary technology in thermal liner, modular systems, and more."
+      "image": "/media/cert-iso14001.webp",
+      "title": "ISO 14001 Environmental Management System",
+      "issuer": "Beijing OYCC International Certification Center Co., Ltd.",
+      "number": "55123E00113ROS",
+      "desc": "Management system conforms to GB/T24001-2016 / ISO 14001:2015, covering environmental management activities related to sales and premises."
     },
     {
-      "title": "Multiple Patents",
-      "desc": "Utility model and design patents covering tower structures, liner systems, and training props."
+      "image": "/media/cert-iso45001.webp",
+      "title": "ISO 45001 Occupational Health & Safety Management System",
+      "issuer": "Beijing OYCC International Certification Center Co., Ltd.",
+      "number": "55123S00113ROS",
+      "desc": "Management system conforms to GB/T45001-2020 / ISO 45001:2018, covering occupational health and safety management activities related to sales and premises."
     },
     {
-      "title": "Work Safety Standardization",
-      "desc": "Strict safety protocols ensuring quality and safety in production and on-site installation."
+      "image": "/media/cert-after-sales-5star.webp",
+      "title": "Five-Star After-Sales Service Certification",
+      "issuer": "Beijing OYCC International Certification Center Co., Ltd.",
+      "number": "55123FW00011ROS",
+      "desc": "After-sales service capability meets the five-star requirements of GB/T27922-2011 Commodity After-Sales Service Evaluation System."
     }
   ],
   "valueSection": {

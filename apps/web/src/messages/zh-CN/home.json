@@ -78,28 +78,6 @@
           "category": "CFBT"
         }
       }
-    },
-    "certification": {
-      "eyebrow": "资质与信任",
-      "title": "体系认证，质量过程可控",
-      "description": "多项行业资质认证与客户背书，是我们对品质与诚信的坚守。",
-      "items": {
-        "iso9001": { "title": "ISO 9001", "subtitle": "质量管理体系" },
-        "hitech": { "title": "高新技术企业", "subtitle": "认定证书" },
-        "patents": { "title": "多项专利", "subtitle": "实用新型 & 外观" },
-        "safety": { "title": "安全生产标准化", "subtitle": "三级达标" }
-      },
-      "clientsHeading": "服务客户行业",
-      "clients": {
-        "fire": "消防救援",
-        "police": "公安特警",
-        "mine": "矿山救援",
-        "university": "高等院校",
-        "tourism": "旅游景区",
-        "military": "部队训练",
-        "petrochemical": "石化企业",
-        "maritime": "港口海事"
-      }
     }
   }
 }

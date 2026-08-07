@@ -36,12 +36,12 @@ const collectHrefs = (item: NavItemLocal): string[] => [
 const isProductsNav = (item: NavItemLocal | null | undefined) => item?.href === PRODUCTS_HREF;
 
 export function Header({
-  topBarPhone,
+  topBarPhones,
   topBarEmail,
   topBarSocialChannels,
   topBarScanHint,
 }: {
-  topBarPhone: string;
+  topBarPhones: string[];
   topBarEmail: string;
   topBarSocialChannels: SocialChannelItem[];
   topBarScanHint: string;
@@ -235,7 +235,7 @@ export function Header({
         )}
       >
         <TopBar
-          phone={topBarPhone}
+          phones={topBarPhones}
           email={topBarEmail}
           socialChannels={topBarSocialChannels}
           scanHint={topBarScanHint}

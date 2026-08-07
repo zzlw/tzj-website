@@ -1,13 +1,35 @@
 {
   "meta": {
     "title": "Liner Comparison",
-    "description": "Compare TZJ interlocking thermal liners with traditional firebrick and cast-in-place burn room liner systems, and learn the retrofit process for existing burn rooms."
+    "description": "Compare TZJ interlocking thermal liners with traditional firebrick and cast-in-place burn room liner systems, and learn when to choose liners vs. fire simulation."
   },
   "hero": {
     "eyebrow": "Live Fire & Burn Training · Comparison",
     "title": "Liner Comparison",
-    "description": "Interlocking thermal liners vs. traditional liners—a full comparison from installation and maintenance to service life, plus the retrofit process."
+    "description": "Interlocking thermal liners vs. traditional liners — plus a decision guide for live-fire liners vs. fire simulation."
   },
+  "heroImageAlt": "Burn room liner comparison overview",
+  "decisionSection": {
+    "eyebrow": "Decision guide",
+    "title": "When to choose liners vs. simulation",
+    "description": "Live-fire liners and fire simulation serve different training goals. Many agencies combine both — here's how to decide.",
+    "linerTitle": "Choose interlocking liners / live fire when…",
+    "simulationTitle": "Choose fire simulation when…"
+  },
+  "chooseLiner": [
+    "Training fire behavior, flashover recognition, and hose stream tactics",
+    "Building or retrofitting a dedicated burn room or CFBT facility",
+    "Needing realistic heat, smoke layers, and structural fireground conditions",
+    "Meeting NFPA 1403/1402 live-fire training requirements",
+    "Running advanced interior attack and ventilation control drills"
+  ],
+  "chooseSimulation": [
+    "High-frequency equipment handling and initial attack training",
+    "Indoor or densely populated sites with strict emissions requirements",
+    "Public education, workforce training, and evacuation drills",
+    "Needing rapid reset between sessions without solid fuel or liner wear",
+    "Complementing live-fire facilities for routine, cost-effective drills"
+  ],
   "compareSection": {
     "eyebrow": "System comparison",
     "title": "Interlocking vs. traditional liners"
@@ -88,6 +110,7 @@
   ],
   "cta": {
     "title": "Evaluate your burn room retrofit",
+    "description": "Book a consult to compare liner options and decide the right mix of live fire and simulation.",
     "secondaryLabel": "Learn about interlocking liners"
   }
 }

@@ -1,27 +1,31 @@
 import { Blocks, Check, Maximize, Puzzle, Ruler } from 'lucide-react';
+import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { BaiduSafeVideoHero as VideoHero } from '@/components/BaiduSafeVideoHero';
 import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { MediaImage as Image } from '@/components/MediaImage';
+import { ProductGallery } from '@/components/products/ProductLineMedia';
 import { FeatureGrid, RelatedLinks } from '@/components/sections/blocks';
 import { ProcessBandI18n } from '@/components/sections/blocks-i18n';
 import { Container, RbLink, SectionHeading } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
+import { getProductPageImages } from '@/lib/product-images';
+import { relatedLinksWithImages } from '@/lib/product-line-page';
+
+const PAGE = getProductPageImages('fixed-custom');
+const HERO_POSTER = PAGE.heroImage;
+const HERO_VIDEO = '/media/hero.mp4';
+const STRUCTURE_IMAGES = PAGE.detailImages ?? [];
 
 const CAPABILITY_ICONS = [Ruler, Puzzle, Blocks, Maximize] as const;
 const RELATED_HREFS = ['/fixed-tower/series', '/burn-rooms', '/cases'] as const;
-/** 与 Hub「延伸了解」定制卡同源 */
-const HERO_POSTER = '/media/ft-path-custom.png';
-const HERO_VIDEO = '/media/fixed-tower.mp4';
-const DETAIL_IMAGE = '/media/fixed-tower-custom-detail.png';
-const RELATED_IMAGES = [
-  '/media/ft-path-standard.png',
-  '/media/burn-room.webp',
-  '/media/case-henan-hero.png',
-] as const;
 
-export async function generateMetadata() {
-  return createPageMetadata({ namespace: 'pages.fixedTowerCustom', path: '/fixed-tower/custom' });
+export async function generateMetadata(): Promise<Metadata> {
+  return createPageMetadata({
+    namespace: 'pages.fixedTowerCustom',
+    path: '/fixed-tower/custom',
+    image: PAGE.ogImage ?? PAGE.heroImage,
+  });
 }
 
 export default async function FixedTowerCustomPage() {
@@ -30,10 +34,20 @@ export default async function FixedTowerCustomPage() {
   const tBlocks = await getTranslations('blocks.relatedLinks');
   const tCommon = await getTranslations('common');
 
+  const gallery = t.raw('gallery') as Array<{ alt: string }>;
   const features = t.raw('features') as string[];
   const capabilitiesRaw = t.raw('capabilities') as Array<{ title: string; desc: string }>;
-  const capabilities = capabilitiesRaw.map((item, i) => ({ ...item, icon: CAPABILITY_ICONS[i]! }));
+  const capabilities = capabilitiesRaw.map((item, i) => ({
+    ...item,
+    icon: CAPABILITY_ICONS[i] ?? CAPABILITY_ICONS[0],
+  }));
   const relatedLinks = t.raw('relatedLinks') as Array<{ label: string; desc: string }>;
+
+  const galleryItems = gallery.map((g, i) => ({
+    src: STRUCTURE_IMAGES[i] ?? STRUCTURE_IMAGES[0] ?? HERO_POSTER,
+    alt: g.alt,
+  }));
+  const detailImage = STRUCTURE_IMAGES[0] ?? HERO_POSTER;
 
   return (
     <div className="pb-20">
@@ -48,6 +62,8 @@ export default async function FixedTowerCustomPage() {
           {tCta('bookConsult')}
         </BookConsultButton>
       </VideoHero>
+
+      <ProductGallery items={galleryItems} fallbackSrc={HERO_POSTER} />
 
       <section>
         <Container className="py-16 lg:py-24">
@@ -69,7 +85,7 @@ export default async function FixedTowerCustomPage() {
             </div>
             <div className="rb-img-shimmer relative aspect-[4/3] overflow-hidden border border-neutral-300 bg-neutral-200">
               <Image
-                src={DETAIL_IMAGE}
+                src={detailImage}
                 alt={t('customSection.title')}
                 fill
                 sizes="(max-width: 1024px) 100vw, 50vw"
@@ -108,11 +124,7 @@ export default async function FixedTowerCustomPage() {
         title={tBlocks('titleDefault')}
         learnMore={tBlocks('learnMore')}
         eyebrow={tBlocks('eyebrow')}
-        links={relatedLinks.map((l, i) => ({
-          ...l,
-          href: RELATED_HREFS[i]!,
-          image: RELATED_IMAGES[i],
-        }))}
+        links={relatedLinksWithImages(relatedLinks, RELATED_HREFS)}
       />
 
       <Container className="pt-16 lg:pt-24">

@@ -8,6 +8,27 @@
     "title": "Modular vs Containers",
     "description": "New materials and all-galvanized steel frames — longer life, more open space, and repeated reconfiguration that refurbished containers cannot match."
   },
+  "heroImageAlt": "Modular training system vs container conversion comparison",
+  "decisionSection": {
+    "eyebrow": "Decision guide",
+    "title": "When to choose modular vs containers",
+    "description": "Modular systems and container conversions serve different budgets and scenarios. Use this guide to find your best fit.",
+    "modularTitle": "Choose modular when…",
+    "containerTitle": "Containers may work when…"
+  },
+  "chooseModular": [
+    "You need open floor plans and freely reconfigurable training scenarios",
+    "Phased construction, later expansion, or capability upgrades are planned",
+    "Roof and floor must be rated for training loads and long-term heavy use",
+    "You want 50-year structural life with low maintenance",
+    "Training realism requires building-like layouts and heights"
+  ],
+  "chooseContainer": [
+    "Very short-term temporary training with low life expectancy",
+    "Extremely limited budget accepting ~15-year service life",
+    "Site constraints prevent standard modular installation",
+    "Interim solution before planned demolition and rebuild"
+  ],
   "overview": {
     "eyebrow": "Better · Longer · More Flexible",
     "title": "Why modular systems are the superior choice",
@@ -92,6 +113,7 @@
   ],
   "cta": {
     "title": "Choose the better option for your budget",
+    "description": "Talk with our engineers about your site and training goals to confirm whether modular is the right fit.",
     "secondaryLabel": "View modular series"
   }
 }

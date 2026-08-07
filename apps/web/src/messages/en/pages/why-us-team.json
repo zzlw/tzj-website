@@ -6,7 +6,8 @@
   "hero": {
     "eyebrow": "Why TZJ · Team",
     "title": "Leadership Team",
-    "description": "Fire service, engineering, and construction management experts dedicated to building better fire training solutions."
+    "description": "Fire service, engineering, and construction management experts dedicated to building better fire training solutions.",
+    "imageAlt": "Blueprints and hard hats — team collaboration at work"
   },
   "teamSection": {
     "eyebrow": "Meet the Team",
@@ -80,5 +81,6 @@
   "cta": {
     "title": "Let us become part of your team",
     "description": "From pre-sales through after-sales, we work alongside you on every project."
-  }
+  },
+  "collabImageAlt": "Engineers collaborating on a training tower structural model"
 }

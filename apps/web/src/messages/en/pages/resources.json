@@ -35,7 +35,7 @@
       "desc": "Recent trade shows and industry events we participate in."
     },
     {
-      "label": "News & Media",
+      "label": "News",
       "href": "/resources/news",
       "desc": "Company updates, product developments, and project delivery news."
     },
@@ -52,6 +52,7 @@
   ],
   "cta": {
     "title": "Still have questions?",
-    "description": "Speak with our engineers and fire service experts for professional guidance."
+    "description": "Speak with our engineers and fire service experts for professional guidance.",
+    "inquiryLink": "Send an Inquiry"
   }
 }

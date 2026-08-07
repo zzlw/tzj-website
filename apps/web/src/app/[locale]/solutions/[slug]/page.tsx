@@ -1,4 +1,4 @@
-import { ArrowRight, Check } from 'lucide-react';
+import { ArrowRight, Check, Phone } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -8,14 +8,53 @@ import { JsonLd } from '@/components/JsonLd';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { FeatureGrid } from '@/components/sections/blocks';
 import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
+import { CertificationTrustStrip } from '@/components/sections/CertificationTrustStrip';
 import { Container, Eyebrow, RbLink, SectionHeading } from '@/components/ui';
+import { Link as I18nLink } from '@/i18n/navigation';
+import { getCases } from '@/lib/api';
 import { getLocalizedSolution, getLocalizedSolutions } from '@/lib/i18n/solutions';
 import { breadcrumbJsonLd } from '@/lib/jsonld';
 import { generateSeo } from '@/lib/seo';
-import { getAllSolutionSlugs } from '@/lib/solutions';
+import { getSitePublicSettings, resolveContactPhones } from '@/lib/site-settings';
+import { getAllSolutionSlugs, type SolutionCaseType } from '@/lib/solutions';
 
 interface SolutionPageProps {
   params: Promise<{ slug: string }>;
+}
+
+interface SolutionCaseCard {
+  slug: string;
+  title: string;
+  location: string;
+  summary: string;
+  image: string;
+}
+
+/** 按案例分类拉取已发布案例（内嵌真实案例卡）；接口异常时降级为空。 */
+async function fetchSolutionCases(
+  caseType: SolutionCaseType,
+  limit = 3,
+): Promise<SolutionCaseCard[]> {
+  try {
+    const res = await getCases({
+      type: caseType,
+      limit,
+      sortBy: 'completionDate',
+      sortOrder: 'desc',
+    });
+    return (res.data ?? [])
+      .filter((c) => c.coverImage)
+      .map((c) => ({
+        slug: c.slug,
+        title: c.title,
+        location: c.location ?? '',
+        // API 列表含 summary；共享 Case 类型尚未收录该字段
+        summary: ((c as unknown as { summary?: string }).summary ?? c.description) || '',
+        image: c.coverImage,
+      }));
+  } catch {
+    return [];
+  }
 }
 
 export async function generateStaticParams() {
@@ -35,7 +74,7 @@ export async function generateMetadata({ params }: SolutionPageProps): Promise<M
     description: solution.tagline,
     locale,
     path: `/solutions/${slug}`,
-    image: solution.image,
+    image: solution.ogImage,
     siteName: tCommon('brandName'),
   });
 }
@@ -50,6 +89,14 @@ export default async function SolutionDetailPage({ params }: SolutionPageProps) 
   const tBread = await getTranslations('breadcrumbs');
   const tCommon = await getTranslations('common');
   const others = (await getLocalizedSolutions()).filter((s) => s.slug !== solution.slug);
+  const sceneImageAlts = t.raw('sceneImageAlts') as string[];
+  const [featuredCases, settings] = await Promise.all([
+    solution.caseType ? fetchSolutionCases(solution.caseType) : Promise.resolve([]),
+    getSitePublicSettings(),
+  ]);
+  // CTA 拨号按钮用主电话（后台可配置）
+  const { primary: primaryPhone } = resolveContactPhones(settings);
+  const phoneHref = `tel:${primaryPhone.replace(/-/g, '')}`;
 
   return (
     <>
@@ -66,7 +113,7 @@ export default async function SolutionDetailPage({ params }: SolutionPageProps) 
       <div className="pb-20">
         <section className="relative h-[420px] overflow-hidden bg-neutral-800 lg:h-[500px]">
           <Image
-            src={solution.image}
+            src={solution.heroImage}
             alt={solution.name}
             fill
             preload
@@ -92,6 +139,8 @@ export default async function SolutionDetailPage({ params }: SolutionPageProps) 
           </Container>
         </section>
 
+        <CertificationTrustStrip />
+
         <section>
           <Container className="py-16 lg:py-24">
             <div className="grid grid-cols-1 gap-10 lg:grid-cols-2 lg:gap-16">
@@ -111,6 +160,23 @@ export default async function SolutionDetailPage({ params }: SolutionPageProps) 
                   </p>
                 ))}
               </div>
+            </div>
+            <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {solution.detailImages.map((src, i) => (
+                <div
+                  key={src}
+                  className="rb-img-shimmer relative aspect-[4/3] overflow-hidden bg-neutral-200"
+                >
+                  <Image
+                    src={src}
+                    alt={sceneImageAlts[i] ?? solution.name}
+                    fill
+                    quality={75}
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    className="object-cover"
+                  />
+                </div>
+              ))}
             </div>
           </Container>
         </section>
@@ -173,6 +239,53 @@ export default async function SolutionDetailPage({ params }: SolutionPageProps) 
           </Container>
         </section>
 
+        {featuredCases.length > 0 ? (
+          <section>
+            <Container className="py-16 lg:py-24">
+              <SectionHeading
+                eyebrow={t('cases.eyebrow')}
+                title={t('cases.title')}
+                description={t('cases.description')}
+              />
+              <div className="mt-10 grid grid-cols-1 gap-4 md:grid-cols-3">
+                {featuredCases.map((item) => (
+                  <I18nLink
+                    key={item.slug}
+                    href={`/cases/${item.slug}`}
+                    className="group flex flex-col border border-neutral-300 bg-white transition-colors hover:border-neutral-900"
+                  >
+                    <div className="rb-img-shimmer relative aspect-[4/3] overflow-hidden bg-neutral-200">
+                      <Image
+                        src={item.image}
+                        alt={item.title}
+                        fill
+                        sizes="(max-width: 768px) 100vw, 33vw"
+                        className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                      />
+                    </div>
+                    <div className="p-5">
+                      {item.location ? (
+                        <p className="text-xs font-bold tracking-wide text-primary">
+                          {item.location}
+                        </p>
+                      ) : null}
+                      <h3 className="rb-h5 mt-2 text-neutral-900">{item.title}</h3>
+                      <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-secondary-text">
+                        {item.summary}
+                      </p>
+                    </div>
+                  </I18nLink>
+                ))}
+              </div>
+              {solution.caseHref ? (
+                <div className="mt-8">
+                  <RbLink href={solution.caseHref}>{t('cases.linkText')}</RbLink>
+                </div>
+              ) : null}
+            </Container>
+          </section>
+        ) : null}
+
         <StatBandI18n />
 
         <ProcessBandI18n />
@@ -215,6 +328,16 @@ export default async function SolutionDetailPage({ params }: SolutionPageProps) 
               <BookConsultButton message={tCommon('bookConsultSolution')}>
                 {tCta('bookConsult')}
               </BookConsultButton>
+              <a
+                href={phoneHref}
+                className="inline-flex items-center gap-2 border border-neutral-900 px-6 py-3 font-display text-base font-bold text-neutral-900 transition-colors hover:bg-neutral-900 hover:text-white"
+              >
+                <Phone className="h-4 w-4" aria-hidden="true" />
+                {primaryPhone}
+              </a>
+              <RbLink href="/contact">{t('cta.inquiryLink')}</RbLink>
+            </div>
+            <div className="mt-4">
               <RbLink href="/solutions">{t('cta.backLink')}</RbLink>
             </div>
           </div>

@@ -1,15 +1,23 @@
 import { Flame, Handshake, HardHat } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
+import { MediaImage as Image } from '@/components/MediaImage';
 import { CtaBand, FeatureGrid, RelatedLinks } from '@/components/sections/blocks';
 import { StatBandI18n } from '@/components/sections/blocks-i18n';
+import { CertificationTrustStrip } from '@/components/sections/CertificationTrustStrip';
 import { Container, PageHero, SectionHeading } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
+import { siteCoverByHref } from '@/lib/site-cover';
+import { WHY_US_IMAGES } from '@/lib/why-us-images';
 
 const WHY_ICONS = [Flame, HardHat, Handshake] as const;
 const RELATED_HREFS = ['/why-us/story', '/why-us/certification', '/why-us/global'];
 
 export async function generateMetadata() {
-  return createPageMetadata({ namespace: 'pages.whyUsTeam', path: '/why-us/team' });
+  return createPageMetadata({
+    namespace: 'pages.whyUsTeam',
+    path: '/why-us/team',
+    image: WHY_US_IMAGES.team.og,
+  });
 }
 
 export default async function TeamPage() {
@@ -28,6 +36,18 @@ export default async function TeamPage() {
         title={t('hero.title')}
         description={t('hero.description')}
       />
+      <div className="rb-img-shimmer relative aspect-[21/9] max-h-[560px] w-full overflow-hidden bg-neutral-200">
+        <Image
+          src={WHY_US_IMAGES.team.hero}
+          alt={t('hero.imageAlt')}
+          fill
+          quality={80}
+          sizes="100vw"
+          className="object-cover"
+          loading="eager"
+        />
+      </div>
+      <CertificationTrustStrip />
       <section>
         <Container className="py-16 lg:py-24">
           <SectionHeading eyebrow={t('teamSection.eyebrow')} title={t('teamSection.title')} />
@@ -52,6 +72,16 @@ export default async function TeamPage() {
             title={t('whySection.title')}
             description={t('whySection.description')}
           />
+          <div className="rb-img-shimmer relative mt-10 aspect-[21/9] overflow-hidden bg-neutral-200">
+            <Image
+              src={WHY_US_IMAGES.team.collab}
+              alt={t('collabImageAlt')}
+              fill
+              quality={75}
+              sizes="100vw"
+              className="object-cover"
+            />
+          </div>
           <div className="mt-10">
             <FeatureGrid items={why} columns={3} />
           </div>
@@ -61,7 +91,10 @@ export default async function TeamPage() {
         title={tBlocks('titleDefault')}
         learnMore={tBlocks('learnMore')}
         eyebrow={tBlocks('eyebrow')}
-        links={relatedLinks.map((l, i) => ({ ...l, href: RELATED_HREFS[i]! }))}
+        links={relatedLinks.map((l, i) => {
+          const href = RELATED_HREFS[i]!;
+          return { ...l, href, image: siteCoverByHref(href) };
+        })}
       />
       <CtaBand
         title={t('cta.title')}

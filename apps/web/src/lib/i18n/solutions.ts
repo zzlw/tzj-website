@@ -28,11 +28,15 @@ async function buildSolution(meta: SolutionMeta): Promise<Solution> {
     name: t('name'),
     icon: meta.icon,
     image: meta.image,
+    heroImage: meta.heroImage,
+    ogImage: meta.ogImage,
+    detailImages: meta.detailImages,
     tagline: t('tagline'),
     intro,
     focus,
     recommended,
     programs,
+    caseType: meta.caseType,
     caseHref: meta.caseType ? solutionCasesHref(meta.caseType) : undefined,
   };
 }

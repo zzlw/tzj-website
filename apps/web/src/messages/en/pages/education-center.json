@@ -9,6 +9,12 @@
     "description": "Turn safety knowledge into memorable, hands-on experiences—for schools and the public.",
     "imageAlt": "Fire safety education center"
   },
+  "heroImageAlt": "Fire safety education center — immersive public experience overview",
+  "gallery": [
+    { "alt": "Education center — immersive experience zone" },
+    { "alt": "Education center — themed exhibit zones" },
+    { "alt": "Education center — interactive and digital exhibits" }
+  ],
   "breadcrumb": {
     "parent": "Training Towers",
     "current": "Education Center"
@@ -26,7 +32,8 @@
   },
   "featuresSection": {
     "eyebrow": "Key features",
-    "title": "Six hallmarks of our education centers"
+    "title": "Six hallmarks of our education centers",
+    "description": "Immersive experiences and themed zones supporting a complete safety education loop."
   },
   "features": [
     {
@@ -56,8 +63,10 @@
   ],
   "zonesSection": {
     "eyebrow": "Exhibit planning",
-    "title": "Typical zones and experiences"
+    "title": "Typical zones and experiences",
+    "description": "Themed visitor paths connecting prevention, escape, and equipment operation."
   },
+  "extraImageAlt": "Education center — interactive exhibits and display details",
   "zones": [
     "Fire cause and prevention",
     "Home and public hazard identification",
@@ -66,6 +75,34 @@
     "Knot tying, alarm, and self-rescue",
     "Fire service history and heroes"
   ],
+  "configSection": {
+    "eyebrow": "Typical configuration",
+    "title": "Education centers planned to your goals",
+    "description": "From exhibit zones to interactive installations — engineers deliver build-ready education center configurations.",
+    "point1": "Themed paths connect prevention awareness, escape experience, and equipment operation.",
+    "point2": "Integrates with training towers and simulation for a combined public education and hands-on base."
+  },
+  "configImageAlt": "Fire safety education center — typical exhibit configuration",
+  "usersSection": {
+    "eyebrow": "Who uses it",
+    "title": "Organizations using education centers",
+    "description": "For fire, emergency, and education organizations needing public safety and school outreach spaces."
+  },
+  "usersImageAlt": "Students visiting a fire safety education center",
+  "users": [
+    "Fire & rescue departments",
+    "Emergency management agencies",
+    "Schools and universities",
+    "Corporate safety training",
+    "Community public education",
+    "Science museums and outreach centers"
+  ],
+  "casesSection": {
+    "eyebrow": "Related projects",
+    "title": "Education and school deliveries",
+    "description": "Selected school and public education projects for education center reference.",
+    "linkText": "View more case studies"
+  },
   "relatedLinks": [
     {
       "label": "Fire simulation systems",
@@ -82,6 +119,7 @@
   ],
   "cta": {
     "title": "Build your education center",
-    "description": "Share your site and education goals—we will plan exhibits and interaction end to end."
+    "description": "Share your site and education goals—we will plan exhibits and interaction end to end.",
+    "secondaryLabel": "View standard tower series"
   }
 }

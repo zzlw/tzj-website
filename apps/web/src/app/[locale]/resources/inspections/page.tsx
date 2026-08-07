@@ -5,18 +5,28 @@ import {
   DoorClosed,
   FileText,
   Layers,
+  Phone,
   ShieldCheck,
   Wrench,
 } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
-import { CtaBand, FeatureGrid, RelatedLinks } from '@/components/sections/blocks';
-import { Container, PageHero, SectionHeading } from '@/components/ui';
+import { BookConsultButton } from '@/components/chat/BookConsultButton';
+import { MediaImage as Image } from '@/components/MediaImage';
+import { FeatureGrid, RelatedLinks } from '@/components/sections/blocks';
+import { CertificationTrustStrip } from '@/components/sections/CertificationTrustStrip';
+import { Container, Eyebrow, RbLink, SectionHeading } from '@/components/ui';
+import { Link as I18nLink } from '@/i18n/navigation';
+import { getCases } from '@/lib/api';
 import { createPageMetadata } from '@/lib/i18n/metadata';
+import { relatedLinksWithImages } from '@/lib/product-line-page';
+import { RESOURCES_IMAGES } from '@/lib/resources-images';
+import { getSitePublicSettings, resolveContactPhones } from '@/lib/site-settings';
 
 export async function generateMetadata() {
   return createPageMetadata({
     namespace: 'pages.resourcesInspections',
     path: '/resources/inspections',
+    image: RESOURCES_IMAGES.inspections.og,
   });
 }
 
@@ -24,10 +34,37 @@ const CATEGORY_ICONS = [DoorClosed, Building, Boxes, Layers, Wrench, FileText] a
 const WHY_ICONS = [ShieldCheck, Clock, FileText] as const;
 const RELATED_HREFS = ['/resources/warranty', '/burn-rooms/liner', '/burn-rooms/comparison'];
 
+interface FeaturedCase {
+  slug: string;
+  title: string;
+  location: string;
+  summary: string;
+  image: string;
+}
+
+/** 拉取最近交付的案例（检测服务面向全部设施，不限分类）；接口异常时降级为空。 */
+async function fetchFeaturedCases(limit = 3): Promise<FeaturedCase[]> {
+  try {
+    const res = await getCases({ limit, sortBy: 'completionDate', sortOrder: 'desc' });
+    return (res.data ?? [])
+      .filter((c) => c.coverImage)
+      .map((c) => ({
+        slug: c.slug,
+        title: c.title,
+        location: c.location ?? '',
+        summary: ((c as unknown as { summary?: string }).summary ?? c.description) || '',
+        image: c.coverImage,
+      }));
+  } catch {
+    return [];
+  }
+}
+
 export default async function InspectionsPage() {
   const t = await getTranslations('pages.resourcesInspections');
   const tCta = await getTranslations('cta');
   const tBlocks = await getTranslations('blocks.relatedLinks');
+  const tCommon = await getTranslations('common');
 
   const reviewItems = t.raw('reviewItems') as string[];
   const categoriesRaw = t.raw('categories') as Array<{ title: string; desc: string }>;
@@ -35,14 +72,40 @@ export default async function InspectionsPage() {
   const whyRaw = t.raw('why') as Array<{ title: string; desc: string }>;
   const why = whyRaw.map((item, i) => ({ ...item, icon: WHY_ICONS[i]! }));
   const relatedLinks = t.raw('relatedLinks') as Array<{ label: string; desc: string }>;
+  const sceneImageAlts = t.raw('sceneImageAlts') as string[];
+  const [featuredCases, settings] = await Promise.all([
+    fetchFeaturedCases(),
+    getSitePublicSettings(),
+  ]);
+  // CTA 拨号按钮用主电话（后台可配置）
+  const { primary: primaryPhone } = resolveContactPhones(settings);
+  const phoneHref = `tel:${primaryPhone.replace(/-/g, '')}`;
 
   return (
     <div className="pb-20">
-      <PageHero
-        eyebrow={t('hero.eyebrow')}
-        title={t('hero.title')}
-        description={t('hero.description')}
-      />
+      <section className="relative h-[380px] overflow-hidden bg-neutral-800 lg:h-[460px]">
+        <Image
+          src={RESOURCES_IMAGES.inspections.hero}
+          alt={t('hero.title')}
+          fill
+          preload
+          loading="eager"
+          fetchPriority="high"
+          quality={90}
+          sizes="100vw"
+          className="object-cover"
+        />
+        <div className="absolute inset-0 rb-media-shade-strong" />
+        <Container className="rb-on-media relative z-10 flex h-full flex-col justify-end pb-12 pt-24">
+          <Eyebrow inverted>{t('hero.eyebrow')}</Eyebrow>
+          <h1 className="rb-h1 mt-4 max-w-3xl text-white">{t('hero.title')}</h1>
+          <p className="mt-4 max-w-2xl text-base leading-relaxed text-white/85 md:text-lg">
+            {t('hero.description')}
+          </p>
+        </Container>
+      </section>
+
+      <CertificationTrustStrip />
 
       <section>
         <Container className="py-16 lg:py-24">
@@ -121,23 +184,97 @@ export default async function InspectionsPage() {
           <div className="mt-10">
             <FeatureGrid items={why} columns={3} />
           </div>
+          <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {RESOURCES_IMAGES.inspections.detailImages.map((src, i) => (
+              <div
+                key={src}
+                className="rb-img-shimmer relative aspect-[4/3] overflow-hidden bg-neutral-200"
+              >
+                <Image
+                  src={src}
+                  alt={sceneImageAlts[i] ?? t('hero.title')}
+                  fill
+                  quality={75}
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  className="object-cover"
+                />
+              </div>
+            ))}
+          </div>
         </Container>
       </section>
+
+      {featuredCases.length > 0 ? (
+        <section>
+          <Container className="py-16 lg:py-24">
+            <SectionHeading
+              eyebrow={t('cases.eyebrow')}
+              title={t('cases.title')}
+              description={t('cases.description')}
+            />
+            <div className="mt-10 grid grid-cols-1 gap-4 md:grid-cols-3">
+              {featuredCases.map((item) => (
+                <I18nLink
+                  key={item.slug}
+                  href={`/cases/${item.slug}`}
+                  className="group flex flex-col border border-neutral-300 bg-white transition-colors hover:border-neutral-900"
+                >
+                  <div className="rb-img-shimmer relative aspect-[4/3] overflow-hidden bg-neutral-200">
+                    <Image
+                      src={item.image}
+                      alt={item.title}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 33vw"
+                      className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                    />
+                  </div>
+                  <div className="p-5">
+                    {item.location ? (
+                      <p className="text-xs font-bold tracking-wide text-primary">
+                        {item.location}
+                      </p>
+                    ) : null}
+                    <h3 className="rb-h5 mt-2 text-neutral-900">{item.title}</h3>
+                    <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-secondary-text">
+                      {item.summary}
+                    </p>
+                  </div>
+                </I18nLink>
+              ))}
+            </div>
+            <div className="mt-8">
+              <RbLink href="/cases">{t('cases.linkText')}</RbLink>
+            </div>
+          </Container>
+        </section>
+      ) : null}
 
       <RelatedLinks
         title={tBlocks('titleDefault')}
         learnMore={tBlocks('learnMore')}
         eyebrow={tBlocks('eyebrow')}
-        links={relatedLinks.map((l, i) => ({ ...l, href: RELATED_HREFS[i]! }))}
+        links={relatedLinksWithImages(relatedLinks, RELATED_HREFS)}
       />
 
-      <CtaBand
-        title={t('cta.title')}
-        description={t('cta.description')}
-        primaryLabel={tCta('bookConsult')}
-        secondaryLabel={t('cta.secondaryLabel')}
-        secondaryHref="/resources/warranty"
-      />
+      <Container>
+        <div className="flex flex-col items-center gap-5 border border-neutral-300 bg-white p-10 text-center md:p-14">
+          <h2 className="rb-h3 text-neutral-900">{t('cta.title')}</h2>
+          <p className="max-w-xl text-secondary-text">{t('cta.description')}</p>
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            <BookConsultButton message={tCommon('bookConsultContent')}>
+              {tCta('bookConsult')}
+            </BookConsultButton>
+            <a
+              href={phoneHref}
+              className="inline-flex items-center gap-2 border border-neutral-900 px-6 py-3 font-display text-base font-bold text-neutral-900 transition-colors hover:bg-neutral-900 hover:text-white"
+            >
+              <Phone className="h-4 w-4" aria-hidden="true" />
+              {primaryPhone}
+            </a>
+            <RbLink href="/contact">{t('cta.inquiryLink')}</RbLink>
+          </div>
+        </div>
+      </Container>
     </div>
   );
 }

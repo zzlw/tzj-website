@@ -9,14 +9,12 @@
     "description": "Safe, clean, and repeatable—bring high-frequency instruction and routine drills to any site with simulated flame and smoke.",
     "imageAlt": "Fire simulation training facility"
   },
-  "breadcrumb": {
-    "parent": "Live Fire & Burn Training",
-    "current": "Fire Simulation Training Systems"
-  },
-  "jsonLd": {
-    "productName": "Fire Simulation Training Systems",
-    "productDescription": "Gas and electronic simulation of flame and smoke for multiple fire scenarios—safe, clean, and repeatable."
-  },
+  "heroImageAlt": "Fire simulation training facility overview",
+  "gallery": [
+    { "alt": "Fire simulation room with programmable smoke effects" },
+    { "alt": "Simulated flame and heat training scenario" },
+    { "alt": "Fire simulation control panel and alarm integration" }
+  ],
   "overview": {
     "eyebrow": "Between realism and control",
     "title": "Not every drill needs live fire",
@@ -26,38 +24,41 @@
   },
   "featuresSection": {
     "eyebrow": "Key capabilities",
-    "title": "Six advantages of simulation systems"
+    "title": "Six advantages of simulation systems",
+    "description": "Programmable smoke, heat, alarm, and evacuation scenarios — safe and repeatable."
   },
   "features": [
     {
-      "title": "Multi-scenario simulation",
+      "title": "Programmable smoke",
+      "desc": "Adjustable smoke density simulates visibility challenges from introductory lessons through advanced drills."
+    },
+    {
+      "title": "Adjustable heat",
+      "desc": "Scale heat intensity to train thermal stress recognition without solid-fuel live fire."
+    },
+    {
+      "title": "Alarm integration",
+      "desc": "Fire alarm and detection systems trigger realistic response sequences during simulation drills."
+    },
+    {
+      "title": "Multi-scenario programs",
       "desc": "Simulate pan fires, gas, electrical, kitchen, and other fire types from a single facility."
     },
     {
-      "title": "Adjustable conditions",
-      "desc": "Scale flame and smoke intensity from introductory lessons through advanced practical drills."
+      "title": "Evacuation drills",
+      "desc": "Support evacuation, escape, and self-rescue exercises with controlled conditions."
     },
     {
-      "title": "High-frequency repeatability",
-      "desc": "Fast ignition and reset support large-volume, routine, repeatable training."
-    },
-    {
-      "title": "Clean and eco-friendly",
-      "desc": "Primarily gas and electronic simulation with minimal smoke—ideal for indoor and densely populated areas."
-    },
-    {
-      "title": "Lower operating cost",
-      "desc": "No solid fuel or frequent liner replacement—more economical over the long term."
-    },
-    {
-      "title": "Safe and controllable",
-      "desc": "Safety interlocks and emergency shutoff keep the training environment safe, controlled, and auditable."
+      "title": "Central control & safety",
+      "desc": "Safety interlocks, emergency shutoff, and instructor control keep training auditable and safe."
     }
   ],
   "programsSection": {
     "eyebrow": "Training programs",
-    "title": "Programs this system supports"
+    "title": "Programs this system supports",
+    "description": "From equipment operation to workforce training — high-frequency programs simulation excels at."
   },
+  "extraImageAlt": "Fire simulation facility with multi-scenario props",
   "programs": [
     "Extinguisher and hose line equipment operation",
     "Initial fire attack and response procedures",
@@ -65,6 +66,28 @@
     "Evacuation, escape, and self-rescue exercises",
     "Workforce and public fire safety training",
     "Routine drill programs for career departments"
+  ],
+  "configSection": {
+    "eyebrow": "Typical configuration",
+    "title": "Tailored simulation layouts for your site",
+    "description": "Engineers configure simulation rooms, props, and control systems based on training volume and site constraints.",
+    "point1": "Modular simulation cells combine smoke generators, heat sources, and scenario props for flexible program design.",
+    "point2": "Central control with safety interlocks enables rapid reset — supporting large-volume, routine, repeatable training."
+  },
+  "configImageAlt": "Typical fire simulation training facility configuration",
+  "usersSection": {
+    "eyebrow": "Who uses it",
+    "title": "Who uses fire simulation training systems",
+    "description": "For agencies, campuses, and enterprises that need high-frequency training without live-fire overhead."
+  },
+  "usersImageAlt": "Trainees practicing with fire simulation equipment",
+  "users": [
+    "Enterprise & campus safety teams",
+    "Public fire safety education centers",
+    "Career fire departments (routine drills)",
+    "Industrial fire brigades",
+    "Hotels & commercial property managers",
+    "Schools and community training programs"
   ],
   "relatedLinks": [
     {
@@ -82,6 +105,7 @@
   ],
   "cta": {
     "title": "Configure simulation training for your site",
-    "description": "Tell us your training goals and site conditions—we will recommend the right simulation solution."
+    "description": "Tell us your training goals and site conditions—we will recommend the right simulation solution.",
+    "secondaryLabel": "Compare liner options"
   }
 }

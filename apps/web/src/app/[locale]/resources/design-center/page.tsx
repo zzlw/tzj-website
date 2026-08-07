@@ -1,49 +1,105 @@
-import { Boxes, FileBox, FileText, Ruler } from 'lucide-react';
+import { Boxes, FileBox, FileText, Phone, Ruler } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
-import { CtaBand, RelatedLinks } from '@/components/sections/blocks';
+import { BookConsultButton } from '@/components/chat/BookConsultButton';
+import { MediaImage as Image } from '@/components/MediaImage';
+import { RelatedLinks } from '@/components/sections/blocks';
 import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
-import { Container, PageHero, RbLink, SectionHeading } from '@/components/ui';
+import { CertificationTrustStrip } from '@/components/sections/CertificationTrustStrip';
+import { Container, Eyebrow, RbLink, SectionHeading } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
+import { relatedLinksWithImages } from '@/lib/product-line-page';
+import { RESOURCES_IMAGES } from '@/lib/resources-images';
+import { getSitePublicSettings, resolveContactPhones } from '@/lib/site-settings';
 
 export async function generateMetadata() {
   return createPageMetadata({
     namespace: 'pages.resourcesDesignCenter',
     path: '/resources/design-center',
+    image: RESOURCES_IMAGES['design-center'].og,
   });
 }
 
 const DOWNLOAD_ICONS = [FileText, Ruler, Boxes, FileBox] as const;
 const RELATED_HREFS = ['/resources/how-to-buy', '/fixed-tower/series', '/resources/faqs'];
+/** 目录卡封面：复用产品线实拍图（真实优先） */
+const CATALOG_COVERS = [
+  '/media/fixed-tower-hero.jpg',
+  '/media/modular-hero.jpg',
+  '/media/burn-room.webp',
+  '/media/tactical.jpg',
+] as const;
 
 export default async function DesignCenterPage() {
   const t = await getTranslations('pages.resourcesDesignCenter');
   const tCta = await getTranslations('cta');
   const tBlocks = await getTranslations('blocks.relatedLinks');
+  const tCommon = await getTranslations('common');
 
   const catalog = t.raw('catalog') as Array<{ title: string; desc: string; href: string }>;
   const resources = t.raw('resources') as string[];
   const downloadsRaw = t.raw('downloads') as Array<{ title: string; desc: string }>;
   const downloads = downloadsRaw.map((item, i) => ({ ...item, icon: DOWNLOAD_ICONS[i]! }));
   const relatedLinks = t.raw('relatedLinks') as Array<{ label: string; desc: string }>;
+  const settings = await getSitePublicSettings();
+  // CTA 拨号按钮用主电话（后台可配置）
+  const { primary: primaryPhone } = resolveContactPhones(settings);
+  const phoneHref = `tel:${primaryPhone.replace(/-/g, '')}`;
 
   return (
     <div className="pb-20">
-      <PageHero
-        eyebrow={t('hero.eyebrow')}
-        title={t('hero.title')}
-        description={t('hero.description')}
-      />
+      <section className="relative h-[380px] overflow-hidden bg-neutral-800 lg:h-[460px]">
+        <Image
+          src={RESOURCES_IMAGES['design-center'].hero}
+          alt={t('hero.title')}
+          fill
+          preload
+          loading="eager"
+          fetchPriority="high"
+          quality={90}
+          sizes="100vw"
+          className="object-cover"
+        />
+        <div className="absolute inset-0 rb-media-shade-strong" />
+        <Container className="rb-on-media relative z-10 flex h-full flex-col justify-end pb-12 pt-24">
+          <Eyebrow inverted>{t('hero.eyebrow')}</Eyebrow>
+          <h1 className="rb-h1 mt-4 max-w-3xl text-white">{t('hero.title')}</h1>
+          <p className="mt-4 max-w-2xl text-base leading-relaxed text-white/85 md:text-lg">
+            {t('hero.description')}
+          </p>
+        </Container>
+      </section>
+
+      <CertificationTrustStrip />
 
       <section>
         <Container className="py-16 lg:py-24">
           <SectionHeading eyebrow={t('catalogSection.eyebrow')} title={t('catalogSection.title')} />
           <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {catalog.map((c) => (
-              <div key={c.title} className="flex flex-col border border-neutral-300 bg-white p-6">
-                <h3 className="rb-h5 text-neutral-900">{c.title}</h3>
-                <p className="mt-2 flex-1 text-sm leading-relaxed text-secondary-text">{c.desc}</p>
-                <div className="mt-4">
-                  <RbLink href={c.href}>{t('catalogSection.viewDetails')}</RbLink>
+            {catalog.map((c, i) => (
+              <div
+                key={c.title}
+                className="group flex flex-col overflow-hidden border border-neutral-300 bg-white"
+              >
+                {CATALOG_COVERS[i] ? (
+                  <div className="rb-img-shimmer relative aspect-[16/9] overflow-hidden bg-neutral-200">
+                    <Image
+                      src={CATALOG_COVERS[i]!}
+                      alt={c.title}
+                      fill
+                      quality={75}
+                      sizes="(max-width: 768px) 100vw, 50vw"
+                      className="object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                  </div>
+                ) : null}
+                <div className="flex flex-1 flex-col p-6">
+                  <h3 className="rb-h5 text-neutral-900">{c.title}</h3>
+                  <p className="mt-2 flex-1 text-sm leading-relaxed text-secondary-text">
+                    {c.desc}
+                  </p>
+                  <div className="mt-4">
+                    <RbLink href={c.href}>{t('catalogSection.viewDetails')}</RbLink>
+                  </div>
                 </div>
               </div>
             ))}
@@ -103,15 +159,27 @@ export default async function DesignCenterPage() {
         title={tBlocks('titleDefault')}
         learnMore={tBlocks('learnMore')}
         eyebrow={tBlocks('eyebrow')}
-        links={relatedLinks.map((l, i) => ({ ...l, href: RELATED_HREFS[i]! }))}
+        links={relatedLinksWithImages(relatedLinks, RELATED_HREFS)}
       />
 
-      <CtaBand
-        title={t('cta.title')}
-        primaryLabel={tCta('bookConsult')}
-        secondaryLabel={t('cta.secondaryLabel')}
-        secondaryHref="/resources/how-to-buy"
-      />
+      <Container>
+        <div className="flex flex-col items-center gap-5 border border-neutral-300 bg-white p-10 text-center md:p-14">
+          <h2 className="rb-h3 text-neutral-900">{t('cta.title')}</h2>
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            <BookConsultButton message={tCommon('bookConsultContent')}>
+              {tCta('bookConsult')}
+            </BookConsultButton>
+            <a
+              href={phoneHref}
+              className="inline-flex items-center gap-2 border border-neutral-900 px-6 py-3 font-display text-base font-bold text-neutral-900 transition-colors hover:bg-neutral-900 hover:text-white"
+            >
+              <Phone className="h-4 w-4" aria-hidden="true" />
+              {primaryPhone}
+            </a>
+            <RbLink href="/contact">{t('cta.inquiryLink')}</RbLink>
+          </div>
+        </div>
+      </Container>
     </div>
   );
 }

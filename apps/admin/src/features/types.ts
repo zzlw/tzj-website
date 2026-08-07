@@ -76,6 +76,7 @@ export interface BlogItem extends BaseEntity {
   excerpt?: string | null;
   content?: string | null;
   coverImage?: string | null;
+  detailCoverImage?: string | null;
   images: string[];
   category: string;
   readTime?: string | null;
@@ -107,6 +108,7 @@ export interface TradeShowItem extends BaseEntity {
   boothNumber?: string | null;
   eventType: string;
   coverImage?: string | null;
+  detailCoverImage?: string | null;
   images: string[];
   externalUrl?: string | null;
   seoTitle?: string | null;

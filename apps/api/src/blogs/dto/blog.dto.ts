@@ -48,6 +48,11 @@ export class CreateBlogDto {
   @IsString()
   coverImage?: string;
 
+  @ApiPropertyOptional({ description: '详情页封面图 URL；留空回退封面图' })
+  @IsOptional()
+  @IsString()
+  detailCoverImage?: string;
+
   @ApiPropertyOptional({ type: [String], description: '图片 URL 列表' })
   @IsOptional()
   @IsArray()

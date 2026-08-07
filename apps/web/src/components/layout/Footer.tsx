@@ -9,7 +9,7 @@ import { Link } from '@/i18n/navigation';
 import { resolveMediaUrl } from '@/lib/media-url';
 import { FOOTER_BLOCKS } from '@/lib/navigation';
 import { resolveSocialChannels } from '@/lib/resolve-social-channels';
-import { getSitePublicSettings, localizedAddress } from '@/lib/site-settings';
+import { getSitePublicSettings, localizedAddress, resolveContactPhones } from '@/lib/site-settings';
 
 export async function Footer() {
   const tNav = await getTranslations('nav');
@@ -19,6 +19,9 @@ export async function Footer() {
   const locale = await getLocale();
   const settings = await getSitePublicSettings();
   const address = localizedAddress(settings, locale, tContact('address'));
+  // 双号码展示：主电话在前，备用电话在后（备用留空则不展示）
+  const { primary: primaryPhone, secondary: secondaryPhone } = resolveContactPhones(settings);
+  const contactPhones = secondaryPhone ? [primaryPhone, secondaryPhone] : [primaryPhone];
   const contactChannels = resolveSocialChannels(settings, 'contact', (key) =>
     tContact(key as Parameters<typeof tContact>[0]),
   );
@@ -84,13 +87,16 @@ export async function Footer() {
           <div className="flex flex-col gap-5 py-8 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
             <div className="flex flex-col gap-4">
               <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-secondary-text">
-                <a
-                  href={`tel:${settings.contact.phone.replace(/-/g, '')}`}
-                  className="inline-flex items-center gap-2 transition-colors hover:text-primary"
-                >
-                  <Phone className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-                  {settings.contact.phone}
-                </a>
+                {contactPhones.map((phone) => (
+                  <a
+                    key={phone}
+                    href={`tel:${phone.replace(/-/g, '')}`}
+                    className="inline-flex items-center gap-2 transition-colors hover:text-primary"
+                  >
+                    <Phone className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                    {phone}
+                  </a>
+                ))}
                 <a
                   href={`mailto:${settings.contact.email}`}
                   className="inline-flex items-center gap-2 transition-colors hover:text-primary"

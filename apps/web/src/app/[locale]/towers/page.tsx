@@ -1,15 +1,25 @@
+import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { JsonLd } from '@/components/JsonLd';
 import { ProductHubNav } from '@/components/products/ProductHubNav';
+import { ProductHeroBand } from '@/components/products/ProductLineMedia';
 import { ProductLinesOverview } from '@/components/products/ProductLinesGrid';
 import { CtaBand } from '@/components/sections/blocks';
 import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
+import { CertificationWall } from '@/components/sections/CertificationWall';
 import { PageHero } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 import { breadcrumbJsonLd } from '@/lib/jsonld';
+import { getProductPageImages } from '@/lib/product-images';
 
-export async function generateMetadata() {
-  return createPageMetadata({ namespace: 'pages.towers', path: '/towers' });
+const HUB = getProductPageImages('towers-hub');
+
+export async function generateMetadata(): Promise<Metadata> {
+  return createPageMetadata({
+    namespace: 'pages.towers',
+    path: '/towers',
+    image: HUB.ogImage ?? HUB.heroImage,
+  });
 }
 
 export default async function TowersPage() {
@@ -35,6 +45,8 @@ export default async function TowersPage() {
           description={t('hero.description')}
         />
 
+        <ProductHeroBand src={HUB.heroImage} alt={t('heroImageAlt')} />
+
         <ProductHubNav />
 
         <section
@@ -43,6 +55,8 @@ export default async function TowersPage() {
         >
           <ProductLinesOverview />
         </section>
+
+        <CertificationWall />
 
         <StatBandI18n />
         <ProcessBandI18n />

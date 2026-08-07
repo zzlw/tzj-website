@@ -59,6 +59,10 @@ export default async function TradeShowDetailPage({ params, searchParams }: Trad
 
   const summary = pickSummary(item.summary, item.content);
   const coverImage = pickCoverImage(item.coverImage);
+  // 详情页宽幅封面：优先使用独立设置，未设置时回退列表封面图
+  const heroImage = pickCoverImage(
+    (item as { detailCoverImage?: string | null }).detailCoverImage ?? item.coverImage,
+  );
   const dateLabel =
     item.eventDateLabel || formatContentDateRange(item.startDate, item.endDate, locale);
 
@@ -94,7 +98,7 @@ export default async function TradeShowDetailPage({ params, searchParams }: Trad
       <div className="pb-20">
         <section className="relative h-[360px] overflow-hidden bg-neutral-800 lg:h-[460px]">
           <Image
-            src={coverImage}
+            src={heroImage}
             alt={item.title}
             fill
             preload

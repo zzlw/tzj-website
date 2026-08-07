@@ -36,6 +36,8 @@ export function mergeSiteSettings(cms: SitePublicSettings): SitePublicSettings {
   return {
     contact: {
       phone: process.env.NEXT_PUBLIC_CONTACT_PHONE || cms.contact.phone,
+      phoneAlt: cms.contact.phoneAlt,
+      primaryPhone: cms.contact.primaryPhone,
       email: process.env.NEXT_PUBLIC_CONTACT_EMAIL || cms.contact.email,
       address: {
         ...cms.contact.address,
@@ -111,6 +113,24 @@ export function localizedAddress(
 ): string {
   const map = settings.contact.address;
   return map[locale as keyof typeof map] ?? map['zh-CN'] ?? map.en ?? fallback;
+}
+
+/**
+ * 解析联系电话的主/备划分（后台可配置 primaryPhone）。
+ * - primary：主电话，用于「点击咨询」分流（无坐席在线时兜底拨号）与结构化数据
+ * - secondary：备用电话（选填，留空则不展示）
+ * 展示顺序固定为主电话在前。primaryPhone 指向空号码时自动回退到 phone。
+ */
+export function resolveContactPhones(settings: SitePublicSettings): {
+  primary: string;
+  secondary?: string;
+} {
+  const { phone, phoneAlt, primaryPhone } = settings.contact;
+  const alt = phoneAlt?.trim() || undefined;
+  if (primaryPhone === 'phoneAlt' && alt) {
+    return { primary: alt, secondary: phone };
+  }
+  return { primary: phone, secondary: alt };
 }
 
 /**

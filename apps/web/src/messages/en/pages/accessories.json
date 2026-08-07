@@ -9,10 +9,57 @@
     "description": "Beyond safety, the most important element of live-fire training is creating a dynamic, realistic learning environment. TZJ's extensive props and accessories help you build the training simulators you need.",
     "imageAlt": "Training props and accessories"
   },
+  "heroImageAlt": "Training props and accessories facility — integrated training scene overview",
+  "gallery": [
+    { "alt": "Training props · heat and smoke distribution systems" },
+    { "alt": "Training props · egress stairs and ladder configurations" },
+    { "alt": "Training props · search maze and rescue drill fixtures" }
+  ],
   "overview": {
     "eyebrow": "Overview",
     "title": "Available training props and accessories",
-    "description": "From breach points to balconies, attics to elevator shafts — TZJ's design options, fixtures, infrastructure, and props are virtually limitless."
+    "description": "From breach points to balconies, attics to elevator shafts — TZJ's design options, fixtures, infrastructure, and props are virtually limitless.",
+    "lead": "Six core capability categories cover hazmat, heat and smoke, egress, search and rescue, confined space, and forcible entry — the foundation of realistic live-fire training.",
+    "body": "Four additional categories — ventilation, rope rescue, building facades, and standpipes/sprinklers — extend your facility into a complete training ecosystem."
+  },
+  "featuresSection": {
+    "eyebrow": "Core Capabilities",
+    "title": "Six essential training prop categories",
+    "description": "From hazmat props to forcible entry — covering the most frequently deployed training accessories in live-fire facilities."
+  },
+  "programsSection": {
+    "eyebrow": "Extended Capabilities",
+    "title": "Four additional prop categories",
+    "description": "Ventilation, rope rescue, building facades, and standpipe/sprinkler systems — completing your facility's training accessory portfolio."
+  },
+  "extraImageAlt": "Training props collection · ventilation, rope rescue, and facade accessories",
+  "configSection": {
+    "eyebrow": "Typical Configuration",
+    "title": "Tailored prop packages for your training facility",
+    "description": "From individual props to integrated accessory packages — engineers deliver configurations based on your training mission and facility layout.",
+    "point1": "Modular prop selection lets you start with core categories and expand as training needs evolve — supporting phased investment.",
+    "point2": "All props integrate with TZJ training towers and burn rooms — hot-dip galvanized steel construction for durability and low maintenance."
+  },
+  "configImageAlt": "Training facility · typical props and accessories configuration",
+  "usersSection": {
+    "eyebrow": "Who Uses It",
+    "title": "Who uses training props and accessories",
+    "description": "For fire departments, training academies, and industrial safety teams building realistic live-fire training environments."
+  },
+  "usersImageAlt": "Firefighters training with props and accessories at a live-fire facility",
+  "users": [
+    "Fire departments & training academies",
+    "Industrial safety teams",
+    "Military & tactical training units",
+    "Hazmat response teams",
+    "Maritime firefighting units",
+    "Academic safety programs"
+  ],
+  "casesSection": {
+    "eyebrow": "Related Projects",
+    "title": "Training props in real deliveries",
+    "description": "Explore how TZJ props and accessories integrate into complete training facilities.",
+    "linkText": "View more case studies"
   },
   "features": [
     {
@@ -124,18 +171,22 @@
     ]
   },
   "relatedLinks": [
-    { "label": "Maritime Training", "desc": "Ship fire scenarios and specialized props." },
     {
-      "label": "Tactical Training",
-      "desc": "Reconfigurable tactical training scenarios for law enforcement and military."
+      "label": "Fitness & Vestibular Equipment",
+      "desc": "Strength conditioning and vestibular anti-vertigo training equipment."
     },
     {
-      "label": "Hazmat Training",
-      "desc": "Hazard props, mobile trailers, and integrated training complexes."
+      "label": "Competition Training Facilities",
+      "desc": "Professional facilities aligned with competition rules."
+    },
+    {
+      "label": "Fixed Training Tower (Steel)",
+      "desc": "Multi-level steel structure integrating props and live-fire training."
     }
   ],
   "cta": {
     "title": "Can't find the training prop you need?",
-    "description": "We can customize training solutions or props for your unique requirements."
+    "description": "We can customize training solutions or props for your unique requirements.",
+    "secondaryLabel": "Explore fitness equipment"
   }
 }

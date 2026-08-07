@@ -20,6 +20,7 @@ import {
 import { getBlogCategoryFilter } from '@/lib/i18n/content-filters';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 import { getBlogSortOptions } from '@/lib/i18n/sort-options';
+import { relatedLinksWithImages } from '@/lib/product-line-page';
 
 const RELATED_HREFS = ['/resources/faqs', '/cases', '/resources/design-center'] as const;
 
@@ -155,24 +156,35 @@ export default async function BlogPage({ searchParams }: PageProps) {
                     <Link
                       key={p.id}
                       href={`/resources/blog/${p.slug}`}
-                      className="group flex flex-col border border-neutral-300 bg-white p-6 transition-colors hover:border-neutral-900"
+                      className="group flex h-full flex-col border border-neutral-300 bg-white transition-colors hover:border-neutral-900"
                     >
-                      <span className="text-xs font-bold uppercase tracking-wide text-primary">
-                        {blogCategoryLabel(p.category)}
-                      </span>
-                      <h3 className="rb-h5 mt-2 text-neutral-900 transition-colors group-hover:text-primary">
-                        {p.title}
-                      </h3>
-                      <p className="mt-2 flex-1 text-sm leading-relaxed text-secondary-text">
-                        {pickSummary(p.excerpt)}
-                      </p>
-                      <div className="mt-5 flex items-center justify-between border-t border-neutral-200 pt-4">
-                        <span className="inline-flex items-center gap-1.5 text-xs text-secondary-text">
-                          <Clock className="h-3.5 w-3.5" aria-hidden="true" />
-                          {formatContentDate(p.publishedAt)}
-                          {p.readTime ? ` · ${p.readTime}` : null}
+                      <div className="relative aspect-[16/9] w-full overflow-hidden bg-neutral-200">
+                        <Image
+                          src={pickCoverImage(p.coverImage, '/media/fixed-tower-hero.jpg')}
+                          alt={p.title}
+                          fill
+                          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                          className="object-cover transition-transform duration-700 group-hover:scale-105"
+                        />
+                      </div>
+                      <div className="flex flex-1 flex-col p-6">
+                        <span className="text-xs font-bold uppercase tracking-wide text-primary">
+                          {blogCategoryLabel(p.category)}
                         </span>
-                        <ArrowRight className="h-4 w-4 text-primary transition-transform duration-300 group-hover:translate-x-1.5" />
+                        <h3 className="rb-h5 mt-2 text-neutral-900 transition-colors group-hover:text-primary">
+                          {p.title}
+                        </h3>
+                        <p className="mt-2 flex-1 text-sm leading-relaxed text-secondary-text">
+                          {pickSummary(p.excerpt)}
+                        </p>
+                        <div className="mt-5 flex items-center justify-between border-t border-neutral-200 pt-4">
+                          <span className="inline-flex items-center gap-1.5 text-xs text-secondary-text">
+                            <Clock className="h-3.5 w-3.5" aria-hidden="true" />
+                            {formatContentDate(p.publishedAt)}
+                            {p.readTime ? ` · ${p.readTime}` : null}
+                          </span>
+                          <ArrowRight className="h-4 w-4 text-primary transition-transform duration-300 group-hover:translate-x-1.5" />
+                        </div>
                       </div>
                     </Link>
                   ))}
@@ -194,7 +206,7 @@ export default async function BlogPage({ searchParams }: PageProps) {
         title={tBlocks('titleDefault')}
         learnMore={tBlocks('learnMore')}
         eyebrow={tBlocks('eyebrow')}
-        links={relatedLinks.map((l, i) => ({ ...l, href: RELATED_HREFS[i] ?? RELATED_HREFS[0] }))}
+        links={relatedLinksWithImages(relatedLinks, RELATED_HREFS)}
       />
 
       <Container className="pt-4 lg:pt-8">

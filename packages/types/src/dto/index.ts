@@ -48,6 +48,7 @@ export interface CreateBlogDto {
   excerpt: string;
   content: string;
   coverImage: string;
+  detailCoverImage?: string;
   category: BlogCategory;
   readTime?: string;
   author?: string;
@@ -75,6 +76,7 @@ export interface CreateTradeShowDto {
   boothNumber?: string;
   eventType?: TradeShowType;
   coverImage?: string;
+  detailCoverImage?: string;
   images?: string[];
   externalUrl?: string;
   isFeatured?: boolean;
@@ -177,6 +179,7 @@ export type {
   ChatPrompts,
   LocalizedText,
   PageViewGeoSource,
+  PrimaryPhoneKey,
   ScreenWatermark,
   SitePublicSettings,
   SocialChannelPurpose,

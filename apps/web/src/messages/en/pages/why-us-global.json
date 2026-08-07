@@ -14,19 +14,6 @@
     "title": "Advancing fire training tower design",
     "description": "With projects delivered nationwide, TZJ products are recognized for durability, effectiveness, and safety. Our impact goes beyond numbers — it reflects an relentless pursuit of excellence and innovation."
   },
-  "regions": [
-    "Nationwide coverage",
-    "North China",
-    "East China",
-    "South China",
-    "Central China",
-    "Southwest China",
-    "Northwest China",
-    "Northeast China",
-    "Southeast Asia",
-    "Middle East",
-    "Other international markets"
-  ],
   "sectorsSection": {
     "eyebrow": "Sectors Served",
     "title": "Training solutions for teams across industries",
@@ -82,5 +69,18 @@
   ],
   "cta": {
     "title": "Trust your project to a partner who delivers"
-  }
+  },
+  "regionsBadge": "Nationwide coverage",
+  "regionsDomestic": [
+    "North China",
+    "East China",
+    "South China",
+    "Central China",
+    "Southwest China",
+    "Northwest China",
+    "Northeast China"
+  ],
+  "regionsOverseas": ["Southeast Asia", "Middle East", "Other international markets"],
+  "regionsDomesticLabel": "Domestic coverage",
+  "regionsOverseasLabel": "International markets"
 }

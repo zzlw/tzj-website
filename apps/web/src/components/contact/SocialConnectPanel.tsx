@@ -21,14 +21,16 @@ export type SocialConnectItem = {
   scanHint: string;
   href?: string;
   hrefAction?: SocialHrefAction;
+  /** 复制模式点击后的提示语，留空使用默认「链接已复制」 */
+  copyHint?: string;
 };
 
 /** 联系页社媒二维码 — 二维码在上，文案在下；有外链时支持复制/跳转 */
 export function SocialConnectPanel({ channels, sectionTitle, className }: SocialConnectPanelProps) {
-  const handleCopy = useCallback(async (href: string) => {
+  const handleCopy = useCallback(async (href: string, copyHint?: string) => {
     try {
       await navigator.clipboard.writeText(href);
-      toast.success('链接已复制');
+      toast.success(copyHint?.trim() || '链接已复制');
     } catch {
       window.open(href, '_blank', 'noopener,noreferrer');
     }
@@ -71,7 +73,7 @@ export function SocialConnectPanel({ channels, sectionTitle, className }: Social
               <article key={channel.id} className="flex flex-col items-center">
                 <button
                   type="button"
-                  onClick={() => handleCopy(channel.href!)}
+                  onClick={() => handleCopy(channel.href!, channel.copyHint)}
                   className="flex cursor-pointer flex-col items-center transition-opacity hover:opacity-80"
                   aria-label={`复制${channel.label}链接`}
                 >

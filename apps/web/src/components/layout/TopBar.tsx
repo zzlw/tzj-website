@@ -13,7 +13,8 @@ import { resolveSocialQrUrl } from '@/lib/media-url';
 import { cn } from '@/lib/utils';
 
 type TopBarProps = {
-  phone: string;
+  /** 联系电话列表（主电话在前，备用电话在后，至少一个） */
+  phones: string[];
   email: string;
   socialChannels: SocialChannelItem[];
   scanHint: string;
@@ -28,7 +29,7 @@ const ICON_CLASS =
  * 仅桌面端（lg+）显示，与 --site-topbar-height 变量的计入断点（1024px）严格对齐；
  * 高度锁定为变量值，避免实际渲染高度与吸顶导航的 top 偏移不一致产生透明缝隙。
  */
-export function TopBar({ phone, email, socialChannels, scanHint }: TopBarProps) {
+export function TopBar({ phones, email, socialChannels, scanHint }: TopBarProps) {
   const locale = useLocale();
   const tHeader = useTranslations('header');
   const tContact = useTranslations('contact');
@@ -36,11 +37,11 @@ export function TopBar({ phone, email, socialChannels, scanHint }: TopBarProps) 
   const [openQrKey, setOpenQrKey] = useState<string | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
-  const handleCopy = useCallback(async (key: string, href: string) => {
+  const handleCopy = useCallback(async (key: string, href: string, copyHint?: string) => {
     try {
       await navigator.clipboard.writeText(href);
       setCopiedKey(key);
-      toast.success('链接已复制');
+      toast.success(copyHint?.trim() || '链接已复制');
       setTimeout(() => setCopiedKey(null), 2000);
     } catch {
       window.open(href, '_blank', 'noopener,noreferrer');
@@ -71,7 +72,7 @@ export function TopBar({ phone, email, socialChannels, scanHint }: TopBarProps) 
                               open={isOpen}
                               onOpenChange={(open) => {
                                 setOpenQrKey(open ? channel.key : null);
-                                if (open) handleCopy(channel.key, channel.href!);
+                                if (open) handleCopy(channel.key, channel.href!, channel.copyHint);
                               }}
                               modal={false}
                             >
@@ -122,8 +123,8 @@ export function TopBar({ phone, email, socialChannels, scanHint }: TopBarProps) 
                         <li key={channel.key}>
                           <button
                             type="button"
-                            onClick={() => handleCopy(channel.key, channel.href!)}
-                            className={cn(ICON_CLASS, 'px-10', isCopied && 'text-primary')}
+                            onClick={() => handleCopy(channel.key, channel.href!, channel.copyHint)}
+                            className={cn(ICON_CLASS, 'px-2', isCopied && 'text-primary')}
                             aria-label={channel.label}
                             title={isCopied ? '已复制' : channel.label}
                           >
@@ -138,7 +139,7 @@ export function TopBar({ phone, email, socialChannels, scanHint }: TopBarProps) 
                           href={channel.href}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className={cn(ICON_CLASS, 'px-10')}
+                          className={cn(ICON_CLASS, 'px-2')}
                           aria-label={channel.label}
                           title={channel.label}
                         >
@@ -198,10 +199,12 @@ export function TopBar({ phone, email, socialChannels, scanHint }: TopBarProps) 
             </>
           ) : null}
 
-          <a href={`tel:${phone.replace(/-/g, '')}`} className={ICON_CLASS}>
-            <Phone className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-            <span>{phone}</span>
-          </a>
+          {phones.map((phone) => (
+            <a key={phone} href={`tel:${phone.replace(/-/g, '')}`} className={ICON_CLASS}>
+              <Phone className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              <span>{phone}</span>
+            </a>
+          ))}
 
           <a href={`mailto:${email}`} className={ICON_CLASS}>
             <Mail className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />

@@ -6,17 +6,14 @@
   "hero": {
     "eyebrow": "Specialized Training · Psychological Expansion",
     "title": "Psychological Expansion Training Facilities",
-    "description": "The real test often comes from within — building will, courage, and teamwork under height and pressure.",
-    "imageAlt": "Psychological expansion training facilities"
+    "description": "The real test often comes from within — building will, courage, and teamwork under height and pressure."
   },
-  "breadcrumb": {
-    "parent": "Specialized Training",
-    "current": "Psychological Expansion Training Facilities"
-  },
-  "jsonLd": {
-    "productName": "Psychological Expansion Training Facilities",
-    "productDescription": "High-altitude bridge crossings, cloud ladders, and aerial courses building will, courage, and teamwork."
-  },
+  "heroImageAlt": "Psychological expansion training facility — high-altitude course panorama",
+  "gallery": [
+    { "alt": "Psychological expansion facility · high-altitude bridge and aerial course" },
+    { "alt": "Psychological expansion facility · team trust and cooperation exercises" },
+    { "alt": "Psychological expansion facility · graduated difficulty and safety systems" }
+  ],
   "overview": {
     "eyebrow": "Building Mental Strength",
     "title": "Beyond equipment, mindset is combat power",
@@ -25,8 +22,9 @@
     "body": "Complete protection and fall-arrest systems keep high-intensity psychological challenges within safe boundaries."
   },
   "featuresSection": {
-    "eyebrow": "Core Features",
-    "title": "Six capabilities of expansion facilities"
+    "eyebrow": "Core Capabilities",
+    "title": "Six capabilities of expansion facilities",
+    "description": "Built on high-altitude courses and team challenge elements — covering the full expansion workflow from will-building to team coordination."
   },
   "features": [
     {
@@ -56,8 +54,10 @@
   ],
   "programsSection": {
     "eyebrow": "Training Programs",
-    "title": "Supported expansion programs"
+    "title": "Supported expansion programs",
+    "description": "From high-altitude challenges to team trust exercises — covering core psychological expansion disciplines."
   },
+  "extraImageAlt": "Psychological expansion facility · team challenge and trust exercise details",
   "programs": [
     "High-altitude bridge crossing challenges",
     "Cloud ladder / rope ladder climbing",
@@ -66,22 +66,51 @@
     "Decision-making under pressure",
     "Team building and icebreaker activities"
   ],
+  "configSection": {
+    "eyebrow": "Typical Configuration",
+    "title": "Tailored expansion training grounds for your site and mission",
+    "description": "From high-altitude modules to team challenge structures — engineers deliver deployable facility configurations based on training goals and site conditions.",
+    "point1": "High-altitude, balance, and team challenge modules combine to fit your site — supporting phased construction and capability upgrades.",
+    "point2": "Pre-installed belay stations, fall-protection redundancy, and graduated difficulty enable high-intensity psychological training within controlled boundaries."
+  },
+  "configImageAlt": "Psychological expansion training ground · typical site configuration",
+  "usersSection": {
+    "eyebrow": "Who Uses It",
+    "title": "Who uses psychological expansion training facilities",
+    "description": "For military, emergency, and corporate teams requiring will-building, team cohesion, and stress tolerance capability."
+  },
+  "usersImageAlt": "Military and fire teams training at a psychological expansion course",
+  "users": [
+    "Military training units",
+    "Fire & rescue services",
+    "Police & public security",
+    "Emergency management agencies",
+    "Corporate team-building programs",
+    "Academic outdoor education programs"
+  ],
+  "casesSection": {
+    "eyebrow": "Related Projects",
+    "title": "Expansion and outdoor scenarios in real deliveries",
+    "description": "These projects include outdoor expansion, team training, and high-altitude disciplines for facility reference.",
+    "linkText": "View more case studies"
+  },
   "relatedLinks": [
     {
       "label": "Mountain & Rope Rescue Training",
-      "desc": "Complex terrain rope and high-angle transfer."
+      "desc": "Complex terrain rope and high-angle transfer — complementary to expansion training."
     },
     {
       "label": "Fitness & Vestibular Equipment",
-      "desc": "Physical conditioning and vestibular stability."
+      "desc": "Physical conditioning and vestibular stability for comprehensive readiness."
     },
     {
-      "label": "Military Solutions",
-      "desc": "Comprehensive training programs for military units."
+      "label": "Fixed Training Tower",
+      "desc": "Multi-level steel structure integrating high-altitude and rope disciplines."
     }
   ],
   "cta": {
     "title": "Plan a psychological expansion course for your team",
-    "description": "Tell us your training goals and site conditions — we'll design safe, effective expansion facilities for you."
+    "description": "Tell us your training goals and site conditions — our engineers will advise on course modules, difficulty grading, and safety configuration, and deliver a deployable expansion training plan.",
+    "secondaryLabel": "Back to specialized training"
   }
 }

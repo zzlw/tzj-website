@@ -1,11 +1,17 @@
-import { Plus } from 'lucide-react';
+import { Phone, Plus } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { BookConsultButton } from '@/components/chat/BookConsultButton';
-import { Container, PageHero } from '@/components/ui';
+import { Container, PageHero, RbLink } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
+import { RESOURCES_IMAGES } from '@/lib/resources-images';
+import { getSitePublicSettings, resolveContactPhones } from '@/lib/site-settings';
 
 export async function generateMetadata() {
-  return createPageMetadata({ namespace: 'pages.resourcesFaqs', path: '/resources/faqs' });
+  return createPageMetadata({
+    namespace: 'pages.resourcesFaqs',
+    path: '/resources/faqs',
+    image: RESOURCES_IMAGES.faqs.og,
+  });
 }
 
 export default async function FaqsPage() {
@@ -17,6 +23,10 @@ export default async function FaqsPage() {
     title: string;
     items: Array<{ q: string; a: string }>;
   }>;
+  const settings = await getSitePublicSettings();
+  // CTA 拨号按钮用主电话（后台可配置）
+  const { primary: primaryPhone } = resolveContactPhones(settings);
+  const phoneHref = `tel:${primaryPhone.replace(/-/g, '')}`;
 
   return (
     <div className="pb-20">
@@ -53,9 +63,19 @@ export default async function FaqsPage() {
         <div className="flex flex-col items-center gap-5 border border-neutral-300 bg-white p-10 text-center md:p-14">
           <h2 className="rb-h3 text-neutral-900">{t('cta.title')}</h2>
           <p className="text-secondary-text">{t('cta.description')}</p>
-          <BookConsultButton message={tCommon('bookConsultContent')}>
-            {tCta('bookConsult')}
-          </BookConsultButton>
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            <BookConsultButton message={tCommon('bookConsultContent')}>
+              {tCta('bookConsult')}
+            </BookConsultButton>
+            <a
+              href={phoneHref}
+              className="inline-flex items-center gap-2 border border-neutral-900 px-6 py-3 font-display text-base font-bold text-neutral-900 transition-colors hover:bg-neutral-900 hover:text-white"
+            >
+              <Phone className="h-4 w-4" aria-hidden="true" />
+              {primaryPhone}
+            </a>
+            <RbLink href="/contact">{t('cta.inquiryLink')}</RbLink>
+          </div>
         </div>
       </Container>
     </div>

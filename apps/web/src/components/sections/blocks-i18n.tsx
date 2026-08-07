@@ -32,7 +32,19 @@ export async function StatBandI18n({ className }: { className?: string }) {
   return <StatBand stats={stats} className={className} />;
 }
 
-export async function ProcessBandI18n() {
+/** 全站交钥匙默认主图；产品线可传 processImage 覆盖 */
+export const SHARED_PROCESS_IMAGE = '/media/product/shared/process-turnkey.webp';
+
+export async function ProcessBandI18n({
+  image = SHARED_PROCESS_IMAGE,
+  imageAlt,
+  compact = false,
+}: {
+  image?: string;
+  imageAlt?: string;
+  /** 仅时间轴（无图） */
+  compact?: boolean;
+} = {}) {
   const t = await getTranslations('blocks.processBand');
   const steps: ProcessStep[] = PROCESS_KEYS.map((key, i) => ({
     icon: PROCESS_ICONS[i]!,
@@ -45,6 +57,11 @@ export async function ProcessBandI18n() {
       title={t('title')}
       description={t('description')}
       steps={steps}
+      image={image}
+      imageAlt={imageAlt ?? t('imageAlt')}
+      compact={compact}
+      ctaLabel={t('ctaLabel')}
+      ctaMessage={t('ctaMessage')}
     />
   );
 }

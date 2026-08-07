@@ -35,6 +35,7 @@ function toBarItem(channel: SocialChannelSetting, t: (key: string) => string): S
     qr: channel.qr,
     href: channel.href,
     hrefAction: channel.hrefAction,
+    copyHint: channel.copyHint,
   };
 }
 
@@ -84,5 +85,6 @@ export function resolveAllSocialQrChannels(
       scanHint: channelPurpose(c) === 'contact' ? t('scanToAdd') : t('scanToFollow'),
       href: c.href,
       hrefAction: c.hrefAction,
+      copyHint: c.copyHint,
     }));
 }

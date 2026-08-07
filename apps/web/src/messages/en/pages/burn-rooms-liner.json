@@ -8,47 +8,56 @@
     "title": "Interlocking Thermal Liners",
     "description": "Calcium-silicate interlocking liner systems with replaceable panels and easy maintenance for long-term burn room protection."
   },
-  "gallery": {
-    "linerAlt": "Interlocking thermal liner in burn room",
-    "steelAlt": "Hot-dip galvanized steel structure"
-  },
-  "specsSection": {
-    "eyebrow": "Technical specifications",
-    "title": "Liner system specifications",
-    "description": "Liners directly affect burn room safety and service life. Our engineered materials and structure isolate heat and minimize thermal loss."
-  },
-  "specs": [
-    { "item": "Material", "value": "Calcium-silicate thermal composite panels" },
-    { "item": "Structure", "value": "Interlocking assembly; each panel independently replaceable" },
-    {
-      "item": "Temperature rating",
-      "value": "Withstands repeated Class A live-fire training temperatures"
-    },
-    {
-      "item": "Insulation",
-      "value": "Significantly reduces steel back-face temperature; protects primary structure"
-    },
-    {
-      "item": "Maintenance",
-      "value": "Local damage repaired by replacing individual panels—no full tear-out"
-    },
-    { "item": "Compatibility", "value": "For fixed towers and modular system burn rooms" }
+  "heroImageAlt": "Interlocking thermal liner burn room overview",
+  "gallery": [
+    { "alt": "Interlocking thermal liner installed in burn room" },
+    { "alt": "Burn room liner detail and mounting channels" },
+    { "alt": "Completed liner envelope with inspection access" }
   ],
+  "overview": {
+    "eyebrow": "Built for live fire",
+    "title": "Calcium silicate — the optimal choice for burn rooms",
+    "description": "Advances in materials make calcium silicate a practical balance of durability and heat resistance. TZJ interlocking liners are purpose-built for burn rooms that support live-fire training.",
+    "lead": "The interlocking tile system combines the hardest calcium silicate surface with factory-grade waterproof polymer to stand up to day-after-day live-fire training.",
+    "body": "Insulation performance is exceptional — during an interior burn, you can touch the exterior wall without being burned."
+  },
   "featuresSection": {
     "eyebrow": "Liner advantages",
-    "title": "The value of interlocking design"
+    "title": "Six capabilities of interlocking liners",
+    "description": "From interlocking assembly to NFPA-aligned design — protecting structure while keeping maintenance practical."
   },
   "features": [
-    "Interlocking structure for faster installation and replacement",
-    "Calcium-silicate material balances durability and insulation",
-    "Protects primary burn room steel structure and extends service life",
-    "Retrofit upgrades for existing burn rooms"
+    {
+      "title": "Interlocking assembly",
+      "desc": "Tiles lock together for faster installation, inspection access, and single-panel replacement."
+    },
+    {
+      "title": "High-temperature rated",
+      "desc": "Calcium-silicate composite withstands repeated Class A live-fire training temperatures."
+    },
+    {
+      "title": "Inspection-friendly",
+      "desc": "Expansion joints and staggered channels allow independent tile movement and routine inspection."
+    },
+    {
+      "title": "Replaceable panels",
+      "desc": "Local damage repaired by replacing individual panels — no full tear-out required."
+    },
+    {
+      "title": "Modular retrofit",
+      "desc": "Upgrade path for existing burn rooms — new builds, retrofits, and damaged-structure repair."
+    },
+    {
+      "title": "Standards-aligned",
+      "desc": "Designed to support NFPA 1403/1402 live-fire training requirements and domestic standards."
+    }
   ],
   "performanceSection": {
     "eyebrow": "Engineering performance",
     "title": "Built for demanding live-fire conditions",
     "description": "From material to construction, our liner systems are built for repeated live-fire training—protecting structure, supporting realism, and simplifying maintenance."
   },
+  "extraImageAlt": "Interlocking liner panels and mounting detail",
   "performance": [
     "High-durability, low-maintenance thermal insulation",
     "Asbestos-free calcium-silicate product",
@@ -61,6 +70,34 @@
     "No freeze-thaw issues; no drying period between sessions",
     "Does not promote mold growth; does not absorb water"
   ],
+  "configSection": {
+    "eyebrow": "Typical configuration",
+    "title": "Tailored liner layouts for your burn room",
+    "description": "Engineers deliver interlocking liner configurations based on room size, fuel type, and training objectives.",
+    "point1": "Mounting channels, insulation buttons, and air gaps form a complete thermal envelope around steel or masonry substrates.",
+    "point2": "Staggered panel layout maximizes airflow between liner and wall — maintaining insulation integrity through rapid heat cycles."
+  },
+  "configImageAlt": "Typical interlocking liner burn room configuration",
+  "usersSection": {
+    "eyebrow": "Who uses it",
+    "title": "Who uses interlocking burn room liners",
+    "description": "For fire departments and training academies that need durable live-fire environments with manageable maintenance."
+  },
+  "usersImageAlt": "Firefighters training in a burn room with interlocking liners",
+  "users": [
+    "Municipal fire & rescue departments",
+    "Fire training academies",
+    "Industrial fire brigades",
+    "Military & defense fire training units",
+    "Campus emergency response teams",
+    "Contractors retrofitting legacy burn rooms"
+  ],
+  "casesSection": {
+    "eyebrow": "Related projects",
+    "title": "Live-fire and liner deliveries in the field",
+    "description": "These projects include CFBT and burn room liner work for reference.",
+    "linkText": "View more case studies"
+  },
   "relatedLinks": [
     {
       "label": "Liner comparison",
@@ -74,6 +111,7 @@
   ],
   "cta": {
     "title": "Want to understand liner options?",
+    "description": "Book a consult to confirm liner specs, retrofit path, and delivery timeline.",
     "secondaryLabel": "View liner comparison"
   }
 }

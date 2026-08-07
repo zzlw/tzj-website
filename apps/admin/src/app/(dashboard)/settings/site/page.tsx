@@ -3,6 +3,7 @@
 import type {
   AnalyticsGeoMode,
   AnalyticsIpGeoSource,
+  PrimaryPhoneKey,
   SiteNotificationSettings,
   SitePublicSettings,
   SocialChannelPurpose,
@@ -78,7 +79,7 @@ const PURPOSES: { id: SocialChannelPurpose; label: string; hint: string }[] = [
 
 const HREF_ACTIONS: { id: SocialHrefAction; label: string; hint: string }[] = [
   { id: 'open', label: '链接跳转', hint: '点击后新窗口打开外链' },
-  { id: 'copy', label: '复制链接', hint: '点击后复制到剪切板并提示用户' },
+  { id: 'copy', label: '复制', hint: '点击后复制内容并提示用户' },
 ];
 
 function defaultPurpose(platform: SocialPlatformId): SocialChannelPurpose {
@@ -293,7 +294,7 @@ export default function SiteSettingsPage() {
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
             <div>
-              <Label htmlFor="phone">服务热线</Label>
+              <Label htmlFor="phone">服务热线（电话一）</Label>
               <Input
                 id="phone"
                 value={form.contact.phone}
@@ -303,6 +304,40 @@ export default function SiteSettingsPage() {
                 placeholder="0371-58691119"
                 className="mt-1.5"
               />
+            </div>
+            <div>
+              <Label htmlFor="phone-alt">备用电话（电话二，选填）</Label>
+              <Input
+                id="phone-alt"
+                value={form.contact.phoneAlt ?? ''}
+                onChange={(e) =>
+                  patch((p) => ({ ...p, contact: { ...p.contact, phoneAlt: e.target.value } }))
+                }
+                placeholder="REDACTED-PHONE，留空则不展示"
+                className="mt-1.5"
+              />
+            </div>
+            <div>
+              <Label htmlFor="primaryPhone">主电话</Label>
+              <Select
+                value={form.contact.primaryPhone ?? 'phone'}
+                onValueChange={(primaryPhone: PrimaryPhoneKey) =>
+                  patch((p) => ({ ...p, contact: { ...p.contact, primaryPhone } }))
+                }
+              >
+                <SelectTrigger id="primaryPhone" className="mt-1.5">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="phone">电话一（{form.contact.phone || '未填写'}）</SelectItem>
+                  <SelectItem value="phoneAlt">
+                    电话二（{form.contact.phoneAlt?.trim() || '未填写'}）
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                主电话用于官网「点击咨询」无客服在线时的兜底拨号；两个号码均会在官网展示
+              </p>
             </div>
             <div>
               <Label htmlFor="email">电子邮箱</Label>
@@ -950,7 +985,39 @@ export default function SiteSettingsPage() {
                       </div>
                     </div>
                     <div>
-                      <Label className="whitespace-nowrap">外链（可选）</Label>
+                      <Label className="whitespace-nowrap">触发方式</Label>
+                      <Select
+                        value={channel.hrefAction ?? 'open'}
+                        onValueChange={(hrefAction: SocialHrefAction) =>
+                          patch((p) => ({
+                            ...p,
+                            social: {
+                              channels: p.social.channels.map((c) =>
+                                c.id === channel.id ? { ...c, hrefAction } : c,
+                              ),
+                            },
+                          }))
+                        }
+                      >
+                        <SelectTrigger className="mt-1.5">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {HREF_ACTIONS.map((a) => (
+                            <SelectItem key={a.id} value={a.id}>
+                              {a.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {HREF_ACTIONS.find((a) => a.id === (channel.hrefAction ?? 'open'))?.hint}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="whitespace-nowrap">
+                        {channel.hrefAction === 'copy' ? '复制内容（可选）' : '外链（可选）'}
+                      </Label>
                       <Input
                         value={channel.href ?? ''}
                         onChange={(e) =>
@@ -965,42 +1032,36 @@ export default function SiteSettingsPage() {
                             },
                           }))
                         }
-                        placeholder="https://weibo.com/..."
+                        placeholder={
+                          channel.hrefAction === 'copy'
+                            ? '如：tzj-service（点击后复制的内容）'
+                            : 'https://weibo.com/...'
+                        }
                         className="mt-1.5"
                       />
+                      {channel.hrefAction === 'copy' ? (
+                        <>
+                          <Label className="mt-3 block">点击后提示语</Label>
+                          <Input
+                            value={channel.copyHint ?? ''}
+                            onChange={(e) =>
+                              patch((p) => ({
+                                ...p,
+                                social: {
+                                  channels: p.social.channels.map((c) =>
+                                    c.id === channel.id
+                                      ? { ...c, copyHint: e.target.value.trim() || undefined }
+                                      : c,
+                                  ),
+                                },
+                              }))
+                            }
+                            placeholder="如：已复制微信号"
+                            className="mt-1.5"
+                          />
+                        </>
+                      ) : null}
                     </div>
-                    {channel.href ? (
-                      <div>
-                        <Label className="whitespace-nowrap">外链触发方式</Label>
-                        <Select
-                          value={channel.hrefAction ?? 'open'}
-                          onValueChange={(hrefAction: SocialHrefAction) =>
-                            patch((p) => ({
-                              ...p,
-                              social: {
-                                channels: p.social.channels.map((c) =>
-                                  c.id === channel.id ? { ...c, hrefAction } : c,
-                                ),
-                              },
-                            }))
-                          }
-                        >
-                          <SelectTrigger className="mt-1.5">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {HREF_ACTIONS.map((a) => (
-                              <SelectItem key={a.id} value={a.id}>
-                                {a.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {HREF_ACTIONS.find((a) => a.id === (channel.hrefAction ?? 'open'))?.hint}
-                        </p>
-                      </div>
-                    ) : null}
                   </div>
                 </div>
               ))}

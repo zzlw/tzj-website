@@ -1,212 +1,243 @@
-import {
-  ArrowUpDown,
-  Biohazard,
-  Box,
-  Droplets,
-  Flame,
-  Hammer,
-  LayoutGrid,
-  MountainSnow,
-  Search,
-  Wind,
-} from 'lucide-react';
+import { Check } from 'lucide-react';
+import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { BookConsultButton } from '@/components/chat/BookConsultButton';
+import { JsonLd } from '@/components/JsonLd';
 import { MediaImage as Image } from '@/components/MediaImage';
-import { RelatedLinks } from '@/components/sections/blocks';
+import {
+  CasesBand,
+  FeatureImageGrid,
+  ProductGallery,
+  ProductHeroBand,
+  UsersBand,
+} from '@/components/products/ProductLineMedia';
+import { CtaBand, RelatedLinks } from '@/components/sections/blocks';
 import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
-import { Container, Eyebrow, RbLink, SectionHeading } from '@/components/ui';
+import { Container, PageHero, SectionHeading } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
+import { breadcrumbJsonLd, productJsonLd } from '@/lib/jsonld';
+import { productLineHeroImage, productLineOgImage } from '@/lib/product-catalog';
+import {
+  fetchFeaturedCases,
+  relatedLinksWithImages,
+  requireProductLine,
+} from '@/lib/product-line-page';
 
-export async function generateMetadata() {
-  return createPageMetadata({ namespace: 'pages.accessories', path: '/accessories' });
-}
+const LINE = requireProductLine('accessories');
 
-const HERO_IMAGE = '/media/tower-eastside.jpg';
-const FEATURE_ICONS = [
-  Biohazard,
-  Flame,
-  ArrowUpDown,
-  Search,
-  Box,
-  Hammer,
-  Wind,
-  MountainSnow,
-  LayoutGrid,
-  Droplets,
-] as const;
+/** 与 i18n `features` 前 6 条顺序一一对应 */
+const FEATURE_IDS = ['hazmat', 'heat', 'egress', 'search', 'confined', 'breach'] as const;
+const FEATURE_GRID_COUNT = FEATURE_IDS.length;
+
+const HERO_SRC = productLineHeroImage(LINE);
+const GALLERY_SRCS = LINE.detailImages ?? [LINE.image];
+const FEATURE_IMAGES = LINE.featureImages ?? {};
+const CONFIG_SRC = LINE.configImage;
+const EXTRA_SRC = LINE.extraImage;
+const USERS_SRC = LINE.usersImage;
 const RELATED_HREFS = [
-  '/accessories/maritime',
-  '/accessories/tactical',
-  '/accessories/hazmat',
+  '/accessories/fitness-equipment',
+  '/accessories/competition',
+  '/fixed-tower',
 ] as const;
+
+export async function generateMetadata(): Promise<Metadata> {
+  return createPageMetadata({
+    namespace: 'pages.accessories',
+    path: '/accessories',
+    image: productLineOgImage(LINE),
+  });
+}
 
 export default async function AccessoriesPage() {
   const t = await getTranslations('pages.accessories');
   const tCta = await getTranslations('cta');
   const tBlocks = await getTranslations('blocks.relatedLinks');
-  const tCommon = await getTranslations('common');
+  const tBread = await getTranslations('breadcrumbs');
 
-  const featuresRaw = t.raw('features') as Array<{ title: string; desc: string }>;
-  const features = featuresRaw.map((item, i) => ({
-    ...item,
-    icon: FEATURE_ICONS[i] ?? FEATURE_ICONS[0],
-  }));
-  const maritimeFeatures = t.raw('maritime.features') as string[];
-  const tacticalScenarios = t.raw('tactical.scenarios') as string[];
-  const hazmatProducts = t.raw('hazmat.products') as Array<{ name: string; desc: string }>;
+  const gallery = t.raw('gallery') as Array<{ alt: string }>;
+  const features = t.raw('features') as Array<{ title: string; desc: string }>;
+  const users = t.raw('users') as string[];
   const relatedLinks = t.raw('relatedLinks') as Array<{ label: string; desc: string }>;
+
+  const featuredCases = await fetchFeaturedCases(LINE.relatedCaseSlugs);
+
+  const galleryItems = gallery.map((g, i) => ({
+    src: GALLERY_SRCS[i] ?? GALLERY_SRCS[0] ?? LINE.image,
+    alt: g.alt,
+  }));
+
+  const gridFeatures = features.slice(0, FEATURE_GRID_COUNT);
+  const programFeatures = features.slice(FEATURE_GRID_COUNT);
+
+  const featureItems = gridFeatures.map((f, i) => {
+    const featureId = FEATURE_IDS[i] ?? FEATURE_IDS[0];
+    return {
+      id: featureId,
+      title: f.title,
+      desc: f.desc,
+      src: FEATURE_IMAGES[featureId] ?? LINE.image,
+    };
+  });
 
   return (
     <div className="pb-20">
-      <section className="relative flex min-h-[460px] items-end overflow-hidden bg-neutral-800 pt-16">
-        <Image
-          src={HERO_IMAGE}
-          alt={t('hero.imageAlt')}
-          fill
-          quality={90}
-          sizes="100vw"
-          className="object-cover object-center"
-          preload
-          loading="eager"
-          fetchPriority="high"
-        />
-        <div className="absolute inset-0 rb-media-shade-strong" />
-        <Container className="rb-on-media relative z-10 py-14 lg:py-20">
-          <Eyebrow inverted>{t('hero.eyebrow')}</Eyebrow>
-          <h1 className="rb-h1 mt-5 max-w-3xl text-white">{t('hero.title')}</h1>
-          <p className="mt-5 max-w-xl text-base text-white/85 md:text-lg">
-            {t('hero.description')}
-          </p>
-          <div className="mt-8">
-            <BookConsultButton variant="light" message={tCommon('bookConsultProduct')}>
-              {tCta('bookConsult')}
-            </BookConsultButton>
-          </div>
-        </Container>
-      </section>
+      <JsonLd
+        data={[
+          breadcrumbJsonLd([
+            { name: tBread('home'), path: '/' },
+            { name: t('hero.eyebrow'), path: '/accessories' },
+            { name: t('meta.title'), path: '/accessories' },
+          ]),
+          productJsonLd({
+            name: LINE.title,
+            description: t('meta.description'),
+            path: '/accessories',
+            image: HERO_SRC,
+          }),
+        ]}
+      />
 
-      <section className="scroll-mt-24">
+      <PageHero
+        eyebrow={t('hero.eyebrow')}
+        title={t('hero.title')}
+        description={t('hero.description')}
+      />
+
+      <ProductHeroBand src={HERO_SRC} alt={t('heroImageAlt')} />
+      <ProductGallery items={galleryItems} fallbackSrc={LINE.image} />
+
+      <section>
         <Container className="py-16 lg:py-24">
-          <SectionHeading
-            eyebrow={t('overview.eyebrow')}
-            title={t('overview.title')}
-            description={t('overview.description')}
-          />
-          <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-            {features.map((p) => {
-              const Icon = p.icon;
-              return (
-                <div
-                  key={p.title}
-                  className="group border border-neutral-300 bg-white p-6 transition-colors hover:border-neutral-900"
-                >
-                  <div className="mb-4 flex h-11 w-11 items-center justify-center bg-primary/10 transition-colors group-hover:bg-primary/15">
-                    <Icon className="h-5 w-5 text-primary" />
-                  </div>
-                  <h3 className="rb-h5 mb-2 text-neutral-900">{p.title}</h3>
-                  <p className="text-sm leading-relaxed text-secondary-text">{p.desc}</p>
-                </div>
-              );
-            })}
+          <div className="grid grid-cols-1 gap-10 lg:grid-cols-2 lg:gap-16">
+            <SectionHeading
+              eyebrow={t('overview.eyebrow')}
+              title={t('overview.title')}
+              description={t('overview.description')}
+            />
+            <div className="flex flex-col justify-center gap-4 border-l-2 border-primary pl-6">
+              <p className="text-lg leading-relaxed text-neutral-900">{t('overview.lead')}</p>
+              <p className="text-secondary-text">{t('overview.body')}</p>
+            </div>
           </div>
         </Container>
       </section>
 
       <StatBandI18n />
 
-      <section id="maritime" className="scroll-mt-24 bg-neutral-100">
+      <section className="bg-neutral-100">
+        <Container className="py-16 lg:py-24">
+          <SectionHeading
+            eyebrow={t('featuresSection.eyebrow')}
+            title={t('featuresSection.title')}
+            description={t('featuresSection.description')}
+          />
+          <FeatureImageGrid items={featureItems} columns={3} />
+        </Container>
+      </section>
+
+      <section>
         <Container className="py-16 lg:py-24">
           <div className="grid grid-cols-1 gap-10 lg:grid-cols-2 lg:gap-16">
             <SectionHeading
-              eyebrow={t('maritime.eyebrow')}
-              title={t('maritime.title')}
-              description={t('maritime.description')}
+              eyebrow={t('programsSection.eyebrow')}
+              title={t('programsSection.title')}
+              description={t('programsSection.description')}
             />
-            <div>
-              <p className="mb-5 text-base leading-relaxed text-neutral-900">
-                {t('maritime.lead')}
-              </p>
-              <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {maritimeFeatures.map((f) => (
+            <div className="flex flex-col justify-center">
+              {EXTRA_SRC ? (
+                <div className="rb-img-shimmer relative mb-8 aspect-[4/3] overflow-hidden bg-neutral-200">
+                  <Image
+                    src={EXTRA_SRC}
+                    alt={t('extraImageAlt')}
+                    fill
+                    quality={70}
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                    className="object-cover"
+                  />
+                </div>
+              ) : null}
+              <ul className="grid grid-cols-1 gap-3">
+                {programFeatures.map((f) => (
                   <li
-                    key={f}
-                    className="border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900"
+                    key={f.title}
+                    className="flex items-start gap-3 border border-neutral-300 bg-white px-4 py-3 text-sm text-neutral-900"
                   >
-                    {f}
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                    <span>
+                      <span className="font-bold">{f.title}</span>
+                      <span className="mt-1 block text-secondary-text">{f.desc}</span>
+                    </span>
                   </li>
                 ))}
               </ul>
-              <div className="mt-6">
-                <RbLink href="/accessories/maritime">{t('maritime.linkText')}</RbLink>
-              </div>
             </div>
           </div>
         </Container>
       </section>
 
-      <section id="tactical" className="scroll-mt-24">
+      <section className="bg-neutral-100">
         <Container className="py-16 lg:py-24">
           <SectionHeading
-            eyebrow={t('tactical.eyebrow')}
-            title={t('tactical.title')}
-            description={t('tactical.description')}
+            eyebrow={t('configSection.eyebrow')}
+            title={t('configSection.title')}
+            description={t('configSection.description')}
           />
-          <div className="mt-10 flex flex-wrap gap-3">
-            {tacticalScenarios.map((s) => (
-              <span
-                key={s}
-                className="border border-neutral-300 bg-neutral-100 px-4 py-2 text-sm font-bold text-neutral-900"
-              >
-                {s}
-              </span>
-            ))}
-          </div>
-          <div className="mt-8">
-            <RbLink href="/accessories/tactical">{t('tactical.linkText')}</RbLink>
+          {CONFIG_SRC ? (
+            <div className="rb-img-shimmer relative mt-10 aspect-[21/9] overflow-hidden bg-neutral-200">
+              <Image
+                src={CONFIG_SRC}
+                alt={t('configImageAlt')}
+                fill
+                quality={75}
+                sizes="100vw"
+                className="object-cover"
+              />
+            </div>
+          ) : null}
+          <div className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <p className="text-base leading-relaxed text-neutral-900">
+              {t('configSection.point1')}
+            </p>
+            <p className="text-base leading-relaxed text-secondary-text">
+              {t('configSection.point2')}
+            </p>
           </div>
         </Container>
       </section>
 
-      <section id="hazmat" className="scroll-mt-24 bg-neutral-100">
-        <Container className="py-16 lg:py-24">
-          <SectionHeading
-            eyebrow={t('hazmat.eyebrow')}
-            title={t('hazmat.title')}
-            description={t('hazmat.description')}
-          />
-          <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {hazmatProducts.map((h) => (
-              <div key={h.name} className="border border-neutral-300 bg-white p-6">
-                <h3 className="rb-h5 mb-2 text-neutral-900">{h.name}</h3>
-                <p className="text-sm leading-relaxed text-secondary-text">{h.desc}</p>
-              </div>
-            ))}
-          </div>
-          <div className="mt-8">
-            <RbLink href="/accessories/hazmat">{t('hazmat.linkText')}</RbLink>
-          </div>
-        </Container>
-      </section>
+      <UsersBand
+        eyebrow={t('usersSection.eyebrow')}
+        title={t('usersSection.title')}
+        description={t('usersSection.description')}
+        imageSrc={USERS_SRC}
+        imageAlt={t('usersImageAlt')}
+        users={users}
+      />
 
-      <ProcessBandI18n />
+      <CasesBand
+        eyebrow={t('casesSection.eyebrow')}
+        title={t('casesSection.title')}
+        description={t('casesSection.description')}
+        linkText={t('casesSection.linkText')}
+        cases={featuredCases}
+      />
+
+      <ProcessBandI18n image={LINE.processImage} />
 
       <RelatedLinks
         title={tBlocks('titleDefault')}
         learnMore={tBlocks('learnMore')}
         eyebrow={tBlocks('eyebrow')}
-        links={relatedLinks.map((l, i) => ({ ...l, href: RELATED_HREFS[i] ?? RELATED_HREFS[0] }))}
+        links={relatedLinksWithImages(relatedLinks, RELATED_HREFS)}
       />
 
-      <Container className="pt-16 lg:pt-24">
-        <div className="flex flex-col items-center gap-5 border border-neutral-300 bg-white p-10 text-center md:p-14">
-          <h2 className="rb-h3 text-neutral-900">{t('cta.title')}</h2>
-          <p className="text-secondary-text">{t('cta.description')}</p>
-          <BookConsultButton message={tCommon('bookConsultProduct')}>
-            {tCta('bookConsult')}
-          </BookConsultButton>
-        </div>
-      </Container>
+      <CtaBand
+        title={t('cta.title')}
+        description={t('cta.description')}
+        primaryLabel={tCta('bookConsult')}
+        secondaryLabel={t('cta.secondaryLabel')}
+        secondaryHref="/accessories/fitness-equipment"
+      />
     </div>
   );
 }

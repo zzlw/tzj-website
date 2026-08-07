@@ -30,6 +30,13 @@
     "titlePrefix": "Custom training solutions for ",
     "titleSuffix": "",
     "description": "Tell us your site, disciplines, and budget — our engineers and fire service experts will design a complete program for you.",
-    "backLink": "Back to all solutions"
+    "backLink": "Back to all solutions",
+    "inquiryLink": "Send an inquiry"
+  },
+  "cases": {
+    "eyebrow": "Real Projects",
+    "title": "Delivered projects in this field",
+    "description": "Representative delivered projects in this field — click through for full project details and specifications.",
+    "linkText": "View more cases in this field"
   }
 }

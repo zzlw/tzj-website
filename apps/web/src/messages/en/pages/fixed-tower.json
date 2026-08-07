@@ -29,6 +29,27 @@
     "title": "Training towers purpose-built for drills",
     "description": "Industrial steel framed systems designed to NFPA 1400/1402 and related standards. Bolted ribbed walls, full galvanizing, and configurable burn rooms for long-term live-fire use."
   },
+  "overviewImageAlt": "Fixed training tower — multi-level steel structure overview",
+  "configSection": {
+    "eyebrow": "Typical configuration",
+    "title": "Structural capabilities for standard and custom towers",
+    "description": "From multi-level main structures to burn room interfaces — engineers deliver build-ready fixed tower configurations for your site and scenarios."
+  },
+  "configImageAlt": "Fixed training tower — typical structural configuration",
+  "usersSection": {
+    "eyebrow": "Who uses it",
+    "title": "Organizations using fixed training towers",
+    "description": "For fire, emergency, and school training units that need multi-level live-fire and comprehensive drill structures."
+  },
+  "usersImageAlt": "Fire crews training in front of a fixed training tower",
+  "users": [
+    "Fire & rescue departments",
+    "Emergency management agencies",
+    "Police & SWAT units",
+    "School fire safety programs",
+    "Industrial fire brigades",
+    "International fire training providers"
+  ],
   "paths": {
     "eyebrow": "How to choose",
     "title": "Standard models or deep customization",

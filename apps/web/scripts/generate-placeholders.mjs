@@ -2,8 +2,9 @@
 /**
  * 同步 C 端静态媒体资源到 public/media/
  *
- * 优先从本地 trainingtowers.com / Hero V2.mp4 复制真实素材；
- * 找不到源文件时才生成可见的纯色占位图（非 1×1）。
+ * 图片：优先从本地 trainingtowers.com 复制真实素材，找不到时生成纯色占位图；
+ * hero 视频：唯一事实源为对象存储（本地 MinIO / 生产 OSS）content/hero.mp4（已 +faststart），
+ * 首次运行下载到 .assets-cache/ 后复用缓存。
  */
 import { copyFile, mkdir, stat, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
@@ -50,26 +51,29 @@ const IMAGE_SOURCES = {
   'modular-o.png': src('O-Series-MODx-2024-Elevation_web.png'),
   'modular-d.png': src('D-Series-MODx-2024-Elevation_web.png'),
   'modular-x.png': src('X-Series-MODx-2024-Elevation_web.png'),
-  'alarm-highrise.png': src('high-rise-5-story-blueprint.jpg'),
-  'alarm-5th.png': src('5th-Alarm-Five-Story-2024_web.png'),
-  'alarm-3rd.png': src('3rd-Alarm-Four-Story-2024_web.png'),
-  'alarm-1st.png': src('1st-Alarm-Two-Story-2024_web.png'),
   'og-default.jpg': src('TX_Wylie.jpg'),
 };
 
-const heroVideo = join(workspaceRoot, 'Hero V2.mp4');
 const missionVideo = src('25164-348110782_medium.mp4');
 
+/** hero 视频：对象存储是唯一事实源（content/hero.mp4），下载后缓存到 .assets-cache/ */
+const assetCacheDir = join(__dirname, '..', '.assets-cache');
+const heroVideoCached = join(assetCacheDir, 'hero.mp4');
+const s3PublicDomain = process.env.S3_PUBLIC_DOMAIN || 'http://localhost:9000/tzj-uploads-dev';
+
+async function ensureHeroVideo() {
+  if ((await fileSize(heroVideoCached)) > 512) return;
+  await mkdir(assetCacheDir, { recursive: true });
+  const url = `${s3PublicDomain.replace(/\/$/, '')}/content/hero.mp4`;
+  console.log(`  ↓ downloading hero video from ${url}`);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`hero.mp4 download failed: ${res.status} ${url}`);
+  await writeFile(heroVideoCached, Buffer.from(await res.arrayBuffer()));
+}
+
 const VIDEO_SOURCES = {
-  'hero.mp4': heroVideo,
+  'hero.mp4': heroVideoCached,
   'mission.mp4': missionVideo,
-  'fixed-tower.mp4': heroVideo,
-  'modular-tower.mp4': heroVideo,
-  'burn-room.mp4': heroVideo,
-  'why.mp4': heroVideo,
-  'whp-hero.mp4': missionVideo,
-  'fixed-series.mp4': missionVideo,
-  'louisville-case.mp4': missionVideo,
 };
 
 /** 生成可见的纯色 PNG 占位图（1600×900） */
@@ -165,6 +169,7 @@ async function syncImages() {
 }
 
 async function syncVideos() {
+  await ensureHeroVideo();
   for (const [name, source] of Object.entries(VIDEO_SOURCES)) {
     const dest = join(mediaDir, name);
     const ok = await copyIfExists(source, dest);

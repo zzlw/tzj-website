@@ -9,6 +9,12 @@
     "description": "Train to compete, compete to win — professional facilities aligned with competition rules connect daily training directly to the arena.",
     "imageAlt": "Competition training facilities"
   },
+  "heroImageAlt": "Competition training facilities — event-aligned training ground overview",
+  "gallery": [
+    { "alt": "Competition facility · obstacle course and speed events" },
+    { "alt": "Competition facility · ladder climb and hose lay stations" },
+    { "alt": "Competition facility · load carry and handling events" }
+  ],
   "breadcrumb": {
     "parent": "Training Equipment",
     "current": "Competition Training Facilities"
@@ -26,7 +32,8 @@
   },
   "featuresSection": {
     "eyebrow": "Core Features",
-    "title": "Six capabilities of competition facilities"
+    "title": "Six capabilities of competition facilities",
+    "description": "From competition-aligned design to durability — covering core requirements for event preparation and year-round drill training."
   },
   "features": [
     {
@@ -56,7 +63,37 @@
   ],
   "programsSection": {
     "eyebrow": "Competition Events",
-    "title": "Supported competition and training events"
+    "title": "Supported competition and training events",
+    "description": "From obstacle courses to selection camps — covering core skills competition and drill events."
+  },
+  "extraImageAlt": "Competition facility · multi-event training area details",
+  "configSection": {
+    "eyebrow": "Typical Configuration",
+    "title": "Tailored competition training grounds for your event camp",
+    "description": "From single-event stations to complete competition grounds — configured based on your competition events and team size.",
+    "point1": "Dimensions and standards match competition rules — enabling systematic preparation and consistent performance.",
+    "point2": "Industrial-grade construction withstands high-frequency competition training with adjustable difficulty for all skill levels."
+  },
+  "configImageAlt": "Competition training ground · typical facility configuration",
+  "usersSection": {
+    "eyebrow": "Who Uses It",
+    "title": "Who uses competition training facilities",
+    "description": "For fire and rescue teams preparing for skills competitions, selection camps, and year-round drill programs."
+  },
+  "usersImageAlt": "Firefighters training at competition-aligned facilities",
+  "users": [
+    "Fire & rescue services",
+    "Skills competition teams",
+    "Training academies",
+    "Industrial emergency teams",
+    "Military firefighting units",
+    "Selection and preparation camps"
+  ],
+  "casesSection": {
+    "eyebrow": "Related Projects",
+    "title": "Competition training in real deliveries",
+    "description": "Explore how competition facilities integrate into complete training bases.",
+    "linkText": "View more case studies"
   },
   "programs": [
     "100-meter obstacle and speed events",
@@ -82,6 +119,7 @@
   ],
   "cta": {
     "title": "Configure competition facilities for your event camp",
-    "description": "Tell us your preparation goals and competition events — we'll customize training facilities aligned with the rules."
+    "description": "Tell us your preparation goals and competition events — we'll customize training facilities aligned with the rules.",
+    "secondaryLabel": "Back to props & accessories"
   }
 }

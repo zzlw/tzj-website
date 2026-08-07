@@ -1,9 +1,14 @@
-import { Award, BadgeCheck, FileCheck, ShieldCheck } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
-import { Container, SectionHeading } from '@/components/ui';
+import { CertificationWallCards } from '@/components/sections/CertificationWallCards';
+import { Container, RbLink, SectionHeading } from '@/components/ui';
 
-const CERT_KEYS = ['iso9001', 'hitech', 'patents', 'safety'] as const;
-const CERT_ICONS = [ShieldCheck, Award, FileCheck, BadgeCheck] as const;
+const CERT_KEYS = ['iso9001', 'iso14001', 'iso45001', 'aftersales'] as const;
+const CERT_IMAGES: Record<(typeof CERT_KEYS)[number], string> = {
+  iso9001: '/media/cert-iso9001.webp',
+  iso14001: '/media/cert-iso14001.webp',
+  iso45001: '/media/cert-iso45001.webp',
+  aftersales: '/media/cert-after-sales-5star.webp',
+};
 
 const CLIENT_KEYS = [
   'fire',
@@ -17,7 +22,14 @@ const CLIENT_KEYS = [
 ] as const;
 
 export async function CertificationWall() {
-  const t = await getTranslations('home.certification');
+  const t = await getTranslations('blocks.certification');
+
+  const certs = CERT_KEYS.map((key) => ({
+    key,
+    image: CERT_IMAGES[key],
+    title: t(`items.${key}.title`),
+    subtitle: t(`items.${key}.subtitle`),
+  }));
 
   return (
     <section className="bg-neutral-100 py-16 lg:py-24">
@@ -29,24 +41,14 @@ export async function CertificationWall() {
           align="center"
         />
 
-        <div className="mt-10 grid grid-cols-2 gap-4 md:grid-cols-4">
-          {CERT_KEYS.map((key, i) => {
-            const Icon = CERT_ICONS[i]!;
-            return (
-              <div
-                key={key}
-                className="flex flex-col items-center border border-neutral-300 bg-white p-6 text-center"
-              >
-                <div className="mb-3 flex h-14 w-14 items-center justify-center bg-primary/10">
-                  <Icon className="h-7 w-7 text-primary" aria-hidden="true" />
-                </div>
-                <h3 className="font-display text-sm font-bold text-neutral-900">
-                  {t(`items.${key}.title`)}
-                </h3>
-                <p className="mt-1 text-xs text-secondary-text">{t(`items.${key}.subtitle`)}</p>
-              </div>
-            );
-          })}
+        <CertificationWallCards
+          certs={certs}
+          detailHref="/why-us/certification"
+          viewLargeLabel={t('viewLarge')}
+        />
+
+        <div className="mt-10 text-center">
+          <RbLink href="/why-us/certification">{t('viewCerts')}</RbLink>
         </div>
 
         <div className="mt-12 border-t border-neutral-300 pt-10">

@@ -1,7 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import { Header } from '@/components/layout/Header';
 import { resolveSocialChannels } from '@/lib/resolve-social-channels';
-import { getSitePublicSettings } from '@/lib/site-settings';
+import { getSitePublicSettings, resolveContactPhones } from '@/lib/site-settings';
 
 /**
  * 导航区壳组件（Server Component）
@@ -15,10 +15,13 @@ export async function HeaderShell() {
     tContact(key as Parameters<typeof tContact>[0]),
   );
   const scanHint = tContact('scanToFollow');
+  // 双号码展示：主电话在前，备用电话在后（备用留空则不展示）
+  const { primary, secondary } = resolveContactPhones(settings);
+  const topBarPhones = secondary ? [primary, secondary] : [primary];
 
   return (
     <Header
-      topBarPhone={settings.contact.phone}
+      topBarPhones={topBarPhones}
       topBarEmail={settings.contact.email}
       topBarSocialChannels={socialChannels}
       topBarScanHint={scanHint}

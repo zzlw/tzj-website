@@ -17,6 +17,8 @@ export type SocialChannelItem = {
   href?: string;
   /** 外链触发方式，默认 open */
   hrefAction?: SocialHrefAction;
+  /** 复制模式点击后的提示语，留空使用默认「链接已复制」 */
+  copyHint?: string;
 };
 
 type SocialChannelBarProps = {
@@ -42,11 +44,11 @@ export function SocialChannelBar({
   const [openKey, setOpenKey] = useState<string | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
-  const handleCopy = useCallback(async (key: string, href: string) => {
+  const handleCopy = useCallback(async (key: string, href: string, copyHint?: string) => {
     try {
       await navigator.clipboard.writeText(href);
       setCopiedKey(key);
-      toast.success('链接已复制');
+      toast.success(copyHint?.trim() || '链接已复制');
       setTimeout(() => setCopiedKey(null), 2000);
     } catch {
       // clipboard API 不可用时回退跳转
@@ -77,7 +79,7 @@ export function SocialChannelBar({
                       open={isOpen}
                       onOpenChange={(open) => {
                         setOpenKey(open ? channel.key : null);
-                        if (open) handleCopy(channel.key, channel.href!);
+                        if (open) handleCopy(channel.key, channel.href!, channel.copyHint);
                       }}
                       modal={false}
                     >
@@ -127,7 +129,7 @@ export function SocialChannelBar({
                 <li key={channel.key}>
                   <button
                     type="button"
-                    onClick={() => handleCopy(channel.key, channel.href!)}
+                    onClick={() => handleCopy(channel.key, channel.href!, channel.copyHint)}
                     className={cn(
                       BTN_CLASS,
                       isCopied && 'border-primary bg-primary/5 text-primary',

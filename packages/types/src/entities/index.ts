@@ -62,6 +62,8 @@ export interface Blog extends BaseEntity {
   excerpt: string;
   content: string;
   coverImage: string;
+  /** 详情页宽幅封面（比例特殊，与列表封面分离）；未设置时 C 端回退 coverImage */
+  detailCoverImage?: string | null;
   images: string[];
   category: BlogCategory;
   readTime: string;
@@ -88,6 +90,8 @@ export interface TradeShow extends BaseEntity {
   boothNumber: string;
   eventType: TradeShowType;
   coverImage: string;
+  /** 详情页宽幅封面（比例特殊，与列表封面分离）；未设置时 C 端回退 coverImage */
+  detailCoverImage?: string | null;
   images: string[];
   externalUrl: string;
   isFeatured: boolean;

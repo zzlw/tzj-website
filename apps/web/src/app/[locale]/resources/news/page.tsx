@@ -7,7 +7,7 @@ import { ContentPagination } from '@/components/content/ContentPagination';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { RelatedLinks } from '@/components/sections/blocks';
 import { StatBandI18n } from '@/components/sections/blocks-i18n';
-import { Container, PageHero, SectionHeading } from '@/components/ui';
+import { Container, PageHero } from '@/components/ui';
 import { getNewsList } from '@/lib/api';
 import { formatContentDate, newsCategoryLabel } from '@/lib/content-labels';
 import {
@@ -20,6 +20,7 @@ import {
 import { getNewsCategoryFilter } from '@/lib/i18n/content-filters';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 import { getNewsSortOptions } from '@/lib/i18n/sort-options';
+import { relatedLinksWithImages } from '@/lib/product-line-page';
 
 const RELATED_HREFS = ['/cases', '/resources/blog', '/resources/trade-shows'];
 
@@ -73,68 +74,64 @@ export default async function NewsPage({ searchParams }: PageProps) {
 
       <section>
         <Container className="py-16 lg:py-24">
-          <SectionHeading eyebrow={t('listSection.eyebrow')} title={t('listSection.title')} />
-
-          <div className="mt-8">
-            <ContentListShell
-              toolbar={{
-                filters: [categoryFilter],
-                sortOptions,
-                defaultSort: sortOptions[0]!,
-              }}
-            >
-              {items.length === 0 ? (
-                <p className="mt-8 border border-dashed border-neutral-300 py-16 text-center text-sm text-secondary-text">
-                  {tList('emptyNews')}
-                </p>
-              ) : (
-                <div className="rb-content-list mt-8">
-                  {items.map((n) => (
-                    <Link
-                      key={n.id}
-                      href={`/resources/news/${n.slug}`}
-                      className="rb-content-list-row group"
-                    >
-                      <div className="flex min-w-0 flex-col gap-3 md:flex-1 md:flex-row md:items-center md:gap-8">
-                        <div className="relative aspect-[16/9] w-full shrink-0 overflow-hidden bg-neutral-200 md:aspect-[16/10] md:w-64">
-                          <Image
-                            src={pickCoverImage(n.coverImage)}
-                            alt={n.title}
-                            fill
-                            sizes="(max-width: 768px) 100vw, 256px"
-                            className="object-cover transition-transform duration-700 group-hover:scale-105"
-                          />
-                        </div>
-                        <div className="max-w-3xl">
-                          <span className="text-xs font-bold uppercase tracking-wide text-primary">
-                            {newsCategoryLabel(n.category)}
-                          </span>
-                          <h3 className="rb-h5 mt-2 text-neutral-900 transition-colors group-hover:text-primary">
-                            {n.title}
-                          </h3>
-                          <p className="mt-2 text-sm leading-relaxed text-secondary-text">
-                            {pickSummary(n.summary)}
-                          </p>
-                        </div>
+          <ContentListShell
+            toolbar={{
+              filters: [categoryFilter],
+              sortOptions,
+              defaultSort: sortOptions[0]!,
+            }}
+          >
+            {items.length === 0 ? (
+              <p className="mt-8 border border-dashed border-neutral-300 py-16 text-center text-sm text-secondary-text">
+                {tList('emptyNews')}
+              </p>
+            ) : (
+              <div className="rb-content-list mt-8">
+                {items.map((n) => (
+                  <Link
+                    key={n.id}
+                    href={`/resources/news/${n.slug}`}
+                    className="rb-content-list-row group"
+                  >
+                    <div className="flex min-w-0 flex-col gap-3 md:flex-1 md:flex-row md:items-center md:gap-8">
+                      <div className="relative aspect-[16/9] w-full shrink-0 overflow-hidden bg-neutral-200 md:aspect-[16/10] md:w-64">
+                        <Image
+                          src={pickCoverImage(n.coverImage)}
+                          alt={n.title}
+                          fill
+                          sizes="(max-width: 768px) 100vw, 256px"
+                          className="object-cover transition-transform duration-700 group-hover:scale-105"
+                        />
                       </div>
-                      <span className="mt-2 flex shrink-0 items-center gap-3 text-sm text-secondary-text md:mt-0">
-                        {formatContentDate(n.publishedAt)}
-                        <ArrowRight className="h-4 w-4 text-primary transition-transform duration-300 group-hover:translate-x-1.5" />
-                      </span>
-                    </Link>
-                  ))}
-                </div>
-              )}
+                      <div className="max-w-3xl">
+                        <span className="text-xs font-bold uppercase tracking-wide text-primary">
+                          {newsCategoryLabel(n.category)}
+                        </span>
+                        <h3 className="rb-h5 mt-2 text-neutral-900 transition-colors group-hover:text-primary">
+                          {n.title}
+                        </h3>
+                        <p className="mt-2 text-sm leading-relaxed text-secondary-text">
+                          {pickSummary(n.summary)}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="mt-2 flex shrink-0 items-center gap-3 text-sm text-secondary-text md:mt-0">
+                      {formatContentDate(n.publishedAt)}
+                      <ArrowRight className="h-4 w-4 text-primary transition-transform duration-300 group-hover:translate-x-1.5" />
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            )}
 
-              <ContentPaginationShell>
-                <ContentPagination
-                  pagination={pagination}
-                  unit={tContent('pagination.units.articles')}
-                  pageSizeOptions={[10, 20, 50]}
-                />
-              </ContentPaginationShell>
-            </ContentListShell>
-          </div>
+            <ContentPaginationShell>
+              <ContentPagination
+                pagination={pagination}
+                unit={tContent('pagination.units.articles')}
+                pageSizeOptions={[10, 20, 50]}
+              />
+            </ContentPaginationShell>
+          </ContentListShell>
         </Container>
       </section>
 
@@ -144,7 +141,7 @@ export default async function NewsPage({ searchParams }: PageProps) {
         title={tBlocks('titleDefault')}
         learnMore={tBlocks('learnMore')}
         eyebrow={tBlocks('eyebrow')}
-        links={relatedLinks.map((l, i) => ({ ...l, href: RELATED_HREFS[i]! }))}
+        links={relatedLinksWithImages(relatedLinks, RELATED_HREFS)}
       />
 
       <Container className="pt-4 lg:pt-8">

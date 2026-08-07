@@ -8,9 +8,11 @@
     "title": "Custom Modular Training System",
     "description": "Whether a budget-conscious starter project or a phased large-scale complex, modular systems begin with minimal investment and retain full expansion capacity."
   },
-  "gallery": {
-    "imageAlt": "Modular training tower on-site assembly"
-  },
+  "heroImageAlt": "Custom modular training system — on-site assembly overview",
+  "gallery": [
+    { "alt": "Custom modular — module stacking and structural frame" },
+    { "alt": "Custom modular — multi-level structure and training scenarios" }
+  ],
   "optionsSection": {
     "eyebrow": "Customization Options",
     "title": "Flexible configuration, phased delivery",

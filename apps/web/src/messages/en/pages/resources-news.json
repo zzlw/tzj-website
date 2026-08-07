@@ -1,16 +1,12 @@
 {
   "meta": {
-    "title": "News & Media",
-    "description": "TZJ news and media coverage — latest projects, product developments, industry events, and partnership updates in the training facilities sector."
+    "title": "News",
+    "description": "TZJ news — latest projects, product developments, industry events, and partnership updates in the training facilities sector."
   },
   "hero": {
     "eyebrow": "Resources · News",
-    "title": "News & Media",
+    "title": "News",
     "description": "Latest projects, product developments, industry events, and partnership updates in the training facilities sector."
-  },
-  "listSection": {
-    "eyebrow": "Latest Updates",
-    "title": "News"
   },
   "relatedLinks": [
     {
