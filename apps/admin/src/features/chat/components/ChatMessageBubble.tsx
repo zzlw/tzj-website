@@ -1,19 +1,10 @@
 'use client';
 
 import { cn, ImagePreview } from '@tzj/ui';
+import { formatChatTime } from '@tzj/utils';
 import { Check, CheckCheck, File as FileIcon } from 'lucide-react';
 import type { ChatMessage } from '../types';
 import { ChatMarkdown } from './ChatMarkdown';
-
-function formatTime(iso?: string) {
-  if (!iso) return '';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
-  return d.toLocaleTimeString('zh-CN', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
 
 function formatBytes(bytes: number): string {
   if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
@@ -197,7 +188,7 @@ export function ChatMessageBubble({
             isAgent ? 'text-primary-foreground/80' : 'text-muted-foreground',
           )}
         >
-          <span>{formatTime(message.timestamp)}</span>
+          <span>{formatChatTime(message.timestamp, 'zh-CN')}</span>
           {/* 已读回执：仅客服发出的消息展示「已读 / 未读」，对齐 iMessage / WhatsApp 实践 */}
           {isAgent &&
             (isReadByOpposite ? (

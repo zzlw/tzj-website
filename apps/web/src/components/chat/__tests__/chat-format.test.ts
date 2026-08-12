@@ -98,6 +98,15 @@ describe('chat-format', () => {
       expect(formatDayLabel('2026-07-01T08:00:00Z', 'en', t)).toContain('Jul');
     });
 
+    it('跨年消息必须带年份', () => {
+      expect(formatDayLabel('2025-07-01T08:00:00Z', 'en', t)).toContain('2025');
+    });
+
+    it('简体中文跨年显示「YYYY年M月D日」', () => {
+      const zh = resolveChatI18n('zh-CN');
+      expect(formatDayLabel('2025-07-01T08:00:00Z', 'zh-CN', zh)).toContain('2025年');
+    });
+
     it('非法时间返回空字符串', () => {
       expect(formatDayLabel('oops', 'en', t)).toBe('');
     });

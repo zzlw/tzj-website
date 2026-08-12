@@ -10,6 +10,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@tzj/ui';
+import { formatChatListTime } from '@tzj/utils';
 import {
   Archive,
   Check,
@@ -66,14 +67,7 @@ function previewOf(room: ChatRoom): string {
 
 function timeOf(room: ChatRoom): string {
   const ts = room.lastMessage?.timestamp ?? room.lastActivity;
-  try {
-    return new Date(ts).toLocaleTimeString('zh-CN', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  } catch {
-    return '';
-  }
+  return formatChatListTime({ ts, locale: 'zh-CN' });
 }
 
 /** 列表行归属坐席芯片（业内最佳实践：Intercom/Zendesk 列表行用与周围文本等重的

@@ -1,10 +1,12 @@
 'use client';
 
 import { ImagePreviewProvider, ScrollArea } from '@tzj/ui';
+import { isSameChatDay } from '@tzj/utils';
 import { ArrowDown } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import type { ChatRoom } from '../types';
 import type { OnlineAgent } from '../useChatSocket';
+import { ChatDayDivider } from './ChatDayDivider';
 import { ChatHeader } from './ChatHeader';
 import { ChatMessageBubble } from './ChatMessageBubble';
 import { ChatMessageComposer } from './ChatMessageComposer';
@@ -238,13 +240,17 @@ export function ChatArea({
               {room.messages?.length === 0 ? (
                 <p className="text-muted-foreground py-10 text-center text-sm">尚未有消息</p>
               ) : (
-                (room.messages ?? []).map((m) => (
-                  <ChatMessageBubble
-                    key={m.messageId}
-                    message={m}
-                    highlighted={m.messageId === flashId}
-                  />
-                ))
+                (room.messages ?? []).map((m, i, all) => {
+                  const prev = all[i - 1];
+                  // 跨自然日插入日期分隔胶囊，气泡内只保留 HH:mm（与 C 端一致）
+                  const showDayDivider = !prev || !isSameChatDay(prev.timestamp, m.timestamp);
+                  return (
+                    <Fragment key={m.messageId}>
+                      {showDayDivider && <ChatDayDivider timestamp={m.timestamp} />}
+                      <ChatMessageBubble message={m} highlighted={m.messageId === flashId} />
+                    </Fragment>
+                  );
+                })
               )}
               {/* 访客正在输入指示器（业内最佳实践 LiveChat/Tawk.to）
                   有预览文本 → 「草稿消息」气泡（淡化+斜体 = 未发送语义）+ 底部小圆点

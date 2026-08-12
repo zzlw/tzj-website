@@ -1,3 +1,7 @@
+import {
+  formatChatDayLabel as sharedFormatChatDayLabel,
+  formatChatTime as sharedFormatChatTime,
+} from '@tzj/utils';
 import { CHAT_I18N, type ChatI18n, type ChatLocaleKey } from './chat-i18n';
 
 // normalizeMessage 已下沉到领域层（供 hooks 共用），此处 re-export 保持既有引用不变
@@ -15,13 +19,12 @@ export function formatRelativeTime(ts: number, locale: string): string {
   return t.daysAgo.replace('{n}', String(days));
 }
 
+function chatLocale(locale: string): string {
+  return locale.startsWith('zh') ? 'zh-CN' : 'en';
+}
+
 export function formatTime(iso: string, locale: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
-  return new Intl.DateTimeFormat(locale.startsWith('zh') ? 'zh-CN' : 'en', {
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(d);
+  return sharedFormatChatTime(iso, chatLocale(locale));
 }
 
 export function formatBytes(bytes: number): string {
@@ -63,27 +66,14 @@ export function resolveContentType(file: File): string {
   return EXT_MIME[ext] ?? 'application/octet-stream';
 }
 
-/** "今天 HH:mm" / "昨天 HH:mm" / 否则日期+时间 */
+/** "今天 HH:mm" / "昨天 HH:mm" / 今年内 "M月D日 HH:mm" / 跨年带年份 */
 export function formatDayLabel(iso: string, locale: string, t: ChatI18n): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
-  const now = new Date();
-  const sameDay = d.toDateString() === now.toDateString();
-  const yest = new Date(now);
-  yest.setDate(now.getDate() - 1);
-  const isYest = d.toDateString() === yest.toDateString();
-  const time = new Intl.DateTimeFormat(locale.startsWith('zh') ? 'zh-CN' : 'en', {
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(d);
-  if (sameDay) return `${t.today} ${time}`;
-  if (isYest) return `${t.yesterday} ${time}`;
-  return new Intl.DateTimeFormat(locale.startsWith('zh') ? 'zh-CN' : 'en', {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(d);
+  return sharedFormatChatDayLabel({
+    ts: iso,
+    locale: chatLocale(locale),
+    todayLabel: t.today,
+    yesterdayLabel: t.yesterday,
+  });
 }
 
 /** 气泡用相对时间："刚刚" / "X 分钟前" / "X 小时前" / "X 天前" */
