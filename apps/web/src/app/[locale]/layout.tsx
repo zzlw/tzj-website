@@ -1,6 +1,6 @@
 import { Toaster } from '@tzj/ui';
 import type { Metadata } from 'next';
-import { Archivo, Geist } from 'next/font/google';
+import localFont from 'next/font/local';
 import { notFound } from 'next/navigation';
 import Script from 'next/script';
 import { NextIntlClientProvider } from 'next-intl';
@@ -37,17 +37,17 @@ import {
 import { cn } from '@/lib/utils';
 import '../globals.css';
 
-const geist = Geist({
-  subsets: ['latin'],
+const geist = localFont({
+  src: '../../fonts/geist-var.woff2',
   variable: '--font-geist',
   display: 'swap',
 });
 
-const archivo = Archivo({
+const archivo = localFont({
   // 全站只用 600/700/800（rb-* 标题 700、font-bold/extrabold/semibold）；
-  // 不声明 400，避免每页 preload 未使用字重触发浏览器告警
-  subsets: ['latin'],
-  weight: ['600', '700', '800'],
+  // 可变字体限定 600-800 字重区间，其余字重回退 Geist，与原 next/font/google 行为一致
+  src: '../../fonts/archivo-var.woff2',
+  weight: '600 800',
   variable: '--font-archivo',
   display: 'swap',
 });

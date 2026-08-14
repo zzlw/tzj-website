@@ -1,6 +1,6 @@
 import { getStaticsUrl } from '@tzj/env';
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import localFont from 'next/font/local';
 import { cookies } from 'next/headers';
 import NextTopLoader from 'nextjs-toploader';
 import { AppToaster } from '@/components/AppToaster';
@@ -13,9 +13,10 @@ import './globals.css';
 import './theme-presets.css';
 
 // 拉丁字符真实加载 Inter（此前令牌声明了 Inter 但从未加载，实际渲染为系统回退字体）；
-// 中文回退保持现状（--font-sans 中的 Noto Sans SC / 系统黑体）
-const inter = Inter({
-  subsets: ['latin'],
+// 中文回退保持现状（--font-sans 中的 Noto Sans SC / 系统黑体）。
+// 本地托管可变字体：构建期不再请求 fonts.gstatic.com（Google Fonts URL 会随版本失效）
+const inter = localFont({
+  src: '../fonts/inter-var.woff2',
   variable: '--font-sans-latin',
   display: 'swap',
 });
