@@ -25,7 +25,7 @@ const prisma = new PrismaClient();
 export const MOCK_ROOM_PREFIX = 'MOCK-';
 /** 与 seed-visitors-mock.ts 保持一致的访客前缀，用于关联。 */
 const MOCK_VID_PREFIX = 'mock-vid-';
-/** 坐席账号（本地唯一管理员）。 */
+/** 坐席账号（与 prisma/seed.ts 默认管理员一致）。 */
 const AGENT_EMAIL = 'admin@example.com';
 const AGENT_NAME = '超级管理员';
 

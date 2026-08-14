@@ -313,7 +313,7 @@ export default function SiteSettingsPage() {
                 onChange={(e) =>
                   patch((p) => ({ ...p, contact: { ...p.contact, phoneAlt: e.target.value } }))
                 }
-                placeholder="REDACTED-PHONE，留空则不展示"
+                placeholder="选填，留空则不展示"
                 className="mt-1.5"
               />
             </div>

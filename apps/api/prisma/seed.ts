@@ -1,3 +1,5 @@
+import { randomBytes } from 'node:crypto';
+
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import {
@@ -9,7 +11,9 @@ const prisma = new PrismaClient();
 
 async function main() {
   const adminUsername = process.env.SEED_ADMIN_USERNAME || 'admin@example.com';
-  const adminPassword = process.env.SEED_ADMIN_PASSWORD || 'REDACTED-PASSWORD';
+  // 未提供 SEED_ADMIN_PASSWORD 时用 CSPRNG 生成强随机密码（仅打印一次，不落盘；重新 seed 前记下控制台输出）
+  const adminPassword =
+    process.env.SEED_ADMIN_PASSWORD ?? `Tzj9${randomBytes(9).toString('base64url')}`;
   const adminHash = await bcrypt.hash(adminPassword, 12);
 
   // upsert：无论账号是否已存在，都同步为最新的密码/角色，方便改密后重新 seed
