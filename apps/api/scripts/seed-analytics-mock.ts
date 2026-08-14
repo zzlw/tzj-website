@@ -37,7 +37,7 @@ const VISITOR_COUNT = getNum('visitors', 140);
 
 // ---- 随机工具 ----
 function pick<T>(arr: readonly T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
+  return arr[Math.floor(Math.random() * arr.length)]!;
 }
 function weighted<T>(items: ReadonlyArray<readonly [T, number]>): T {
   const total = items.reduce((s, [, w]) => s + w, 0);
@@ -46,7 +46,7 @@ function weighted<T>(items: ReadonlyArray<readonly [T, number]>): T {
     r -= w;
     if (r <= 0) return v;
   }
-  return items[items.length - 1][0];
+  return items[items.length - 1]![0];
 }
 function randInt(min: number, max: number): number {
   return min + Math.floor(Math.random() * (max - min + 1));

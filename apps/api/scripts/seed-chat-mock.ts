@@ -44,7 +44,7 @@ const COUNT = getNum('count', 16);
 
 // ---- 随机工具 ----
 function pick<T>(arr: readonly T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
+  return arr[Math.floor(Math.random() * arr.length)]!;
 }
 function randInt(min: number, max: number): number {
   return min + Math.floor(Math.random() * (max - min + 1));
@@ -227,7 +227,7 @@ function buildRoom(idx: number, status: string, visitorId: string | null): Built
       ? new Date(Date.now() - randInt(1, 300) * 60_000)
       : new Date(Date.now() - daysAgo * DAY_MS - randInt(0, 86_399) * 1000);
   const messages = buildMessages(createdAt, status);
-  const lastMsg = messages[messages.length - 1];
+  const lastMsg = messages[messages.length - 1]!;
   const lastActivity = lastMsg.timestamp;
 
   const unreadForAgent = messages.filter((m) => m.sender === 'client' && !m.isRead).length;

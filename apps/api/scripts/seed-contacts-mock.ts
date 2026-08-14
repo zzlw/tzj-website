@@ -35,7 +35,7 @@ const COUNT = getNum('count', 32);
 
 // ---- 随机工具 ----
 function pick<T>(arr: readonly T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
+  return arr[Math.floor(Math.random() * arr.length)]!;
 }
 function randInt(min: number, max: number): number {
   return min + Math.floor(Math.random() * (max - min + 1));

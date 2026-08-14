@@ -1,7 +1,9 @@
 {
   "extends": "../tsconfig.json",
   "compilerOptions": {
-    "rootDir": ".",
+    // prisma/ 下的脚本会 import ../src 与 ../../web/src 的模块（seed、seed-content、
+    // sync-content-media），因此 rootDir 需上移到 apps/，覆盖 api 与 web 两个包。
+    "rootDir": "../..",
     "noEmit": true,
     "types": ["node"]
   },

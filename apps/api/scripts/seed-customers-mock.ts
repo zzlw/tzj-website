@@ -39,7 +39,7 @@ const COUNT = getNum('count', 30);
 
 // ---- 随机工具 ----
 function pick<T>(arr: readonly T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
+  return arr[Math.floor(Math.random() * arr.length)]!;
 }
 function randInt(min: number, max: number): number {
   return min + Math.floor(Math.random() * (max - min + 1));
@@ -51,7 +51,7 @@ function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
+    [a[i], a[j]] = [a[j]!, a[i]!];
   }
   return a;
 }
@@ -281,7 +281,7 @@ async function main(): Promise<void> {
     // 约 25% 客户绑定一个唯一 mock 会话（来源溯源）
     let chatRoomId: string | null = null;
     if (roomCursor < availRooms.length && Math.random() < 0.25) {
-      chatRoomId = availRooms[roomCursor++];
+      chatRoomId = availRooms[roomCursor++]!;
     }
 
     const data = buildCustomer(agent, visitorId, chatRoomId);

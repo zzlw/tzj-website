@@ -1,0 +1,14 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    // scripts/ 位于 api 主 tsconfig 的 include（仅 src/**）之外，编辑器会为其
+    // 使用「推断项目」而不会自动加载任何 @types 包，导致 process 等 Node 全局
+    // 报 ts(2591)。参照 prisma/tsconfig.json 的做法：独立 tsconfig 显式声明
+    // types: ["node"]，仅做类型检查、不参与编译产出。
+    // 同时覆盖主 tsconfig 的 rootDir("./src")，避免 TS6059「file is not under rootDir」。
+    "rootDir": "..",
+    "noEmit": true,
+    "types": ["node"]
+  },
+  "include": ["**/*.ts"]
+}
