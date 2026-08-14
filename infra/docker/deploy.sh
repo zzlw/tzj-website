@@ -195,7 +195,7 @@ sync_cdn_static() {
   local app=$1
   local bucket
   local image
-  local extractor="tzj-cdn-extract-${app}"
+  local extract_cmd
   local local_count oss_count
 
   set -a
@@ -217,19 +217,20 @@ sync_cdn_static() {
   fi
 
   echo "==> Extract ${app} 构建产物（${image}）"
-  rm -rf "${CDN_SYNC_DIR}/${app}"
+  # docker cp 产物的文件属主为 root，deploy 用户后续 rm -rf 会 Permission denied；
+  # 直接删除失败时用容器内 root 兜底清理（一次性自愈服务器上历史残留的 root 文件）
+  rm -rf "${CDN_SYNC_DIR}/${app}" 2>/dev/null ||
+    docker run --rm -v "${CDN_SYNC_DIR}":/cdn "$image" sh -c "rm -rf /cdn/${app}"
   mkdir -p "${CDN_SYNC_DIR}/${app}"
-  docker rm -f "$extractor" >/dev/null 2>&1 || true
-  docker create --name "$extractor" "$image" >/dev/null
-  docker cp "${extractor}:/app/apps/${app}/.next/static" "${CDN_SYNC_DIR}/${app}/next-static"
-  docker cp "${extractor}:/app/apps/${app}/public/vditor-assets" "${CDN_SYNC_DIR}/${app}/vditor-assets"
+  # 以当前用户 uid 提取，产物属主为 deploy，后续部署可直接 rm（不再累积 root 文件）
+  extract_cmd="cp -r /app/apps/${app}/.next/static /out/next-static && cp -r /app/apps/${app}/public/vditor-assets /out/vditor-assets"
   if [[ "$app" == "web" ]]; then
-    docker cp "${extractor}:/app/apps/web/public/browser-support.js" "${CDN_SYNC_DIR}/web/browser-support.js"
+    extract_cmd+=" && cp /app/apps/web/public/browser-support.js /out/browser-support.js"
   fi
   if [[ "$app" == "admin" ]]; then
-    docker cp "${extractor}:/app/apps/admin/public/sounds" "${CDN_SYNC_DIR}/admin/sounds"
+    extract_cmd+=" && cp -r /app/apps/admin/public/sounds /out/sounds"
   fi
-  docker rm -f "$extractor" >/dev/null
+  docker run --rm -u "$(id -u):$(id -g)" -v "${CDN_SYNC_DIR}/${app}":/out "$image" sh -c "$extract_cmd"
 
   local oss_args=(-e oss-cn-beijing-internal.aliyuncs.com --region cn-beijing -i "$ALI_KEY" -k "$ALI_SECRET")
 
