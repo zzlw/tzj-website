@@ -69,6 +69,18 @@ pnpm dev
 - 后台: http://localhost:3002
 - API: http://localhost:4000/api/docs
 
+## 演示账号
+
+管理后台提供只读游客账号，用于体验 CMS 功能（最小权限：仅可查看官网内容，无任何写权限）：
+
+| 入口 | 地址 | 用户名 | 密码 |
+|---|---|---|---|
+| 管理后台 | <https://admin.tzjii.com> | `guest` | `guest1234` |
+
+- 游客角色：`guest`（自定义只读角色，权限仅为 `content.view`，越权写操作返回 403）
+- 账号由 [`apps/api/scripts/create-guest-user.cjs`](apps/api/scripts/create-guest-user.cjs)
+  幂等创建/重置（服务器 API 容器内执行，含审计留痕），重复执行会同步更新而非报错
+
 ## 数据库（Prisma）
 
 schema 单一来源：`apps/api/prisma/schema.prisma`。任何变更都必须同步到数据库：
