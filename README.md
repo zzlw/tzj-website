@@ -1,5 +1,25 @@
 # TZJ — 拓之迹官网
 
+[![CI/CD Pipeline](https://github.com/zzlw/tzj-website/actions/workflows/ci.yml/badge.svg)](https://github.com/zzlw/tzj-website/actions/workflows/ci.yml)
+[![Deploy Production](https://github.com/zzlw/tzj-website/actions/workflows/deploy.yml/badge.svg)](https://github.com/zzlw/tzj-website/actions/workflows/deploy.yml)
+[![License: MIT](https://img.shields.io/github/license/zzlw/tzj-website)](LICENSE)
+[![Website](https://img.shields.io/website?url=https%3A%2F%2Fwww.tzjii.com&label=website&up_message=online)](https://www.tzjii.com)
+[![Commit Activity](https://img.shields.io/github/commit-activity/m/zzlw/tzj-website?label=commits)](https://github.com/zzlw/tzj-website/commits/main)
+[![Last Commit](https://img.shields.io/github/last-commit/zzlw/tzj-website)](https://github.com/zzlw/tzj-website)
+
+[![Next.js 16](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)]()
+[![React 19](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)]()
+[![TypeScript 6](https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript&logoColor=white)]()
+[![Tailwind CSS 4](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)]()
+[![NestJS 11](https://img.shields.io/badge/NestJS-11-E0234E?logo=nestjs&logoColor=white)]()
+[![Prisma 6](https://img.shields.io/badge/Prisma-6-2D3748?logo=prisma&logoColor=white)]()
+[![PostgreSQL 16](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)]()
+[![Node.js 22](https://img.shields.io/badge/Node.js-22-339933?logo=nodedotjs&logoColor=white)]()
+[![Turborepo 2](https://img.shields.io/badge/Turborepo-2-EF4444?logo=turborepo&logoColor=white)]()
+[![Biome 2](https://img.shields.io/badge/Biome-2-60A5FA?logo=biome&logoColor=white)]()
+[![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)]()
+[![pnpm 11](https://img.shields.io/badge/pnpm-11-F69220?logo=pnpm&logoColor=white)]()
+
 > 应急救援训练装备制造商官网 + CMS 管理后台，Turborepo Monorepo 架构。
 
 ## 技术栈
@@ -8,7 +28,7 @@
 |---|------|
 | 官网 | Next.js 16 · React 19 · Tailwind CSS 4 · Shadcn/ui |
 | 后台 | Next.js 16 · React 19 |
-| API | NestJS 11 · Prisma 7 · PostgreSQL 16 |
+| API | NestJS 11 · Prisma 6 · PostgreSQL 16 |
 | 构建 | Turborepo · pnpm workspace |
 | 质量 | Biome 2.x (lint + format) · TypeScript strict |
 | 部署 | GitHub Actions · ACR · Docker Compose · ECS |
