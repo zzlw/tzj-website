@@ -109,7 +109,7 @@ function ExternalUrlHint({ control, name }: { control: Control<FieldValues>; nam
   const value = useWatch({ control, name }) as string | undefined;
   if (!value?.trim() || isUsableExternalUrl(value)) return null;
   return (
-    <p className="text-xs font-medium text-amber-600 dark:text-amber-500">
+    <p className="text-xs font-medium text-warning-foreground">
       当前值不是可用外链（缺域名或非 http(s) 协议），前台将按未填写处理并跳站内详情页
     </p>
   );

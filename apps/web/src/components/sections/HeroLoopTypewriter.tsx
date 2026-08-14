@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import Typewriter from 'typewriter-effect';
 import type { TypewriterClass } from 'typewriter-effect';
+import Typewriter from 'typewriter-effect';
 
 /** 删除速度 ms/字：约为 natural 删除（40–80ms）的一半，观感干脆不拖沓 */
 const DELETE_SPEED_MS = 30;
