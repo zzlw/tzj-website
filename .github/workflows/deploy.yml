@@ -47,6 +47,10 @@ jobs:
           context: .
           file: apps/${{ matrix.app }}/Dockerfile
           push: true
+          # ACR 个人版不支持 buildx 默认生成的 SLSA provenance attestation
+          # （OCI 空清单 application/vnd.oci.empty.v1+json），push 会被 deny：
+          # "denied: unknown manifest class for application/vnd.oci.empty.v1+json"
+          provenance: false
           tags: |
             ${{ env.IMAGE_PREFIX }}/tzj-${{ matrix.app }}:${{ github.sha }}
             ${{ env.IMAGE_PREFIX }}/tzj-${{ matrix.app }}:latest
