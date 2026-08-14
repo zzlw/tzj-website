@@ -1,5 +1,9 @@
 # TZJ — 拓之迹官网
 
+> 应急救援训练装备制造商官网 + CMS 管理后台，Turborepo Monorepo 架构。
+>
+> **线上地址**：官网 <https://www.tzjii.com> · 管理后台 <https://admin.tzjii.com>
+
 [![CI/CD Pipeline](https://github.com/zzlw/tzj-website/actions/workflows/ci.yml/badge.svg)](https://github.com/zzlw/tzj-website/actions/workflows/ci.yml)
 [![Deploy Production](https://github.com/zzlw/tzj-website/actions/workflows/deploy.yml/badge.svg)](https://github.com/zzlw/tzj-website/actions/workflows/deploy.yml)
 [![License: MIT](https://img.shields.io/github/license/zzlw/tzj-website)](LICENSE)
@@ -19,8 +23,6 @@
 [![Biome 2](https://img.shields.io/badge/Biome-2-60A5FA?logo=biome&logoColor=white)]()
 [![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)]()
 [![pnpm 11](https://img.shields.io/badge/pnpm-11-F69220?logo=pnpm&logoColor=white)]()
-
-> 应急救援训练装备制造商官网 + CMS 管理后台，Turborepo Monorepo 架构。
 
 ## 技术栈
 
