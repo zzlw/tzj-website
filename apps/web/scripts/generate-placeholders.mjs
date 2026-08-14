@@ -66,9 +66,17 @@ async function ensureHeroVideo() {
   await mkdir(assetCacheDir, { recursive: true });
   const url = `${s3PublicDomain.replace(/\/$/, '')}/content/hero.mp4`;
   console.log(`  ↓ downloading hero video from ${url}`);
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`hero.mp4 download failed: ${res.status} ${url}`);
-  await writeFile(heroVideoCached, Buffer.from(await res.arrayBuffer()));
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`hero.mp4 download failed: ${res.status} ${url}`);
+    await writeFile(heroVideoCached, Buffer.from(await res.arrayBuffer()));
+  } catch (err) {
+    // CI 等无对象存储环境优雅降级：hero 视频缺失不阻断构建
+    // （页面均有 poster 兜底，视频 404 可接受；与图片的占位图降级策略一致）。
+    // 需排查生产 OSS 下载异常时可设 FAIL_ON_MISSING_HERO_VIDEO=1 恢复 fail-fast。
+    if (process.env.FAIL_ON_MISSING_HERO_VIDEO === '1') throw err;
+    console.warn(`  ⚠ hero video unavailable (object storage unreachable): ${url} — skipping`);
+  }
 }
 
 const VIDEO_SOURCES = {
