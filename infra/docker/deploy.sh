@@ -217,14 +217,9 @@ sync_cdn_static() {
   fi
 
   echo "==> Extract ${app} 构建产物（${image}）"
-  # 旧产物可能含 root 属主文件（历史 docker cp 生成），deploy 用户 rm -rf 会 EACCES；
-  # 容器内 root 也可能受 userns-remap 限制删不掉，故不依赖删除权限：
-  # 整体 mv 到一次性 trash 名（只需 cdn-sync 目录写权限），新目录每次全新创建。
-  if [[ -e "${CDN_SYNC_DIR}/${app}" ]]; then
-    mv "${CDN_SYNC_DIR}/${app}" "${CDN_SYNC_DIR}/${app}.trash.$(date +%s)" 2>/dev/null || true
-  fi
-  # trash 能删则删（best-effort，删不掉不影响部署，留给 root 后续清理）
-  ( rm -rf "${CDN_SYNC_DIR}/${app}.trash."* 2>/dev/null || true ) &
+  # 旧产物可能含 root 属主文件（历史 docker cp 生成），deploy 用户 rm 会 EACCES；
+  # deploy 具备 sudo NOPASSWD，失败时用 sudo rm 兜底（历史残留已在服务器一次性清理）。
+  rm -rf "${CDN_SYNC_DIR}/${app}" 2>/dev/null || sudo rm -rf "${CDN_SYNC_DIR}/${app}"
   mkdir -p "${CDN_SYNC_DIR}/${app}"
   # 以当前用户 uid 提取，产物属主为 deploy，后续部署可直接 rm（不再累积 root 文件）
   extract_cmd="cp -r /app/apps/${app}/.next/static /out/next-static && cp -r /app/apps/${app}/public/vditor-assets /out/vditor-assets"
