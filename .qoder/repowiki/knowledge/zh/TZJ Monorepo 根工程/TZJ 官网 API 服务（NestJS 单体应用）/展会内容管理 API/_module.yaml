@@ -1,8 +1,0 @@
-schema_version: 1
-module_path: api_server/trade_shows
-title: 展会内容管理 API
-scope:
-    - apps/api/src/trade-shows/
-source_files: []
-depends_on: []
-related_to: []

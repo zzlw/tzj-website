@@ -1,8 +1,0 @@
-schema_version: 1
-module_path: api_server/contact
-title: 联系信息（询盘）管理模块
-scope:
-    - apps/api/src/contact/
-source_files: []
-depends_on: []
-related_to: []

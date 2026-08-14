@@ -11,7 +11,7 @@
 | API | NestJS 11 · Prisma 7 · PostgreSQL 16 |
 | 构建 | Turborepo · pnpm workspace |
 | 质量 | Biome 2.x (lint + format) · TypeScript strict |
-| 部署 | 云效 Flow · ACR · Docker Compose · ECS |
+| 部署 | GitHub Actions · ACR · Docker Compose · ECS |
 
 ## 项目结构
 
@@ -26,8 +26,7 @@
 │   ├── theme/        # 设计令牌 (@tzj/theme)
 │   └── config/       # 共享配置 (@tzj/config)
 ├── infra/
-│   ├── docker/       # Docker 编排 + 部署脚本
-│   └── yunxiao/      # 云效 CI/CD 流水线
+│   └── docker/       # Docker 编排 + 服务器脚本
 └── docs/             # 专题文档
 ```
 
@@ -65,22 +64,17 @@ make db-migrate   # 生产/预发：应用 apps/api/prisma/migrations/ 下的迁
 
 ## 部署
 
-```bash
-# 本地构建 + push ACR + SSH 部署 ECS
-./infra/docker/deploy-local.sh
+生产部署由 GitHub Actions 自动完成（`.github/workflows/deploy.yml`）：
 
-# 仅构建
-./infra/docker/deploy-local.sh --build-only
-
-# 仅部署已有 tag
-./infra/docker/deploy-local.sh --deploy-only --tag <commit-hash>
-```
+- `push main` 触发构建并推送镜像至容器仓库（ACR）
+- SSH 连接服务器（`infra/docker/deploy.sh`）执行镜像拉取、迁移与服务滚动更新
+- 服务器运维入口：`make -C infra/docker <target>`（见 `infra/docker/Makefile`）
 
 ## 文档
 
 - [系统架构](ARCHITECTURE.md)
 - [编码规范](CONVENTIONS.md)
-- [AI Agent 行为规范](AGENTS.md)
+- [开发指南](AGENTS.md)
 - [变更日志](CHANGELOG.md)
 - [API 文档](docs/api/README.md)
 - [品牌规范](docs/brand/README.md)

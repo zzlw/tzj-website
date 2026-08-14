@@ -1,9 +1,0 @@
-schema_version: 1
-module_path: packages/dnd
-title: 基于 dnd-kit 的可排序树组件库
-scope:
-    - packages/dnd/
-source_files: []
-depends_on: []
-related_to:
-    - path: admin_app/shared_crud_components

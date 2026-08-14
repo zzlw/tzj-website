@@ -1,9 +1,0 @@
-schema_version: 1
-module_path: api_server/notifications
-title: 通知与邮件服务模块
-scope:
-    - apps/api/src/notifications/
-source_files: []
-depends_on: []
-related_to:
-    - path: admin_app/shared_features_api_hooks

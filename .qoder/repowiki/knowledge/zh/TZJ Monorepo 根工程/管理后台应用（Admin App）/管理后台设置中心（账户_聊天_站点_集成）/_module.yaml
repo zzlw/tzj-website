@@ -1,9 +1,0 @@
-schema_version: 1
-module_path: admin_app/feature_settings_integrations
-title: 管理后台设置中心（账户/聊天/站点/集成）
-scope:
-    - apps/admin/src/app/(dashboard)/settings/
-    - apps/admin/src/components/settings/
-source_files: []
-depends_on: []
-related_to: []

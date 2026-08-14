@@ -17,7 +17,7 @@
 │ Shadcn  │ Entities  │ Biome/TS    │    Design Tokens    │
 ├─────────┴───────────┴─────────────┴─────────────────────┤
 │              Infrastructure (Docker + CI/CD)                │
-│  deploy.sh + deploy-local.sh + 云效 Flow + acme.sh         │
+│  deploy.sh + GitHub Actions + acme.sh         │
 └─────────────────────────────────────────────────────────┘
 ```
 
