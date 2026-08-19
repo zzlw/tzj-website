@@ -17,7 +17,9 @@ export default function manifest(): MetadataRoute.Manifest {
     icons: [
       {
         src: `${s3Base}/statics/favicon.ico`,
-        sizes: 'any',
+        // OSS 上的 ICO 实际为单张 32x32；声明 'any' 会触发 Chrome
+        // "Resource size is not correct" 警告，须与真实像素一致
+        sizes: '32x32',
         type: 'image/x-icon',
       },
       {
