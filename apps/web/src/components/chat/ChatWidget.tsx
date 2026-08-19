@@ -43,7 +43,11 @@ import {
   presignChatAttachment,
   sendMessageHTTP,
 } from '@/features/chat/api';
-import { markChatWidgetReady, OPEN_CHAT_EVENT, type OpenChatDetail } from '@/features/chat/open-chat';
+import {
+  markChatWidgetReady,
+  OPEN_CHAT_EVENT,
+  type OpenChatDetail,
+} from '@/features/chat/open-chat';
 import type { ChatAttachment, ChatMessage } from '@/features/chat/types';
 import { useAgentPresence } from '@/features/chat/useAgentPresence';
 import { useChatMessages } from '@/features/chat/useChatMessages';
