@@ -43,7 +43,7 @@ import {
   presignChatAttachment,
   sendMessageHTTP,
 } from '@/features/chat/api';
-import { OPEN_CHAT_EVENT, type OpenChatDetail } from '@/features/chat/open-chat';
+import { markChatWidgetReady, OPEN_CHAT_EVENT, type OpenChatDetail } from '@/features/chat/open-chat';
 import type { ChatAttachment, ChatMessage } from '@/features/chat/types';
 import { useAgentPresence } from '@/features/chat/useAgentPresence';
 import { useChatMessages } from '@/features/chat/useChatMessages';
@@ -613,6 +613,8 @@ export function ChatWidget({
       if (message) handleSend(undefined, message);
     };
     window.addEventListener(OPEN_CHAT_EVENT, onOpenChat);
+    // 懒加载缓冲回放：监听注册完成后标记就绪，缓冲期内的 openChat 请求在此重放
+    markChatWidgetReady();
     return () => window.removeEventListener(OPEN_CHAT_EVENT, onOpenChat);
   }, [handleSend]);
 

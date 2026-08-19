@@ -10,6 +10,26 @@ export interface OpenChatDetail {
   message?: string;
 }
 
+/**
+ * ChatWidget 懒加载期间的事件缓冲：组件 chunk 尚在加载时（营销弹窗 CTA
+ * 可能在挂载窗口内触发 openChat），事件暂存于此；ChatWidget 注册监听后
+ * 调用 markChatWidgetReady() 回放，消除事件丢失窗口。
+ */
+let chatWidgetReady = false;
+const pendingOpens: OpenChatDetail[] = [];
+
 export function openChat(detail: OpenChatDetail = {}): void {
+  if (!chatWidgetReady) {
+    pendingOpens.push(detail);
+    return;
+  }
   window.dispatchEvent(new CustomEvent<OpenChatDetail>(OPEN_CHAT_EVENT, { detail }));
+}
+
+/** ChatWidget 注册事件监听后调用：标记就绪并回放缓冲期内的打开请求。 */
+export function markChatWidgetReady(): void {
+  chatWidgetReady = true;
+  for (const detail of pendingOpens.splice(0)) {
+    window.dispatchEvent(new CustomEvent<OpenChatDetail>(OPEN_CHAT_EVENT, { detail }));
+  }
 }

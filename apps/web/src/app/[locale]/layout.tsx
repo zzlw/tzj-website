@@ -10,7 +10,7 @@ import type { ReactNode } from 'react';
 import { Suspense } from 'react';
 import { BaiduAnalytics } from '@/components/analytics/BaiduAnalytics';
 import { ConsoleBranding } from '@/components/ConsoleBranding';
-import { ChatWidget } from '@/components/chat/ChatWidget';
+import { ChatWidgetLazy } from '@/components/chat/ChatWidgetLazy';
 import { LanguageSelectorProvider } from '@/components/i18n/LanguageSelector';
 import { JsonLd } from '@/components/JsonLd';
 import { Footer } from '@/components/layout/Footer';
@@ -104,9 +104,9 @@ export default async function LocaleLayout({ children, params }: Props) {
   // statics/ 对象位于 bucket 内，文件 URL 必须用带 bucket 的公开域前缀
   // （preconnect/dns-prefetch 仍用 origin，避免多余 path 干扰连接复用）
   const mediaBase = getS3PublicDomain();
-  // statics 资源（vditor / browser-support）统一走 getStaticsUrl 的规则收口：
+  // statics 资源（browser-support）统一走 getStaticsUrl 的规则收口：
   // 生产 OSS，开发/测试走应用自身 public/
-  const vditorLuteUrl = getStaticsUrl(mediaBase, 'vditor-assets/dist/js/lute/lute.min.js');
+  // （vditor lute 解析引擎不再全站 prefetch：聊天组件懒加载后由其内部按需拉取）
   const browserSupportUrl = getStaticsUrl(mediaBase, 'browser-support.js');
   // 站点设置与 favicon 相互独立：并行拉取，避免两个 3s 超时串行叠加
   const [siteSettings, faviconUrl] = await Promise.all([getSitePublicSettings(), getFaviconUrl()]);
@@ -126,10 +126,6 @@ export default async function LocaleLayout({ children, params }: Props) {
         <link rel="preconnect" href={mediaOrigin} crossOrigin="anonymous" />
         <link rel="dns-prefetch" href={mediaOrigin} />
         <link rel="dns-prefetch" href="https://flagcdn.com" />
-        {/* 空闲时预取 Vditor 的 lute 解析引擎，缩短聊天 Markdown 预览初始化等待；
-            用 prefetch 而非 preload：该脚本仅在访客打开聊天时才执行，preload 会触发
-            「预加载未及时使用」控制台警告并抢占首屏带宽 */}
-        <link rel="prefetch" as="script" href={vditorLuteUrl} />
         {/* 旧版浏览器检测与升级引导：ES5 自包含脚本，主包解析失败时仍能提示；defer 不阻塞渲染 */}
         <script src={browserSupportUrl} defer />
         {/* 双轨 CSS 客户端检测：beforeInteractive 在首屏渲染前注入 legacy.css，避免 FOUC */}
@@ -157,7 +153,7 @@ export default async function LocaleLayout({ children, params }: Props) {
                 </Suspense>
                 <BaiduAnalytics hmId={siteSettings.analytics.baiduHmId} />
                 <ConsoleBranding />
-                <ChatWidget
+                <ChatWidgetLazy
                   businessHours={siteSettings.businessHours}
                   agentProfile={siteSettings.agentProfile}
                   chatPrompts={siteSettings.chatPrompts}
