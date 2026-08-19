@@ -66,6 +66,7 @@ server {
     listen 443 ssl http2;
     server_name ${ADMIN_DOMAIN};
     include /etc/nginx/snippets/ssl.conf;
+    include /etc/nginx/snippets/gzip.conf;
 
     # Admin 上传媒体/富文本附件：与 API 侧 Multer 100MB 上限对齐
     client_max_body_size 100m;
@@ -88,6 +89,7 @@ server {
     listen 443 ssl http2;
     server_name ${API_DOMAIN};
     include /etc/nginx/snippets/ssl.conf;
+    include /etc/nginx/snippets/gzip.conf;
 
     client_max_body_size 100m;
 
