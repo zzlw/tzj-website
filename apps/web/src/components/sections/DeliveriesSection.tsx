@@ -1,8 +1,8 @@
 import { MapPin } from 'lucide-react';
-import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { Container, RbButton, SectionHeading } from '@/components/ui';
+import { Link } from '@/i18n/navigation';
 
 const DELIVERY_SLUGS = [
   'henan-fire-rescue',

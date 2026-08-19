@@ -1,5 +1,4 @@
 import { ArrowRight } from 'lucide-react';
-import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { ContentListShell, ContentPaginationShell } from '@/components/content/ContentListShell';
@@ -8,6 +7,7 @@ import { MediaImage as Image } from '@/components/MediaImage';
 import { RelatedLinks } from '@/components/sections/blocks';
 import { StatBandI18n } from '@/components/sections/blocks-i18n';
 import { Container, PageHero } from '@/components/ui';
+import { Link } from '@/i18n/navigation';
 import { getNewsList } from '@/lib/api';
 import { formatContentDate, newsCategoryLabel } from '@/lib/content-labels';
 import {

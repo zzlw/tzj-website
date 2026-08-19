@@ -1,6 +1,5 @@
 import { ArrowRight, CalendarDays, MapPin } from 'lucide-react';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { BookConsultButton } from '@/components/chat/BookConsultButton';
@@ -9,6 +8,7 @@ import { MarkdownBody } from '@/components/content/MarkdownBody';
 import { JsonLd } from '@/components/JsonLd';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { Container, Eyebrow, RbLink } from '@/components/ui';
+import { Link } from '@/i18n/navigation';
 import { getTradeShow, getTradeShows } from '@/lib/api';
 import { fetchBySlug, previewParams } from '@/lib/content-detail';
 import { formatContentDateRange, tradeShowTypeLabel } from '@/lib/content-labels';

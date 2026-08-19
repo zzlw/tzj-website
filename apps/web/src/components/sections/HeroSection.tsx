@@ -1,12 +1,12 @@
 import { isBaiduAppUserAgent } from '@tzj/device';
 import { ChevronDown } from 'lucide-react';
 import { headers } from 'next/headers';
-import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { MediaImage } from '@/components/MediaImage';
 import { MediaVideo } from '@/components/MediaVideo';
 import { HeroLoopTypewriter } from '@/components/sections/HeroLoopTypewriter';
 import { Container, Eyebrow, RbButton } from '@/components/ui';
+import { Link } from '@/i18n/navigation';
 import { PRODUCT_LINE_COUNT } from '@/lib/product-catalog';
 
 const HERO_VIDEO = '/media/hero-720.mp4';

@@ -2,8 +2,8 @@
 
 import { ImagePreview, ImagePreviewProvider } from '@tzj/ui';
 import { Maximize2 } from 'lucide-react';
-import Link from 'next/link';
 import { MediaImage as Image } from '@/components/MediaImage';
+import { Link } from '@/i18n/navigation';
 import { resolveMediaUrl } from '@/lib/media-url';
 
 export interface CertificationWallCardItem {

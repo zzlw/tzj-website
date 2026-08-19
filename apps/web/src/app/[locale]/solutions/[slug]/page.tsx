@@ -1,6 +1,5 @@
 import { ArrowRight, Check } from 'lucide-react';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { BookConsultButton } from '@/components/chat/BookConsultButton';
@@ -190,7 +189,7 @@ export default async function SolutionDetailPage({ params }: SolutionPageProps) 
             />
             <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2">
               {solution.recommended.map((r) => (
-                <Link
+                <I18nLink
                   key={r.href}
                   href={r.href}
                   className="group flex items-start justify-between gap-4 border border-neutral-300 bg-white p-6 transition-colors hover:border-neutral-900"
@@ -202,7 +201,7 @@ export default async function SolutionDetailPage({ params }: SolutionPageProps) 
                     <p className="mt-2 text-sm leading-relaxed text-secondary-text">{r.desc}</p>
                   </div>
                   <ArrowRight className="mt-1 h-5 w-5 shrink-0 text-primary transition-transform duration-300 group-hover:translate-x-1.5" />
-                </Link>
+                </I18nLink>
               ))}
             </div>
           </Container>
@@ -288,7 +287,7 @@ export default async function SolutionDetailPage({ params }: SolutionPageProps) 
               {others.map((s) => {
                 const Icon = s.icon;
                 return (
-                  <Link
+                  <I18nLink
                     key={s.slug}
                     href={`/solutions/${s.slug}`}
                     className="group flex items-center gap-4 border border-neutral-300 bg-white p-5 transition-colors hover:border-neutral-900"
@@ -300,7 +299,7 @@ export default async function SolutionDetailPage({ params }: SolutionPageProps) 
                       {s.name}
                     </span>
                     <ArrowRight className="ml-auto h-4 w-4 text-primary transition-transform duration-300 group-hover:translate-x-1.5" />
-                  </Link>
+                  </I18nLink>
                 );
               })}
             </div>

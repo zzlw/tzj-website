@@ -1,12 +1,12 @@
 import { ArrowRight } from 'lucide-react';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { ProductHeroBand } from '@/components/products/ProductLineMedia';
 import { CtaBand } from '@/components/sections/blocks';
 import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
 import { Container, PageHero } from '@/components/ui';
+import { Link } from '@/i18n/navigation';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 import { linesByFamily } from '@/lib/product-catalog';
 import { getProductPageImages } from '@/lib/product-images';

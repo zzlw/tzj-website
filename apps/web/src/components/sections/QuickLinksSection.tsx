@@ -1,7 +1,7 @@
 import { ArrowRight } from 'lucide-react';
-import Link from 'next/link';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { Container } from '@/components/ui';
+import { Link } from '@/i18n/navigation';
 
 const CARDS = [
   {

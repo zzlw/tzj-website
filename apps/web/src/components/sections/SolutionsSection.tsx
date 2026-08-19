@@ -1,7 +1,7 @@
 import { ArrowRight } from 'lucide-react';
-import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { Container, RbButton, SectionHeading } from '@/components/ui';
+import { Link } from '@/i18n/navigation';
 import { getLocalizedSolutions } from '@/lib/i18n/solutions';
 
 export async function SolutionsSection() {

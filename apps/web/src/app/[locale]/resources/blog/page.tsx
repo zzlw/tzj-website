@@ -1,6 +1,5 @@
 import type { Blog } from '@tzj/types';
 import { ArrowRight, Clock } from 'lucide-react';
-import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { ContentListShell, ContentPaginationShell } from '@/components/content/ContentListShell';
@@ -8,6 +7,7 @@ import { ContentPagination } from '@/components/content/ContentPagination';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { RelatedLinks } from '@/components/sections/blocks';
 import { Container, PageHero, SectionHeading } from '@/components/ui';
+import { Link } from '@/i18n/navigation';
 import { getBlogs } from '@/lib/api';
 import { blogCategoryLabel, formatContentDate } from '@/lib/content-labels';
 import {

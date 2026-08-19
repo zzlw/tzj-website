@@ -9,11 +9,11 @@ import {
   Ruler,
   ShieldCheck,
 } from 'lucide-react';
-import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { Container, PageHero } from '@/components/ui';
+import { Link } from '@/i18n/navigation';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 import { RESOURCES_CARD_BY_HREF, RESOURCES_IMAGES } from '@/lib/resources-images';
 

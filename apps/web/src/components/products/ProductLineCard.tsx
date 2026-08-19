@@ -1,9 +1,9 @@
 'use client';
 
 import { ArrowRight } from 'lucide-react';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { MediaImage as Image } from '@/components/MediaImage';
+import { Link } from '@/i18n/navigation';
 import type { ProductLine } from '@/lib/product-catalog';
 
 type ProductLineCardProps = {

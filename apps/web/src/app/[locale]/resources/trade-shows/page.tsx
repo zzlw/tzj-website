@@ -1,6 +1,5 @@
 import { isUsableExternalUrl } from '@tzj/utils';
 import { CalendarDays, Eye, Handshake, MapPin, MessagesSquare } from 'lucide-react';
-import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { ContentListShell, ContentPaginationShell } from '@/components/content/ContentListShell';
 import { ContentPagination } from '@/components/content/ContentPagination';
@@ -8,6 +7,7 @@ import { MediaImage as Image } from '@/components/MediaImage';
 import { CtaBand, FeatureGrid, RelatedLinks } from '@/components/sections/blocks';
 import { StatBandI18n } from '@/components/sections/blocks-i18n';
 import { Container, PageHero, SectionHeading } from '@/components/ui';
+import { Link } from '@/i18n/navigation';
 import { getTradeShows } from '@/lib/api';
 import { formatContentDateRange, tradeShowTypeLabel } from '@/lib/content-labels';
 import {

@@ -8,12 +8,12 @@ import {
   ShieldCheck,
   Truck,
 } from 'lucide-react';
-import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { Container, RbLink, SectionHeading } from '@/components/ui';
+import { Link } from '@/i18n/navigation';
 import { PRODUCT_LINE_COUNT } from '@/lib/product-catalog';
 import { cn } from '@/lib/utils';
 
