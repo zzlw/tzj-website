@@ -745,6 +745,8 @@ const EXTRA_SITE_MEDIA_PATHS = [
   '/media/ft-path-custom.png',
   '/media/ft-path-standard.png',
   '/media/gongan.png',
+  '/media/hero-540.mp4',
+  '/media/hero-720.mp4',
   '/media/hero.mp4',
   '/media/maritime-jacksonville.jpg',
   '/media/maritime-miami.jpg',
@@ -840,6 +842,8 @@ export const TRADE_SHOW_COVERS = [
 ] as const;
 
 const SECTION_MEDIA_PATHS = [
+  '/media/hero-540.mp4',
+  '/media/hero-720.mp4',
   '/media/hero.mp4',
   '/media/fixed-tower-hero.jpg',
   '/media/mission.mp4',

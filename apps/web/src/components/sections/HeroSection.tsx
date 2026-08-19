@@ -9,7 +9,9 @@ import { HeroLoopTypewriter } from '@/components/sections/HeroLoopTypewriter';
 import { Container, Eyebrow, RbButton } from '@/components/ui';
 import { PRODUCT_LINE_COUNT } from '@/lib/product-catalog';
 
-const HERO_VIDEO = '/media/hero.mp4';
+const HERO_VIDEO = '/media/hero-720.mp4';
+/** 窄屏低码率版（540p/crf28，2.2MB），移动端少下载近一半流量。 */
+const HERO_VIDEO_MOBILE = '/media/hero-540.mp4';
 const HERO_POSTER = '/media/fixed-tower-hero.jpg';
 
 export async function HeroSection() {
@@ -42,6 +44,7 @@ export async function HeroSection() {
         <MediaVideo
           className="absolute inset-0 z-[1] h-full w-full object-cover object-center"
           src={HERO_VIDEO}
+          mobileSrc={HERO_VIDEO_MOBILE}
           autoPlay
           muted
           loop

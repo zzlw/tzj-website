@@ -12,7 +12,9 @@ const CAPABILITY_ICONS = [Ruler, Puzzle, Blocks, Maximize] as const;
 const RELATED_HREFS = ['/fixed-tower/series', '/burn-rooms', '/cases'] as const;
 /** 与 Hub「延伸了解」定制卡同源 */
 const HERO_POSTER = '/media/ft-path-custom.png';
-const HERO_VIDEO = '/media/hero.mp4';
+const HERO_VIDEO = '/media/hero-720.mp4';
+/** 窄屏低码率版（540p/crf28），移动端省流量。 */
+const HERO_VIDEO_MOBILE = '/media/hero-540.mp4';
 const DETAIL_IMAGE = '/media/fixed-tower-custom-detail.png';
 const RELATED_IMAGES = [
   '/media/ft-path-standard.png',
@@ -42,6 +44,7 @@ export default async function FixedTowerCustomPage() {
         title={t('hero.title')}
         description={t('hero.description')}
         video={HERO_VIDEO}
+        videoMobile={HERO_VIDEO_MOBILE}
         poster={HERO_POSTER}
       >
         <BookConsultButton variant="light" message={tCommon('bookConsultProduct')}>

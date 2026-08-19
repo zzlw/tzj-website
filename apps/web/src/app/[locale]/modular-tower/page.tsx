@@ -29,7 +29,9 @@ const FEATURE_IDS = [
 ] as const;
 
 const HERO_POSTER = productLineHeroImage(LINE);
-const HERO_VIDEO = '/media/hero.mp4';
+const HERO_VIDEO = '/media/hero-720.mp4';
+/** 窄屏低码率版（540p/crf28），移动端省流量。 */
+const HERO_VIDEO_MOBILE = '/media/hero-540.mp4';
 const GALLERY_SRCS = LINE.detailImages ?? [LINE.image];
 const FEATURE_IMAGES = LINE.featureImages ?? {};
 const EXTRA_SRC = LINE.extraImage;
@@ -87,6 +89,7 @@ export default async function ModularTowerPage() {
         title={t('hero.title')}
         description={t('hero.description')}
         video={HERO_VIDEO}
+        videoMobile={HERO_VIDEO_MOBILE}
         poster={HERO_POSTER}
       >
         <BookConsultButton variant="light" message={tCommon('bookConsultProduct')}>

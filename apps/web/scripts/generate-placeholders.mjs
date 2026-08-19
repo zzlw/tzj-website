@@ -3,7 +3,7 @@
  * 同步 C 端静态媒体资源到 public/media/
  *
  * 图片：优先从本地 trainingtowers.com 复制真实素材，找不到时生成纯色占位图；
- * hero 视频：唯一事实源为对象存储（本地 MinIO / 生产 OSS）content/hero.mp4（已 +faststart），
+ * hero 视频：唯一事实源为对象存储（本地 MinIO / 生产 OSS）content/hero-720.mp4（已 +faststart），
  * 首次运行下载到 .assets-cache/ 后复用缓存。
  */
 import { copyFile, mkdir, stat, writeFile } from 'node:fs/promises';
@@ -56,7 +56,7 @@ const IMAGE_SOURCES = {
 
 const missionVideo = src('25164-348110782_medium.mp4');
 
-/** hero 视频：对象存储是唯一事实源（content/hero.mp4），下载后缓存到 .assets-cache/ */
+/** hero 视频：对象存储是唯一事实源（content/hero-720.mp4），下载后缓存到 .assets-cache/ */
 const assetCacheDir = join(__dirname, '..', '.assets-cache');
 const heroVideoCached = join(assetCacheDir, 'hero.mp4');
 const s3PublicDomain = process.env.S3_PUBLIC_DOMAIN || 'http://localhost:9000/tzj-uploads-dev';
@@ -64,7 +64,7 @@ const s3PublicDomain = process.env.S3_PUBLIC_DOMAIN || 'http://localhost:9000/tz
 async function ensureHeroVideo() {
   if ((await fileSize(heroVideoCached)) > 512) return;
   await mkdir(assetCacheDir, { recursive: true });
-  const url = `${s3PublicDomain.replace(/\/$/, '')}/content/hero.mp4`;
+  const url = `${s3PublicDomain.replace(/\/$/, '')}/content/hero-720.mp4`;
   console.log(`  ↓ downloading hero video from ${url}`);
   try {
     const res = await fetch(url);

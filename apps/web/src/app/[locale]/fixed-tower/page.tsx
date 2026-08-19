@@ -17,8 +17,10 @@ export async function generateMetadata() {
 }
 
 const HERO_IMAGE = '/media/fixed-tower-hero.jpg';
-/** 对象存储唯一事实源：content/hero.mp4（旧 fixed-tower.mp4 已下线） */
-const HERO_VIDEO = '/media/hero.mp4';
+/** 对象存储唯一事实源：content/hero-720.mp4（ 旧 hero.mp4 待下线） */
+const HERO_VIDEO = '/media/hero-720.mp4';
+/** 窄屏低码率版（540p/crf28），移动端省流量。 */
+const HERO_VIDEO_MOBILE = '/media/hero-540.mp4';
 const OVERVIEW_IMAGE = '/media/ft-overview-detail.png';
 const PATH_STANDARD_IMAGE = '/media/ft-path-standard.png';
 const PATH_CUSTOM_IMAGE = '/media/ft-path-custom.png';
@@ -101,6 +103,7 @@ export default async function FixedTowerPage() {
           title={t('hero.title')}
           description={t('hero.description')}
           video={HERO_VIDEO}
+          videoMobile={HERO_VIDEO_MOBILE}
           poster={HERO_IMAGE}
         >
           <BookConsultButton variant="light" message={tCommon('bookConsultProduct')}>

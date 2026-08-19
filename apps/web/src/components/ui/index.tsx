@@ -124,6 +124,7 @@ export function VideoHero({
   title,
   description,
   video,
+  videoMobile,
   poster,
   posterOnly = false,
   className,
@@ -133,6 +134,8 @@ export function VideoHero({
   title: ReactNode;
   description?: ReactNode;
   video: string;
+  /** 窄屏（<768px）低码率版背景视频，移动端省流量。 */
+  videoMobile?: string;
   poster?: string;
   /** 仅渲染封面图、不输出 <video>（百度 App 嗅探降级等场景）。 */
   posterOnly?: boolean;
@@ -166,6 +169,7 @@ export function VideoHero({
         <MediaVideo
           className="absolute inset-0 z-[1] h-full w-full object-cover object-center"
           src={video}
+          mobileSrc={videoMobile}
           autoPlay
           muted
           loop

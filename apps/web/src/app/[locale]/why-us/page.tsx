@@ -9,7 +9,9 @@ import { createPageMetadata } from '@/lib/i18n/metadata';
 import { WHY_US_IMAGES } from '@/lib/why-us-images';
 
 const HERO_IMAGE = WHY_US_IMAGES.overview.hero;
-const HERO_VIDEO = '/media/hero.mp4';
+const HERO_VIDEO = '/media/hero-720.mp4';
+/** 窄屏低码率版（540p/crf28），移动端省流量。 */
+const HERO_VIDEO_MOBILE = '/media/hero-540.mp4';
 const PILLAR_ICONS = [Award, Lightbulb, ShieldCheck] as const;
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -38,6 +40,7 @@ export default async function WhyUsPage() {
         title={t('hero.title')}
         description={t('hero.description')}
         video={HERO_VIDEO}
+        videoMobile={HERO_VIDEO_MOBILE}
         poster={HERO_IMAGE}
       />
 
