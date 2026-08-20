@@ -302,13 +302,30 @@ export function useChatMessages({
         })
         .catch(() => {});
     };
-    const timer = setInterval(syncMessages, 5000);
+    // 标签页隐藏时暂停轮询（避免后台空转），回到前台立即同步一次再恢复
+    let timer: ReturnType<typeof setInterval> | null = null;
+    const startPolling = () => {
+      if (timer) return;
+      timer = setInterval(syncMessages, 5000);
+    };
+    const stopPolling = () => {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
+    };
+    if (!document.hidden) startPolling();
     const onVis = () => {
-      if (!document.hidden) syncMessages();
+      if (document.hidden) {
+        stopPolling();
+      } else {
+        syncMessages();
+        startPolling();
+      }
     };
     document.addEventListener('visibilitychange', onVis);
     return () => {
-      clearInterval(timer);
+      stopPolling();
       document.removeEventListener('visibilitychange', onVis);
     };
   }, [roomIdForSync, clientEmailRef, roomIdRef, setMessages]);
