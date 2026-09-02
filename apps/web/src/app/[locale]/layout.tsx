@@ -125,9 +125,17 @@ export default async function LocaleLayout({ children, params }: Props) {
         <link rel="apple-touch-icon" href={`${mediaBase}/statics/apple-touch-icon.png`} />
         <link rel="preconnect" href={mediaOrigin} crossOrigin="anonymous" />
         <link rel="dns-prefetch" href={mediaOrigin} />
-        <link rel="dns-prefetch" href="https://flagcdn.com" />
         {/* 旧版浏览器检测与升级引导：ES5 自包含脚本，主包解析失败时仍能提示；defer 不阻塞渲染 */}
         <script src={browserSupportUrl} defer />
+        {/* 百度统计 hm.js：推广「抵达率」按上报成功计，故在 head 直接 async 加载，
+            让 PV 早于 hydration 上报（走 next/script 的 afterInteractive 会拖到主包
+            执行之后，慢网访客常在上报前离开）。SPA 路由补报见 BaiduAnalytics。 */}
+        {siteSettings.analytics.baiduHmId && (
+          <>
+            <link rel="preconnect" href="https://hm.baidu.com" />
+            <script async src={`https://hm.baidu.com/hm.js?${siteSettings.analytics.baiduHmId}`} />
+          </>
+        )}
         {/* 双轨 CSS 客户端检测：beforeInteractive 在首屏渲染前注入 legacy.css，避免 FOUC */}
         {env.legacyCssEnabled && <Script src={legacyDetectJsHref} strategy="beforeInteractive" />}
       </head>

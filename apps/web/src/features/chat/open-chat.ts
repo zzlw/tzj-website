@@ -17,10 +17,23 @@ export interface OpenChatDetail {
  */
 let chatWidgetReady = false;
 const pendingOpens: OpenChatDetail[] = [];
+const wakeListeners = new Set<() => void>();
+
+/**
+ * 唤醒订阅：ChatWidget 为让出首屏而延后到浏览器空闲期挂载，此前若有
+ * openChat 请求（营销弹窗 CTA 等），需立即触发挂载，否则用户点击落空。
+ */
+export function onChatWidgetWake(listener: () => void): () => void {
+  wakeListeners.add(listener);
+  return () => {
+    wakeListeners.delete(listener);
+  };
+}
 
 export function openChat(detail: OpenChatDetail = {}): void {
   if (!chatWidgetReady) {
     pendingOpens.push(detail);
+    for (const listener of wakeListeners) listener();
     return;
   }
   window.dispatchEvent(new CustomEvent<OpenChatDetail>(OPEN_CHAT_EVENT, { detail }));

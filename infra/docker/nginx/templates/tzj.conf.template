@@ -122,9 +122,29 @@ server {
 }
 
 # 裸域 301 → www（泛域证书覆盖 tzjii.com + *.tzjii.com）
+# `/` 直接落到默认语言首页，避免「apex→www」后再被 Next 308 补 `/zh-CN` 的两跳。
+# 带路径的请求（含 /zh-CN、/en）只补 www，不改写 locale。
+server {
+    listen 80;
+    server_name ${BASE_DOMAIN};
+
+    location = / {
+        return 301 https://www.${BASE_DOMAIN}/zh-CN$is_args$args;
+    }
+    location / {
+        return 301 https://www.${BASE_DOMAIN}$request_uri;
+    }
+}
+
 server {
     listen 443 ssl http2;
     server_name ${BASE_DOMAIN};
     include /etc/nginx/snippets/ssl.conf;
-    return 301 https://www.${BASE_DOMAIN}$request_uri;
+
+    location = / {
+        return 301 https://www.${BASE_DOMAIN}/zh-CN$is_args$args;
+    }
+    location / {
+        return 301 https://www.${BASE_DOMAIN}$request_uri;
+    }
 }

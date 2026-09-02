@@ -1,18 +1,18 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import Script from 'next/script';
 import { useEffect, useRef } from 'react';
 
 /**
- * 百度统计（hm.js）接入 — 与自建埋点并行、互不依赖。
+ * 百度统计（hm.js）SPA 路由补报 — 与自建埋点并行、互不依赖。
  *
- * - 直接以 `src` 加载 hm.js（`_hmt` 由脚本自身初始化），刻意避开内联 `dangerouslySetInnerHTML`
- *   （AGENTS.md 宪法级禁令）；afterInteractive 不阻塞首屏。
- * - hm.js 加载时会自动上报首屏 PV；官网是 SPA，故对后续客户端路由切换手动向
- *   `_hmt` 补报 `_trackPageview`，否则百度只统计到落地页一跳。
- * - `hmId` 由 layout SSR 从站点设置下发（后台配置优先、NEXT_PUBLIC_BAIDU_HM_ID 兜底）；
- *   留空时整体不渲染（本地/预览默认不接入）。
+ * hm.js 本体由 layout 的 `<head>` 以原生 `async <script>` 直接注入，不再走
+ * `next/script`：推广「抵达率」按上报成功计，afterInteractive 要等主包 hydration
+ * 完成，慢网下访客常在上报前就已离开，点击被记为未抵达。
+ *
+ * 官网是 SPA，hm.js 只自动上报首屏 PV，故对后续客户端路由切换手动补报
+ * `_trackPageview`。`_hmt` 队列在脚本就位前先自建，避免脚本尚未加载完成时
+ * 发生的路由切换丢失 PV（hm.js 加载后会消费既有队列）。
  */
 export function BaiduAnalytics({ hmId }: { hmId?: string }) {
   const pathname = usePathname();
@@ -28,13 +28,10 @@ export function BaiduAnalytics({ hmId }: { hmId?: string }) {
     if (pathname === lastPath.current) return;
     lastPath.current = pathname;
 
-    const hmt = (window as unknown as { _hmt?: unknown[][] })._hmt;
-    hmt?.push(['_trackPageview', pathname]);
+    const w = window as unknown as { _hmt?: unknown[][] };
+    w._hmt = w._hmt ?? [];
+    w._hmt.push(['_trackPageview', pathname]);
   }, [hmId, pathname]);
 
-  if (!hmId) return null;
-
-  return (
-    <Script id="baidu-hm" src={`https://hm.baidu.com/hm.js?${hmId}`} strategy="afterInteractive" />
-  );
+  return null;
 }

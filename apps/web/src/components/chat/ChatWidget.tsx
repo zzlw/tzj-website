@@ -28,6 +28,7 @@ import {
   SquarePen,
   X,
 } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { useLocale } from 'next-intl';
 import {
   type ClipboardEvent,
@@ -63,8 +64,19 @@ import {
   resolveContentType,
 } from './chat-format';
 import { resolveChatI18n } from './chat-i18n';
-import { EmojiPicker } from './EmojiPicker';
-import { DayGroupedMessages } from './MessageList';
+
+/**
+ * 消息 Markdown（vditor/lute ≈ 600KB）与表情面板都不在启动器首屏路径上。
+ * 面板关闭时不渲染，避免落地页空闲挂载聊天时把 lute 拉进首屏带宽。
+ */
+const DayGroupedMessages = dynamic(
+  () => import('./MessageList').then((m) => m.DayGroupedMessages),
+  { ssr: false, loading: () => null },
+);
+const EmojiPicker = dynamic(() => import('./EmojiPicker').then((m) => m.EmojiPicker), {
+  ssr: false,
+  loading: () => null,
+});
 
 // 会话级标记：避免刷新/重渲染重复主动打扰（Intercom 默认「每会话一次」）
 const BUBBLE_DISMISSED_KEY = 'tzj_chat_bubble_dismissed'; // 用户主动关闭
@@ -923,21 +935,22 @@ export function ChatWidget({
                 ref={chatContentRef}
                 className="flex min-h-full flex-col gap-4 overflow-x-hidden px-4 py-4"
               >
-                {displayMessages.length === 0 ? (
-                  <div className="m-auto flex w-full max-w-[300px] flex-col items-center py-8 text-center">
-                    <p className="whitespace-pre-line text-sm leading-relaxed text-zinc-700">
-                      {t.welcome}
-                    </p>
-                  </div>
-                ) : (
-                  <DayGroupedMessages
-                    messages={displayMessages}
-                    locale={locale}
-                    t={t}
-                    agentName={agentName}
-                    agentTitle={agentTitle}
-                  />
-                )}
+                {open &&
+                  (displayMessages.length === 0 ? (
+                    <div className="m-auto flex w-full max-w-[300px] flex-col items-center py-8 text-center">
+                      <p className="whitespace-pre-line text-sm leading-relaxed text-zinc-700">
+                        {t.welcome}
+                      </p>
+                    </div>
+                  ) : (
+                    <DayGroupedMessages
+                      messages={displayMessages}
+                      locale={locale}
+                      t={t}
+                      agentName={agentName}
+                      agentTitle={agentTitle}
+                    />
+                  ))}
                 {error && <p className="mx-auto mt-1 text-xs text-red-600">{error}</p>}
                 {/* 转接通知（业内最佳实践 Intercom/Zendesk：访客看到“正在为您转接至 XXX”） */}
                 {transferNotice && (
@@ -1162,12 +1175,14 @@ export function ChatWidget({
                   >
                     <Smile className="h-4 w-4" />
                   </button>
-                  <EmojiPicker
-                    open={emojiOpen}
-                    onClose={() => setEmojiOpen(false)}
-                    onSelect={handleEmojiSelect}
-                    triggerRef={emojiBtnRef}
-                  />
+                  {emojiOpen ? (
+                    <EmojiPicker
+                      open={emojiOpen}
+                      onClose={() => setEmojiOpen(false)}
+                      onSelect={handleEmojiSelect}
+                      triggerRef={emojiBtnRef}
+                    />
+                  ) : null}
                 </div>
                 {/* 暂时隐藏 GIF / 语音输入（功能未上线）；恢复时移除外层 hidden 即可 */}
                 <div className="hidden">

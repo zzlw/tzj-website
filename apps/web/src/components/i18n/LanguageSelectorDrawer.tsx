@@ -3,7 +3,7 @@
 import { ScrollArea } from '@tzj/ui';
 import { X } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { usePathname, useRouter } from '@/i18n/navigation';
 import type { AppLocale } from '@/i18n/routing';
@@ -21,8 +21,18 @@ export function LanguageSelectorDrawer({ open, onOpenChange }: LanguageSelectorD
   const locale = useLocale() as AppLocale;
   const pathname = usePathname();
   const router = useRouter();
+  /**
+   * 抽屉始终挂载（靠 translate 移出视口），其中的三方 flagcdn 国旗图即便标了
+   * lazy 也会在首屏被拉取，与落地页图片抢带宽。首次打开后才渲染 <img>，
+   * 之后保持渲染以免反复开合重新请求。
+   */
+  const [flagsRequested, setFlagsRequested] = useState(false);
 
   useBodyScrollLock(open);
+
+  useEffect(() => {
+    if (open) setFlagsRequested(true);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -101,6 +111,7 @@ export function LanguageSelectorDrawer({ open, onOpenChange }: LanguageSelectorD
                 marketLabel={t(`markets.${market.nameKey}`)}
                 optionLabel={(loc) => t(`options.${loc}`)}
                 onSelect={selectLanguage}
+                showFlags={flagsRequested}
               />
             ))}
           </div>
@@ -110,22 +121,24 @@ export function LanguageSelectorDrawer({ open, onOpenChange }: LanguageSelectorD
   );
 }
 
-function LocaleFlag({ country }: { country: string }) {
+function LocaleFlag({ country, show }: { country: string; show: boolean }) {
   return (
     <span
       className="relative inline-flex h-[1.125rem] w-7 shrink-0 overflow-hidden rounded-[2px] border border-neutral-200 bg-neutral-100 shadow-sm"
       aria-hidden="true"
     >
       {/* 豁免 next/image：三方 flagcdn 小图标（已带 srcSet/尺寸/lazy），不值得过代理优化 */}
-      <img
-        src={`https://flagcdn.com/w40/${country}.png`}
-        srcSet={`https://flagcdn.com/w80/${country}.png 2x`}
-        alt=""
-        width={28}
-        height={18}
-        className="h-full w-full object-cover"
-        loading="lazy"
-      />
+      {show && (
+        <img
+          src={`https://flagcdn.com/w40/${country}.png`}
+          srcSet={`https://flagcdn.com/w80/${country}.png 2x`}
+          alt=""
+          width={28}
+          height={18}
+          className="h-full w-full object-cover"
+          loading="lazy"
+        />
+      )}
     </span>
   );
 }
@@ -136,12 +149,14 @@ function LanguageMarketSection({
   activeLocale,
   optionLabel,
   onSelect,
+  showFlags,
 }: {
   market: LanguageMarket;
   marketLabel: string;
   activeLocale: AppLocale;
   optionLabel: (locale: AppLocale) => string;
   onSelect: (locale: AppLocale) => void;
+  showFlags: boolean;
 }) {
   return (
     <section aria-labelledby={`market-${market.id}`}>
@@ -160,6 +175,7 @@ function LanguageMarketSection({
             optionName={optionLabel(option.locale)}
             active={option.locale === activeLocale}
             onSelect={onSelect}
+            showFlag={showFlags}
           />
         ))}
       </ul>
@@ -173,12 +189,14 @@ function LanguageOptionRow({
   optionName,
   active,
   onSelect,
+  showFlag,
 }: {
   option: LanguageOption;
   marketLabel: string;
   optionName: string;
   active: boolean;
   onSelect: (locale: AppLocale) => void;
+  showFlag: boolean;
 }) {
   return (
     <li>
@@ -192,7 +210,7 @@ function LanguageOptionRow({
         )}
       >
         <span className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
-          <LocaleFlag country={option.flagCountry} />
+          <LocaleFlag country={option.flagCountry} show={showFlag} />
           <span
             className={cn(
               'truncate text-base font-medium text-neutral-800 sm:text-base group-hover:text-primary',
