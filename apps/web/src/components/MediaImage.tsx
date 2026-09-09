@@ -4,7 +4,7 @@ import type { ImageProps } from 'next/image';
 import NextImage from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import { resolveMediaUrl } from '@/lib/media-url';
-import { ossImageLoader } from '@/lib/oss-image-loader';
+import { ossAvifSrcSet, ossImageLoader } from '@/lib/oss-image-loader';
 import { cn } from '@/lib/utils';
 
 /**
@@ -24,6 +24,24 @@ type MediaImageProps = ImageProps & {
   /** 是否启用加载过渡动画。默认仅对 lazy 图开启；eager/preload 图自动关闭。 */
   fadeOnLoad?: boolean;
 };
+
+/**
+ * 取该图的 AVIF 候选集；返回 null 表示不挂 AVIF、直接用 next/image 的 WebP。
+ * 跳过 preload 图：Next 会为其注入指向 WebP 的 <link rel=preload>，
+ * 再挂 AVIF source 会让浏览器先下 WebP 再下 AVIF，白白多一份流量。
+ */
+function resolveAvifSrcSet(
+  src: string,
+  {
+    preload,
+    unoptimized,
+    sizes,
+    quality,
+  }: Pick<MediaImageProps, 'preload' | 'unoptimized' | 'sizes' | 'quality'>,
+): string | null {
+  if (preload || unoptimized || typeof sizes !== 'string') return null;
+  return ossAvifSrcSet(src, typeof quality === 'number' ? quality : undefined);
+}
 
 export function MediaImage({
   preload,
@@ -75,7 +93,14 @@ export function MediaImage({
   const hide = shouldFade && imgState === 'hidden';
   const fade = shouldFade && imgState === 'loaded' && wasHidden;
 
-  return (
+  const avifSrcSet = resolveAvifSrcSet(src, {
+    preload,
+    unoptimized,
+    sizes: props.sizes,
+    quality: props.quality,
+  });
+
+  const image = (
     <NextImage
       {...props}
       ref={imgRef}
@@ -88,5 +113,16 @@ export function MediaImage({
       onLoad={handleLoad}
       onError={handleError}
     />
+  );
+
+  if (!avifSrcSet) return image;
+
+  // display:contents —— <picture> 不参与布局，<img> 仍是父容器的直接布局子元素，
+  // 保证 fill / flex / grid 下的定位与包裹前完全一致。
+  return (
+    <picture className="contents">
+      <source type="image/avif" srcSet={avifSrcSet} sizes={props.sizes} />
+      {image}
+    </picture>
   );
 }

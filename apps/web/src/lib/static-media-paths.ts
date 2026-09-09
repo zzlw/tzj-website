@@ -750,6 +750,7 @@ const EXTRA_SITE_MEDIA_PATHS = [
   '/media/hero.mp4',
   '/media/maritime-jacksonville.jpg',
   '/media/maritime-miami.jpg',
+  '/media/mission-540.mp4',
   '/media/mission.mp4',
   '/media/modular-construction.jpg',
   '/media/modular-d.png',
@@ -846,6 +847,7 @@ const SECTION_MEDIA_PATHS = [
   '/media/hero-720.mp4',
   '/media/hero.mp4',
   '/media/fixed-tower-hero.jpg',
+  '/media/mission-540.mp4',
   '/media/mission.mp4',
   '/media/modular-construction.jpg',
 ] as const;

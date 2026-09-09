@@ -26,7 +26,10 @@ function defaultQualityForWidth(width?: number): number {
   return 82;
 }
 
-export function ossImageLoader({ src, width, quality }: ImageLoaderProps): string {
+/** OSS 图片处理支持的输出格式；AVIF 同参数下比 WebP 小三到四成。 */
+type OssImageFormat = 'webp' | 'avif';
+
+function buildOssUrl({ src, width, quality }: ImageLoaderProps, format: OssImageFormat): string {
   try {
     const url = new URL(src);
 
@@ -42,9 +45,45 @@ export function ossImageLoader({ src, width, quality }: ImageLoaderProps): strin
     }
 
     const q = quality ?? defaultQualityForWidth(width);
-    url.searchParams.set('x-oss-process', `image/resize,w_${width}/quality,q_${q}/format,webp`);
+    url.searchParams.set(
+      'x-oss-process',
+      `image/resize,w_${width}/quality,q_${q}/format,${format}`,
+    );
     return url.toString();
   } catch {
     return src;
   }
+}
+
+export function ossImageLoader(props: ImageLoaderProps): string {
+  return buildOssUrl(props, 'webp');
+}
+
+/** 该 src 是否会真正走 OSS 处理（本地 MinIO 与 SVG/GIF 不会）。 */
+function isOssProcessable(src: string): boolean {
+  try {
+    const url = new URL(src);
+    if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') return false;
+    return !/\.(svg|gif)(\?|$)/i.test(url.pathname);
+  } catch {
+    return false;
+  }
+}
+
+/** next/image 默认候选宽度（next.config 未覆盖 deviceSizes / imageSizes）。 */
+const CANDIDATE_WIDTHS = [
+  16, 32, 48, 64, 96, 128, 256, 384, 640, 750, 828, 1080, 1200, 1920, 2048, 3840,
+] as const;
+
+/**
+ * 生成 AVIF 候选集，供 <picture> 的 <source type="image/avif"> 使用。
+ * 浏览器不认 AVIF 时会跳过该 source，回落到 next/image 输出的 WebP <img>，
+ * 因此无需做 UA 判定，也不影响 HTML 的可缓存性。
+ * 返回 null 表示该图没有 AVIF 候选（本地 MinIO / SVG / GIF）。
+ */
+export function ossAvifSrcSet(src: string, quality?: number): string | null {
+  if (!src || !isOssProcessable(src)) return null;
+  return CANDIDATE_WIDTHS.map(
+    (width) => `${buildOssUrl({ src, width, quality }, 'avif')} ${width}w`,
+  ).join(', ');
 }

@@ -6,6 +6,8 @@ import { Container, Eyebrow, RbLink } from '@/components/ui';
 import { PRODUCT_LINE_COUNT } from '@/lib/product-catalog';
 
 const MISSION_VIDEO = '/media/mission.mp4';
+/** 窄屏低码率版（540p/crf28），移动端省流量。 */
+const MISSION_VIDEO_MOBILE = '/media/mission-540.mp4';
 const MISSION_POSTER = '/media/modular-construction.jpg';
 
 export async function MissionSection() {
@@ -36,6 +38,7 @@ export async function MissionSection() {
       <BaiduSafeVideoLayer
         className="absolute inset-0 z-[1] h-full w-full object-cover object-center"
         src={MISSION_VIDEO}
+        mobileSrc={MISSION_VIDEO_MOBILE}
         autoPlay
         muted
         loop
