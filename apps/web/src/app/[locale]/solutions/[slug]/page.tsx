@@ -1,7 +1,7 @@
 import { ArrowRight, Check } from 'lucide-react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { getLocale, getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { JsonLd } from '@/components/JsonLd';
 import { MediaImage as Image } from '@/components/MediaImage';
@@ -15,8 +15,11 @@ import { breadcrumbJsonLd } from '@/lib/jsonld';
 import { generateSeo } from '@/lib/seo';
 import { getAllSolutionSlugs, type SolutionCaseType } from '@/lib/solutions';
 
+/** next-intl 4 + Next 16 的 auto 模式不会静态化 [locale] 路由，需显式声明；本页无动态 API。 */
+export const dynamic = 'force-static';
+
 interface SolutionPageProps {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ locale: string; slug: string }>;
 }
 
 interface SolutionCaseCard {
@@ -59,13 +62,13 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: SolutionPageProps): Promise<Metadata> {
-  const { slug } = await params;
+  const { locale, slug } = await params;
+  setRequestLocale(locale);
   const solution = await getLocalizedSolution(slug);
   if (!solution) return {};
 
   const t = await getTranslations('pages.solutionDetail');
   const tCommon = await getTranslations('common');
-  const locale = await getLocale();
   return generateSeo({
     title: `${solution.name}${t('meta.titleSuffix')}`,
     description: solution.tagline,
@@ -77,7 +80,8 @@ export async function generateMetadata({ params }: SolutionPageProps): Promise<M
 }
 
 export default async function SolutionDetailPage({ params }: SolutionPageProps) {
-  const { slug } = await params;
+  const { locale, slug } = await params;
+  setRequestLocale(locale);
   const solution = await getLocalizedSolution(slug);
   if (!solution) notFound();
 

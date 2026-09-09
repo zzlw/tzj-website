@@ -1,6 +1,6 @@
 import { ArrowRight } from 'lucide-react';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { LazyFillMedia } from '@/components/performance/LazyFillMedia';
 import { ProductHeroBand } from '@/components/products/ProductLineMedia';
 import { CtaBand } from '@/components/sections/blocks';
@@ -11,13 +11,22 @@ import { createPageMetadata } from '@/lib/i18n/metadata';
 import { linesByFamily } from '@/lib/product-catalog';
 import { getProductPageImages } from '@/lib/product-images';
 
+/** next-intl 4 + Next 16 的 auto 模式不会静态化 [locale] 路由，需显式声明；本页无动态 API。 */
+export const dynamic = 'force-static';
+
 /** 须为字面量；窗口约定见 `@/lib/ad-landing` */
 export const revalidate = 60;
 
 const HUB = getProductPageImages('specialized-hub');
 const SPECIALIZED_LINES = linesByFamily('specialized');
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  setRequestLocale(locale);
   return createPageMetadata({
     namespace: 'pages.specializedTraining',
     path: '/specialized-training',
@@ -25,7 +34,13 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 }
 
-export default async function SpecializedTrainingPage() {
+export default async function SpecializedTrainingPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   const t = await getTranslations('pages.specializedTraining');
   const tCta = await getTranslations('cta');
   const tBlocks = await getTranslations('blocks.relatedLinks');

@@ -1,11 +1,14 @@
 import { Award, Check, Lightbulb, ShieldCheck } from 'lucide-react';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { Container, Eyebrow, SectionHeading, VideoHero } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 import { WHY_US_IMAGES } from '@/lib/why-us-images';
+
+/** next-intl 4 + Next 16 的 auto 模式不会静态化 [locale] 路由，需显式声明；本页无动态 API。 */
+export const dynamic = 'force-static';
 
 const HERO_IMAGE = WHY_US_IMAGES.overview.hero;
 const HERO_VIDEO = '/media/hero-720.mp4';
@@ -13,7 +16,13 @@ const HERO_VIDEO = '/media/hero-720.mp4';
 const HERO_VIDEO_MOBILE = '/media/hero-540.mp4';
 const PILLAR_ICONS = [Award, Lightbulb, ShieldCheck] as const;
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  setRequestLocale(locale);
   return createPageMetadata({
     namespace: 'pages.whyUs',
     path: '/why-us',
@@ -21,7 +30,9 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 }
 
-export default async function WhyUsPage() {
+export default async function WhyUsPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   const t = await getTranslations('pages.whyUs');
   const tCta = await getTranslations('cta');
   const tBlocks = await getTranslations('blocks.relatedLinks');

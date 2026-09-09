@@ -1,5 +1,5 @@
 import { Check } from 'lucide-react';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { JsonLd } from '@/components/JsonLd';
 import { LazyFillMedia } from '@/components/performance/LazyFillMedia';
@@ -11,10 +11,15 @@ import { getCaseBySlug } from '@/lib/cases';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 import { breadcrumbJsonLd, productJsonLd } from '@/lib/jsonld';
 
+/** next-intl 4 + Next 16 的 auto 模式不会静态化 [locale] 路由，需显式声明；本页无动态 API。 */
+export const dynamic = 'force-static';
+
 /** 须为字面量；窗口约定见 `@/lib/ad-landing` */
 export const revalidate = 60;
 
-export async function generateMetadata() {
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   return createPageMetadata({ namespace: 'pages.fixedTower', path: '/fixed-tower' });
 }
 
@@ -55,7 +60,9 @@ type PathColumn = {
   linkText: string;
 };
 
-export default async function FixedTowerPage() {
+export default async function FixedTowerPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   const t = await getTranslations('pages.fixedTower');
   const tSeries = await getTranslations('pages.fixedTowerSeries');
   const tCta = await getTranslations('cta');

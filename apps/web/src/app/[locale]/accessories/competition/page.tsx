@@ -1,6 +1,6 @@
 import { Check } from 'lucide-react';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { JsonLd } from '@/components/JsonLd';
 import { MediaImage as Image } from '@/components/MediaImage';
 import {
@@ -18,6 +18,9 @@ import { breadcrumbJsonLd, productJsonLd } from '@/lib/jsonld';
 import { getProductPageImages } from '@/lib/product-images';
 import { fetchFeaturedCases, relatedLinksWithImages } from '@/lib/product-line-page';
 
+/** next-intl 4 + Next 16 的 auto 模式不会静态化 [locale] 路由，需显式声明；本页无动态 API。 */
+export const dynamic = 'force-static';
+
 const IMGS = getProductPageImages('accessories-competition');
 
 /** 与 i18n `features` 数组顺序一一对应 */
@@ -31,7 +34,13 @@ const EXTRA_SRC = IMGS.extraImage;
 const USERS_SRC = IMGS.usersImage;
 const RELATED_HREFS = ['/accessories/fitness-equipment', '/fixed-tower', '/accessories'] as const;
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  setRequestLocale(locale);
   return createPageMetadata({
     namespace: 'pages.accessoriesCompetition',
     path: '/accessories/competition',
@@ -39,7 +48,9 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 }
 
-export default async function CompetitionPage() {
+export default async function CompetitionPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   const t = await getTranslations('pages.accessoriesCompetition');
   const tCta = await getTranslations('cta');
   const tBlocks = await getTranslations('blocks.relatedLinks');

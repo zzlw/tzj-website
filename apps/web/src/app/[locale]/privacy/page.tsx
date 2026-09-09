@@ -1,16 +1,22 @@
-import { getLocale, getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { MarkdownBody } from '@/components/content/MarkdownBody';
 import { Container, PageHero } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 import { getLegalPage } from '@/lib/legal';
 
-export async function generateMetadata() {
+/** next-intl 4 + Next 16 的 auto 模式不会静态化 [locale] 路由，需显式声明；本页无动态 API。 */
+export const dynamic = 'force-static';
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   return createPageMetadata({ namespace: 'pages.privacy', path: '/privacy' });
 }
 
-export default async function PrivacyPage() {
+export default async function PrivacyPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   const t = await getTranslations('pages.privacy');
-  const locale = await getLocale();
   // 后台「法务页面」维护的 Markdown 正文优先；未维护时回退内置 i18n 静态文案
   const cms = await getLegalPage('privacy', locale);
 

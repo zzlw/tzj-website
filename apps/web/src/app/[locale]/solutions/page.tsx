@@ -1,5 +1,5 @@
 import { ArrowRight } from 'lucide-react';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { JsonLd } from '@/components/JsonLd';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { CtaBand } from '@/components/sections/blocks';
@@ -11,7 +11,12 @@ import { getLocalizedSolutions } from '@/lib/i18n/solutions';
 import { breadcrumbJsonLd } from '@/lib/jsonld';
 import { SOLUTIONS_HUB_OG } from '@/lib/solutions';
 
-export async function generateMetadata() {
+/** next-intl 4 + Next 16 的 auto 模式不会静态化 [locale] 路由，需显式声明；本页无动态 API。 */
+export const dynamic = 'force-static';
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   return createPageMetadata({
     namespace: 'pages.solutions',
     path: '/solutions',
@@ -19,7 +24,9 @@ export async function generateMetadata() {
   });
 }
 
-export default async function SolutionsPage() {
+export default async function SolutionsPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   const t = await getTranslations('pages.solutions');
   const tCta = await getTranslations('cta');
   const tBread = await getTranslations('breadcrumbs');

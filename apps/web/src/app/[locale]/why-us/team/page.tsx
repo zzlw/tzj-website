@@ -1,5 +1,5 @@
 import { Flame, Handshake, HardHat } from 'lucide-react';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { CtaBand, FeatureGrid, RelatedLinks } from '@/components/sections/blocks';
 import { StatBandI18n } from '@/components/sections/blocks-i18n';
@@ -8,10 +8,15 @@ import { createPageMetadata } from '@/lib/i18n/metadata';
 import { siteCoverByHref } from '@/lib/site-cover';
 import { WHY_US_IMAGES } from '@/lib/why-us-images';
 
+/** next-intl 4 + Next 16 的 auto 模式不会静态化 [locale] 路由，需显式声明；本页无动态 API。 */
+export const dynamic = 'force-static';
+
 const WHY_ICONS = [Flame, HardHat, Handshake] as const;
 const RELATED_HREFS = ['/why-us/story', '/why-us/certification', '/why-us/global'];
 
-export async function generateMetadata() {
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   return createPageMetadata({
     namespace: 'pages.whyUsTeam',
     path: '/why-us/team',
@@ -19,7 +24,9 @@ export async function generateMetadata() {
   });
 }
 
-export default async function TeamPage() {
+export default async function TeamPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   const t = await getTranslations('pages.whyUsTeam');
   const tCta = await getTranslations('cta');
   const tBlocks = await getTranslations('blocks.relatedLinks');

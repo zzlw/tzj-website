@@ -1,15 +1,23 @@
 import type { Metadata } from 'next';
-import { getLocale, getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { CertificationWall } from '@/components/sections/CertificationWall';
 import { ContactSectionDynamic } from '@/components/sections/ContactSectionDynamic';
 import { PageHero } from '@/components/ui';
 import { generateSeo } from '@/lib/seo';
 import { getSitePublicSettings, localizedAddress } from '@/lib/site-settings';
 
-export async function generateMetadata(): Promise<Metadata> {
+/** next-intl 4 + Next 16 的 auto 模式不会静态化 [locale] 路由，需显式声明；本页无动态 API。 */
+export const dynamic = 'force-static';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  setRequestLocale(locale);
   const t = await getTranslations('contact.page');
   const tCommon = await getTranslations('common');
-  const locale = await getLocale();
   return generateSeo({
     title: t('title'),
     description: t('metaDescription'),
@@ -19,11 +27,12 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 }
 
-export default async function ContactPage() {
+export default async function ContactPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   const t = await getTranslations('contact.page');
   const tContact = await getTranslations('contact');
   const settings = await getSitePublicSettings();
-  const locale = await getLocale();
   const address = localizedAddress(settings, locale, tContact('address'));
 
   return (

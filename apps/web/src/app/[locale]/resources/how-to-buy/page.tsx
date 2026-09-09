@@ -1,4 +1,4 @@
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { RelatedLinks } from '@/components/sections/blocks';
@@ -10,7 +10,12 @@ import { createPageMetadata } from '@/lib/i18n/metadata';
 import { relatedLinksWithImages } from '@/lib/product-line-page';
 import { RESOURCES_IMAGES } from '@/lib/resources-images';
 
-export async function generateMetadata() {
+/** next-intl 4 + Next 16 的 auto 模式不会静态化 [locale] 路由，需显式声明；本页无动态 API。 */
+export const dynamic = 'force-static';
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   return createPageMetadata({
     namespace: 'pages.resourcesHowToBuy',
     path: '/resources/how-to-buy',
@@ -51,7 +56,9 @@ async function fetchFeaturedCases(limit = 3): Promise<FeaturedCase[]> {
   }
 }
 
-export default async function HowToBuyPage() {
+export default async function HowToBuyPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   const t = await getTranslations('pages.resourcesHowToBuy');
   const tCta = await getTranslations('cta');
   const tBlocks = await getTranslations('blocks.relatedLinks');

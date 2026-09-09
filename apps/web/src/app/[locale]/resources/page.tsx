@@ -9,13 +9,16 @@ import {
   Ruler,
   ShieldCheck,
 } from 'lucide-react';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { Container, PageHero } from '@/components/ui';
 import { Link } from '@/i18n/navigation';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 import { RESOURCES_CARD_BY_HREF, RESOURCES_IMAGES } from '@/lib/resources-images';
+
+/** next-intl 4 + Next 16 的 auto 模式不会静态化 [locale] 路由，需显式声明；本页无动态 API。 */
+export const dynamic = 'force-static';
 
 const SECTION_ICONS = [
   FileText,
@@ -28,7 +31,9 @@ const SECTION_ICONS = [
   BookOpen,
 ] as const;
 
-export async function generateMetadata() {
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   return createPageMetadata({
     namespace: 'pages.resources',
     path: '/resources',
@@ -36,7 +41,9 @@ export async function generateMetadata() {
   });
 }
 
-export default async function ResourcesPage() {
+export default async function ResourcesPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   const t = await getTranslations('pages.resources');
   const tCta = await getTranslations('cta');
   const tBlocks = await getTranslations('blocks.relatedLinks');

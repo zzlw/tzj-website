@@ -1,6 +1,6 @@
 import { Check } from 'lucide-react';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { JsonLd } from '@/components/JsonLd';
 import { LazyFillMedia } from '@/components/performance/LazyFillMedia';
 import {
@@ -16,6 +16,10 @@ import { Container, PageHero, SectionHeading } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 import { breadcrumbJsonLd, productJsonLd } from '@/lib/jsonld';
 import { productLineHeroImage, productLineOgImage } from '@/lib/product-catalog';
+
+/** next-intl 4 + Next 16 的 auto 模式不会静态化 [locale] 路由，需显式声明；本页无动态 API。 */
+export const dynamic = 'force-static';
+
 import {
   fetchFeaturedCases,
   relatedLinksWithImages,
@@ -43,7 +47,13 @@ const RELATED_HREFS = [
   '/fixed-tower',
 ] as const;
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  setRequestLocale(locale);
   return createPageMetadata({
     namespace: 'pages.accessories',
     path: '/accessories',
@@ -51,7 +61,9 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 }
 
-export default async function AccessoriesPage() {
+export default async function AccessoriesPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   const t = await getTranslations('pages.accessories');
   const tCta = await getTranslations('cta');
   const tBlocks = await getTranslations('blocks.relatedLinks');

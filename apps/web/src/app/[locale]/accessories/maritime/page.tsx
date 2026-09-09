@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { JsonLd } from '@/components/JsonLd';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { CtaBand, RelatedLinks } from '@/components/sections/blocks';
@@ -9,6 +9,9 @@ import { createPageMetadata } from '@/lib/i18n/metadata';
 import { breadcrumbJsonLd, productJsonLd } from '@/lib/jsonld';
 import { getProductLine, productLineHeroImage, productLineOgImage } from '@/lib/product-catalog';
 import { relatedLinksWithImages } from '@/lib/product-line-page';
+
+/** next-intl 4 + Next 16 的 auto 模式不会静态化 [locale] 路由，需显式声明；本页无动态 API。 */
+export const dynamic = 'force-static';
 
 const maritimeLine = getProductLine('maritime');
 if (!maritimeLine) throw new Error('missing product line: maritime');
@@ -25,7 +28,13 @@ const EXTRA_SRC = LINE.extraImage;
 const USERS_SRC = LINE.usersImage;
 const RELATED_HREFS = ['/fixed-tower', '/modular-tower', '/accessories'] as const;
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  setRequestLocale(locale);
   return createPageMetadata({
     namespace: 'pages.accessoriesMaritime',
     path: '/accessories/maritime',
@@ -33,7 +42,9 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 }
 
-export default async function MaritimePage() {
+export default async function MaritimePage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   const t = await getTranslations('pages.accessoriesMaritime');
   const tCta = await getTranslations('cta');
   const tBlocks = await getTranslations('blocks.relatedLinks');

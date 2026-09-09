@@ -1,6 +1,6 @@
 import { Check } from 'lucide-react';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { JsonLd } from '@/components/JsonLd';
 import { MediaImage as Image } from '@/components/MediaImage';
 import {
@@ -17,6 +17,9 @@ import { breadcrumbJsonLd, productJsonLd } from '@/lib/jsonld';
 import { productLineHeroImage, productLineOgImage } from '@/lib/product-catalog';
 import { relatedLinksWithImages, requireProductLine } from '@/lib/product-line-page';
 
+/** next-intl 4 + Next 16 的 auto 模式不会静态化 [locale] 路由，需显式声明；本页无动态 API。 */
+export const dynamic = 'force-static';
+
 const LINE = requireProductLine('fire-simulation');
 
 /** 与 i18n `features` 数组顺序一一对应 */
@@ -30,7 +33,13 @@ const EXTRA_SRC = LINE.extraImage;
 const USERS_SRC = LINE.usersImage;
 const RELATED_HREFS = ['/burn-rooms/cfbt', '/education-center', '/solutions/enterprise'] as const;
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  setRequestLocale(locale);
   return createPageMetadata({
     namespace: 'pages.burnRoomsFireSimulation',
     path: '/burn-rooms/fire-simulation',
@@ -38,7 +47,13 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 }
 
-export default async function FireSimulationPage() {
+export default async function FireSimulationPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   const t = await getTranslations('pages.burnRoomsFireSimulation');
   const tCta = await getTranslations('cta');
   const tBlocks = await getTranslations('blocks.relatedLinks');

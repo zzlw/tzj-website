@@ -1,13 +1,21 @@
 import type { Metadata } from 'next';
-import { getLocale, getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Suspense } from 'react';
 import { HeroSection } from '@/components/sections/HeroSection';
 import { HomeBelowFold } from '@/components/sections/HomeBelowFold';
 import { HomeBelowFoldSkeleton } from '@/components/sections/HomeBelowFoldSkeleton';
 import { generateSeo } from '@/lib/seo';
 
-export async function generateMetadata(): Promise<Metadata> {
-  const locale = await getLocale();
+/** next-intl 4 + Next 16 的 auto 模式不会静态化 [locale] 路由，需显式声明；本页无动态 API。 */
+export const dynamic = 'force-static';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  setRequestLocale(locale);
   const t = await getTranslations('home.meta');
   const tCommon = await getTranslations('common');
   return generateSeo({
@@ -21,7 +29,9 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 }
 
-export default function HomePage() {
+export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   return (
     <>
       <HeroSection />

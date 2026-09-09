@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { JsonLd } from '@/components/JsonLd';
 import { ProductHubNav } from '@/components/products/ProductHubNav';
 import { ProductHeroBand } from '@/components/products/ProductLineMedia';
@@ -12,9 +12,18 @@ import { createPageMetadata } from '@/lib/i18n/metadata';
 import { breadcrumbJsonLd } from '@/lib/jsonld';
 import { getProductPageImages } from '@/lib/product-images';
 
+/** next-intl 4 + Next 16 的 auto 模式不会静态化 [locale] 路由，需显式声明；本页无动态 API。 */
+export const dynamic = 'force-static';
+
 const HUB = getProductPageImages('towers-hub');
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  setRequestLocale(locale);
   return createPageMetadata({
     namespace: 'pages.towers',
     path: '/towers',
@@ -22,7 +31,9 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 }
 
-export default async function TowersPage() {
+export default async function TowersPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   const t = await getTranslations('pages.towers');
   const tCta = await getTranslations('cta');
   const tBread = await getTranslations('breadcrumbs');

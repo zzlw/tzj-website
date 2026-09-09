@@ -103,6 +103,8 @@ export const CLIENT_MESSAGE_NAMESPACES = [
   'cta',
   'content',
   'error',
+  // not-found.tsx 改为客户端组件后需在客户端取文案（见该文件注释）
+  'notFound',
 ] as const;
 
 export function pickClientMessages(messages: Record<string, unknown>): Record<string, unknown> {

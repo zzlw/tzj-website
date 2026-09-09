@@ -1,5 +1,5 @@
 import { Globe, MapPin } from 'lucide-react';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { CtaBand, RelatedLinks } from '@/components/sections/blocks';
 import { StatBandI18n } from '@/components/sections/blocks-i18n';
@@ -8,10 +8,15 @@ import { createPageMetadata } from '@/lib/i18n/metadata';
 import { siteCoverByHref } from '@/lib/site-cover';
 import { WHY_US_IMAGES } from '@/lib/why-us-images';
 
+/** next-intl 4 + Next 16 的 auto 模式不会静态化 [locale] 路由，需显式声明；本页无动态 API。 */
+export const dynamic = 'force-static';
+
 const HERO_IMAGE = WHY_US_IMAGES.global.hero;
 const RELATED_HREFS = ['/cases', '/why-us/story', '/why-us/team'] as const;
 
-export async function generateMetadata() {
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   return createPageMetadata({
     namespace: 'pages.whyUsGlobal',
     path: '/why-us/global',
@@ -19,7 +24,9 @@ export async function generateMetadata() {
   });
 }
 
-export default async function GlobalPage() {
+export default async function GlobalPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   const t = await getTranslations('pages.whyUsGlobal');
   const tCta = await getTranslations('cta');
   const tBlocks = await getTranslations('blocks.relatedLinks');

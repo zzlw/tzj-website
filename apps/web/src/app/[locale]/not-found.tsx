@@ -1,9 +1,15 @@
-import { getTranslations } from 'next-intl/server';
+'use client';
+
+import { useTranslations } from 'next-intl';
 import { Container, RbButton } from '@/components/ui';
 import { Link } from '@/i18n/navigation';
 
-export default async function NotFound() {
-  const t = await getTranslations('notFound');
+/**
+ * 404 取客户端文案：not-found.tsx 拿不到 params，无法调 setRequestLocale，
+ * 走 next-intl/server 会回退读请求头，把所在路由整条打成动态渲染。
+ */
+export default function NotFound() {
+  const t = useTranslations('notFound');
 
   return (
     <Container className="flex min-h-[60vh] flex-col items-center justify-center py-20 text-center">

@@ -1,11 +1,14 @@
 import { Blocks, Check, Maximize, Puzzle, Ruler } from 'lucide-react';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { FeatureGrid, RelatedLinks } from '@/components/sections/blocks';
 import { ProcessBandI18n } from '@/components/sections/blocks-i18n';
 import { Container, RbLink, SectionHeading, VideoHero } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
+
+/** next-intl 4 + Next 16 的 auto 模式不会静态化 [locale] 路由，需显式声明；本页无动态 API。 */
+export const dynamic = 'force-static';
 
 const CAPABILITY_ICONS = [Ruler, Puzzle, Blocks, Maximize] as const;
 const RELATED_HREFS = ['/fixed-tower/series', '/burn-rooms', '/cases'] as const;
@@ -21,11 +24,19 @@ const RELATED_IMAGES = [
   '/media/case-henan-hero.png',
 ] as const;
 
-export async function generateMetadata() {
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   return createPageMetadata({ namespace: 'pages.fixedTowerCustom', path: '/fixed-tower/custom' });
 }
 
-export default async function FixedTowerCustomPage() {
+export default async function FixedTowerCustomPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   const t = await getTranslations('pages.fixedTowerCustom');
   const tCta = await getTranslations('cta');
   const tBlocks = await getTranslations('blocks.relatedLinks');

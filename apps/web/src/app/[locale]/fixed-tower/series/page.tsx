@@ -1,5 +1,5 @@
 import { Check, CloudRain, Link2, Recycle, Shield, X } from 'lucide-react';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { FeatureGrid, RelatedLinks } from '@/components/sections/blocks';
@@ -7,7 +7,12 @@ import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n
 import { Container, RbLink, SectionHeading, VideoHero } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 
-export async function generateMetadata() {
+/** next-intl 4 + Next 16 的 auto 模式不会静态化 [locale] 路由，需显式声明；本页无动态 API。 */
+export const dynamic = 'force-static';
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   return createPageMetadata({ namespace: 'pages.fixedTowerSeries', path: '/fixed-tower/series' });
 }
 
@@ -24,7 +29,13 @@ const RELATED_IMAGES = [
 
 type CmpRow = { feature: string; standard: boolean | string; custom: boolean | string };
 
-export default async function FixedTowerSeriesPage() {
+export default async function FixedTowerSeriesPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   const t = await getTranslations('pages.fixedTowerSeries');
   const tCta = await getTranslations('cta');
   const tBlocks = await getTranslations('blocks.relatedLinks');

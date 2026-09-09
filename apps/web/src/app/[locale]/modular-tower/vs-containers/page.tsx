@@ -1,6 +1,6 @@
 import { Check } from 'lucide-react';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { JsonLd } from '@/components/JsonLd';
 import { ProductHeroBand } from '@/components/products/ProductLineMedia';
 import { CtaBand, RelatedLinks } from '@/components/sections/blocks';
@@ -11,10 +11,19 @@ import { breadcrumbJsonLd } from '@/lib/jsonld';
 import { getProductPageImages } from '@/lib/product-images';
 import { relatedLinksWithImages } from '@/lib/product-line-page';
 
+/** next-intl 4 + Next 16 的 auto 模式不会静态化 [locale] 路由，需显式声明；本页无动态 API。 */
+export const dynamic = 'force-static';
+
 const COMPARISON = getProductPageImages('modular-vs-containers');
 const RELATED_HREFS = ['/modular-tower/series', '/fixed-tower', '/cases'] as const;
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  setRequestLocale(locale);
   return createPageMetadata({
     namespace: 'pages.modularTowerVsContainers',
     path: '/modular-tower/vs-containers',
@@ -22,7 +31,13 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 }
 
-export default async function VsContainersPage() {
+export default async function VsContainersPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   const t = await getTranslations('pages.modularTowerVsContainers');
   const tCta = await getTranslations('cta');
   const tBlocks = await getTranslations('blocks.relatedLinks');

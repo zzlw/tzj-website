@@ -1,5 +1,5 @@
 import { Award, HeartHandshake, Lightbulb, ShieldCheck } from 'lucide-react';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { CtaBand, FeatureGrid, RelatedLinks } from '@/components/sections/blocks';
 import { StatBandI18n } from '@/components/sections/blocks-i18n';
@@ -7,6 +7,9 @@ import { Container, SectionHeading, VideoHero } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 import { siteCoverByHref } from '@/lib/site-cover';
 import { WHY_US_IMAGES } from '@/lib/why-us-images';
+
+/** next-intl 4 + Next 16 的 auto 模式不会静态化 [locale] 路由，需显式声明；本页无动态 API。 */
+export const dynamic = 'force-static';
 
 const VALUE_ICONS = [Award, Lightbulb, ShieldCheck, HeartHandshake] as const;
 const RELATED_HREFS = ['/why-us/team', '/why-us/certification', '/why-us/global'];
@@ -17,7 +20,9 @@ const TIMELINE_IMAGES: Record<number, { src: string; altKey: string }> = {
   7: { src: WHY_US_IMAGES.story.milestoneDelivery, altKey: 'timelineImageAltDelivery' },
 };
 
-export async function generateMetadata() {
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   return createPageMetadata({
     namespace: 'pages.whyUsStory',
     path: '/why-us/story',
@@ -25,7 +30,9 @@ export async function generateMetadata() {
   });
 }
 
-export default async function StoryPage() {
+export default async function StoryPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   const t = await getTranslations('pages.whyUsStory');
   const tCta = await getTranslations('cta');
   const tBlocks = await getTranslations('blocks.relatedLinks');
