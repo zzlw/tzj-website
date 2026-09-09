@@ -21,7 +21,7 @@
     try {
       var l = document.createElement('link');
       l.rel = 'stylesheet';
-      l.href = '/legacy/legacy.239d5bda8ae4.css';
+      l.href = '/legacy/legacy.9b945795d45b.css';
       l.setAttribute('data-track', 'legacy');
       l.onerror = function () {
         document.documentElement.setAttribute('data-css-track', 'legacy-error');
