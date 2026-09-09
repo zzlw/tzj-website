@@ -14,9 +14,9 @@
 import { execSync, spawn } from 'node:child_process';
 import net from 'node:net';
 
-const API_PORT = process.env.API_PORT || '4000';
-const WEB_PORT = process.env.WEB_PORT || '3001';
-const ADMIN_PORT = process.env.ADMIN_PORT || '3002';
+const API_PORT = process.env.API_PORT || '3240';
+const WEB_PORT = process.env.WEB_PORT || '3201';
+const ADMIN_PORT = process.env.ADMIN_PORT || '3202';
 const POLL_INTERVAL_MS = 200;
 const TIMEOUT_MS = 60_000;
 

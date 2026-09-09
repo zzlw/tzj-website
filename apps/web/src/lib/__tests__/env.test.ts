@@ -31,14 +31,14 @@ describe('开发/测试环境（非 production）', () => {
 
   it('缺失必填变量时回退本地默认值', async () => {
     const env = await importEnv();
-    expect(env.apiUrl).toBe('http://localhost:4000/api/v1');
-    expect(env.s3PublicDomain).toBe('http://localhost:9000/tzj-uploads-dev');
+    expect(env.apiUrl).toBe('http://localhost:3240/api/v1');
+    expect(env.s3PublicDomain).toBe('http://localhost:3290/tzj-uploads-dev');
   });
 
   it('chat 未覆盖时从主 API 派生：REST 同址、Socket 取 origin', async () => {
     const env = await importEnv();
     expect(env.chatApiUrl).toBe(env.apiUrl);
-    expect(env.chatSocketUrl).toBe('http://localhost:4000');
+    expect(env.chatSocketUrl).toBe('http://localhost:3240');
   });
 
   it('显式配置时使用配置值并去尾斜杠', async () => {
@@ -55,9 +55,9 @@ describe('开发/测试环境（非 production）', () => {
   });
 
   it('开发环境允许 localhost 覆盖（本地联调）', async () => {
-    vi.stubEnv('NEXT_PUBLIC_CHAT_API_URL', 'http://localhost:4000/api/v1');
+    vi.stubEnv('NEXT_PUBLIC_CHAT_API_URL', 'http://localhost:3240/api/v1');
     const env = await importEnv();
-    expect(env.chatApiUrl).toBe('http://localhost:4000/api/v1');
+    expect(env.chatApiUrl).toBe('http://localhost:3240/api/v1');
   });
 });
 
@@ -90,7 +90,7 @@ describe('生产环境 fail-fast', () => {
   it('可选覆盖项指向 localhost 时构建期抛错（防 .env.local 开发值烤进镜像，2026-08-07 事故）', async () => {
     vi.stubEnv('NEXT_PUBLIC_API_URL', 'https://api.tzjii.com/api/v1');
     vi.stubEnv('NEXT_PUBLIC_S3_PUBLIC_DOMAIN', 'https://oss.tzjii.com/tzj-uploads');
-    vi.stubEnv('NEXT_PUBLIC_CHAT_API_URL', 'http://localhost:4000/api/v1');
+    vi.stubEnv('NEXT_PUBLIC_CHAT_API_URL', 'http://localhost:3240/api/v1');
     await expect(importEnv()).rejects.toThrow(/指向 localhost/);
   });
 

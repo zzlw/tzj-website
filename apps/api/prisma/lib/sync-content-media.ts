@@ -30,10 +30,10 @@ interface S3Config {
 function loadS3Config(): S3Config {
   return {
     bucket: process.env.S3_BUCKET || 'tzj-uploads-dev',
-    endpoint: process.env.S3_ENDPOINT || 'http://localhost:9000',
+    endpoint: process.env.S3_ENDPOINT || 'http://localhost:3290',
     accessKeyId: process.env.S3_ACCESS_KEY_ID || 'minioadmin',
     secretAccessKey: process.env.S3_ACCESS_KEY_SECRET || 'minioadmin',
-    publicDomain: process.env.S3_PUBLIC_DOMAIN || 'http://localhost:9000/tzj-uploads-dev',
+    publicDomain: process.env.S3_PUBLIC_DOMAIN || 'http://localhost:3290/tzj-uploads-dev',
   };
 }
 
@@ -184,7 +184,7 @@ export const syncContentMedia = syncSiteStaticMedia;
 export function resolveContentUrl(
   value: string | null | undefined,
   map: Map<string, string>,
-  publicDomain = process.env.S3_PUBLIC_DOMAIN || 'http://localhost:9000/tzj-uploads-dev',
+  publicDomain = process.env.S3_PUBLIC_DOMAIN || 'http://localhost:3290/tzj-uploads-dev',
 ): string | undefined {
   if (!value?.trim()) return undefined;
   const src = value.trim();

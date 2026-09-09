@@ -9,7 +9,7 @@
 │   apps/web    │   apps/admin    │     apps/api          │
 │   Next.js 16  │   Next.js 16    │     NestJS 11         │
 │   React 19    │   React 19      │     Prisma 7          │
-│   Port 3001   │   Port 3002     │     Port 4000         │
+│   Port 3201   │   Port 3202     │     Port 3240         │
 ├───────────────┴─────────────────┴───────────────────────┤
 │              Shared Packages Layer                       │
 ├─────────┬───────────┬─────────────┬─────────────────────┤
@@ -61,7 +61,7 @@ packages/config → (无依赖, 仅导出配置)
 - REST API，全局前缀 `/api/v1`
 - Swagger 文档: `/api/docs`
 - 健康检查: `/api/v1/health`
-- CORS: 允许 web(3001) + admin(3002)
+- CORS: 允许 web(3201) + admin(3202)
 - 统一响应格式: `{ code, message, data, pagination? }`
 
 ## 安全策略

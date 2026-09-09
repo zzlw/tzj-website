@@ -437,7 +437,7 @@ async function main(): Promise<void> {
   console.log(
     `✅ 已插入 ${built.length} 位 mock 访客（${identifiedTotal} 位已识别）+ ${pvTotal} 条埋点 PageView`,
   );
-  console.log('👉 访客中心 http://localhost:3002/visitors');
+  console.log('👉 访客中心 http://localhost:3202/visitors');
 }
 
 main()

@@ -1,15 +1,18 @@
 import { ArrowRight } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { MediaImage as Image } from '@/components/MediaImage';
+import { LazyFillMedia } from '@/components/performance/LazyFillMedia';
 import { ProductHeroBand } from '@/components/products/ProductLineMedia';
 import { CtaBand } from '@/components/sections/blocks';
 import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
 import { Container, PageHero } from '@/components/ui';
 import { Link } from '@/i18n/navigation';
+import { AD_LANDING_REVALIDATE } from '@/lib/ad-landing';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 import { linesByFamily } from '@/lib/product-catalog';
 import { getProductPageImages } from '@/lib/product-images';
+
+export const revalidate = AD_LANDING_REVALIDATE;
 
 const HUB = getProductPageImages('specialized-hub');
 const SPECIALIZED_LINES = linesByFamily('specialized');
@@ -48,7 +51,7 @@ export default async function SpecializedTrainingPage() {
                 className="group flex flex-col overflow-hidden border border-neutral-300 bg-white transition-colors duration-300 hover:border-neutral-900"
               >
                 <div className="rb-img-shimmer relative aspect-[4/3] overflow-hidden bg-neutral-200">
-                  <Image
+                  <LazyFillMedia
                     src={line.image}
                     alt={tNav(line.navKey)}
                     fill

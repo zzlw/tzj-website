@@ -2,9 +2,8 @@
   "CORSRule": [
     {
       "AllowedOrigin": [
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "http://localhost:3002",
+        "http://localhost:3201",
+        "http://localhost:3202",
         "https://www.tzjii.com",
         "https://admin.tzjii.com"
       ],

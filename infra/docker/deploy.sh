@@ -342,7 +342,7 @@ if [[ "$SERVICE" == "all" || "$SERVICE" == "web" || "$SERVICE" == "admin" ]]; th
   source "$LOCAL_ENV_FILE"
   set +a
   if [[ -n "${S3_BUCKET:-}" && -n "${ALI_KEY:-}" && -n "${ALI_SECRET:-}" ]]; then
-    CORS_BODY='{"CORSRule":[{"AllowedOrigin":["http://localhost:3000","http://localhost:3001","http://localhost:3002","https://www.tzjii.com","https://admin.tzjii.com"],"AllowedMethod":["GET","PUT","POST","HEAD"],"AllowedHeader":["*"],"ExposeHeader":["ETag","x-amz-request-id","x-oss-request-id"],"MaxAgeSeconds":3000}]}'
+    CORS_BODY='{"CORSRule":[{"AllowedOrigin":["http://localhost:3201","http://localhost:3202","https://www.tzjii.com","https://admin.tzjii.com"],"AllowedMethod":["GET","PUT","POST","HEAD"],"AllowedHeader":["*"],"ExposeHeader":["ETag","x-amz-request-id","x-oss-request-id"],"MaxAgeSeconds":3000}]}'
     ossutil api put-bucket-cors --bucket "$S3_BUCKET" --cors-configuration "$CORS_BODY" \
       -e oss-cn-beijing-internal.aliyuncs.com --region cn-beijing -i "$ALI_KEY" -k "$ALI_SECRET"
   else

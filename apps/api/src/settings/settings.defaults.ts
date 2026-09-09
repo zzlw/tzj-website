@@ -49,7 +49,7 @@ export function normalizeSocialChannel(channel: SocialChannelSetting): SocialCha
 /** 将 MediaPicker URL 规范为 MinIO 对象 key，避免存 localhost 绝对地址 */
 export function normalizeSocialQrPath(
   raw: string | undefined,
-  publicDomain = process.env.S3_PUBLIC_DOMAIN || 'http://localhost:9000/tzj-uploads-dev',
+  publicDomain = process.env.S3_PUBLIC_DOMAIN || 'http://localhost:3290/tzj-uploads-dev',
 ): string | undefined {
   if (!raw?.trim()) return undefined;
   let s = raw.trim();

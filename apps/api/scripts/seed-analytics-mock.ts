@@ -657,7 +657,7 @@ async function main() {
     console.log(`     - ${ch.padEnd(9)} ${c}`);
   }
   console.log(
-    '👉 访客分析 http://localhost:3002/analytics · 访客会话 http://localhost:3002/visitors（默认近 7 天）',
+    '👉 访客分析 http://localhost:3202/analytics · 访客会话 http://localhost:3202/visitors（默认近 7 天）',
   );
 }
 

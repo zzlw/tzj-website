@@ -74,7 +74,7 @@ interface RateBucket {
   namespace: '/chat',
   cors: {
     origin: (origin, callback) => {
-      const origins = (process.env.CORS_ORIGINS || 'http://localhost:3001,http://localhost:3002')
+      const origins = (process.env.CORS_ORIGINS || 'http://localhost:3201,http://localhost:3202')
         .split(',')
         .map((o) => o.trim())
         .filter(Boolean);

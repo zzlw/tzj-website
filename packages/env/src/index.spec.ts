@@ -25,7 +25,7 @@ describe('getStaticsUrl（规则收口）', () => {
   it('开发/测试环境走应用自身 public/ 根路径', async () => {
     vi.resetModules();
     const { getStaticsUrl } = await import('./index');
-    expect(getStaticsUrl('http://localhost:9000/tzj-uploads-dev', 'vditor-assets/x.js')).toBe(
+    expect(getStaticsUrl('http://localhost:3290/tzj-uploads-dev', 'vditor-assets/x.js')).toBe(
       '/vditor-assets/x.js',
     );
   });

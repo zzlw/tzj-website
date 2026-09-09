@@ -35,7 +35,7 @@ docs/             # 架构/规范/设计文档
 ```bash
 pnpm install       # 安装依赖
 make dev           # 启动本地依赖服务（PostgreSQL + Redis + MinIO）
-pnpm dev           # 启动全部应用（web:3001 / admin:3002 / api:4000）
+pnpm dev           # 启动全部应用（web:3201 / admin:3202 / api:3240）
 pnpm typecheck     # 全仓 TypeScript 类型检查
 pnpm lint          # Biome lint + format 检查
 ```

@@ -210,7 +210,7 @@ async function main(): Promise<void> {
   console.log(
     `✅ 已插入 ${res.count} 条 mock 询盘（${unread} 条未读，${handled} 条已处理，${res.count - handled} 条待处理）`,
   );
-  console.log('👉 询盘管理 http://localhost:3002/contacts');
+  console.log('👉 询盘管理 http://localhost:3202/contacts');
 }
 
 main()

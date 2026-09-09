@@ -6,7 +6,7 @@ import { z } from 'zod';
  */
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  API_PORT: z.coerce.number().default(3001),
+  API_PORT: z.coerce.number().default(3240),
 
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
 
@@ -18,7 +18,7 @@ const envSchema = z.object({
   // CORS 白名单（逗号分隔）
   CORS_ORIGINS: z
     .string()
-    .default('http://localhost:3000,http://localhost:3001,http://localhost:3002'),
+    .default('http://localhost:3201,http://localhost:3202'),
 
   // 限流
   THROTTLE_TTL: z.coerce.number().default(60),
@@ -27,10 +27,10 @@ const envSchema = z.object({
   // S3 / OSS
   S3_BUCKET: z.string().default('tzj-uploads-dev'),
   S3_REGION: z.string().default('us-east-1'),
-  S3_ENDPOINT: z.string().default('http://localhost:9000'),
+  S3_ENDPOINT: z.string().default('http://localhost:3290'),
   S3_ACCESS_KEY_ID: z.string().default('minioadmin'),
   S3_ACCESS_KEY_SECRET: z.string().default('minioadmin'),
-  S3_PUBLIC_DOMAIN: z.string().default('http://localhost:9000/tzj-uploads-dev'),
+  S3_PUBLIC_DOMAIN: z.string().default('http://localhost:3290/tzj-uploads-dev'),
   /** 生产端点不含 localhost/minio 时需显式开启 path-style（自托管 MinIO 必填 true） */
   S3_FORCE_PATH_STYLE: z.enum(['true', 'false']).default('false'),
 

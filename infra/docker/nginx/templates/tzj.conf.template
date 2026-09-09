@@ -8,6 +8,19 @@ map $http_upgrade $connection_upgrade {
     ''      close;
 }
 
+# 投放落地 HTML：按路径缓存、忽略 query（utm_* / bd_vid 每次点击都不同）。
+# RSC / Next prefetch 请求带专用头，必须跳过，避免把飞行数据当成文档缓存。
+map $http_rsc $web_html_bypass_rsc {
+    default 0;
+    "~."    1;
+}
+map $http_next_router_prefetch $web_html_bypass_prefetch {
+    default 0;
+    "~."    1;
+}
+
+proxy_cache_path /var/cache/nginx/web_html levels=1:2 keys_zone=web_html:16m max_size=128m inactive=10m use_temp_path=off;
+
 server {
     listen 80 default_server;
     server_name _;
@@ -50,15 +63,25 @@ server {
     # 兜底：任何其它未匹配的 .html → 首页（新站不供应任何 .html，故可安全兜底）
     location ~* \.html$               { return 301 https://$host/zh-CN$is_args$args; }
 
+    include /etc/nginx/snippets/gzip.conf;
+
+    # 百度推广主力落地：同源站 60s，缓存键不含 query，付费点击共用一条 HTML。
+    location ~* ^/(zh-CN|zh-TW|en)/(fixed-tower|specialized-training|accessories|towers)(/|$) {
+        include /etc/nginx/snippets/proxy-web.conf;
+        proxy_cache web_html;
+        proxy_cache_key $scheme$host$uri;
+        proxy_cache_valid 200 60s;
+        proxy_cache_lock on;
+        proxy_cache_use_stale updating error timeout http_500 http_502;
+        proxy_ignore_headers Cache-Control Set-Cookie Vary;
+        proxy_hide_header Set-Cookie;
+        proxy_cache_bypass $web_html_bypass_rsc $web_html_bypass_prefetch;
+        proxy_no_cache $web_html_bypass_rsc $web_html_bypass_prefetch;
+        add_header X-Web-Cache $upstream_cache_status;
+    }
+
     location / {
-        include /etc/nginx/snippets/proxy-docker.conf;
-        set $upstream_web web:3000;
-        proxy_pass http://$upstream_web;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $remote_addr;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        include /etc/nginx/snippets/proxy-web.conf;
     }
 }
 

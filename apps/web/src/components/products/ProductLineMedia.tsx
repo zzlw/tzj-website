@@ -1,4 +1,5 @@
 import { MediaImage as Image } from '@/components/MediaImage';
+import { LazyFillMedia } from '@/components/performance/LazyFillMedia';
 import { Container, RbLink, SectionHeading } from '@/components/ui';
 import { Link } from '@/i18n/navigation';
 import type { FeaturedCaseCard } from '@/lib/product-line-page';
@@ -15,8 +16,8 @@ export function ProductHeroBand({ src, alt }: { src: string; alt: string }) {
             preload
             loading="eager"
             fetchPriority="high"
-            quality={90}
-            sizes="100vw"
+            quality={70}
+            sizes="(max-width: 768px) 828px, 1400px"
             className="object-cover"
           />
         </div>
@@ -41,7 +42,7 @@ export function ProductGallery({
               key={g.src + g.alt}
               className="rb-img-shimmer relative aspect-[4/3] overflow-hidden bg-neutral-200"
             >
-              <Image
+              <LazyFillMedia
                 src={g.src || fallbackSrc}
                 alt={g.alt}
                 fill
@@ -73,7 +74,7 @@ export function FeatureImageGrid({
           className="flex flex-col overflow-hidden border border-neutral-300 bg-white"
         >
           <div className="rb-img-shimmer relative aspect-[4/3] overflow-hidden bg-neutral-200">
-            <Image
+            <LazyFillMedia
               src={item.src}
               alt={item.title}
               fill
@@ -114,7 +115,7 @@ export function UsersBand({
         <div className="mt-10 grid grid-cols-1 items-stretch gap-8 lg:grid-cols-2 lg:gap-12">
           {imageSrc ? (
             <div className="rb-img-shimmer relative aspect-[4/3] overflow-hidden bg-neutral-200">
-              <Image
+              <LazyFillMedia
                 src={imageSrc}
                 alt={imageAlt}
                 fill
@@ -166,7 +167,7 @@ export function CasesBand({
               className="group flex flex-col border border-neutral-300 bg-white transition-colors hover:border-neutral-900"
             >
               <div className="rb-img-shimmer relative aspect-[4/3] overflow-hidden bg-neutral-200">
-                <Image
+                <LazyFillMedia
                   src={item.image}
                   alt={item.title}
                   fill

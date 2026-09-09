@@ -1,6 +1,6 @@
 import type { AppLocale } from '@/i18n/routing';
 import { isDev } from '@/lib/env';
-import { resolveMessageLoadPlan } from './message-modules';
+import { resolveFullMessageLoadPlan, resolveMessageLoadPlan } from './message-modules';
 import { kebabToCamelCase } from './page-ids';
 
 /** 核心 messages（layout / header / nav 等全局命名空间）。 */
@@ -107,13 +107,14 @@ async function loadPageFile(
   }
 }
 
-/** 合并核心 messages 与当前路由所需的模块（按需加载）。 */
+/** 合并核心 messages 与模块。省略 pathname 时加载全量（供 getRequestConfig，避免 headers()）。 */
 export async function loadMessages(
   locale: AppLocale,
-  pathname = '/',
+  pathname?: string,
 ): Promise<Record<string, unknown>> {
   const core = await loadCore(locale);
-  const { extraModules, pageIds } = resolveMessageLoadPlan(pathname);
+  const { extraModules, pageIds } =
+    pathname === undefined ? resolveFullMessageLoadPlan() : resolveMessageLoadPlan(pathname);
 
   const extras = await Promise.all(extraModules.map((name) => loadModule(locale, name)));
 

@@ -3,7 +3,7 @@ import { getLocale, getTranslations } from 'next-intl/server';
 import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { SocialChannelBar } from '@/components/contact/SocialChannelBar';
 import { FooterLanguageTrigger } from '@/components/i18n/FooterLanguageTrigger';
-import { MediaImage as Image } from '@/components/MediaImage';
+import { LazyFillMedia } from '@/components/performance/LazyFillMedia';
 import { Container, Eyebrow, RbLink } from '@/components/ui';
 import { Link } from '@/i18n/navigation';
 import { resolveMediaUrl } from '@/lib/media-url';
@@ -36,11 +36,10 @@ export async function Footer() {
           {/* CTA 背景用 Footer 专属独占素材：next/image 的 LCP 检测以 URL 为键，
               与任何页面内容图（hero/案例封面）同 URL 的 lazy 图会覆盖 eager 记录
               导致误报；Footer 渲染于所有页面，必须独占一张不复用的图 */}
-          <Image
+          <LazyFillMedia
             src="/media/footer-cta-bg.webp"
             alt=""
             fill
-            loading="lazy"
             sizes="(max-width: 1024px) 100vw, 50vw"
             className="object-cover object-center"
           />

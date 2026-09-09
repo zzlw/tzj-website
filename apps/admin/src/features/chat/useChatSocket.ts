@@ -7,7 +7,7 @@ import type { ChatMessage, ChatRoom, PresenceStatus } from './types';
 
 // 聊天 Socket.IO 地址：默认取主 API 的 origin（复用已注入的 NEXT_PUBLIC_ADMIN_API_URL），
 // 独立部署时可用 NEXT_PUBLIC_CHAT_SOCKET_URL 覆盖。切勿写死 localhost：那会在构建
-// 时烤进镜像导致生产环境连到 ws://localhost:4000。
+// 时烤进镜像导致生产环境连到 ws://localhost:3240。
 // 2026-08-07 事故后补防：本地 .env.local 的开发值会随「本地构建→ACR」烤进生产 bundle，
 // 故生产构建下显式忽略指向 localhost 的覆盖值，强制回退主 API origin 派生。
 const rawChatSocketUrl = process.env.NEXT_PUBLIC_CHAT_SOCKET_URL;

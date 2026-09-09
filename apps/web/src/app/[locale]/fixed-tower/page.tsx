@@ -3,14 +3,17 @@ import { getTranslations } from 'next-intl/server';
 import { BaiduSafeVideoHero as VideoHero } from '@/components/BaiduSafeVideoHero';
 import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { JsonLd } from '@/components/JsonLd';
-import { MediaImage as Image } from '@/components/MediaImage';
+import { LazyFillMedia } from '@/components/performance/LazyFillMedia';
 import { RelatedLinks } from '@/components/sections/blocks';
 import { ProcessBandI18n } from '@/components/sections/blocks-i18n';
 import { Container, RbLink, SectionHeading } from '@/components/ui';
 import { Link } from '@/i18n/navigation';
+import { AD_LANDING_REVALIDATE } from '@/lib/ad-landing';
 import { getCaseBySlug } from '@/lib/cases';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 import { breadcrumbJsonLd, productJsonLd } from '@/lib/jsonld';
+
+export const revalidate = AD_LANDING_REVALIDATE;
 
 export async function generateMetadata() {
   return createPageMetadata({ namespace: 'pages.fixedTower', path: '/fixed-tower' });
@@ -140,12 +143,10 @@ export default async function FixedTowerPage() {
                 description={t('overview.description')}
               />
               <div className="rb-img-shimmer relative aspect-[4/3] overflow-hidden bg-neutral-200">
-                {/* 页面核心内容图，滚动后是真实 LCP 候选：显式 eager 避免告警 */}
-                <Image
+                <LazyFillMedia
                   src={OVERVIEW_IMAGE}
                   alt={t('overview.title')}
                   fill
-                  loading="eager"
                   sizes="(max-width: 1024px) 100vw, 560px"
                   className="object-cover"
                 />
@@ -173,7 +174,7 @@ export default async function FixedTowerPage() {
                   className="flex flex-col border border-neutral-300 bg-white"
                 >
                   <div className="rb-img-shimmer relative aspect-[16/10] overflow-hidden bg-neutral-200">
-                    <Image
+                    <LazyFillMedia
                       src={image}
                       alt={col.title}
                       fill
@@ -216,7 +217,7 @@ export default async function FixedTowerPage() {
                   className="group flex flex-col border border-neutral-300 bg-white transition-colors hover:border-neutral-900"
                 >
                   <div className="rb-img-shimmer relative aspect-[4/3] overflow-hidden border-b border-neutral-300 bg-neutral-200">
-                    <Image
+                    <LazyFillMedia
                       src={s.image}
                       alt={s.name}
                       fill
@@ -266,11 +267,10 @@ export default async function FixedTowerPage() {
                   className="group flex flex-col border border-neutral-300 bg-white transition-colors hover:border-neutral-900"
                 >
                   <div className="rb-img-shimmer relative aspect-[4/3] overflow-hidden bg-neutral-200">
-                    <Image
+                    <LazyFillMedia
                       src={item.image}
                       alt={item.title}
                       fill
-                      loading="eager"
                       sizes="(max-width: 768px) 100vw, 33vw"
                       className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
                     />

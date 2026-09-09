@@ -41,7 +41,7 @@ export function watermarkImageKeyFromUrl(url: string | undefined): string | unde
   let s = url.trim();
   const base =
     process.env.NEXT_PUBLIC_S3_PUBLIC_DOMAIN?.replace(/\/$/, '') ??
-    'http://localhost:9000/tzj-uploads-dev';
+    'http://localhost:3290/tzj-uploads-dev';
   if (s.startsWith(`${base}/`)) {
     s = s.slice(base.length + 1);
   } else if (/^https?:\/\//i.test(s)) {
@@ -65,6 +65,6 @@ export function watermarkImageUrlFromKey(key: string | undefined): string {
   if (!key?.trim()) return '';
   const base =
     process.env.NEXT_PUBLIC_S3_PUBLIC_DOMAIN?.replace(/\/$/, '') ??
-    'http://localhost:9000/tzj-uploads-dev';
+    'http://localhost:3290/tzj-uploads-dev';
   return `${base}/${key.replace(/^\/+/, '')}`;
 }

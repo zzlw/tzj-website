@@ -2,7 +2,7 @@ import { Check } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { JsonLd } from '@/components/JsonLd';
-import { MediaImage as Image } from '@/components/MediaImage';
+import { LazyFillMedia } from '@/components/performance/LazyFillMedia';
 import {
   CasesBand,
   FeatureImageGrid,
@@ -13,6 +13,7 @@ import {
 import { CtaBand, RelatedLinks } from '@/components/sections/blocks';
 import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
 import { Container, PageHero, SectionHeading } from '@/components/ui';
+import { AD_LANDING_REVALIDATE } from '@/lib/ad-landing';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 import { breadcrumbJsonLd, productJsonLd } from '@/lib/jsonld';
 import { productLineHeroImage, productLineOgImage } from '@/lib/product-catalog';
@@ -21,6 +22,8 @@ import {
   relatedLinksWithImages,
   requireProductLine,
 } from '@/lib/product-line-page';
+
+export const revalidate = AD_LANDING_REVALIDATE;
 
 const LINE = requireProductLine('accessories');
 
@@ -146,7 +149,7 @@ export default async function AccessoriesPage() {
             <div className="flex flex-col justify-center">
               {EXTRA_SRC ? (
                 <div className="rb-img-shimmer relative mb-8 aspect-[4/3] overflow-hidden bg-neutral-200">
-                  <Image
+                  <LazyFillMedia
                     src={EXTRA_SRC}
                     alt={t('extraImageAlt')}
                     fill
@@ -184,12 +187,12 @@ export default async function AccessoriesPage() {
           />
           {CONFIG_SRC ? (
             <div className="rb-img-shimmer relative mt-10 aspect-[21/9] overflow-hidden bg-neutral-200">
-              <Image
+              <LazyFillMedia
                 src={CONFIG_SRC}
                 alt={t('configImageAlt')}
                 fill
                 quality={75}
-                sizes="100vw"
+                sizes="(max-width: 768px) 828px, 1400px"
                 className="object-cover"
               />
             </div>

@@ -329,7 +329,7 @@ async function main(): Promise<void> {
   if (vids.length > 0)
     console.log(`   已关联 ${vids.length} 位 mock 访客（部分会话可跳转访客抽屉）`);
   else console.log('   （未发现 mock 访客，visitorId 留空；如需联动请先跑 seed-visitors-mock.ts）');
-  console.log('👉 在线客服 http://localhost:3002/chat');
+  console.log('👉 在线客服 http://localhost:3202/chat');
 }
 
 main()

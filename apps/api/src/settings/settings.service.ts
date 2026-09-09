@@ -108,7 +108,7 @@ export class SettingsService {
 
     const publicDomain = this.config.get<string>(
       'S3_PUBLIC_DOMAIN',
-      'http://localhost:9000/tzj-uploads-dev',
+      'http://localhost:3290/tzj-uploads-dev',
     );
 
     const value: SitePublicSettings = {
@@ -189,7 +189,7 @@ export class SettingsService {
 
     const publicDomain = this.config.get<string>(
       'S3_PUBLIC_DOMAIN',
-      'http://localhost:9000/tzj-uploads-dev',
+      'http://localhost:3290/tzj-uploads-dev',
     );
     const imageKey = normalizeWatermarkImageKey(parsed.data.watermark.imageKey, publicDomain);
 

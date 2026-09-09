@@ -2,7 +2,7 @@
 // TZJ API — S3-compatible Unified Storage Service
 // ============================================================
 // 一套 SDK 打通本地 MinIO 和线上阿里云 OSS
-// - 本地: MinIO (http://localhost:9000)
+// - 本地: MinIO (http://localhost:3290)
 // - 线上: 阿里云 OSS (https://oss-cn-beijing.aliyuncs.com, virtual-hosted style)
 // 关键: 通过环境变量切换 Endpoint, 代码逻辑零差异
 // ============================================================
@@ -43,12 +43,12 @@ export class S3Service implements OnModuleInit {
     this.bucket = this.config.get<string>('S3_BUCKET', 'tzj-uploads-dev');
     this.publicDomain = this.config.get<string>(
       'S3_PUBLIC_DOMAIN',
-      `http://localhost:9000/${this.bucket}`,
+      `http://localhost:3290/${this.bucket}`,
     );
 
     this.client = new S3Client({
       region: this.config.get<string>('S3_REGION', 'us-east-1'),
-      endpoint: this.config.get<string>('S3_ENDPOINT', 'http://localhost:9000'),
+      endpoint: this.config.get<string>('S3_ENDPOINT', 'http://localhost:3290'),
       credentials: {
         accessKeyId: this.config.get<string>('S3_ACCESS_KEY_ID', 'minioadmin'),
         secretAccessKey: this.config.get<string>('S3_ACCESS_KEY_SECRET', 'minioadmin'),

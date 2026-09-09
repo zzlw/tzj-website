@@ -3,7 +3,7 @@ export function getS3PublicDomain(): string {
   return (
     process.env.NEXT_PUBLIC_S3_PUBLIC_DOMAIN ??
     process.env.S3_PUBLIC_DOMAIN ??
-    'http://localhost:9000/tzj-uploads-dev'
+    'http://localhost:3290/tzj-uploads-dev'
   );
 }
 

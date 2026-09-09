@@ -34,14 +34,14 @@ export function ChatWidgetLazy(props: ChatWidgetProps) {
     const unsubscribe = onChatWidgetWake(activate);
 
     if (typeof window.requestIdleCallback === 'function') {
-      const id = window.requestIdleCallback(activate, { timeout: 2500 });
+      const id = window.requestIdleCallback(activate, { timeout: 4000 });
       return () => {
         unsubscribe();
         window.cancelIdleCallback(id);
       };
     }
 
-    const id = window.setTimeout(activate, 1200);
+    const id = window.setTimeout(activate, 2000);
     return () => {
       unsubscribe();
       window.clearTimeout(id);

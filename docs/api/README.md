@@ -1,6 +1,6 @@
 # API Documentation
 
-REST API 文档自动生成于 Swagger: `http://localhost:4000/api/docs`
+REST API 文档自动生成于 Swagger: `http://localhost:3240/api/docs`
 
 ## 端点概览
 
@@ -44,7 +44,7 @@ Authorization: Bearer <token>
 ```
 # API Documentation
 
-REST API 文档自动生成于 Swagger: `http://localhost:3000/api/docs`
+REST API 文档自动生成于 Swagger: `http://localhost:3240/api/docs`
 
 ## 端点概览
 

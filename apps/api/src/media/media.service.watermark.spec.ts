@@ -77,7 +77,7 @@ function buildService(opts: { isSiteResource?: boolean } = {}) {
   const list = jest.fn();
   const head = jest.fn();
   // 按当前环境公开域重建 url（与 S3Service.getUrl 一致）
-  const getUrl = jest.fn((key: string) => `http://localhost:9000/tzj-uploads-dev/${key}`);
+  const getUrl = jest.fn((key: string) => `http://localhost:3290/tzj-uploads-dev/${key}`);
   const s3 = { getObjectBuffer, copy, upload, list, head, getUrl } as unknown as S3Service;
 
   const isStaticSiteAsset = jest.fn(() => opts.isSiteResource ?? false);
@@ -157,7 +157,7 @@ describe('MediaService.applyWatermark', () => {
     expect(result.watermarked).toBe(true);
     expect(typeof result.backupKey).toBe('string');
     // 出口统一按当前环境重建 url（存量素材 DB url 可能是其他环境地址）
-    expect(result.url).toBe('http://localhost:9000/tzj-uploads-dev/cms/abc.jpg');
+    expect(result.url).toBe('http://localhost:3290/tzj-uploads-dev/cms/abc.jpg');
   });
 
   it('watermarked=null（历史未知）视同未加水印，正常处理', async () => {
@@ -276,7 +276,7 @@ describe('MediaService.removeWatermark', () => {
     });
     expect(result.restoredFrom).toBe('_archive/watermark/cuid1/200-bbbbbbbb-abc.jpg');
     // 出口统一按当前环境重建 url
-    expect(result.url).toBe('http://localhost:9000/tzj-uploads-dev/cms/abc.jpg');
+    expect(result.url).toBe('http://localhost:3290/tzj-uploads-dev/cms/abc.jpg');
   });
 
   it('无备份 → 404 WATERMARK_BACKUP_NOT_FOUND，且不发生任何 copy', async () => {

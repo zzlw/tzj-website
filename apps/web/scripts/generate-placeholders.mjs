@@ -59,7 +59,7 @@ const missionVideo = src('25164-348110782_medium.mp4');
 /** hero 视频：对象存储是唯一事实源（content/hero-720.mp4），下载后缓存到 .assets-cache/ */
 const assetCacheDir = join(__dirname, '..', '.assets-cache');
 const heroVideoCached = join(assetCacheDir, 'hero.mp4');
-const s3PublicDomain = process.env.S3_PUBLIC_DOMAIN || 'http://localhost:9000/tzj-uploads-dev';
+const s3PublicDomain = process.env.S3_PUBLIC_DOMAIN || 'http://localhost:3290/tzj-uploads-dev';
 
 async function ensureHeroVideo() {
   if ((await fileSize(heroVideoCached)) > 512) return;

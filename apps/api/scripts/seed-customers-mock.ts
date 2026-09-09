@@ -296,7 +296,7 @@ async function main(): Promise<void> {
   console.log(`✅ 已插入 ${COUNT} 位 mock 客户（私海 ${privateCount} / 公海 ${publicCount}）`);
   console.log(`   回链：${linkedVisitor} 位关联访客，${linkedRoom} 位关联会话`);
   if (!agent) console.log('   ⚠️ 未找到用户，私海归属为空（全部落入公海）');
-  console.log('👉 客户管理 http://localhost:3002/customers');
+  console.log('👉 客户管理 http://localhost:3202/customers');
 }
 
 main()

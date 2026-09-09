@@ -25,7 +25,7 @@ async function bootstrap() {
   app.setGlobalPrefix('api/v1');
 
   // CORS 白名单（逗号分隔）+ 生产域名模式匹配
-  const origins = (process.env.CORS_ORIGINS || 'http://localhost:3001,http://localhost:3002')
+  const origins = (process.env.CORS_ORIGINS || 'http://localhost:3201,http://localhost:3202')
     .split(',')
     .map((o) => o.trim())
     .filter(Boolean);
@@ -72,7 +72,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  const port = process.env.API_PORT || process.env.PORT || 4000;
+  const port = process.env.API_PORT || process.env.PORT || 3240;
   await app.listen(port);
   const logger = new Logger('Bootstrap');
   logger.log(`🚀 TZJ API running on http://localhost:${port}`);

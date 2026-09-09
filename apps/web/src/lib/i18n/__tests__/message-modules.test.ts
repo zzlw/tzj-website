@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { loadMessages } from '@/lib/i18n/load-messages';
-import { resolveMessageLoadPlan, stripLocalePrefix } from '@/lib/i18n/message-modules';
-import { kebabToCamelCase, pageContentIdFromPath } from '@/lib/i18n/page-ids';
+import {
+  pickClientMessages,
+  resolveFullMessageLoadPlan,
+  resolveMessageLoadPlan,
+  stripLocalePrefix,
+} from '@/lib/i18n/message-modules';
+import { kebabToCamelCase, PAGE_IDS, pageContentIdFromPath } from '@/lib/i18n/page-ids';
 
 describe('stripLocalePrefix', () => {
   it('剥离已知 locale 前缀', () => {
@@ -93,5 +98,38 @@ describe('loadMessages（回退链集成）', () => {
   it('未知路径不加载多余页面模块（pages 为空对象），不抛错', async () => {
     const messages = await loadMessages('zh-TW', '/zh-TW/not-a-real-page');
     expect(messages.pages).toEqual({});
+  });
+
+  it('省略 pathname 时加载全量页面模块（getRequestConfig 不读 headers）', async () => {
+    const plan = resolveFullMessageLoadPlan();
+    expect(plan.extraModules).toEqual(expect.arrayContaining(['home', 'solutions', 'blocks']));
+    expect(plan.pageIds).toEqual([...PAGE_IDS]);
+
+    const messages = await loadMessages('zh-CN');
+    const pages = messages.pages as Record<string, unknown>;
+    expect(pages).toHaveProperty('fixedTowerClimbingTower');
+    expect(pages).toHaveProperty('specializedTrainingPsychological');
+    expect(pages).toHaveProperty('accessories');
+    expect(messages).toHaveProperty('home');
+  });
+});
+
+describe('pickClientMessages', () => {
+  it('只保留 hydration 用到的命名空间，丢掉 pages/catalog 等服务端文案', () => {
+    const picked = pickClientMessages({
+      common: { brandName: 'TZJ' },
+      header: { searchAria: '搜索' },
+      nav: { products: '产品' },
+      pages: { climbing: '攀登楼' },
+      catalog: { families: {} },
+      blocks: { statBand: {} },
+    });
+    expect(picked).toEqual({
+      common: { brandName: 'TZJ' },
+      header: { searchAria: '搜索' },
+      nav: { products: '产品' },
+    });
+    expect(picked).not.toHaveProperty('pages');
+    expect(picked).not.toHaveProperty('catalog');
   });
 });

@@ -11,14 +11,14 @@
  *
  * 用法：
  *   PERF_USERNAME=xxx PERF_PASSWORD=xxx node scripts/perf/admin-perf.mjs
- *   可选：PERF_BASE_URL（默认 http://localhost:3002）、PERF_ROUNDS（默认 5）
+ *   可选：PERF_BASE_URL（默认 http://localhost:3202）、PERF_ROUNDS（默认 5）
  */
 import { createRequire } from 'node:module';
 
 const require = createRequire(new URL('../../apps/admin/package.json', import.meta.url));
 const { chromium } = require('playwright');
 
-const BASE_URL = process.env.PERF_BASE_URL ?? 'http://localhost:3002';
+const BASE_URL = process.env.PERF_BASE_URL ?? 'http://localhost:3202';
 const USERNAME = process.env.PERF_USERNAME;
 const PASSWORD = process.env.PERF_PASSWORD;
 const ROUNDS = Number(process.env.PERF_ROUNDS ?? 5);

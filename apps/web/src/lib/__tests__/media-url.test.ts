@@ -8,7 +8,7 @@ import {
 } from '@/lib/media-url';
 
 /** vitest 下 NODE_ENV=test，env.ts 走开发默认值（本地 MinIO 域名） */
-const DOMAIN = 'http://localhost:9000/tzj-uploads-dev';
+const DOMAIN = 'http://localhost:3290/tzj-uploads-dev';
 
 afterEach(() => {
   vi.unstubAllEnvs();

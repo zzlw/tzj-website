@@ -72,7 +72,7 @@ const nextConfig: NextConfig = {
       {
         protocol: 'http',
         hostname: 'localhost',
-        port: '9000',
+        port: '3290',
         pathname: '/**',
       },
       { protocol: 'https', hostname: '**.tzjii.com', pathname: '/**' },

@@ -7,9 +7,9 @@
     "safari 14"
   ],
   "scripts": {
-    "dev": "node scripts/generate-placeholders.mjs && node -e \"try{require('child_process').execSync('lsof -ti:3001|xargs kill -9',{stdio:'ignore'})}catch{}\" && next dev --port 3001",
+    "dev": "node scripts/generate-placeholders.mjs && node -e \"try{require('child_process').execSync('lsof -ti:3201|xargs kill -9',{stdio:'ignore'})}catch{}\" && next dev --port 3201",
     "build": "node scripts/generate-placeholders.mjs && pnpm --filter @tzj/legacy-css build && next build",
-    "start": "next start --port 3001",
+    "start": "next start --port 3201",
     "lint": "biome lint src/",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

@@ -65,9 +65,9 @@ make dev
 pnpm dev
 ```
 
-- 官网: http://localhost:3001
-- 后台: http://localhost:3002
-- API: http://localhost:4000/api/docs
+- 官网: http://localhost:3201
+- 后台: http://localhost:3202
+- API: http://localhost:3240/api/docs
 
 ## 演示账号
 

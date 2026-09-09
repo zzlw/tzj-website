@@ -16,8 +16,8 @@ export { isDev, isProduction };
  */
 
 const DEV_DEFAULTS = {
-  NEXT_PUBLIC_API_URL: 'http://localhost:4000/api/v1',
-  NEXT_PUBLIC_S3_PUBLIC_DOMAIN: 'http://localhost:9000/tzj-uploads-dev',
+  NEXT_PUBLIC_API_URL: 'http://localhost:3240/api/v1',
+  NEXT_PUBLIC_S3_PUBLIC_DOMAIN: 'http://localhost:3290/tzj-uploads-dev',
 } as const;
 
 const urlSchema = z.url();
@@ -39,7 +39,7 @@ function requiredUrl(name: keyof typeof DEV_DEFAULTS, value: string | undefined)
 
 /** 校验可选 URL 覆盖项：未配置返回 undefined 交由调用方派生，配置了则必须合法。
  * 生产构建额外拒绝 localhost 值——2026-08-07 事故：本地 apps/web/.env.local 的开发值
- * （NEXT_PUBLIC_CHAT_API_URL=localhost:4000）随「本地构建→ACR」烤进生产 bundle，导致
+ * （NEXT_PUBLIC_CHAT_API_URL=localhost:3240）随「本地构建→ACR」烤进生产 bundle，导致
  * 线上访客的坐席可用性/聊天请求全打到访客自己的 localhost 而静默失败（CTA 拨号分流失效）。 */
 function optionalUrl(name: string, value: string | undefined): string | undefined {
   if (!value) return undefined;

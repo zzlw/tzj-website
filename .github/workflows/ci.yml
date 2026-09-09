@@ -82,8 +82,8 @@ jobs:
       - name: Build & Test (Turbo)
         run: pnpm run build
         env:
-          NEXT_PUBLIC_API_URL: http://localhost:4000/api/v1
-          NEXT_PUBLIC_S3_PUBLIC_DOMAIN: http://localhost:9000/tzj-uploads-dev
+          NEXT_PUBLIC_API_URL: http://localhost:3240/api/v1
+          NEXT_PUBLIC_S3_PUBLIC_DOMAIN: http://localhost:3290/tzj-uploads-dev
 
       - name: Verify legacy CSS artifacts (dual-track)
         run: |
@@ -116,8 +116,8 @@ jobs:
         # 与 Docker 构建链路保持一致；直接 --filter build 会因依赖未构建而 module not found
         run: pnpm exec turbo run build --filter=@tzj/web
         env:
-          NEXT_PUBLIC_API_URL: http://localhost:4000/api/v1
-          NEXT_PUBLIC_S3_PUBLIC_DOMAIN: http://localhost:9000/tzj-uploads-dev
+          NEXT_PUBLIC_API_URL: http://localhost:3240/api/v1
+          NEXT_PUBLIC_S3_PUBLIC_DOMAIN: http://localhost:3290/tzj-uploads-dev
 
       - name: Run Lighthouse CI
         # pnpm dlx 代替 npm install -g（AGENTS.md 禁止 CI 中用 npm install）

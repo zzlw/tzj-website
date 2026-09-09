@@ -13,7 +13,7 @@ describe('isUsableExternalUrl', () => {
     expect(isUsableExternalUrl('https://')).toBe(false);
     expect(isUsableExternalUrl('http://')).toBe(false);
     expect(isUsableExternalUrl('localhost')).toBe(false);
-    expect(isUsableExternalUrl('http://localhost:9000/a.jpg')).toBe(false);
+    expect(isUsableExternalUrl('http://localhost:3290/a.jpg')).toBe(false);
   });
 
   it('合法 http(s) 外链通过（含两侧空白）', () => {

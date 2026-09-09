@@ -11,7 +11,7 @@ import {
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { BookConsultButton } from '@/components/chat/BookConsultButton';
-import { MediaImage as Image } from '@/components/MediaImage';
+import { LazyFillMedia } from '@/components/performance/LazyFillMedia';
 import { Container, RbLink, SectionHeading } from '@/components/ui';
 import { Link } from '@/i18n/navigation';
 import { PRODUCT_LINE_COUNT } from '@/lib/product-catalog';
@@ -165,7 +165,7 @@ export function ProcessBand({
             <div className="lg:col-span-5 lg:sticky lg:top-28">
               {/* fill 图的直接父级必须是 relative/absolute/fixed，sticky 放外层 */}
               <div className="rb-img-shimmer relative aspect-[4/5] overflow-hidden bg-neutral-200">
-                <Image
+                <LazyFillMedia
                   src={image!}
                   alt={imageAlt ?? title}
                   fill
@@ -250,13 +250,10 @@ export function RelatedLinks({
             >
               {l.image ? (
                 <div className="rb-img-shimmer relative aspect-[16/9] overflow-hidden bg-neutral-200">
-                  {/* 卡图滚动后是真实 LCP 候选，且封面 URL 常与其他页面复用：
-                      统一 eager 避免 next/image LCP 告警与 allImgs 同 URL lazy 覆盖冲突 */}
-                  <Image
+                  <LazyFillMedia
                     src={l.image}
                     alt={l.label}
                     fill
-                    loading="eager"
                     sizes="(max-width: 768px) 100vw, 33vw"
                     className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
                   />

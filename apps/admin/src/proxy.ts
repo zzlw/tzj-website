@@ -8,7 +8,7 @@ const API_BASE =
   process.env.ADMIN_API_URL ||
   process.env.NEXT_PUBLIC_ADMIN_API_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
-  'http://localhost:4000/api/v1';
+  'http://localhost:3240/api/v1';
 
 /** 解码 JWT payload（不校验签名，Edge 兼容） */
 function decodeJwt(token: string): Record<string, unknown> | null {

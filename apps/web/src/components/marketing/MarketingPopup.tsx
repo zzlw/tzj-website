@@ -81,34 +81,49 @@ export function MarketingPopup({ phone }: { phone?: string }) {
   useEffect(() => {
     let cancelled = false;
     let cleanupTrigger: (() => void) | undefined;
-    (async () => {
-      const res = await fetch(`${env.apiUrl}/trade-shows/marketing/active`).catch(() => null);
-      if (!res?.ok || cancelled) return;
-      // API 全局 TransformInterceptor 包装为 { success, data, ... }，须取 .data
-      const json = (await res.json()) as { data?: MarketingActivity[] };
-      if (cancelled) return; // json 解析同为悬挂点，防清理后仍注册定时器/监听
-      const [a] = json.data ?? [];
-      if (!a || !isEligible(a, pathname)) return;
+    const run = () => {
+      void (async () => {
+        const res = await fetch(`${env.apiUrl}/trade-shows/marketing/active`).catch(() => null);
+        if (!res?.ok || cancelled) return;
+        // API 全局 TransformInterceptor 包装为 { success, data, ... }，须取 .data
+        const json = (await res.json()) as { data?: MarketingActivity[] };
+        if (cancelled) return; // json 解析同为悬挂点，防清理后仍注册定时器/监听
+        const [a] = json.data ?? [];
+        if (!a || !isEligible(a, pathname)) return;
 
-      // 通过全部过滤后预热渲染体 chunk：delay/scroll 等待期间并行完成，
-      // 到达展示时机零网络等待；immediate 也仅多一次并行请求
-      void import('./MarketingPopupDialog');
+        // 通过全部过滤后预热渲染体 chunk：delay/scroll 等待期间并行完成，
+        // 到达展示时机零网络等待；immediate 也仅多一次并行请求
+        void import('./MarketingPopupDialog');
 
-      cleanupTrigger = scheduleTrigger(a, () => {
-        if (cancelled) return;
-        setActivity(a);
-        setOpen(true);
-        markShown(a);
-        // view 上报不在此发出：渲染体是懒加载 chunk，弱网下可能未就绪甚至失败；
-        // 由 MarketingPopupDialog 挂载后的 effect 上报，保证「计了曝光 = 真看到了」
+        cleanupTrigger = scheduleTrigger(a, () => {
+          if (cancelled) return;
+          setActivity(a);
+          setOpen(true);
+          markShown(a);
+          // view 上报不在此发出：渲染体是懒加载 chunk，弱网下可能未就绪甚至失败；
+          // 由 MarketingPopupDialog 挂载后的 effect 上报，保证「计了曝光 = 真看到了」
+        });
+      })().catch(() => {
+        /* 兜底捕获，不外泄未处理 rejection */
       });
-    })().catch(() => {
-      /* 兜底捕获，不外泄未处理 rejection */
-    });
+    };
+
+    let idleId: number | undefined;
+    if (typeof window.requestIdleCallback === 'function') {
+      idleId = window.requestIdleCallback(run, { timeout: 4000 });
+    } else {
+      idleId = window.setTimeout(run, 1500);
+    }
+
     return () => {
       // 挂在 layout 几乎不卸载，但按规范清理定时器与监听
       cancelled = true;
       cleanupTrigger?.();
+      if (typeof window.cancelIdleCallback === 'function' && idleId !== undefined) {
+        window.cancelIdleCallback(idleId);
+      } else if (idleId !== undefined) {
+        window.clearTimeout(idleId);
+      }
     };
   }, []);
 

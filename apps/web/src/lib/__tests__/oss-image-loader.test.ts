@@ -17,11 +17,11 @@ describe('ossImageLoader', () => {
 
   it('本地 MinIO 只附加宽度参数，不触发 OSS 处理', () => {
     const url = ossImageLoader({
-      src: 'http://localhost:9000/tzj-uploads-dev/content/a.jpg',
+      src: 'http://localhost:3290/tzj-uploads-dev/content/a.jpg',
       width: 640,
       quality: undefined,
     });
-    expect(url).toBe('http://localhost:9000/tzj-uploads-dev/content/a.jpg?w=640');
+    expect(url).toBe('http://localhost:3290/tzj-uploads-dev/content/a.jpg?w=640');
   });
 
   it('SVG/GIF 不缩放，原样返回', () => {

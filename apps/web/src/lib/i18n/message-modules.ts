@@ -74,3 +74,41 @@ export function resolveMessageLoadPlan(pathname: string): MessageLoadPlan {
     pageIds: [...pageIds],
   };
 }
+
+/**
+ * 全量文案（不读请求 pathname）。
+ * getRequestConfig 若调用 headers() 会把整站打成 dynamic / no-store，
+ * 投放落地的 HTML 就无法 ISR；全量加载后按 locale 静态化，客户端仍只下发
+ * pickClientMessages，HTML 体积不跟着涨。
+ */
+export function resolveFullMessageLoadPlan(): MessageLoadPlan {
+  return {
+    extraModules: [...ALWAYS_EXTRA, 'home', 'solutions'],
+    pageIds: [...PAGE_IDS],
+  };
+}
+
+/**
+ * 客户端 hydration 真正用到的命名空间。
+ * layout 里 NextIntlClientProvider 只下发这些，避免把 pages/catalog/blocks
+ * 等仅服务端使用的文案打进 HTML（投放落地页可少十几 KB）。
+ */
+export const CLIENT_MESSAGE_NAMESPACES = [
+  'common',
+  'header',
+  'nav',
+  'search',
+  'language',
+  'contact',
+  'cta',
+  'content',
+  'error',
+] as const;
+
+export function pickClientMessages(messages: Record<string, unknown>): Record<string, unknown> {
+  const picked: Record<string, unknown> = {};
+  for (const key of CLIENT_MESSAGE_NAMESPACES) {
+    if (key in messages) picked[key] = messages[key];
+  }
+  return picked;
+}

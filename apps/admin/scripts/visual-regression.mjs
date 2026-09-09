@@ -7,7 +7,7 @@
  *   node scripts/visual-regression.mjs capture current    # 迁移后抓当前
  *   node scripts/visual-regression.mjs compare            # 基线 vs 当前逐页像素对比
  *
- * 前置：本地 admin(3002) 已启动；登录凭证从环境变量读取：
+ * 前置：本地 admin(3202) 已启动；登录凭证从环境变量读取：
  *   ADMIN_E2E_USERNAME / ADMIN_E2E_PASSWORD（或回退 SEED_ADMIN_USERNAME / SEED_ADMIN_PASSWORD）
  *
  * 产物目录 .visual-regression/（已 gitignore）：baseline/ current/ diff/
@@ -21,7 +21,7 @@ import { chromium } from 'playwright';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(ROOT, '.visual-regression');
-const BASE_URL = process.env.ADMIN_BASE_URL || 'http://localhost:3002';
+const BASE_URL = process.env.ADMIN_BASE_URL || 'http://localhost:3202';
 const VIEWPORT = { width: 1440, height: 900 };
 const DIFF_PASS_PCT = 0.5;
 

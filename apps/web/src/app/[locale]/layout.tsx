@@ -23,6 +23,7 @@ import { AgentPhoneProvider } from '@/features/chat/AgentPhoneContext';
 import { legacyDetectJsHref } from '@/generated/legacy-css';
 import { type AppLocale, routing } from '@/i18n/routing';
 import { env } from '@/lib/env';
+import { pickClientMessages } from '@/lib/i18n/message-modules';
 import { organizationJsonLd } from '@/lib/jsonld';
 import { LOCALE_HTML_LANG } from '@/lib/locale-config';
 import { getMediaOrigin } from '@/lib/media-origin';
@@ -140,7 +141,7 @@ export default async function LocaleLayout({ children, params }: Props) {
         {env.legacyCssEnabled && <Script src={legacyDetectJsHref} strategy="beforeInteractive" />}
       </head>
       <body className="bg-background text-text antialiased">
-        <NextIntlClientProvider messages={messages}>
+        <NextIntlClientProvider messages={pickClientMessages(messages)}>
           <AgentPhoneProvider phone={primaryPhone}>
             <LanguageSelectorProvider>
               <SearchProvider>

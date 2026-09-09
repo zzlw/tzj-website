@@ -4,7 +4,7 @@
       "startServerCommand": "pnpm --filter @tzj/web start",
       "startServerReadyPattern": "Ready",
       "startServerReadyTimeout": 30000,
-      "url": ["http://localhost:3001/"],
+      "url": ["http://localhost:3201/"],
       "numberOfRuns": 1
     },
     "assert": {
