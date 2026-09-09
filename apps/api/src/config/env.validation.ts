@@ -16,9 +16,7 @@ const envSchema = z.object({
   JWT_REFRESH_TTL: z.string().default('7d'),
 
   // CORS 白名单（逗号分隔）
-  CORS_ORIGINS: z
-    .string()
-    .default('http://localhost:3201,http://localhost:3202'),
+  CORS_ORIGINS: z.string().default('http://localhost:3201,http://localhost:3202'),
 
   // 限流
   THROTTLE_TTL: z.coerce.number().default(60),
