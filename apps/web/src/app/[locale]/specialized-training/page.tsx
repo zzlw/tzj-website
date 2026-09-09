@@ -7,12 +7,12 @@ import { CtaBand } from '@/components/sections/blocks';
 import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
 import { Container, PageHero } from '@/components/ui';
 import { Link } from '@/i18n/navigation';
-import { AD_LANDING_REVALIDATE } from '@/lib/ad-landing';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 import { linesByFamily } from '@/lib/product-catalog';
 import { getProductPageImages } from '@/lib/product-images';
 
-export const revalidate = AD_LANDING_REVALIDATE;
+/** 须为字面量；窗口约定见 `@/lib/ad-landing` */
+export const revalidate = 60;
 
 const HUB = getProductPageImages('specialized-hub');
 const SPECIALIZED_LINES = linesByFamily('specialized');

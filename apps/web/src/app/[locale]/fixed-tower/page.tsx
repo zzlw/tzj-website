@@ -8,12 +8,12 @@ import { RelatedLinks } from '@/components/sections/blocks';
 import { ProcessBandI18n } from '@/components/sections/blocks-i18n';
 import { Container, RbLink, SectionHeading } from '@/components/ui';
 import { Link } from '@/i18n/navigation';
-import { AD_LANDING_REVALIDATE } from '@/lib/ad-landing';
 import { getCaseBySlug } from '@/lib/cases';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 import { breadcrumbJsonLd, productJsonLd } from '@/lib/jsonld';
 
-export const revalidate = AD_LANDING_REVALIDATE;
+/** 须为字面量；窗口约定见 `@/lib/ad-landing` */
+export const revalidate = 60;
 
 export async function generateMetadata() {
   return createPageMetadata({ namespace: 'pages.fixedTower', path: '/fixed-tower' });

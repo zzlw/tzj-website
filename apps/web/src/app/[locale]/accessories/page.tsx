@@ -13,7 +13,6 @@ import {
 import { CtaBand, RelatedLinks } from '@/components/sections/blocks';
 import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
 import { Container, PageHero, SectionHeading } from '@/components/ui';
-import { AD_LANDING_REVALIDATE } from '@/lib/ad-landing';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 import { breadcrumbJsonLd, productJsonLd } from '@/lib/jsonld';
 import { productLineHeroImage, productLineOgImage } from '@/lib/product-catalog';
@@ -23,7 +22,8 @@ import {
   requireProductLine,
 } from '@/lib/product-line-page';
 
-export const revalidate = AD_LANDING_REVALIDATE;
+/** 须为字面量；窗口约定见 `@/lib/ad-landing` */
+export const revalidate = 60;
 
 const LINE = requireProductLine('accessories');
 

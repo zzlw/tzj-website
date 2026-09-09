@@ -8,4 +8,5 @@
  * 拓展器材 / 拓展器材厂家 / 拓展训练器材 / 拓展训练器材公司
  * → /zh-CN/specialized-training（保留原 utm）；心理行为训练、心理训练设施保持原页。
  */
+/** 页面 `export const revalidate` 必须写数字字面量，Next 不能解析此常量。 */
 export const AD_LANDING_REVALIDATE = 60;
