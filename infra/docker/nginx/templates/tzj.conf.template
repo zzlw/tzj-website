@@ -65,19 +65,16 @@ server {
 
     include /etc/nginx/snippets/gzip.conf;
 
+    # 各语言首页：/ 的 308 目标，也是分享与外部测速的落点，同样按 $uri 缓存。
+    location ~* ^/(zh-CN|zh-TW|en)/?$ {
+        include /etc/nginx/snippets/proxy-web.conf;
+        include /etc/nginx/snippets/cache-web-html.conf;
+    }
+
     # 百度推广主力落地：同源站 60s，缓存键不含 query，付费点击共用一条 HTML。
     location ~* ^/(zh-CN|zh-TW|en)/(fixed-tower|specialized-training|accessories|towers)(/|$) {
         include /etc/nginx/snippets/proxy-web.conf;
-        proxy_cache web_html;
-        proxy_cache_key $scheme$host$uri;
-        proxy_cache_valid 200 60s;
-        proxy_cache_lock on;
-        proxy_cache_use_stale updating error timeout http_500 http_502;
-        proxy_ignore_headers Cache-Control Set-Cookie Vary;
-        proxy_hide_header Set-Cookie;
-        proxy_cache_bypass $web_html_bypass_rsc $web_html_bypass_prefetch;
-        proxy_no_cache $web_html_bypass_rsc $web_html_bypass_prefetch;
-        add_header X-Web-Cache $upstream_cache_status;
+        include /etc/nginx/snippets/cache-web-html.conf;
     }
 
     location / {
