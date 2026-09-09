@@ -1,10 +1,9 @@
 import { getTranslations } from 'next-intl/server';
-import { BaiduSafeVideoHero as VideoHero } from '@/components/BaiduSafeVideoHero';
 import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { RelatedLinks } from '@/components/sections/blocks';
 import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
-import { Container, RbLink, SectionHeading } from '@/components/ui';
+import { Container, RbLink, SectionHeading, VideoHero } from '@/components/ui';
 import { Link as I18nLink } from '@/i18n/navigation';
 import { getCases } from '@/lib/api';
 import { createPageMetadata } from '@/lib/i18n/metadata';

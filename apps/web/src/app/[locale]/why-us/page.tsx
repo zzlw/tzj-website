@@ -1,10 +1,9 @@
 import { Award, Check, Lightbulb, ShieldCheck } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { BaiduSafeVideoHero as VideoHero } from '@/components/BaiduSafeVideoHero';
 import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { MediaImage as Image } from '@/components/MediaImage';
-import { Container, Eyebrow, SectionHeading } from '@/components/ui';
+import { Container, Eyebrow, SectionHeading, VideoHero } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 import { WHY_US_IMAGES } from '@/lib/why-us-images';
 

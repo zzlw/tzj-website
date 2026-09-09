@@ -1,7 +1,6 @@
 import { Check, X } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { BaiduSafeVideoHero as VideoHero } from '@/components/BaiduSafeVideoHero';
 import { BookConsultButton } from '@/components/chat/BookConsultButton';
 import { MediaImage as Image } from '@/components/MediaImage';
 import {
@@ -11,7 +10,7 @@ import {
 } from '@/components/products/ProductLineMedia';
 import { RelatedLinks } from '@/components/sections/blocks';
 import { ProcessBandI18n, StatBandI18n } from '@/components/sections/blocks-i18n';
-import { Container, RbLink, SectionHeading } from '@/components/ui';
+import { Container, RbLink, SectionHeading, VideoHero } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 import { productLineHeroImage, productLineOgImage } from '@/lib/product-catalog';
 import { relatedLinksWithImages, requireProductLine } from '@/lib/product-line-page';

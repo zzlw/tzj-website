@@ -1,10 +1,9 @@
 import { Award, HeartHandshake, Lightbulb, ShieldCheck } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
-import { BaiduSafeVideoHero as VideoHero } from '@/components/BaiduSafeVideoHero';
 import { MediaImage as Image } from '@/components/MediaImage';
 import { CtaBand, FeatureGrid, RelatedLinks } from '@/components/sections/blocks';
 import { StatBandI18n } from '@/components/sections/blocks-i18n';
-import { Container, SectionHeading } from '@/components/ui';
+import { Container, SectionHeading, VideoHero } from '@/components/ui';
 import { createPageMetadata } from '@/lib/i18n/metadata';
 import { siteCoverByHref } from '@/lib/site-cover';
 import { WHY_US_IMAGES } from '@/lib/why-us-images';

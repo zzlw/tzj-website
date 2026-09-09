@@ -1,7 +1,7 @@
 import { ArrowRight, type LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { BaiduSafeVideoLayer } from '@/components/BaiduSafeVideoLayer';
 import { MediaImage } from '@/components/MediaImage';
-import { MediaVideo } from '@/components/MediaVideo';
 import { Link } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
 
@@ -126,7 +126,6 @@ export function VideoHero({
   video,
   videoMobile,
   poster,
-  posterOnly = false,
   className,
   children,
 }: {
@@ -137,8 +136,6 @@ export function VideoHero({
   /** 窄屏（<768px）低码率版背景视频，移动端省流量。 */
   videoMobile?: string;
   poster?: string;
-  /** 仅渲染封面图、不输出 <video>（百度 App 嗅探降级等场景）。 */
-  posterOnly?: boolean;
   className?: string;
   children?: ReactNode;
 }) {
@@ -157,27 +154,25 @@ export function VideoHero({
           preload
           loading="eager"
           fetchPriority="high"
-          quality={90}
-          sizes="100vw"
+          quality={70}
+          sizes="(max-width: 768px) 828px, 1400px"
           className="absolute inset-0 z-0 h-full w-full object-cover object-center"
           aria-hidden
         />
       ) : null}
       {/* poster 留给底层 eager <img> 承担，避免 <video poster> 的原始 URL
           与 allImgs 中 eager 图片的 ?w= 键不匹配导致 LCP 误报 */}
-      {!posterOnly ? (
-        <MediaVideo
-          className="absolute inset-0 z-[1] h-full w-full object-cover object-center"
-          src={video}
-          mobileSrc={videoMobile}
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="none"
-          aria-hidden="true"
-        />
-      ) : null}
+      <BaiduSafeVideoLayer
+        className="absolute inset-0 z-[1] h-full w-full object-cover object-center"
+        src={video}
+        mobileSrc={videoMobile}
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="none"
+        aria-hidden="true"
+      />
       <div className="absolute inset-0 rb-media-shade-strong" />
       <Container className="rb-on-media relative z-10 flex flex-col items-center py-16 text-center lg:py-24">
         {eyebrow ? <Eyebrow inverted>{eyebrow}</Eyebrow> : null}

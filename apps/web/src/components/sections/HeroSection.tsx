@@ -1,9 +1,7 @@
-import { isBaiduAppUserAgent } from '@tzj/device';
 import { ChevronDown } from 'lucide-react';
-import { headers } from 'next/headers';
 import { getTranslations } from 'next-intl/server';
+import { BaiduSafeVideoLayer } from '@/components/BaiduSafeVideoLayer';
 import { MediaImage } from '@/components/MediaImage';
-import { MediaVideo } from '@/components/MediaVideo';
 import { HeroLoopTypewriter } from '@/components/sections/HeroLoopTypewriter';
 import { Container, Eyebrow, RbButton } from '@/components/ui';
 import { Link } from '@/i18n/navigation';
@@ -20,8 +18,6 @@ export async function HeroSection() {
   const rotations = Array.isArray(t.raw('titleRotations'))
     ? (t.raw('titleRotations') as string[]).filter((s) => s.trim())
     : [t('titleLine2')];
-  const headerStore = await headers();
-  const isBaiduApp = isBaiduAppUserAgent(headerStore.get('user-agent') ?? '');
 
   return (
     <section className="relative flex min-h-screen flex-col justify-end overflow-hidden bg-neutral-900">
@@ -33,26 +29,24 @@ export async function HeroSection() {
         preload
         loading="eager"
         fetchPriority="high"
-        quality={90}
-        sizes="100vw"
+        quality={70}
+        sizes="(max-width: 768px) 828px, 1400px"
         className="absolute inset-0 z-0 h-full w-full object-cover object-center"
         aria-hidden
       />
       {/* poster 留给底层 eager <img> 承担，避免 <video poster> 的原始 URL
           与 allImgs 中 eager 图片的 ?w= 键不匹配导致 LCP 误报 */}
-      {!isBaiduApp ? (
-        <MediaVideo
-          className="absolute inset-0 z-[1] h-full w-full object-cover object-center"
-          src={HERO_VIDEO}
-          mobileSrc={HERO_VIDEO_MOBILE}
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="none"
-          aria-hidden="true"
-        />
-      ) : null}
+      <BaiduSafeVideoLayer
+        className="absolute inset-0 z-[1] h-full w-full object-cover object-center"
+        src={HERO_VIDEO}
+        mobileSrc={HERO_VIDEO_MOBILE}
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="none"
+        aria-hidden="true"
+      />
 
       <div
         className="pointer-events-none absolute inset-0 z-[5] flex items-center justify-center overflow-hidden"

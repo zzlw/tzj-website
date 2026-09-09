@@ -1,7 +1,5 @@
-import { isBaiduAppUserAgent } from '@tzj/device';
-import { headers } from 'next/headers';
 import { getTranslations } from 'next-intl/server';
-import { LazyMediaVideo } from '@/components/LazyMediaVideo';
+import { BaiduSafeVideoLayer } from '@/components/BaiduSafeVideoLayer';
 import { MediaImage } from '@/components/MediaImage';
 import { AnimatedStat } from '@/components/sections/AnimatedStat';
 import { Container, Eyebrow, RbLink } from '@/components/ui';
@@ -12,8 +10,6 @@ const MISSION_POSTER = '/media/modular-construction.jpg';
 
 export async function MissionSection() {
   const t = await getTranslations('home.mission');
-  const headerStore = await headers();
-  const isBaiduApp = isBaiduAppUserAgent(headerStore.get('user-agent') ?? '');
 
   const stats = [
     { value: '2018', label: t('statFounded'), duration: 0 },
@@ -27,30 +23,27 @@ export async function MissionSection() {
       id="mission"
       className="relative flex min-h-[620px] items-center justify-center overflow-hidden bg-neutral-900 py-20 lg:min-h-[720px] lg:py-28"
     >
-      {isBaiduApp ? (
-        <MediaImage
-          src={MISSION_POSTER}
-          alt=""
-          fill
-          quality={90}
-          sizes="100vw"
-          className="absolute inset-0 h-full w-full object-cover object-center"
-          aria-hidden
-        />
-      ) : (
-        <LazyMediaVideo
-          className="absolute inset-0 h-full w-full object-cover object-center"
-          src={MISSION_VIDEO}
-          poster={MISSION_POSTER}
-          autoPlay
-          muted
-          loop
-          playsInline
-          lazy
-          preload="metadata"
-          aria-hidden="true"
-        />
-      )}
+      {/* 封面走 <MediaImage>（OSS 缩放 + WebP）；交给 <video poster> 会直出未处理原图 */}
+      <MediaImage
+        src={MISSION_POSTER}
+        alt=""
+        fill
+        quality={70}
+        sizes="(max-width: 768px) 828px, 1400px"
+        className="absolute inset-0 z-0 h-full w-full object-cover object-center"
+        aria-hidden
+      />
+      <BaiduSafeVideoLayer
+        className="absolute inset-0 z-[1] h-full w-full object-cover object-center"
+        src={MISSION_VIDEO}
+        autoPlay
+        muted
+        loop
+        playsInline
+        lazy
+        preload="metadata"
+        aria-hidden="true"
+      />
       <div className="absolute inset-0 rb-media-shade-strong" aria-hidden="true" />
 
       <Container className="rb-on-media relative z-10 flex flex-col items-center text-center">
