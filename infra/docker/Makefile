@@ -18,7 +18,7 @@ PROD := docker compose $(COMPOSE_FILES) \
 	--env-file $(DEPLOY_DIR)/.env.prod.local
 
 .PHONY: prod-deploy prod-status prod-logs gateway-reload infra-up \
-        cert-selfsigned acme-build cert-issue cert-renew
+        cert-selfsigned acme-build cert-issue cert-renew cert-deploy-cdn cert-wire-cdn
 
 prod-deploy:
 	cd $(DEPLOY_DIR) && ./deploy.sh $(SERVICE) $(TAG)
@@ -60,4 +60,14 @@ cert-issue:
 
 cert-renew:
 	$(PROD) exec acme acme.sh --renew-all --force
+	$(PROD) exec acme sh /scripts/deploy-cdn.sh
 	$(PROD) exec gateway nginx -s reload
+
+# 仅推 CDN（不续期）；排查或手动换证后用
+cert-deploy-cdn:
+	$(PROD) exec acme sh /scripts/deploy-cdn.sh
+
+# 给已有证书写入 renew-hook（部署新脚本后跑一次即可，幂等）
+cert-wire-cdn:
+	$(PROD) exec acme sh -c 'for conf in /acme.sh/$$BASE_DOMAIN/$$BASE_DOMAIN.conf /acme.sh/$${BASE_DOMAIN}_ecc/$$BASE_DOMAIN.conf; do [ -f "$$conf" ] || continue; if grep -q "^Le_RenewHook=" "$$conf"; then sed -i "s|^Le_RenewHook=.*|Le_RenewHook='"'"'sh /scripts/deploy-cdn.sh'"'"'|" "$$conf"; else echo "Le_RenewHook='"'"'sh /scripts/deploy-cdn.sh'"'"'" >> "$$conf"; fi; grep "^Le_RenewHook=" "$$conf"; done'
+	$(PROD) exec acme sh /scripts/deploy-cdn.sh

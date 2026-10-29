@@ -115,6 +115,8 @@ services:
     environment:
       ACME_EMAIL: ${ACME_EMAIL}
       BASE_DOMAIN: ${BASE_DOMAIN}
+      WEB_DOMAIN: ${WEB_DOMAIN}
+      STATIC_DOMAIN: ${STATIC_DOMAIN:-static.tzjii.com}
       Ali_Key: ${ALI_KEY}
       Ali_Secret: ${ALI_SECRET}
       CF_API_TOKEN: ${CF_API_TOKEN:-}

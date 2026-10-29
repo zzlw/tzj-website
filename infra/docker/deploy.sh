@@ -323,6 +323,36 @@ prune_old_images
 echo "==> Pull images ($SERVICES → $TAG)"
 compose pull $SERVICES
 
+# 续期→CDN：镜像需 aliyun CLI；脚本随 SCP 更新后写入 renew-hook（幂等）
+ensure_acme_cdn_cert_push() {
+  if ! compose exec -T acme sh -c 'command -v aliyun >/dev/null 2>&1'; then
+    echo "==> Rebuild tzj-acme:prod（安装 aliyun CLI，供续期推 CDN）"
+    # override 把 build 置空，需不带 override 构建
+    docker compose -f docker-compose.prod.yml \
+      --env-file .env.prod --env-file .env.prod.local \
+      build acme
+    compose up -d --no-deps --force-recreate acme
+    sleep 2
+  fi
+  if compose exec -T acme sh -c 'test -f /scripts/deploy-cdn.sh'; then
+    echo "==> Wire acme renew-hook → deploy-cdn.sh（www + static CDN）"
+    # acme.sh 对已有证书的 --install-cert --renew-hook 不一定落盘，直接写 conf 更稳
+    compose exec -T acme sh -c '
+      set -e
+      for conf in /acme.sh/$BASE_DOMAIN/$BASE_DOMAIN.conf /acme.sh/${BASE_DOMAIN}_ecc/$BASE_DOMAIN.conf; do
+        [ -f "$conf" ] || continue
+        if grep -q "^Le_RenewHook=" "$conf"; then
+          sed -i "s|^Le_RenewHook=.*|Le_RenewHook='"'"'sh /scripts/deploy-cdn.sh'"'"'|" "$conf"
+        else
+          echo "Le_RenewHook='"'"'sh /scripts/deploy-cdn.sh'"'"'" >> "$conf"
+        fi
+        echo "wired: $conf"
+        grep "^Le_RenewHook=" "$conf"
+      done
+    ' || echo "warn: cert-wire 跳过（可能尚未 cert-issue）" >&2
+  fi
+}
+
 echo "==> Sync CDN 静态资源（OSS）"
 if [[ "$SERVICE" == "all" || "$SERVICE" == "web" || "$SERVICE" == "admin" ]]; then
   for s in web admin; do
@@ -368,6 +398,7 @@ prune_old_images
 echo "==> Ensure gateway (+ acme if needed)"
 compose up -d --force-recreate --no-deps gateway
 compose up -d --no-deps acme
+ensure_acme_cdn_cert_push
 
 compose ps $SERVICES gateway
 

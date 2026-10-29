@@ -1,6 +1,7 @@
 #!/bin/sh
 # 首次签发：make -C /opt/tzj cert-issue（compose exec acme sh /scripts/issue.sh）
 # Let's Encrypt + DNS-01 泛域名 + install-cert；续期后 nginx 由 90-periodic-reload.sh 自动 reload
+# renew-hook：每次续期后把新证书推到 CDN（www + static）
 # tzjii.com NS 在阿里云 → 用 dns_ali（CF_* 留空；若域名 NS 迁到 Cloudflare 才配 CF_API_TOKEN）
 set -e
 
@@ -20,18 +21,25 @@ else
   exit 1
 fi
 
+RENEW_HOOK='sh /scripts/deploy-cdn.sh'
+
 echo "==> 注册 ACME 账户（Let's Encrypt）"
 acme.sh --register-account -m "$ACME_EMAIL" --server letsencrypt
 
 echo "==> DNS-01 签发泛域名：$BASE_DOMAIN + *.$BASE_DOMAIN"
 acme.sh --issue --server letsencrypt --keylength 2048 \
   --dns "$DNS_PROVIDER" \
-  -d "$BASE_DOMAIN" -d "*.$BASE_DOMAIN"
+  -d "$BASE_DOMAIN" -d "*.$BASE_DOMAIN" \
+  --renew-hook "$RENEW_HOOK"
 
-echo "==> 安装证书到 /certs/live（续期后自动重装）"
+echo "==> 安装证书到 /certs/live（续期后自动重装；并写入 renew-hook）"
 mkdir -p /certs/live
 acme.sh --install-cert -d "$BASE_DOMAIN" \
   --fullchain-file /certs/live/fullchain.pem \
-  --key-file /certs/live/privkey.pem
+  --key-file /certs/live/privkey.pem \
+  --renew-hook "$RENEW_HOOK"
+
+echo "==> 推送证书到 CDN（www + static）"
+sh /scripts/deploy-cdn.sh
 
 echo "==> 完成。执行 make -C /opt/tzj gateway-reload"
